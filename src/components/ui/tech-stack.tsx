@@ -51,11 +51,11 @@ const Four = () => {
       initial="initial"
       animate="animate"
       whileHover="hover"
-      className="flex flex-1 w-full h-full min-h-[6rem] dark:bg-dot-white/[0.2] bg-dot-black/[0.2] flex-row space-x-2 p-10 md:p-0"
+      className="flex flex-1 justify-center w-full h-full min-h-[6rem] dark:bg-dot-white/[0.2] bg-dot-black/[0.2] flex-row space-x-0 md:space-x-2 py-10 px-0 md:p-0"
     >
       <motion.div
         variants={first}
-        className="h-full w-1/3 rounded-2xl bg-white p-4 dark:bg-black dark:border-white/[0.1] border border-neutral-200 flex flex-col items-center justify-center"
+        className="h-full w-2/6 rounded-2xl bg-white p-4 dark:bg-black dark:border-white/[0.1] border border-neutral-200 flex flex-col items-center justify-center"
       >
         <Image
           src="/nodejs.svg"
@@ -71,9 +71,9 @@ const Four = () => {
           The OG
         </p>
       </motion.div>
-      <motion.div className="h-full relative z-20 w-1/3 rounded-2xl bg-white p-4 dark:bg-black dark:border-white/[0.1] border border-neutral-200 flex flex-col items-center justify-center">
+      <motion.div className="h-full relative z-20 w-2/6 rounded-2xl bg-white p-4 dark:bg-black dark:border-white/[0.1] border border-neutral-200 flex flex-col items-center justify-center">
         <Image
-          src="/postgreSQL.svg"
+          src="/postgresql.svg"
           alt="avatar"
           height="150"
           width="150"
@@ -88,20 +88,20 @@ const Four = () => {
       </motion.div>
       <motion.div
         variants={second}
-        className="h-full w-1/3 rounded-2xl bg-white p-4 dark:bg-black dark:border-white/[0.1] border border-neutral-200 flex flex-col items-center justify-center"
+        className="h-full w-2/6 rounded-2xl bg-white p-4 dark:bg-black dark:border-white/[0.1] border border-neutral-200 flex flex-col items-center justify-center"
       >
         <Image
           src="/drizzle.svg"
           alt="avatar"
           height="100"
           width="100"
-          className="rounded-full h-10 w-10"
+          className="rounded-full h-16 w-16"
         />
         <p className="sm:text-sm text-xs text-center font-semibold text-neutral-500 mt-4">
           Drizzle
         </p>
         <p className="border border-yellow-300 bg-yellow-50 dark:bg-orange-900/20 text-yellow-400 text-xs rounded-full px-2 py-0.5 mt-4">
-          The cool kid
+          Light ⚡️
         </p>
       </motion.div>
     </motion.div>

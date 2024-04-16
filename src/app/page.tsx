@@ -63,10 +63,25 @@ export default function Home() {
               ✌️
             </h1>
           </div>
-          <p className="text-lg w-full md:w-5/6 items-center">
-            I&apos;m a {age}y old student and passionate developer. I live in 🇫🇷
+          <p className="text-lg w-full items-center">
+            I&apos;m a {age}y old student and passionate developer. I live in
+            <span className="mx-1">
+              <Badge
+                href="https://fr.wikipedia.org/wiki/France"
+                className="rounded-md"
+              >
+                <Image
+                  alt="French flag logo"
+                  src="/france.svg"
+                  className="!mr-1"
+                  width="14"
+                  height="14"
+                />
+                France
+              </Badge>
+            </span>
             and like to work with
-            <span className="mx-2">
+            <span className="mx-1">
               <Badge href="https://nextjs.org" className="rounded-md">
                 <Image
                   alt="Next.js logo"
@@ -79,7 +94,7 @@ export default function Home() {
               </Badge>
             </span>
             and
-            <span className="mx-2">
+            <span className="mx-1">
               <Badge href="https://react.dev" className="rounded-md">
                 <Image
                   alt="React logo"
