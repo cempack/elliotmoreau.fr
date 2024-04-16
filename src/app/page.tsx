@@ -1,112 +1,162 @@
+import { TechStack } from "@/components/tech-stack";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import Project from "@/components/ui/project";
+import LatestRepos from "@/components/ui/repos";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { CalendarIcon } from "lucide-react";
 import Image from "next/image";
+import { Suspense } from "react";
+
+export function Badge(props: any) {
+  return (
+    <a
+      {...props}
+      target="_blank"
+      className="inline-flex items-center rounded border border-neutral-200 bg-neutral-50 p-1 text-sm leading-4 text-neutral-900 no-underline dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+    />
+  );
+}
+
+export async function fetchGithub(element: string): Promise<string> {
+  return fetch("https://api.github.com/users/cempack")
+    .then((response) => response.json())
+    .then((data) => {
+      return data[element];
+    })
+    .catch((error) => {
+      console.error("Error fetching GitHub data:", error);
+      return "Error fetching GitHub data.";
+    });
+}
 
 export default function Home() {
+  const birthday = new Date(2008, 0, 19);
+  const today = new Date();
+  const age = today.getFullYear() - birthday.getFullYear();
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
+    <main className="flex items-center justify-start h-full flex-auto min-w-0 px-2 md:px-0">
+      <div className="flex flex-col gap-2">
+        <section className="px-4 md:px-0">
+          <div className="flex flex-row items-center gap-2">
+            <Avatar className="scale-105">
+              <AvatarImage src="https://github.com/cempack.png" />
+              <AvatarFallback>Cempack</AvatarFallback>
+            </Avatar>
+            <h1 className="text-2xl font-medium tracking-tighter">
+              Hey I&apos;m
+              <HoverCard>
+                <HoverCardTrigger asChild>
+                  <Button className="text-2xl mx-[-0.5rem]" variant="link">
+                    @cempack
+                  </Button>
+                </HoverCardTrigger>
+                <HoverCardContent className="w-80">
+                  <div className="flex justify-between space-x-4">
+                    <Avatar>
+                      <AvatarImage src="https://github.com/cempack.png" />
+                      <AvatarFallback>Cempack</AvatarFallback>
+                    </Avatar>
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-semibold">@cempack</h4>
+                      <p className="text-sm">{fetchGithub("bio")}</p>
+                      <div className="flex items-center pt-2">
+                        <CalendarIcon className="mr-2 h-4 w-4 opacity-70" />{" "}
+                        <span className="text-xs text-muted-foreground">
+                          Joined on the{" "}
+                          {fetchGithub("created_at").then((date) =>
+                            new Date(date).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </HoverCardContent>
+              </HoverCard>
+              ✌️
+            </h1>
+          </div>
+          <p className="text-lg w-full md:w-5/6 items-center">
+            I&apos;m a {age}y old student and passionate developer. I live in 🇫🇷
+            and like to work with
+            <span className="mx-2">
+              <Badge href="https://nextjs.org" className="rounded-md">
+                <Image
+                  alt="Next.js logo"
+                  src="/next-logo.svg"
+                  className="!mr-1"
+                  width="14"
+                  height="14"
+                />
+                Next.js
+              </Badge>
+            </span>
+            and
+            <span className="mx-2">
+              <Badge href="https://react.dev" className="rounded-md">
+                <Image
+                  alt="React logo"
+                  src="/react-logo.svg"
+                  className="!mr-1"
+                  width="14"
+                  height="14"
+                />
+                React
+              </Badge>
+            </span>
+          </p>
+        </section>
+        <section className="mt-12">
+          <h1 className="text-2xl font-bold mb-5">My tech stack</h1>
+          <TechStack />
+        </section>
+        <section className="mt-12 flex flex-row justify-between gap-2">
+          <div className="border-black/[0.2] dark:border-white/[0.2] p-5 rounded-lg w-full border">
+            <h1 className="text-base text-gray-500 dark:text-gray-300 uppercase mb-1">
+              Projects
+            </h1>
+            <Separator className="my-3" />
+            <Project
+              name="LaGazetteTulliste"
+              icon="/lgt.png"
+              href="https://journal.elliotmoreau.fr"
             />
-          </a>
-        </div>
-      </div>
-
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
+            <Separator className="my-3" />
+            <Project
+              name="Winzoria"
+              icon="/winzoria.png"
+              href="https://winzoria.vercel.app"
+            />
+            <Separator className="my-3" />
+            <Project
+              name="Ninariot"
+              icon="/ninariot.png"
+              href="https://github.com/cempack/NinariotUpdates"
+            />
+          </div>
+          <div className="border-black/[0.2] dark:border-white/[0.2] p-5 rounded-lg w-full border">
+            <h1 className="text-base text-gray-500 uppercase mb-1">
+              Latest Repos
+            </h1>
+            <Separator className="mb-5" />
+            <Suspense
+              fallback={<Skeleton className="w-full h-full rounded-full" />}
+            >
+              <LatestRepos count={4} />
+            </Suspense>
+          </div>
+        </section>
       </div>
     </main>
   );
