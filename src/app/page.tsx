@@ -43,7 +43,7 @@ export default function Home() {
               <AvatarFallback>Cempack</AvatarFallback>
             </Avatar>
             <h1 className="text-2xl font-medium tracking-tighter">
-              Hey I&apos;m
+              Hey, I&apos;m
               <HoverCard>
                 <HoverCardTrigger asChild>
                   <Button className="text-2xl mx-[-0.5rem]" variant="link">
@@ -64,8 +64,9 @@ export default function Home() {
             </h1>
           </div>
           <p className="text-lg w-full items-center">
-            I&apos;m a {age}y old student and passionate developer. I live in
-            <span className="mx-1">
+            I&apos;m a {age} years old student and passionate developer. I live
+            in
+            <span className="mx-2 md:mx-1">
               <Badge
                 href="https://fr.wikipedia.org/wiki/France"
                 className="rounded-md"
@@ -80,8 +81,8 @@ export default function Home() {
                 France
               </Badge>
             </span>
-            and like to work with
-            <span className="mx-1">
+            and I like to work with
+            <span className="mx-2 md:mx-1">
               <Badge href="https://nextjs.org" className="rounded-md">
                 <Image
                   alt="Next.js logo"
@@ -94,7 +95,7 @@ export default function Home() {
               </Badge>
             </span>
             and
-            <span className="mx-1">
+            <span className="mx-2 md:mx-1">
               <Badge href="https://react.dev" className="rounded-md">
                 <Image
                   alt="React logo"

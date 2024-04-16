@@ -55,7 +55,7 @@ const Four = () => {
     >
       <motion.div
         variants={first}
-        className="h-full w-2/6 rounded-2xl bg-white p-4 dark:bg-black dark:border-white/[0.1] border border-neutral-200 flex flex-col items-center justify-center"
+        className="h-full w-2/3 rounded-2xl bg-white p-4 dark:bg-black dark:border-white/[0.1] border border-neutral-200 flex flex-col items-center justify-center"
       >
         <Image
           src="/nodejs.svg"
@@ -67,11 +67,11 @@ const Four = () => {
         <p className="sm:text-sm text-xs text-center font-semibold text-neutral-500 mt-4">
           JavaScript... Everywhere
         </p>
-        <p className="border border-green-500 bg-green-50 dark:bg-red-900/20 text-green-600 text-xs rounded-full px-2 py-0.5 mt-4">
+        <p className="border border-green-500 bg-green-50 dark:bg-red-900/20 text-green-600 text-xs rounded-full px-2 py-0.5 mt-4 text-nowrap">
           The OG
         </p>
       </motion.div>
-      <motion.div className="h-full relative z-20 w-2/6 rounded-2xl bg-white p-4 dark:bg-black dark:border-white/[0.1] border border-neutral-200 flex flex-col items-center justify-center">
+      <motion.div className="h-full relative z-20 w-2/3 rounded-2xl bg-white p-4 dark:bg-black dark:border-white/[0.1] border border-neutral-200 flex flex-col items-center justify-center">
         <Image
           src="/postgresql.svg"
           alt="avatar"
@@ -82,13 +82,13 @@ const Four = () => {
         <p className="sm:text-sm text-xs text-center font-semibold text-neutral-500 mt-4">
           PostgreSQL
         </p>
-        <p className="border border-blue-500 bg-blue-50 dark:bg-green-900/20 text-blue-600 text-xs rounded-full px-2 py-0.5 mt-4">
+        <p className="border border-blue-500 bg-blue-50 dark:bg-green-900/20 text-blue-600 text-xs rounded-full px-2 py-0.5 mt-4 text-nowrap">
           🐘 + 💙
         </p>
       </motion.div>
       <motion.div
         variants={second}
-        className="h-full w-2/6 rounded-2xl bg-white p-4 dark:bg-black dark:border-white/[0.1] border border-neutral-200 flex flex-col items-center justify-center"
+        className="h-full w-2/3 rounded-2xl bg-white p-4 dark:bg-black dark:border-white/[0.1] border border-neutral-200 flex flex-col items-center justify-center"
       >
         <Image
           src="/drizzle.svg"
@@ -100,7 +100,7 @@ const Four = () => {
         <p className="sm:text-sm text-xs text-center font-semibold text-neutral-500 mt-4">
           Drizzle
         </p>
-        <p className="border border-yellow-300 bg-yellow-50 dark:bg-orange-900/20 text-yellow-400 text-xs rounded-full px-2 py-0.5 mt-4">
+        <p className="border border-yellow-300 bg-yellow-50 dark:bg-orange-900/20 text-yellow-400 text-xs rounded-full px-2 py-0.5 mt-4 text-nowrap">
           Light ⚡️
         </p>
       </motion.div>

@@ -48,7 +48,7 @@ export default function Blog() {
         <section className="px-4 md:px-0 w-full">
           <div className="flex flex-row items-center gap-2">
             <h1 className="text-2xl font-medium tracking-tighter">
-              Have fun reading me 🗞️
+              Enjoy reading me 🗞️
             </h1>
           </div>
           <div className="flex pb-5 pt-10 items-center justify-center antialiased w-full">
