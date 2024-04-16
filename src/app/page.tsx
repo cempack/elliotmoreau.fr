@@ -5,13 +5,12 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import HoverCardUser from "@/components/ui/hover-card-user";
 import Project from "@/components/ui/project";
 import LatestRepos from "@/components/ui/repos";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { HoverCardSkeleton } from "@/components/ui/skeletons";
 import { TechStack } from "@/components/ui/tech-stack";
-import { CalendarIcon } from "lucide-react";
 import Image from "next/image";
 import { Suspense } from "react";
 
@@ -23,18 +22,6 @@ export function Badge(props: any) {
       className="inline-flex items-center rounded border border-neutral-200 bg-neutral-50 p-1 text-sm leading-4 text-neutral-900 no-underline dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
     />
   );
-}
-
-export async function fetchGithub(element: string): Promise<string> {
-  return fetch("https://api.github.com/users/cempack")
-    .then((response) => response.json())
-    .then((data) => {
-      return data[element];
-    })
-    .catch((error) => {
-      console.error("Error fetching GitHub data:", error);
-      return "Error fetching GitHub data.";
-    });
 }
 
 export default function Home() {
@@ -69,25 +56,7 @@ export default function Home() {
                       <AvatarImage src="https://github.com/cempack.png" />
                       <AvatarFallback>Cempack</AvatarFallback>
                     </Avatar>
-                    <Suspense fallback={<HoverCardSkeleton />}>
-                      <div className="space-y-1">
-                        <h4 className="text-sm font-semibold">@cempack</h4>
-                        <p className="text-sm">{fetchGithub("bio")}</p>
-                        <div className="flex items-center pt-2">
-                          <CalendarIcon className="mr-2 h-4 w-4 opacity-70" />{" "}
-                          <span className="text-xs text-muted-foreground">
-                            Joined on the{" "}
-                            {fetchGithub("created_at").then((date) =>
-                              new Date(date).toLocaleDateString("en-US", {
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric",
-                              })
-                            )}
-                          </span>
-                        </div>
-                      </div>
-                    </Suspense>
+                    <HoverCardUser />
                   </div>
                 </HoverCardContent>
               </HoverCard>

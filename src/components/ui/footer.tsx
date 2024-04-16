@@ -1,4 +1,5 @@
-import { Badge, fetchGithub } from "@/app/page";
+import { Badge } from "@/app/page";
+import { fetchGithub } from "@/lib/fetch-github";
 import Image from "next/image";
 import Social from "./social";
 
