@@ -58,8 +58,8 @@ const Four = () => {
         className="h-full w-2/3 rounded-2xl bg-white p-4 dark:bg-black dark:border-white/[0.1] border border-neutral-200 flex flex-col items-center justify-center"
       >
         <Image
-          src="/nodejs.svg"
-          alt="avatar"
+          src="/nodejs-logo.svg"
+          alt="NodeJS"
           height="150"
           width="150"
           className="rounded-sm h-10 w-10"
@@ -73,8 +73,8 @@ const Four = () => {
       </motion.div>
       <motion.div className="h-full relative z-20 w-2/3 rounded-2xl bg-white p-4 dark:bg-black dark:border-white/[0.1] border border-neutral-200 flex flex-col items-center justify-center">
         <Image
-          src="/postgresql.svg"
-          alt="avatar"
+          src="/postgres-logo.svg"
+          alt="PostgreSQL"
           height="150"
           width="150"
           className="rounded-sm h-10 w-10"
@@ -91,8 +91,8 @@ const Four = () => {
         className="h-full w-2/3 rounded-2xl bg-white p-4 dark:bg-black dark:border-white/[0.1] border border-neutral-200 flex flex-col items-center justify-center"
       >
         <Image
-          src="/drizzle.svg"
-          alt="avatar"
+          src="/drizzle-logo.svg"
+          alt="Drizzle ORM"
           height="100"
           width="100"
           className="rounded-full h-16 w-16"

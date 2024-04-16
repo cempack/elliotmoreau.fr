@@ -66,7 +66,7 @@ export default function Home() {
           <p className="text-lg w-full items-center">
             I&apos;m a {age} years old student and passionate developer. I live
             in
-            <span className="mx-2 md:mx-1">
+            <span className="mx-1">
               <Badge
                 href="https://fr.wikipedia.org/wiki/France"
                 className="rounded-md"
@@ -82,7 +82,7 @@ export default function Home() {
               </Badge>
             </span>
             and I like to work with
-            <span className="mx-2 md:mx-1">
+            <span className="mx-1">
               <Badge href="https://nextjs.org" className="rounded-md">
                 <Image
                   alt="Next.js logo"
