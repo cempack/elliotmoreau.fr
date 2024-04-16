@@ -1,7 +1,5 @@
 import { Badge, fetchGithub } from "@/app/page";
 import Image from "next/image";
-import { Suspense } from "react";
-import { Skeleton } from "./skeleton";
 import Social from "./social";
 
 async function getYTFollowers(): Promise<string> {
@@ -24,7 +22,7 @@ async function getYTFollowers(): Promise<string> {
 
 export default function Footer() {
   return (
-    <footer className="mt-16 px-4">
+    <footer className="mt-16 px-4 md:px-0">
       <h1 id="contact" className="text-2xl font-bold">
         Contact me
       </h1>
@@ -43,32 +41,28 @@ export default function Footer() {
         or on my social networks
       </p>
       <div className="flex flex-row gap-2">
-        <Suspense
-          fallback={<Skeleton className="w-[100px] h-[20px] rounded-full" />}
-        >
-          <Social
-            name="X Icon"
-            href="https://twitter.com/cempack_"
-            icon="x.svg"
-          />
-          <Social
-            name="Github Icon"
-            href="https://github.com/cempack"
-            icon="github.svg"
-            followers={fetchGithub("followers")}
-          />
-          <Social
-            name="YouTube Icon"
-            href="https://youtube.com/@cempack"
-            icon="youtube.svg"
-            followers={getYTFollowers()}
-          />
-          <Social
-            name="Instagram Icon"
-            href="https://instagram.com/elliot.moreau.19/"
-            icon="instagram.svg"
-          />
-        </Suspense>
+        <Social
+          name="X Icon"
+          href="https://twitter.com/cempack_"
+          icon="x.svg"
+        />
+        <Social
+          name="Github Icon"
+          href="https://github.com/cempack"
+          icon="github.svg"
+          followers={fetchGithub("followers")}
+        />
+        <Social
+          name="YouTube Icon"
+          href="https://youtube.com/@cempack"
+          icon="youtube.svg"
+          followers={getYTFollowers()}
+        />
+        <Social
+          name="Instagram Icon"
+          href="https://instagram.com/elliot.moreau.19/"
+          icon="instagram.svg"
+        />
       </div>
     </footer>
   );

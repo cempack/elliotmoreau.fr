@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Separator } from "./separator";
+import { ReposSkeleton } from "./skeletons";
 
 export default function LatestRepos({ count }: { count: number }) {
   useEffect(() => {
@@ -34,20 +35,26 @@ export default function LatestRepos({ count }: { count: number }) {
 
   return (
     <div>
-      {repos.map((repo: any, index: number) => (
-        <div key={repo.id}>
-          <Link
-            href={`https://github.com/cempack/${repo.name}`}
-            target="_blank"
-            className="flex flex-row items-center"
-          >
-            <h1 className="text-sm md:text-lg text-bold text-gray-500 dark:text-gray-300">
-              {repo.name}
-            </h1>
-          </Link>
-          {index !== repos.length - 1 && <Separator className="my-3" />}
-        </div>
-      ))}
+      {repos.length === 0 ? (
+        <Suspense>
+          <ReposSkeleton reposNumber={count} />
+        </Suspense>
+      ) : (
+        repos.map((repo: any, index: number) => (
+          <div key={repo.id}>
+            <Link
+              href={`https://github.com/cempack/${repo.name}`}
+              target="_blank"
+              className="flex flex-row items-center"
+            >
+              <h1 className="text-sm md:text-lg text-bold text-gray-500 dark:text-gray-300">
+                {repo.name}
+              </h1>
+            </Link>
+            {index !== repos.length - 1 && <Separator className="my-3" />}
+          </div>
+        ))
+      )}
     </div>
   );
 }

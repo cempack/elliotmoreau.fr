@@ -9,6 +9,7 @@ import Project from "@/components/ui/project";
 import LatestRepos from "@/components/ui/repos";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { HoverCardSkeleton } from "@/components/ui/skeletons";
 import { TechStack } from "@/components/ui/tech-stack";
 import { CalendarIcon } from "lucide-react";
 import Image from "next/image";
@@ -63,28 +64,30 @@ export default function Home() {
                   </Button>
                 </HoverCardTrigger>
                 <HoverCardContent className="w-80">
-                  <div className="flex justify-between space-x-4">
+                  <div className="flex space-x-4">
                     <Avatar>
                       <AvatarImage src="https://github.com/cempack.png" />
                       <AvatarFallback>Cempack</AvatarFallback>
                     </Avatar>
-                    <div className="space-y-1">
-                      <h4 className="text-sm font-semibold">@cempack</h4>
-                      <p className="text-sm">{fetchGithub("bio")}</p>
-                      <div className="flex items-center pt-2">
-                        <CalendarIcon className="mr-2 h-4 w-4 opacity-70" />{" "}
-                        <span className="text-xs text-muted-foreground">
-                          Joined on the{" "}
-                          {fetchGithub("created_at").then((date) =>
-                            new Date(date).toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            })
-                          )}
-                        </span>
+                    <Suspense fallback={<HoverCardSkeleton />}>
+                      <div className="space-y-1">
+                        <h4 className="text-sm font-semibold">@cempack</h4>
+                        <p className="text-sm">{fetchGithub("bio")}</p>
+                        <div className="flex items-center pt-2">
+                          <CalendarIcon className="mr-2 h-4 w-4 opacity-70" />{" "}
+                          <span className="text-xs text-muted-foreground">
+                            Joined on the{" "}
+                            {fetchGithub("created_at").then((date) =>
+                              new Date(date).toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              })
+                            )}
+                          </span>
+                        </div>
                       </div>
-                    </div>
+                    </Suspense>
                   </div>
                 </HoverCardContent>
               </HoverCard>
@@ -121,10 +124,6 @@ export default function Home() {
             </span>
           </p>
         </section>
-        <section className="mt-12">
-          <h1 className="text-2xl font-bold mb-5">My tech stack</h1>
-          <TechStack />
-        </section>
         <section className="mt-12 flex flex-row justify-between gap-2">
           <div className="bg-white dark:bg-black border-black/[0.2] dark:border-white/[0.2] p-5 rounded-lg w-full border">
             <h1 className="text-base text-gray-500 dark:text-gray-300 uppercase mb-1">
@@ -154,12 +153,12 @@ export default function Home() {
               Latest Repos
             </h1>
             <Separator className="mb-5" />
-            <Suspense
-              fallback={<Skeleton className="w-full h-full rounded-full" />}
-            >
-              <LatestRepos count={4} />
-            </Suspense>
+            <LatestRepos count={4} />
           </div>
+        </section>
+        <section className="mt-12 px-4 md:px-0">
+          <h1 className="text-2xl font-bold mb-5">My tech stack</h1>
+          <TechStack />
         </section>
       </div>
     </main>
