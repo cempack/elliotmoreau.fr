@@ -4,10 +4,10 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { PlusCircle } from "lucide-react";
 import Image from "next/image";
-import NextIcon, { NextHeader } from "./ui/icons/next-logo";
-import ReactIcon, { ReactSpinningIcon } from "./ui/icons/react-icon";
-import TailwindIcon, { TailwindHeader } from "./ui/icons/tailwind-icon";
-import TsIcon, { TsHeader } from "./ui/icons/typescript";
+import NextIcon, { NextHeader } from "./icons/next-logo";
+import ReactIcon, { ReactSpinningIcon } from "./icons/react-icon";
+import TailwindIcon, { TailwindHeader } from "./icons/tailwind-icon";
+import TsIcon, { TsHeader } from "./icons/typescript";
 
 export function TechStack() {
   return (
@@ -51,7 +51,7 @@ const Four = () => {
       initial="initial"
       animate="animate"
       whileHover="hover"
-      className="flex flex-1 w-full h-full min-h-[6rem] dark:bg-dot-white/[0.2] bg-dot-black/[0.2] flex-row space-x-2"
+      className="flex flex-1 w-full h-full min-h-[6rem] dark:bg-dot-white/[0.2] bg-dot-black/[0.2] flex-row space-x-2 p-10 md:p-0"
     >
       <motion.div
         variants={first}

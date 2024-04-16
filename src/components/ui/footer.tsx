@@ -34,7 +34,7 @@ export default function Footer() {
           <Image
             alt="Email icon"
             src="/email.svg"
-            className="!mr-1"
+            className="!mr-1 invert-0 dark:invert"
             width="14"
             height="14"
           />

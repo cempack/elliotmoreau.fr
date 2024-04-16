@@ -15,7 +15,7 @@ export default function Project({
       <Image
         src={icon}
         alt={name}
-        className={`w-9 md:w-10 mr-1 ml-[-3px] md:mx-4 rounded-xl bg-secondary dark:bg-secondary-foreground p-1`}
+        className={`w-7 md:w-10 mr-2 ml-[-10px] md:mx-4 rounded-xl bg-secondary dark:bg-secondary-foreground p-1`}
         width={120}
         height={120}
       />

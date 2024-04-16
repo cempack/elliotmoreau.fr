@@ -36,7 +36,7 @@ export function ThemeToggle() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          className={clsx("fixed top-5 right-8", {
+          className={clsx("fixed top-5 right-5", {
             hidden: visible === false,
           })}
           variant="outline"

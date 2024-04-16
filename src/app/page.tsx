@@ -1,4 +1,3 @@
-import { TechStack } from "@/components/tech-stack";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,6 +9,7 @@ import Project from "@/components/ui/project";
 import LatestRepos from "@/components/ui/repos";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TechStack } from "@/components/ui/tech-stack";
 import { CalendarIcon } from "lucide-react";
 import Image from "next/image";
 import { Suspense } from "react";
@@ -47,7 +47,11 @@ export default function Home() {
         <section className="px-4 md:px-0">
           <div className="flex flex-row items-center gap-2">
             <Avatar className="scale-105">
-              <AvatarImage src="https://github.com/cempack.png" />
+              <Suspense
+                fallback={<Skeleton className="w-full h-full rounded-full" />}
+              >
+                <AvatarImage src="https://github.com/cempack.png" />
+              </Suspense>
               <AvatarFallback>Cempack</AvatarFallback>
             </Avatar>
             <h1 className="text-2xl font-medium tracking-tighter">
@@ -122,7 +126,7 @@ export default function Home() {
           <TechStack />
         </section>
         <section className="mt-12 flex flex-row justify-between gap-2">
-          <div className="border-black/[0.2] dark:border-white/[0.2] p-5 rounded-lg w-full border">
+          <div className="bg-white dark:bg-black border-black/[0.2] dark:border-white/[0.2] p-5 rounded-lg w-full border">
             <h1 className="text-base text-gray-500 dark:text-gray-300 uppercase mb-1">
               Projects
             </h1>
@@ -145,8 +149,8 @@ export default function Home() {
               href="https://github.com/cempack/NinariotUpdates"
             />
           </div>
-          <div className="border-black/[0.2] dark:border-white/[0.2] p-5 rounded-lg w-full border">
-            <h1 className="text-base text-gray-500 uppercase mb-1">
+          <div className="bg-white dark:bg-black border-black/[0.2] dark:border-white/[0.2] p-5 rounded-lg w-full border">
+            <h1 className="text-base text-gray-500 dark:text-gray-300 uppercase mb-1">
               Latest Repos
             </h1>
             <Separator className="mb-5" />
