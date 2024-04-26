@@ -7,6 +7,7 @@ import "@/styles/globals.css";
 import { Home, Rss } from "lucide-react";
 import type { Metadata } from "next";
 import { inter } from "./fonts";
+import {Analytics} from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "Cempack • Home",
@@ -47,6 +48,7 @@ export default function RootLayout({
           </ThemeProvider>
         </div>
       </body>
+      <Analytics />
     </html>
   );
 }
