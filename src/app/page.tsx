@@ -124,7 +124,7 @@ export default function Home() {
             <Project
               name="Winzoria"
               icon="/winzoria.png"
-              href="https://winzoria.vercel.app"
+              href="https://winzoria.fr"
             />
             <Separator className="my-3" />
             <Project
