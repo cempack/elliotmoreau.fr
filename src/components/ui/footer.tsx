@@ -9,7 +9,7 @@ async function getYTFollowers(): Promise<string> {
 
   return new Promise((resolve, reject) => {
     fetch(
-      `https://youtube.googleapis.com/youtube/v3/channels?part=statistics&id=${ChannelID}&key=${API_KEY}`
+      `https://youtube.googleapis.com/youtube/v3/channels?part=statistics&id=${ChannelID}&key=${API_KEY}`,
     )
       .then((response) => response.json())
       .then((data) => {

@@ -4,10 +4,10 @@ import { NavBar } from "@/components/ui/navbar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { cn } from "@/lib/utils";
 import "@/styles/globals.css";
+import { Analytics } from "@vercel/analytics/next";
 import { Home, Rss } from "lucide-react";
 import type { Metadata } from "next";
 import { inter } from "./fonts";
-import {Analytics} from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "Cempack • Home",
@@ -24,7 +24,7 @@ export default function RootLayout({
       <body
         className={cn(
           "antialiased dark:bg-black bg-white  dark:bg-grid-small-white/[0.2] bg-grid-small-black/[0.2]",
-          inter.className
+          inter.className,
         )}
       >
         <div className="mx-auto max-w-2xl mb-8 flex flex-col md:flex-row mt-40 w-full">
@@ -38,7 +38,11 @@ export default function RootLayout({
             <NavBar
               navItems={[
                 { name: "Home", link: "/", icon: <Home /> },
-                { name: "Blog", link: "/blog", icon: <Rss /> },
+                {
+                  name: "Blog",
+                  link: "https://blog.elliotmoreau.fr",
+                  icon: <Rss />,
+                },
               ]}
             />
             <div className="flex flex-col w-full">

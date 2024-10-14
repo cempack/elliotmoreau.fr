@@ -140,7 +140,9 @@ const items = [
   {
     title: "Runtime, Database, ORM",
     description: (
-      <span className="text-sm">The cherry on top of the stack</span>
+      <span className="text-sm">
+        The cherry on top of the stack
+      </span>
     ),
     header: <Four />,
     className: "md:col-span-2",

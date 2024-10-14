@@ -64,8 +64,8 @@ export default function Home() {
             </h1>
           </div>
           <p className="text-lg w-full items-center">
-            I&apos;m a {age} years old student and passionate developer. I live
-            in
+            I&apos;m a {age}{" "}
+            years old student and passionate developer. I live in
             <span className="mx-1">
               <Badge
                 href="https://fr.wikipedia.org/wiki/France"
