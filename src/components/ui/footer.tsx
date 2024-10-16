@@ -9,7 +9,7 @@ async function getYTFollowers(): Promise<string> {
 
   return new Promise((resolve, reject) => {
     fetch(
-      `https://youtube.googleapis.com/youtube/v3/channels?part=statistics&id=${ChannelID}&key=${API_KEY}`,
+      `https://youtube.googleapis.com/youtube/v3/channels?part=statistics&id=${ChannelID}&key=${API_KEY}`
     )
       .then((response) => response.json())
       .then((data) => {
@@ -43,11 +43,6 @@ export default function Footer() {
       </p>
       <div className="flex flex-row gap-2">
         <Social
-          name="X Icon"
-          href="https://twitter.com/cempack_"
-          icon="x.svg"
-        />
-        <Social
           name="Github Icon"
           href="https://github.com/cempack"
           icon="github.svg"
@@ -63,6 +58,21 @@ export default function Footer() {
           name="Instagram Icon"
           href="https://instagram.com/elliot.moreau.19/"
           icon="instagram.svg"
+        />
+        <Social
+          name="Mastodon Icon"
+          href="https://me.dm/@cempack"
+          icon="mastodon.svg"
+        />
+        <Social
+          name="Medium Icon"
+          href="https://blog.elliotmoreau.fr"
+          icon="medium.svg"
+        />
+        <Social
+          name="X Icon"
+          href="https://twitter.com/cempack_"
+          icon="x.svg"
         />
       </div>
     </footer>

@@ -31,6 +31,9 @@ export default function Home() {
 
   return (
     <main className="flex items-center justify-start h-full flex-auto min-w-0 px-2 md:px-0">
+      <a className="hidden" rel="me" href="https://me.dm/@cempack">
+        Mastodon
+      </a>
       <div className="flex flex-col gap-2">
         <section className="px-4 md:px-0">
           <div className="flex flex-row items-center gap-2">
@@ -64,8 +67,8 @@ export default function Home() {
             </h1>
           </div>
           <p className="text-lg w-full items-center">
-            I&apos;m a {age}{" "}
-            years old student and passionate developer. I live in
+            I&apos;m a {age} years old student and passionate developer. I live
+            in
             <span className="mx-1">
               <Badge
                 href="https://fr.wikipedia.org/wiki/France"
