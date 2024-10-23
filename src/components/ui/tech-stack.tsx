@@ -1,7 +1,7 @@
 "use client";
 import { BentoGrid, BentoGridItem } from "@/components/ui/bento-grid";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { motion, MotionProps } from "framer-motion";
 import { PlusCircle } from "lucide-react";
 import Image from "next/image";
 import NextIcon, { NextHeader } from "./icons/next-logo";
@@ -9,6 +9,13 @@ import ReactIcon, { ReactSpinningIcon } from "./icons/react-icon";
 import TailwindIcon, { TailwindHeader } from "./icons/tailwind-icon";
 import TsIcon, { TsHeader } from "./icons/typescript";
 
+// Extend the MotionDivProps to include both HTML props and Motion props
+type MotionDivProps = React.ComponentPropsWithoutRef<"div"> & MotionProps;
+
+// Create a MotionDiv component with extended props
+const MotionDiv = motion.div as React.FC<MotionDivProps>;
+
+// TechStack component that renders the grid
 export function TechStack() {
   return (
     <BentoGrid className="max-w-4xl mx-auto md:auto-rows-[20rem]">
@@ -25,6 +32,8 @@ export function TechStack() {
     </BentoGrid>
   );
 }
+
+// Four component that handles motion-based items
 const Four = () => {
   const first = {
     initial: {
@@ -46,14 +55,15 @@ const Four = () => {
       rotate: 0,
     },
   };
+
   return (
-    <motion.div
+    <MotionDiv
       initial="initial"
       animate="animate"
       whileHover="hover"
       className="flex flex-1 justify-center w-full h-full min-h-[6rem] dark:bg-dot-white/[0.2] bg-dot-black/[0.2] flex-row space-x-0 md:space-x-2 py-10 px-0 md:p-0"
     >
-      <motion.div
+      <MotionDiv
         variants={first}
         className="h-full w-2/3 rounded-2xl bg-white p-4 dark:bg-black dark:border-white/[0.1] border border-neutral-200 flex flex-col items-center justify-center"
       >
@@ -70,8 +80,9 @@ const Four = () => {
         <p className="border border-green-500 bg-green-50 dark:bg-red-900/20 text-green-600 text-xs rounded-full px-2 py-0.5 mt-4 text-nowrap">
           The OG
         </p>
-      </motion.div>
-      <motion.div className="h-full relative z-20 w-2/3 rounded-2xl bg-white p-4 dark:bg-black dark:border-white/[0.1] border border-neutral-200 flex flex-col items-center justify-center">
+      </MotionDiv>
+
+      <MotionDiv className="h-full relative z-20 w-2/3 rounded-2xl bg-white p-4 dark:bg-black dark:border-white/[0.1] border border-neutral-200 flex flex-col items-center justify-center">
         <Image
           src="/postgres-logo.svg"
           alt="PostgreSQL"
@@ -85,8 +96,9 @@ const Four = () => {
         <p className="border border-blue-500 bg-blue-50 dark:bg-green-900/20 text-blue-600 text-xs rounded-full px-2 py-0.5 mt-4 text-nowrap">
           🐘 + 💙
         </p>
-      </motion.div>
-      <motion.div
+      </MotionDiv>
+
+      <MotionDiv
         variants={second}
         className="h-full w-2/3 rounded-2xl bg-white p-4 dark:bg-black dark:border-white/[0.1] border border-neutral-200 flex flex-col items-center justify-center"
       >
@@ -103,10 +115,12 @@ const Four = () => {
         <p className="border border-yellow-300 bg-yellow-50 dark:bg-orange-900/20 text-yellow-400 text-xs rounded-full px-2 py-0.5 mt-4 text-nowrap">
           Light ⚡️
         </p>
-      </motion.div>
-    </motion.div>
+      </MotionDiv>
+    </MotionDiv>
   );
 };
+
+// List of tech stack items with their properties
 const items = [
   {
     title: "React",
@@ -140,15 +154,12 @@ const items = [
   {
     title: "Runtime, Database, ORM",
     description: (
-      <span className="text-sm">
-        The cherry on top of the stack
-      </span>
+      <span className="text-sm">The cherry on top of the stack</span>
     ),
     header: <Four />,
     className: "md:col-span-2",
     icon: <PlusCircle className="h-4 w-4 text-neutral-500" />,
   },
-
   {
     title: "Typescript",
     description: <span className="text-sm">Javascript, with types.</span>,
@@ -157,3 +168,5 @@ const items = [
     icon: <TsIcon className="h-4 w-4 text-neutral-500" />,
   },
 ];
+
+export default TechStack;
