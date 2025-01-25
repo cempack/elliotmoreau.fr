@@ -25,7 +25,7 @@ export function Badge(props: any) {
 }
 
 export default function Home() {
-  const birthday = new Date(2008, 0, 19);
+  const birthday = new Date(2008, 1, 19);
   const today = new Date();
   const age = today.getFullYear() - birthday.getFullYear();
 
