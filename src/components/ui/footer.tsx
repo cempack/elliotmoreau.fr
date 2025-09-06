@@ -61,7 +61,7 @@ export default function Footer() {
         />
         <Social
           name="Mastodon Icon"
-          href="https://me.dm/@cempack"
+          href="https://mastodon.social/@cempack"
           icon="mastodon.svg"
         />
         <Social

@@ -27,6 +27,7 @@ export default function RootLayout({
           inter.className,
         )}
       >
+        <a rel="me" className="hidden" href="https://mastodon.social/@cempack">Mastodon</a>
         <div className="mx-auto max-w-2xl mb-8 flex flex-col md:flex-row mt-40 w-full">
           <ThemeProvider
             attribute="class"
