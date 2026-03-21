@@ -10,6 +10,11 @@ const footerSocials = socialLinks;
     <div class="footer__top">
       <div class="footer__eyebrow">
         <span class="label-upper">Privacy is a human right</span>
+        <p class="footer__quote">
+          “Arguing that you don't care about the right to privacy because you have nothing to hide is no different than
+          saying you don't care about free speech because you have nothing to say.”
+        </p>
+        <span class="footer__quote-attrib">Edward Snowden</span>
         <span class="footer__copy">© {year} Elliot Moreau.</span>
       </div>
 
@@ -93,6 +98,22 @@ const footerSocials = socialLinks;
     color: color-mix(in srgb, var(--text-muted) 92%, white);
     font-family: var(--font-label);
     font-size: 0.66rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .footer__quote {
+    max-width: 42rem;
+    margin: 0;
+    color: color-mix(in srgb, var(--text-body) 92%, white);
+    font-size: 0.92rem;
+    line-height: 1.75;
+  }
+
+  .footer__quote-attrib {
+    color: var(--text-faint);
+    font-family: var(--font-label);
+    font-size: 0.64rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
   }
