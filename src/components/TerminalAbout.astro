@@ -1,0 +1,228 @@
+---
+---
+
+<section class="terminal-section animate-on-scroll deferred-section" id="terminal-about">
+  <div class="terminal card card-paper">
+    <div class="terminal__bar">
+      <div class="terminal__dots">
+        <span class="terminal__dot terminal__dot--red"></span>
+        <span class="terminal__dot terminal__dot--yellow"></span>
+        <span class="terminal__dot terminal__dot--green"></span>
+      </div>
+      <div class="terminal__title-block">
+        <span class="label-upper">Field Notes</span>
+        <span class="terminal__title">elliot@fedora ~ %</span>
+      </div>
+    </div>
+
+    <div class="terminal__body">
+      <div class="terminal__line">
+        <span class="terminal__prompt">$</span>
+        <span class="terminal__cmd">cat about.md</span>
+      </div>
+      <div class="terminal__output" id="terminal-output"></div>
+      <div class="terminal__cursor-line">
+        <span class="terminal__prompt">$</span>
+        <span class="terminal__blinking-cursor">▊</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .terminal-section {
+    margin-bottom: 5rem;
+  }
+
+  .terminal {
+    overflow: hidden;
+  }
+
+  .terminal__bar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.3rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .terminal__dots {
+    display: flex;
+    gap: 6px;
+  }
+
+  .terminal__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  .terminal__dot--red {
+    background: #ff5f57;
+  }
+
+  .terminal__dot--yellow {
+    background: #febc2e;
+  }
+
+  .terminal__dot--green {
+    background: #28c840;
+  }
+
+  .terminal__title-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .terminal__title {
+    color: var(--text-faint);
+    font-family: var(--font-label);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+  }
+
+  .terminal__body {
+    min-height: 220px;
+    padding: 1.5rem;
+    font-family: var(--font-label);
+    font-size: 0.82rem;
+    line-height: 1.8;
+  }
+
+  .terminal__line,
+  .terminal__cursor-line {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .terminal__line {
+    margin-bottom: 1rem;
+  }
+
+  .terminal__prompt {
+    flex-shrink: 0;
+    color: var(--success);
+    font-weight: 600;
+  }
+
+  .terminal__cmd {
+    color: var(--text-primary);
+  }
+
+  .terminal__output {
+    margin-bottom: 1rem;
+    color: var(--text-body);
+    white-space: pre-wrap;
+  }
+
+  :global(.terminal__highlight) {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  :global(.terminal__quote) {
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .terminal__blinking-cursor {
+    color: var(--success);
+    animation: pulse-glow 1s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .terminal__blinking-cursor {
+      animation: none;
+    }
+  }
+</style>
+
+<script>
+  const terminalOutput = document.getElementById('terminal-output');
+  const terminalSection = document.getElementById('terminal-about');
+
+  const lines = [
+    '→ Been coding since I was <span class="terminal__highlight">12 years old</span>.',
+    '→ Always loved computers — bought a domain and published an app on the Play Store before I was legally old enough',
+    '→ Passionate about <span class="terminal__highlight">politics</span> and <span class="terminal__highlight">geopolitics</span>.',
+    '→ Systems thinker. Privacy advocate. Linux daily.',
+    '',
+    '<span class="terminal__quote">"The only true wisdom is in knowing you know nothing."</span>',
+    '<span class="terminal__quote">— Socrates</span>',
+  ];
+
+  let terminalStarted = false;
+
+  function stripTags(text: string): string {
+    return text.replace(/<[^>]*>/g, '');
+  }
+
+  function appendTypedLine(line: string, index: number) {
+    return new Promise<void>((resolve) => {
+      if (!terminalOutput) {
+        resolve();
+        return;
+      }
+
+      if (line === '') {
+        terminalOutput.append(document.createTextNode('\n'));
+        window.setTimeout(resolve, 80);
+        return;
+      }
+
+      const plainText = stripTags(line);
+      const span = document.createElement('span');
+      terminalOutput.appendChild(span);
+      terminalOutput.append(document.createTextNode('\n'));
+
+      if (document.documentElement.dataset.motion === 'reduced') {
+        span.innerHTML = line;
+        resolve();
+        return;
+      }
+
+      let charIndex = 0;
+
+      const tick = () => {
+        charIndex += 1;
+        span.textContent = plainText.slice(0, charIndex);
+
+        if (charIndex < plainText.length) {
+          window.setTimeout(tick, 12 + (index % 3) * 8);
+        } else {
+          span.innerHTML = line;
+          window.setTimeout(resolve, 90);
+        }
+      };
+
+      tick();
+    });
+  }
+
+  async function runTerminalSequence() {
+    if (!terminalOutput || terminalStarted) return;
+    terminalStarted = true;
+
+    for (let index = 0; index < lines.length; index += 1) {
+      await appendTypedLine(lines[index], index);
+    }
+  }
+
+  if (terminalSection) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            runTerminalSequence();
+            observer.disconnect();
+          }
+        });
+      },
+      { threshold: 0.35 }
+    );
+
+    observer.observe(terminalSection);
+  }
+</script>

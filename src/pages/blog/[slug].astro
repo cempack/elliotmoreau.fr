@@ -1,0 +1,130 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection, render } from 'astro:content';
+import { formatBlogDate, getReadingTime, sortBlogPosts } from '../../lib/blog';
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+  const posts = sortBlogPosts(await getCollection('blog'));
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const readingTime = getReadingTime(post.body);
+---
+
+<BaseLayout title={post.data.title} description={post.data.description} activePage="blog">
+  <main class="post-page container-narrow">
+    <header class="post-page__back animate-on-scroll">
+      <a href="/blog" class="post-page__back-link">
+        <span class="material-symbols-outlined" style="font-size:14px">arrow_back</span>
+        Back to blog
+      </a>
+    </header>
+
+    <article class="post-page__article animate-on-scroll stagger-1">
+      <div class="post-page__hero card card-paper">
+        <span class="label-upper">Essay</span>
+        <h1 class="post-page__title text-display">{post.data.title}</h1>
+        <div class="post-page__meta">
+          <div class="post-page__meta-left">
+            <span class="label-upper">{formatBlogDate(post.data.pubDate, 'long')}</span>
+            <span class="post-page__meta-dot"></span>
+            <span class="label-upper">{readingTime}</span>
+          </div>
+          <div class="post-page__tags">
+            {post.data.tags.map((tag: string) => (
+              <span class="chip">{tag}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div class="post-page__content prose animate-on-scroll stagger-2">
+        <Content />
+      </div>
+    </article>
+
+    <div class="post-page__footer animate-on-scroll stagger-3">
+      <a href="/blog" class="post-page__back-link">
+        <span class="material-symbols-outlined" style="font-size:14px">arrow_back</span>
+        All posts
+      </a>
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  .post-page {
+    padding-top: 9.5rem;
+    padding-bottom: 4rem;
+  }
+
+  .post-page__back {
+    margin-bottom: 1.5rem;
+  }
+
+  .post-page__back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-muted);
+    font-family: var(--font-label);
+    font-size: 0.64rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .post-page__hero {
+    padding: 1.6rem;
+    margin-bottom: 2rem;
+  }
+
+  .post-page__title {
+    margin-top: 0.8rem;
+    font-size: clamp(2.7rem, 8vw, 4.25rem);
+    line-height: 1.02;
+  }
+
+  .post-page__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+  }
+
+  .post-page__meta-left {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .post-page__meta-dot {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--outline-strong);
+  }
+
+  .post-page__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .post-page__content {
+    margin-bottom: 3rem;
+  }
+
+  .post-page__footer {
+    padding-top: 2rem;
+    border-top: 1px solid var(--outline);
+  }
+</style>

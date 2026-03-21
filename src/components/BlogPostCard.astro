@@ -1,0 +1,111 @@
+---
+interface Props {
+  title: string;
+  date: string;
+  description: string;
+  tag?: string;
+  slug: string;
+  readingTime?: string;
+}
+
+const { title, date, description, tag, slug, readingTime } = Astro.props;
+---
+
+<a href={`/blog/${slug}`} class="blog-card card card-paper">
+  <div class="blog-card__top">
+    <span class="label-upper">{date}</span>
+    <div class="blog-card__meta-right">
+      {readingTime && <span class="label-sm">{readingTime}</span>}
+      {tag && <span class="chip">{tag}</span>}
+    </div>
+  </div>
+
+  <div class="blog-card__body">
+    <h2 class="blog-card__title">{title}</h2>
+    <p class="blog-card__desc">{description}</p>
+  </div>
+
+  <div class="blog-card__bottom">
+    <span class="label-sm">Read essay</span>
+    <span class="material-symbols-outlined">north_east</span>
+  </div>
+</a>
+
+<style>
+  .blog-card {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    padding: 1.5rem;
+    text-decoration: none;
+  }
+
+  .blog-card__top,
+  .blog-card__bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .blog-card__meta-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .blog-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+
+  .blog-card__title {
+    color: var(--text-primary);
+    font-family: var(--font-headline);
+    font-size: clamp(1.35rem, 3vw, 1.8rem);
+    line-height: 1.08;
+    letter-spacing: -0.04em;
+    transition: color var(--transition-fast);
+  }
+
+  .blog-card__desc {
+    max-width: 44rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  .blog-card__bottom {
+    padding-top: 0.85rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-faint);
+    transition: color var(--transition-fast), transform var(--transition-fast);
+  }
+
+  .blog-card:hover .blog-card__title,
+  .blog-card:hover .blog-card__bottom {
+    color: var(--text-primary);
+  }
+
+  .blog-card:hover .blog-card__bottom .material-symbols-outlined {
+    transform: translate(2px, -2px);
+  }
+
+  .blog-card__bottom .material-symbols-outlined {
+    transition: transform var(--transition-fast);
+  }
+
+  @media (max-width: 768px) {
+    .blog-card__top,
+    .blog-card__bottom {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .blog-card__meta-right {
+      justify-content: flex-start;
+    }
+  }
+</style>
