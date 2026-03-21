@@ -12,6 +12,16 @@ const { title, date, description, tag, slug, readingTime } = Astro.props;
 ---
 
 <a href={`/blog/${slug}`} class="blog-card card card-paper">
+  <div class="blog-card__ornaments ornament-layer" aria-hidden="true">
+    <span class="ornament-grid-mask"></span>
+    <span class="ornament-scanline"></span>
+    <span class="ornament-corner ornament-corner--tr"></span>
+    <span class="ornament-icon-node blog-card__icon">
+      <span class="material-symbols-outlined">article</span>
+    </span>
+    <span class="ornament-hairline blog-card__hairline"></span>
+  </div>
+
   <div class="blog-card__top">
     <span class="label-upper">{date}</span>
     <div class="blog-card__meta-right">
@@ -33,11 +43,27 @@ const { title, date, description, tag, slug, readingTime } = Astro.props;
 
 <style>
   .blog-card {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
     padding: 1.5rem;
     text-decoration: none;
+  }
+
+  .blog-card__hairline {
+    left: 4.2rem;
+    right: 46%;
+    bottom: 4.15rem;
+    opacity: 0;
+    transition: opacity var(--transition-base), right var(--transition-base);
+  }
+
+  .blog-card__icon {
+    top: 1.25rem;
+    left: 1.25rem;
+    width: 1.9rem;
+    height: 1.9rem;
   }
 
   .blog-card__top,
@@ -46,6 +72,11 @@ const { title, date, description, tag, slug, readingTime } = Astro.props;
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
+  }
+
+  .blog-card__top {
+    min-height: 2rem;
+    padding-left: 2.75rem;
   }
 
   .blog-card__meta-right {
@@ -57,9 +88,21 @@ const { title, date, description, tag, slug, readingTime } = Astro.props;
   }
 
   .blog-card__body {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 0.7rem;
+  }
+
+  .blog-card__body::before {
+    content: '';
+    position: absolute;
+    top: 0.15rem;
+    left: -0.55rem;
+    width: 1px;
+    height: calc(100% - 0.2rem);
+    background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--accent-soft) 80%, white 20%), transparent);
+    opacity: 0.45;
   }
 
   .blog-card__title {
@@ -89,6 +132,11 @@ const { title, date, description, tag, slug, readingTime } = Astro.props;
     color: var(--text-primary);
   }
 
+  .blog-card:hover .blog-card__hairline {
+    opacity: 0.78;
+    right: 34%;
+  }
+
   .blog-card:hover .blog-card__bottom .material-symbols-outlined {
     transform: translate(2px, -2px);
   }
@@ -104,8 +152,19 @@ const { title, date, description, tag, slug, readingTime } = Astro.props;
       align-items: flex-start;
     }
 
+    .blog-card__top {
+      padding-top: 2.35rem;
+      padding-left: 0;
+    }
+
     .blog-card__meta-right {
       justify-content: flex-start;
+    }
+
+    .blog-card__icon {
+      top: 1rem;
+      right: 1rem;
+      left: auto;
     }
   }
 </style>

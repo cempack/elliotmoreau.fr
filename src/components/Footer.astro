@@ -23,10 +23,11 @@ const footerSocials = socialLinks;
             aria-label={social.label}
             title={social.label}
           >
+            <span class="sr-only">{social.label}</span>
             {social.id === 'rss' ? (
-              <span class="material-symbols-outlined" style="font-size:18px">rss_feed</span>
+              <span class="material-symbols-outlined" style="font-size:18px" aria-hidden="true">rss_feed</span>
             ) : (
-              <img src={social.icon} width="16" height="16" alt={social.label} loading="lazy" />
+              <img src={social.icon} width="16" height="16" alt="" aria-hidden="true" loading="lazy" />
             )}
           </a>
         ))}

@@ -1,8 +1,46 @@
 ---
+import 'jsvectormap/dist/jsvectormap.css';
+
 import { locations } from '../config/globe';
 
 const visited = locations.filter((location) => location.type === 'visited');
 const wishlist = locations.filter((location) => location.type === 'wishlist');
+const homeBase = visited[0] ?? locations[0];
+
+const regionCodeByName: Record<string, string> = {
+  France: 'FR',
+  Canada: 'CA',
+  Ireland: 'IE',
+  'Northern Ireland': 'GB',
+  Spain: 'ES',
+  Japan: 'JP',
+  'United States': 'US',
+  'South Africa': 'ZA',
+  Norway: 'NO',
+};
+
+const regionValues = Object.fromEntries(
+  locations
+    .map((location) => {
+      const code = regionCodeByName[location.name];
+      return code ? [code, location.type] : null;
+    })
+    .filter(Boolean) as [string, 'visited' | 'wishlist'][]
+);
+
+const mapPayload = {
+  markers: locations.map((location) => ({
+    name: location.name,
+    coords: [location.lat, location.lng],
+    type: location.type,
+  })),
+  lines: wishlist.map((location, index) => ({
+    from: homeBase.name,
+    to: location.name,
+    curvature: 0.16 + index * 0.03,
+  })),
+  regions: regionValues,
+};
 ---
 
 <section class="globe-section animate-on-scroll deferred-section" id="globe-widget">
@@ -18,11 +56,29 @@ const wishlist = locations.filter((location) => location.type === 'wishlist');
   </div>
 
   <div class="globe__layout card card-paper">
-    <div class="globe__canvas-wrap">
-      <div class="globe__atmosphere"></div>
-      <canvas id="globe-canvas" width="600" height="600"></canvas>
-      <div class="globe__orbit"></div>
-      <div class="globe__orbit globe__orbit--2"></div>
+    <div class="globe__map-panel">
+      <div class="globe__map-shell">
+        <div class="globe__atmosphere"></div>
+        <div class="globe__grain"></div>
+        <div class="globe__ornaments ornament-layer" aria-hidden="true">
+          <span class="ornament-corner ornament-corner--tr"></span>
+          <span class="ornament-icon-node globe__icon-node">
+            <span class="material-symbols-outlined">travel_explore</span>
+          </span>
+        </div>
+        <div class="globe__map-root" id="travel-map" data-map={JSON.stringify(mapPayload)}></div>
+
+        <div class="globe__legend">
+          <span class="globe__legend-item">
+            <span class="globe__dot globe__dot--visited"></span>
+            Been there
+          </span>
+          <span class="globe__legend-item">
+            <span class="globe__dot globe__dot--wishlist"></span>
+            Want to go
+          </span>
+        </div>
+      </div>
     </div>
 
     <div class="globe__info">
@@ -90,69 +146,115 @@ const wishlist = locations.filter((location) => location.type === 'wishlist');
 
   .globe__layout {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1.2fr) minmax(18rem, 0.8fr);
     gap: 2rem;
     padding: 1.4rem;
+    align-items: stretch;
   }
 
-  @media (min-width: 880px) {
-    .globe__layout {
-      grid-template-columns: 1fr 1fr;
-      align-items: center;
-    }
+  .globe__map-panel {
+    min-width: 0;
   }
 
-  .globe__canvas-wrap {
+  .globe__map-shell {
     position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    aspect-ratio: 1;
-    max-width: 460px;
-    margin: 0 auto;
+    isolation: isolate;
+    width: 100%;
+    min-height: clamp(19rem, 46vw, 31rem);
+    height: 100%;
+    border-radius: 1.85rem;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 18% 24%, color-mix(in srgb, var(--accent-glow) 95%, transparent) 0%, transparent 28%),
+      linear-gradient(160deg, color-mix(in srgb, var(--panel-soft) 80%, transparent) 0%, color-mix(in srgb, var(--bg-elevated) 88%, black 12%) 100%);
+    border: 1px solid color-mix(in srgb, var(--outline-strong) 72%, transparent);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 28px 55px rgba(0, 0, 0, 0.28);
+  }
+
+  .globe__map-shell::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 50% 50%, transparent 46%, rgba(0, 0, 0, 0.2) 100%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.12));
+    z-index: 2;
+  }
+
+  .globe__atmosphere,
+  .globe__grain,
+  .globe__map-root {
+    position: absolute;
+    inset: 0;
   }
 
   .globe__atmosphere {
-    position: absolute;
-    width: 80%;
-    height: 80%;
-    border-radius: 50%;
-    background: radial-gradient(circle, var(--accent-glow) 0%, transparent 68%);
-    filter: blur(24px);
-    animation: float-gentle 8s ease-in-out infinite;
+    background:
+      radial-gradient(circle at 65% 40%, color-mix(in srgb, var(--accent-glow) 100%, transparent) 0%, transparent 28%),
+      radial-gradient(circle at 30% 70%, color-mix(in srgb, var(--ambient) 100%, transparent) 0%, transparent 30%);
+    filter: blur(26px);
+    transform: scale(1.08);
+    animation: float-gentle 12s ease-in-out infinite;
   }
 
-  .globe__orbit {
-    position: absolute;
-    width: 106%;
-    height: 106%;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 50%;
-    opacity: 0.22;
-    transform: rotateX(72deg) rotateZ(18deg);
-    animation: spin-vinyl 26s linear infinite;
+  .globe__grain {
+    opacity: 0.18;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+    background-size: 18px 18px;
+    mask-image: linear-gradient(180deg, black, transparent 120%);
   }
 
-  .globe__orbit--2 {
-    width: 116%;
-    height: 116%;
-    border-style: dashed;
-    opacity: 0.12;
-    animation-duration: 34s;
-    animation-direction: reverse;
-  }
-
-  #globe-canvas {
-    position: relative;
+  .globe__map-root {
     z-index: 1;
-    width: 100%;
-    height: 100%;
+    padding: clamp(0.8rem, 2vw, 1.2rem);
+  }
+
+  .globe__icon-node {
+    top: 1.35rem;
+    right: 1.35rem;
+    width: 1.9rem;
+    height: 1.9rem;
+    z-index: 3;
+  }
+
+  .globe__legend {
+    position: absolute;
+    left: 1rem;
+    right: auto;
+    bottom: 1rem;
+    display: inline-flex;
+    gap: 0.75rem;
+    z-index: 3;
+    padding: 0.55rem 0.7rem;
+  }
+
+  .globe__legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 0.7rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--panel-strong) 88%, transparent);
+    border: 1px solid color-mix(in srgb, var(--outline) 82%, transparent);
+    color: var(--text-body);
+    font-family: var(--font-label);
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    backdrop-filter: blur(18px);
   }
 
   .globe__info {
     display: flex;
     flex-direction: column;
+    justify-content: center;
     gap: 2rem;
+    min-width: 0;
   }
 
   .globe__list {
@@ -177,6 +279,7 @@ const wishlist = locations.filter((location) => location.type === 'wishlist');
     width: 8px;
     height: 8px;
     border-radius: 50%;
+    flex: 0 0 auto;
   }
 
   .globe__dot--visited {
@@ -231,241 +334,284 @@ const wishlist = locations.filter((location) => location.type === 'wishlist');
     letter-spacing: -0.04em;
   }
 
+  .globe__map-shell :global(.jvm-container) {
+    width: 100%;
+    height: 100%;
+  }
+
+  .globe__map-shell :global(svg) {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .globe__map-shell :global(.jvm-region) {
+    transition: fill 180ms ease, stroke 180ms ease, opacity 180ms ease;
+  }
+
+  .globe__map-shell :global(.jvm-marker) {
+    transition: fill 180ms ease, stroke 180ms ease, transform 180ms ease;
+    filter: drop-shadow(0 0 14px color-mix(in srgb, var(--accent-glow) 65%, transparent));
+  }
+
+  .globe__map-shell :global(.jvm-line) {
+    opacity: 0.78;
+  }
+
+  .globe__map-shell :global(.jvm-zoom-btn),
+  .globe__map-shell :global(.jvm-series-container) {
+    display: none;
+  }
+
+  :global(.jvm-tooltip) {
+    border: 1px solid color-mix(in srgb, var(--outline-strong) 82%, transparent);
+    border-radius: 0.85rem;
+    background: color-mix(in srgb, var(--panel-strong) 92%, transparent);
+    color: var(--text-primary);
+    font-family: var(--font-label);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.26);
+    padding: 0.55rem 0.75rem;
+    backdrop-filter: blur(18px);
+  }
+
+  @media (max-width: 1080px) {
+    .globe__layout {
+      grid-template-columns: 1fr;
+    }
+
+    .globe__map-shell {
+      min-height: clamp(18rem, 60vw, 29rem);
+    }
+  }
+
   @media (max-width: 768px) {
     .globe__stats {
       flex-direction: column;
       gap: 1rem;
     }
+
+    .globe__legend {
+      left: 0.8rem;
+      right: 0.8rem;
+      display: flex;
+      flex-wrap: wrap;
+      padding: 0;
+      gap: 0.5rem;
+    }
+
+    .globe__legend-item {
+      flex: 1 1 11rem;
+      justify-content: center;
+    }
+
+    .globe__icon-node {
+      top: 1rem;
+      right: 1rem;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .globe__atmosphere,
-    .globe__orbit {
+    .globe__atmosphere {
       animation: none;
     }
   }
 </style>
 
 <script>
-  import createGlobe from 'cobe';
+  import jsVectorMap from 'jsvectormap';
+  import 'jsvectormap/dist/maps/world-merc.js';
 
-  const globeSection = document.getElementById('globe-widget');
-  const canvas = document.getElementById('globe-canvas') as HTMLCanvasElement | null;
-  let globe: any = null;
-  let globeVisible = false;
-  let pointerDown = false;
-  let pointerX = 0;
-  let pointerY = 0;
-  let width = canvas?.offsetWidth || 0;
-  let phi = 0;
-  let theta = 0.25;
-  let dpr = 2;
-  let buildFrame = 0;
-  let retryCount = 0;
+  type MapMarker = {
+    name: string;
+    coords: [number, number];
+    type: 'visited' | 'wishlist';
+  };
 
-  function colorFromVar(name: string, fallback: [number, number, number]): [number, number, number] {
+  type MapLine = {
+    from: string;
+    to: string;
+    curvature: number;
+  };
+
+  type TravelMapData = {
+    markers: MapMarker[];
+    lines: MapLine[];
+    regions: Record<string, 'visited' | 'wishlist'>;
+  };
+
+  const mapRoot = document.getElementById('travel-map');
+  const mapData = mapRoot?.dataset.map ? (JSON.parse(mapRoot.dataset.map) as TravelMapData) : null;
+
+  let mapInstance: any = null;
+  let resizeObserver: ResizeObserver | null = null;
+
+  function themeVar(name: string, fallback: string) {
     const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-    if (value.startsWith('#') && value.length >= 7) {
-      return [
-        parseInt(value.slice(1, 3), 16) / 255,
-        parseInt(value.slice(3, 5), 16) / 255,
-        parseInt(value.slice(5, 7), 16) / 255,
-      ];
-    }
-    return fallback;
+    return value || fallback;
   }
 
-  const markers = [
-    { location: [46.6, 1.89], size: 0.1 },
-    { location: [56.13, -106.35], size: 0.08 },
-    { location: [53.14, -7.69], size: 0.07 },
-    { location: [54.79, -6.49], size: 0.06 },
-    { location: [28.29, -16.63], size: 0.06 },
-    { location: [40.46, -3.75], size: 0.07 },
-    { location: [36.2, 138.25], size: 0.07 },
-    { location: [37.09, -95.71], size: 0.08 },
-    { location: [-30.56, 22.94], size: 0.07 },
-    { location: [60.47, 8.47], size: 0.07 },
-  ];
+  function buildMarkers(markers: MapMarker[]) {
+    const accent = themeVar('--accent', '#ff5d5d');
+    const accentStrong = themeVar('--accent-strong', '#ff7b7b');
+    const surfaceHighest = themeVar('--surface-highest', '#3e2c2c');
+    const textPrimary = themeVar('--text-primary', '#f7f0ef');
+    const textGhost = themeVar('--text-ghost', '#503a38');
 
-  function getGlobeTheme() {
-    const accent = colorFromVar('--accent', [1, 0.36, 0.36]);
-    const bg = colorFromVar('--bg', [0.04, 0.03, 0.03]);
-
-    return {
-      accent,
-      bg,
-      baseColor: [bg[0] * 2.4 + 0.1, bg[1] * 2.4 + 0.1, bg[2] * 2.4 + 0.1] as [number, number, number],
-      glowColor: [accent[0] * 0.22, accent[1] * 0.22, accent[2] * 0.22] as [number, number, number],
-    };
+    return markers.map((marker) => ({
+      ...marker,
+      style:
+        marker.type === 'visited'
+          ? {
+              initial: {
+                fill: accent,
+                stroke: textPrimary,
+                strokeWidth: 4,
+                strokeOpacity: 0.18,
+                r: 6.5,
+              },
+              hover: {
+                fill: accentStrong,
+                strokeOpacity: 0.3,
+              },
+            }
+          : {
+              initial: {
+                fill: surfaceHighest,
+                stroke: accentStrong,
+                strokeWidth: 2.5,
+                strokeOpacity: 0.9,
+                r: 5.5,
+              },
+              hover: {
+                fill: textGhost,
+              },
+            },
+    }));
   }
 
-  function buildGlobe() {
-    if (!canvas || globe || document.hidden) return;
+  function buildLines(lines: MapLine[]) {
+    const accentStrong = themeVar('--accent-strong', '#ff7b7b');
 
-    width = Math.round(canvas.offsetWidth);
-    if (width < 40) return;
+    return lines.map((line) => ({
+      from: line.from,
+      to: line.to,
+      style: {
+        animation: true,
+        curvature: line.curvature,
+        stroke: accentStrong,
+        strokeWidth: 2,
+        strokeDasharray: '6 10',
+      },
+    }));
+  }
 
-    const theme = getGlobeTheme();
-    dpr = document.documentElement.dataset.performance === 'lite' ? 1.4 : 2;
+  function buildMap() {
+    if (!mapRoot || !mapData || mapInstance) return;
 
-    globe = createGlobe(canvas, {
-      devicePixelRatio: dpr,
-      width: width * dpr,
-      height: width * dpr,
-      phi,
-      theta,
-      dark: 1,
-      diffuse: 1.3,
-      mapSamples: document.documentElement.dataset.performance === 'lite' ? 18000 : 30000,
-      mapBrightness: 1.8,
-      mapBaseBrightness: 0.12,
-      baseColor: theme.baseColor,
-      markerColor: theme.accent,
-      glowColor: theme.glowColor,
-      markers,
-      onRender: (state) => {
-        if (!pointerDown) {
-          phi += document.documentElement.dataset.motion === 'reduced' ? 0.001 : 0.0035;
-        }
-        state.phi = phi;
-        state.theta = theta;
-        state.width = width * dpr;
-        state.height = width * dpr;
+    const surfaceHigh = themeVar('--surface-high', '#2d1f1f');
+    const surfaceHighest = themeVar('--surface-highest', '#3e2c2c');
+    const accent = themeVar('--accent', '#ff5d5d');
+    const accentSoft = themeVar('--accent-soft', 'rgba(255, 93, 93, 0.16)');
+    const outline = themeVar('--outline', 'rgba(247, 240, 239, 0.14)');
+    const outlineVariant = themeVar('--outline-variant', 'rgba(255, 161, 161, 0.12)');
+
+    mapRoot.innerHTML = '';
+
+    mapInstance = new jsVectorMap({
+      selector: mapRoot,
+      map: 'world_merc',
+      backgroundColor: 'transparent',
+      zoomButtons: false,
+      zoomOnScroll: false,
+      draggable: false,
+      showTooltip: true,
+      markersSelectable: false,
+      regionStyle: {
+        initial: {
+          fill: surfaceHigh,
+          fillOpacity: 1,
+          stroke: outline,
+          strokeWidth: 1.15,
+          strokeOpacity: 0.9,
+        },
+        hover: {
+          fill: surfaceHighest,
+          cursor: 'default',
+        },
+      },
+      markerStyle: {
+        initial: {
+          r: 6,
+          fill: accent,
+          stroke: surfaceHighest,
+          strokeWidth: 3,
+        },
+      },
+      lineStyle: {
+        stroke: accent,
+        strokeWidth: 2,
+        strokeLinecap: 'round',
+      },
+      markers: buildMarkers(mapData.markers),
+      lines: buildLines(mapData.lines),
+      series: {
+        regions: [
+          {
+            attribute: 'fill',
+            scale: {
+              visited: accentSoft,
+              wishlist: outlineVariant,
+            },
+            values: mapData.regions,
+          },
+        ],
+      },
+      onLoaded(map: any) {
+        map.updateSize();
+      },
+      onMarkerTooltipShow(_event: Event, tooltip: any, index: string) {
+        const marker = mapData.markers[Number(index)];
+        if (!marker) return;
+
+        tooltip.text(`${marker.type === 'visited' ? 'Visited' : 'Wishlist'} · ${marker.name}`);
+      },
+      onRegionTooltipShow(_event: Event, tooltip: any, code: string) {
+        const regionType = mapData.regions[code];
+        if (!regionType) return;
+
+        const regionName = tooltip.text();
+        tooltip.text(`${regionType === 'visited' ? 'Visited' : 'Wishlist'} · ${regionName}`);
       },
     });
-  }
 
-  function updateGlobeTheme() {
-    if (!globe) return;
-    const theme = getGlobeTheme();
-    globe.update({
-      baseColor: theme.baseColor,
-      markerColor: theme.accent,
-      glowColor: theme.glowColor,
+    resizeObserver = new ResizeObserver(() => {
+      mapInstance?.updateSize();
     });
+
+    resizeObserver.observe(mapRoot);
   }
 
-  function scheduleBuild() {
-    if (buildFrame) {
-      cancelAnimationFrame(buildFrame);
+  function destroyMap() {
+    resizeObserver?.disconnect();
+    resizeObserver = null;
+
+    if (mapInstance) {
+      mapInstance.destroy();
+      mapInstance = null;
     }
 
-    buildFrame = requestAnimationFrame(() => {
-      buildFrame = 0;
-
-      if (!canvas || document.hidden) return;
-      if (!globeVisible && document.documentElement.dataset.performance === 'lite') return;
-
-      const nextWidth = Math.round(canvas.offsetWidth);
-      if (nextWidth < 40) {
-        if (retryCount < 10) {
-          retryCount += 1;
-          scheduleBuild();
-        }
-        return;
-      }
-
-      retryCount = 0;
-      buildGlobe();
-    });
-  }
-
-  function destroyGlobe() {
-    if (buildFrame) {
-      cancelAnimationFrame(buildFrame);
-      buildFrame = 0;
-    }
-    if (globe) {
-      globe.destroy();
-      globe = null;
+    if (mapRoot) {
+      mapRoot.innerHTML = '';
     }
   }
 
-  if (canvas) {
-    canvas.addEventListener('pointerdown', (event) => {
-      pointerDown = true;
-      pointerX = event.clientX;
-      pointerY = event.clientY;
-    });
-
-    window.addEventListener('pointerup', () => {
-      pointerDown = false;
-    });
-
-    window.addEventListener(
-      'pointermove',
-      (event) => {
-        if (!pointerDown) return;
-        const dx = event.clientX - pointerX;
-        const dy = event.clientY - pointerY;
-        pointerX = event.clientX;
-        pointerY = event.clientY;
-        phi += dx / 220;
-        theta = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, theta - dy / 220));
-      },
-      { passive: true }
-    );
-
-    const resizeObserver = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (!entry) return;
-      width = entry.contentRect.width;
-      if (globe) {
-        globe.update({ width: width * dpr, height: width * dpr });
-      } else if (globeVisible) {
-        scheduleBuild();
-      }
-    });
-    resizeObserver.observe(canvas);
-  }
-
-  if (globeSection) {
-    const sectionObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          globeVisible = entry.isIntersecting;
-          if (globeVisible) {
-            scheduleBuild();
-          } else if (document.documentElement.dataset.performance === 'lite') {
-            destroyGlobe();
-          }
-        });
-      },
-      { threshold: 0.2 }
-    );
-
-    sectionObserver.observe(globeSection);
-  }
-
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      destroyGlobe();
-    } else if (globeSection && globeSection.getBoundingClientRect().top < window.innerHeight) {
-      globeVisible = true;
-      scheduleBuild();
-    }
-  });
+  buildMap();
 
   window.addEventListener('themechange', () => {
-    if (globe) {
-      updateGlobeTheme();
-    } else {
-      scheduleBuild();
-    }
-  });
-
-  window.addEventListener('pageshow', () => {
-    if (globeSection && globeSection.getBoundingClientRect().top < window.innerHeight) {
-      globeVisible = true;
-      scheduleBuild();
-    }
-  });
-
-  window.addEventListener('load', () => {
-    if (globeSection && globeSection.getBoundingClientRect().top < window.innerHeight) {
-      globeVisible = true;
-      scheduleBuild();
-    }
+    destroyMap();
+    requestAnimationFrame(() => buildMap());
   });
 </script>

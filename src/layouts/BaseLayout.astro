@@ -17,11 +17,11 @@ const {
 } = Astro.props;
 
 const themes = [
+  { id: 'nord', label: 'Nord', color: '#88c0d0' },
   { id: 'crimson', label: 'Crimson', color: '#ff4444' },
   { id: 'midnight', label: 'Midnight', color: '#7c6cff' },
   { id: 'monokai', label: 'Monokai', color: '#a6e22e' },
   { id: 'dracula', label: 'Dracula', color: '#bd93f9' },
-  { id: 'nord', label: 'Nord', color: '#88c0d0' },
   { id: 'solarized', label: 'Solarized', color: '#268bd2' },
 ];
 ---
@@ -70,7 +70,9 @@ const themes = [
     <div class="site-shell">
       <div class="site-shell__veil"></div>
       <div class="site-shell__gradient site-shell__gradient--north"></div>
+      <div class="site-shell__gradient site-shell__gradient--center"></div>
       <div class="site-shell__gradient site-shell__gradient--south"></div>
+      <div class="site-shell__beams" aria-hidden="true"></div>
       <div class="site-shell__grid"></div>
       <div class="grain-overlay" aria-hidden="true"></div>
 
@@ -84,7 +86,7 @@ const themes = [
       <CommandBar />
     </div>
 
-    <button class="back-to-top" id="back-to-top" aria-label="Back to top">
+      <button class="back-to-top" id="back-to-top" aria-label="Back to top" type="button">
       <span class="material-symbols-outlined" style="font-size:18px">arrow_upward</span>
     </button>
 
@@ -97,7 +99,7 @@ const themes = [
           </button>
         ))}
       </div>
-      <button class="theme-picker__toggle" id="theme-toggle" aria-label="Change theme">
+      <button class="theme-picker__toggle" id="theme-toggle" aria-label="Change theme" type="button" aria-expanded="false">
         <span class="material-symbols-outlined" style="font-size:18px">palette</span>
       </button>
     </div>
@@ -221,7 +223,10 @@ const themes = [
       const toggle = document.getElementById('theme-toggle');
       const panel = document.getElementById('theme-panel');
 
-      toggle?.addEventListener('click', () => panel?.classList.toggle('is-open'));
+      toggle?.addEventListener('click', () => {
+        const isOpen = panel?.classList.toggle('is-open');
+        toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      });
 
       document.querySelectorAll('.theme-picker__option').forEach((button) => {
         button.addEventListener('click', () => {
@@ -229,6 +234,7 @@ const themes = [
           if (!id) return;
           setTheme(id);
           panel?.classList.remove('is-open');
+          toggle?.setAttribute('aria-expanded', 'false');
         });
       });
 
@@ -236,6 +242,7 @@ const themes = [
         const picker = document.getElementById('theme-picker');
         if (picker && !picker.contains(event.target as Node)) {
           panel?.classList.remove('is-open');
+          toggle?.setAttribute('aria-expanded', 'false');
         }
       });
 
