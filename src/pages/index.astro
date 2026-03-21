@@ -192,22 +192,16 @@ try {
     <section class="pgp container animate-on-scroll stagger-1 deferred-section">
       <div class="pgp__card card card-paper">
         <div class="pgp__grid" aria-hidden="true"></div>
-        <div class="pgp__ornaments ornament-layer" aria-hidden="true">
-          <span class="ornament-ring pgp__ring"></span>
-          <span class="ornament-ring ornament-ring--dashed pgp__ring pgp__ring--inner"></span>
-          <span class="ornament-icon-node pgp__icon-node">
-            <span class="material-symbols-outlined">shield_lock</span>
-          </span>
-        </div>
-        <div class="pgp__left">
-          <div class="pgp__icon-wrap">
-            <span class="material-symbols-outlined">encrypted</span>
-          </div>
-          <div>
+        <div class="pgp__copy">
+          <div class="pgp__head">
+            <div class="pgp__badge" aria-hidden="true">
+              <span class="ornament-ring pgp__badge-ring"></span>
+              <span class="material-symbols-outlined pgp__badge-icon">shield_lock</span>
+            </div>
             <span class="label-upper">Encrypted Comms</span>
-            <h3 class="pgp__title">{pgpEmail}</h3>
-            <p class="pgp__desc">PGP-first if privacy matters. Every channel points back to the same secure contact desk.</p>
           </div>
+          <h3 class="pgp__title">{pgpEmail}</h3>
+          <p class="pgp__desc">PGP-first if privacy matters. Every channel points back to the same secure contact desk.</p>
         </div>
         <div class="pgp__actions">
           <a href="/contact#pgp" class="btn-ghost">View full key</a>
@@ -774,33 +768,6 @@ try {
     padding: 1.5rem;
   }
 
-  .pgp__card::before,
-  .pgp__card::after {
-    content: '';
-    position: absolute;
-    pointer-events: none;
-  }
-
-  .pgp__card::before {
-    top: 1rem;
-    right: 1rem;
-    width: 6rem;
-    height: 6rem;
-    border-top: 1px solid color-mix(in srgb, var(--outline-strong) 78%, transparent);
-    border-right: 1px solid color-mix(in srgb, var(--outline-strong) 78%, transparent);
-    border-radius: 0 22px 0 0;
-    opacity: 0.75;
-  }
-
-  .pgp__card::after {
-    left: 18%;
-    right: 18%;
-    bottom: 1rem;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent-soft) 84%, white 16%), transparent);
-    opacity: 0.55;
-  }
-
   @media (min-width: 900px) {
     .pgp__card {
       flex-direction: row;
@@ -809,12 +776,18 @@ try {
     }
   }
 
-  .pgp__left {
+  .pgp__copy {
     position: relative;
     z-index: 1;
-    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 38rem;
+  }
+
+  .pgp__head {
+    display: inline-flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.95rem;
   }
 
   .pgp__grid {
@@ -829,51 +802,66 @@ try {
     pointer-events: none;
   }
 
-  .pgp__ring {
-    top: 50%;
-    left: 2rem;
-    width: 6.4rem;
-    height: 6.4rem;
-    transform: translateY(-50%);
-    opacity: 0.42;
-  }
-
-  .pgp__ring--inner {
-    left: 3rem;
-    width: 4.4rem;
-    height: 4.4rem;
-    animation: spin-vinyl 20s linear infinite;
-  }
-
-  .pgp__icon-node {
-    top: 50%;
-    left: 4rem;
-    transform: translateY(-50%);
-    z-index: 0;
-  }
-
-  .pgp__icon-wrap {
+  .pgp__badge {
     position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 3.2rem;
-    height: 3.2rem;
-    border: 1px solid var(--outline);
-    border-radius: 50%;
-    background: var(--surface-high);
-    color: var(--accent);
-    flex-shrink: 0;
+    width: 3.55rem;
+    height: 3.55rem;
+    border: 1px solid color-mix(in srgb, var(--outline-strong) 76%, transparent);
+    border-radius: 1.1rem;
+    background:
+      radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--accent-glow) 32%, transparent) 0%, transparent 62%),
+      linear-gradient(180deg, color-mix(in srgb, var(--panel-soft) 70%, transparent), color-mix(in srgb, var(--panel-strong) 88%, transparent));
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 0 24px color-mix(in srgb, var(--accent-glow) 20%, transparent);
+    overflow: hidden;
   }
 
-  .pgp__icon-wrap::after {
+  .pgp__badge::before,
+  .pgp__badge::after {
     content: '';
     position: absolute;
-    inset: -8px;
-    border: 1px dashed color-mix(in srgb, var(--accent) 30%, white 8%);
-    border-radius: 50%;
-    opacity: 0.45;
-    animation: spin-vinyl 16s linear infinite;
+    pointer-events: none;
+  }
+
+  .pgp__badge::before {
+    inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 18px 18px;
+    opacity: 0.22;
+    mask-image: linear-gradient(180deg, black, transparent 100%);
+  }
+
+  .pgp__badge::after {
+    top: 0.55rem;
+    left: 0.55rem;
+    width: 0.8rem;
+    height: 0.8rem;
+    border-top: 1px solid color-mix(in srgb, var(--outline-strong) 74%, transparent);
+    border-left: 1px solid color-mix(in srgb, var(--outline-strong) 74%, transparent);
+    opacity: 0.8;
+  }
+
+  .pgp__badge-ring {
+    top: 50%;
+    left: 50%;
+    width: 2.5rem;
+    height: 2.5rem;
+    transform: translate(-50%, -50%);
+    opacity: 0.2;
+  }
+
+  .pgp__badge-icon {
+    position: relative;
+    z-index: 1;
+    color: color-mix(in srgb, var(--accent) 72%, white 28%);
+    font-size: 1.2rem;
+    font-variation-settings: 'FILL' 0, 'wght' 260, 'GRAD' 0, 'opsz' 20;
   }
 
   .pgp__title {
@@ -882,10 +870,12 @@ try {
     font-family: var(--font-headline);
     font-size: 1.45rem;
     letter-spacing: -0.04em;
+    overflow-wrap: anywhere;
   }
 
   .pgp__desc {
     margin-top: 0.4rem;
+    max-width: 32rem;
     color: var(--text-muted);
     line-height: 1.7;
   }
@@ -1016,6 +1006,16 @@ try {
     .hero__rail--right {
       display: none;
     }
+
+    .pgp__head {
+      gap: 0.8rem;
+    }
+
+    .pgp__badge {
+      width: 3.2rem;
+      height: 3.2rem;
+      border-radius: 1rem;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -1025,9 +1025,7 @@ try {
       animation: none;
     }
 
-    .hero__title-accent::after,
-    .pgp__icon-wrap::after,
-    .pgp__ring--inner {
+    .hero__title-accent::after {
       animation: none;
     }
   }

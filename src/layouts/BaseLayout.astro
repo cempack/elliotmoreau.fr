@@ -33,7 +33,7 @@ const themes = [
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
     <meta name="author" content="Elliot Moreau" />
-    <meta name="theme-color" content="#0a0606" />
+    <meta name="theme-color" content="#88c0d0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -49,7 +49,7 @@ const themes = [
     <script is:inline>
       (function () {
         const root = document.documentElement;
-        const theme = localStorage.getItem('theme') || 'crimson';
+        const theme = localStorage.getItem('theme') || 'nord';
         const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
         const lowThreads = typeof navigator.hardwareConcurrency === 'number' && navigator.hardwareConcurrency <= 4;
@@ -164,7 +164,7 @@ const themes = [
       }
 
       applyEnvironmentFlags();
-      setTheme(localStorage.getItem('theme') || 'crimson');
+      setTheme(localStorage.getItem('theme') || 'nord');
 
       if ('addEventListener' in prefersReducedMotion) {
         prefersReducedMotion.addEventListener('change', applyEnvironmentFlags);
