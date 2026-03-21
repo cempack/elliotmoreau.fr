@@ -1,0 +1,27 @@
+{
+  "name": "users-elliotmoreau-desktop-elliotmoreau-fr-astro-init",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "deploy": "npx vercel@latest",
+    "deploy:prod": "npx vercel@latest --prod",
+    "astro": "astro",
+    "new:post": "node scripts/new-post.mjs"
+  },
+  "dependencies": {
+    "@astrojs/rss": "^4.0.17",
+    "@astrojs/vercel": "^10.0.2",
+    "astro": "^6.0.8",
+    "jsvectormap": "^1.7.0"
+  },
+  "overrides": {
+    "fast-xml-parser": "5.5.8",
+    "path-to-regexp": "6.3.0"
+  }
+}

@@ -1,0 +1,1151 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import SpotifyWidget from '../components/SpotifyWidget.astro';
+import GlobeWidget from '../components/GlobeWidget.astro';
+import TerminalAbout from '../components/TerminalAbout.astro';
+import { fetchGithubRepos } from '../lib/github';
+
+const birthDate = new Date(2008, 0, 19);
+const now = new Date();
+let age = now.getFullYear() - birthDate.getFullYear();
+const monthDiff = now.getMonth() - birthDate.getMonth();
+if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birthDate.getDate())) {
+  age -= 1;
+}
+
+const repos = await fetchGithubRepos();
+const pgpEmail = 'hello@elliotm.fr';
+
+let weather = { temp: '--', icon: '☀️', desc: 'Clear in Paris' };
+try {
+  const weatherRes = await fetch(
+    'https://api.open-meteo.com/v1/forecast?latitude=48.8566&longitude=2.3522&current=temperature_2m,weathercode&timezone=Europe%2FParis'
+  );
+
+  if (weatherRes.ok) {
+    const weatherData = await weatherRes.json();
+    const temp = Math.round(weatherData.current.temperature_2m);
+    const code = weatherData.current.weathercode;
+    const weatherMap: Record<number, [string, string]> = {
+      0: ['☀️', 'Clear in Paris'],
+      1: ['🌤', 'Mostly clear'],
+      2: ['⛅', 'Partly cloudy'],
+      3: ['☁️', 'Overcast'],
+      45: ['🌫', 'Foggy'],
+      48: ['🌫', 'Frost fog'],
+      51: ['🌦', 'Light drizzle'],
+      53: ['🌦', 'Drizzle'],
+      55: ['🌧', 'Heavy drizzle'],
+      61: ['🌧', 'Light rain'],
+      63: ['🌧', 'Rain'],
+      65: ['🌧', 'Heavy rain'],
+      71: ['🌨', 'Light snow'],
+      73: ['🌨', 'Snow'],
+      75: ['❄️', 'Heavy snow'],
+      80: ['🌦', 'Showers'],
+      81: ['🌧', 'Heavy showers'],
+      82: ['⛈', 'Violent showers'],
+      95: ['⛈', 'Thunderstorm'],
+      96: ['⛈', 'Storm with hail'],
+    };
+
+    const [icon, desc] = weatherMap[code] || ['🌡', 'Unknown'];
+    weather = { temp: `${temp}°C`, icon, desc };
+  }
+} catch {
+  // Keep static fallback.
+}
+---
+
+<BaseLayout title="Home" activePage="home">
+  <main class="home">
+    <section class="hero container">
+      <div class="hero__rails" aria-hidden="true">
+        <span class="hero__rail hero__rail--left"></span>
+        <span class="hero__rail hero__rail--right"></span>
+        <span class="hero__ring hero__ring--outer"></span>
+        <span class="hero__ring hero__ring--inner"></span>
+        <span class="hero__beam hero__beam--left"></span>
+        <span class="hero__beam hero__beam--right"></span>
+      </div>
+
+      <div class="hero__constellation" aria-hidden="true">
+        <span class="hero__constellation-dot hero__constellation-dot--1"></span>
+        <span class="hero__constellation-dot hero__constellation-dot--2"></span>
+        <span class="hero__constellation-dot hero__constellation-dot--3"></span>
+        <span class="hero__constellation-line hero__constellation-line--1"></span>
+        <span class="hero__constellation-line hero__constellation-line--2"></span>
+      </div>
+
+      <div class="hero__grid">
+        <div class="hero__content">
+          <div class="hero__intro animate-on-scroll is-visible">
+            <span id="hero-greeting" class="label-upper">Good afternoon</span>
+            <span class="hero__clock label-upper" id="hero-clock">--:-- CET</span>
+          </div>
+
+          <div class="hero__identity animate-on-scroll is-visible">
+            <span class="hero__status">
+              <span class="hero__status-dot"></span>
+              <span class="label-upper">Student · {age} years old · France</span>
+            </span>
+          </div>
+
+          <h1 class="hero__title text-display" aria-label="Elliot Moreau">
+            <span>Elliot</span>
+            <span class="hero__title-accent">Moreau</span>
+          </h1>
+
+          <p class="hero__lede">
+            Building systems at the intersection of efficiency and elegance.
+          </p>
+
+          <p class="hero__support">
+            I like interfaces that feel precise, infrastructure that stays boring in production, and products with just
+            enough drama in the presentation layer.
+          </p>
+
+          <div class="hero__actions">
+            <a href="#projects" class="btn-primary">
+              <span class="material-symbols-outlined" style="font-size:14px">deployed_code</span>
+              Explore projects
+            </a>
+            <a href="/contact" class="btn-ghost">Contact</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="marquee-strip">
+      <div class="marquee-strip__inner">
+        <span class="marquee-strip__text">Systems design · Infrastructure · Privacy · Open source · Editorial interfaces · Performance engineering</span>
+        <span class="marquee-strip__text">Systems design · Infrastructure · Privacy · Open source · Editorial interfaces · Performance engineering</span>
+        <span class="marquee-strip__text">Systems design · Infrastructure · Privacy · Open source · Editorial interfaces · Performance engineering</span>
+      </div>
+    </div>
+
+    <section class="overview container animate-on-scroll deferred-section">
+      <div class="overview__main card card-paper">
+        <div class="overview__header">
+          <span class="label-upper">Favorite toolkit</span>
+          <h2 class="text-title">My favorite tools.</h2>
+          <p class="overview__intro">
+            Tools I keep coming back to when I want clarity, speed, and room to make the interface feel intentional.
+          </p>
+        </div>
+
+        <div class="overview__tech-grid">
+          <div class="overview__tech-item">
+            <span class="overview__tech-glow"></span>
+            <img src="https://cdn.simpleicons.org/go/ffffff" width="30" height="30" alt="Go" loading="lazy" />
+            <span class="overview__tech-name">Go</span>
+            <span class="label-sm">Reliable backend velocity</span>
+          </div>
+          <div class="overview__tech-item">
+            <span class="overview__tech-glow"></span>
+            <img src="https://cdn.simpleicons.org/linux/ffffff" width="30" height="30" alt="Linux" loading="lazy" />
+            <span class="overview__tech-name">Linux</span>
+            <span class="label-sm">Operational clarity</span>
+          </div>
+          <div class="overview__tech-item">
+            <span class="overview__tech-glow"></span>
+            <img src="https://cdn.simpleicons.org/flutter/ffffff" width="30" height="30" alt="Flutter" loading="lazy" />
+            <span class="overview__tech-name">Flutter</span>
+            <span class="label-sm">Interface craft</span>
+          </div>
+          <div class="overview__tech-item">
+            <span class="overview__tech-glow"></span>
+            <img src="https://cdn.simpleicons.org/docker/ffffff" width="30" height="30" alt="Docker" loading="lazy" />
+            <span class="overview__tech-name">Docker</span>
+            <span class="label-sm">Portable environments</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="overview__location card card-paper">
+        <img
+          class="overview__location-image"
+          src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&q=80&auto=format"
+          alt="Paris skyline"
+          loading="lazy"
+        />
+        <div class="overview__location-overlay">
+          <span class="label-upper">Based in</span>
+          <div class="overview__location-name">
+            <span class="material-symbols-outlined" style="font-size:18px">location_on</span>
+            <span>France</span>
+          </div>
+          <div class="overview__location-weather">
+            <span class="overview__location-weather-icon">{weather.icon}</span>
+            <div>
+              <div class="overview__location-weather-temp">{weather.temp}</div>
+              <div class="label-sm">{weather.desc}</div>
+            </div>
+          </div>
+          <p>Working on Central European time with an editorial eye and a systems-engineering mindset.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="pgp container animate-on-scroll stagger-1 deferred-section">
+      <div class="pgp__card card card-paper">
+        <div class="pgp__grid" aria-hidden="true"></div>
+        <div class="pgp__copy">
+          <div class="pgp__head">
+            <div class="pgp__badge" aria-hidden="true">
+              <span class="ornament-ring pgp__badge-ring"></span>
+              <span class="material-symbols-outlined pgp__badge-icon">shield_lock</span>
+            </div>
+            <span class="label-upper">Encrypted Comms</span>
+          </div>
+          <h3 class="pgp__title">{pgpEmail}</h3>
+          <p class="pgp__desc">PGP-first if privacy matters. Every channel points back to the same secure contact desk.</p>
+        </div>
+        <div class="pgp__actions">
+          <a href="/contact#pgp" class="btn-ghost">View full key</a>
+          <a href="/hello@elliotm.fr.asc" download="hello@elliotm.fr.asc" class="btn-primary">
+            <span class="material-symbols-outlined" style="font-size:14px">download</span>
+            Download key
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="container animate-on-scroll stagger-2 deferred-section">
+      <TerminalAbout />
+    </section>
+
+    <section class="projects container animate-on-scroll stagger-3 deferred-section" id="projects">
+      <div class="section-header">
+        <div class="section-header__left">
+          <span class="material-symbols-outlined">terminal</span>
+          <div>
+            <span class="label-upper">Live archive</span>
+            <h2 class="text-title projects__title">Projects</h2>
+            <p class="projects__intro">Selected builds pulled from GitHub and framed like a small product archive.</p>
+          </div>
+        </div>
+
+        <a href="https://github.com/cempack" target="_blank" rel="noopener" class="projects__link label-sm">
+          View all on GitHub
+        </a>
+      </div>
+
+      <div class="projects__grid" id="projects-grid">
+        {repos.length > 0 ? (
+          repos.map((repo) => (
+            <ProjectCard
+              name={repo.name}
+              description={repo.description}
+              url={repo.url}
+              language={repo.language}
+              stars={repo.stars}
+              forks={repo.forks}
+            />
+          ))
+        ) : (
+          <div class="projects__loading" id="projects-loading">
+            <div class="projects__skeleton card card-paper"></div>
+            <div class="projects__skeleton card card-paper"></div>
+            <div class="projects__skeleton card card-paper"></div>
+          </div>
+        )}
+      </div>
+    </section>
+
+    <section class="container animate-on-scroll stagger-4 deferred-section">
+      <GlobeWidget />
+    </section>
+
+    <section class="container animate-on-scroll stagger-5 deferred-section">
+      <SpotifyWidget />
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .home {
+    padding-top: 9rem;
+  }
+
+  .hero {
+    position: relative;
+    min-height: calc(100vh - 10rem);
+    padding-top: 3rem;
+    padding-bottom: 4rem;
+  }
+
+  .hero__rails,
+  .hero__ring,
+  .hero__constellation {
+    position: absolute;
+    pointer-events: none;
+  }
+
+  .hero__rails {
+    inset: 0;
+  }
+
+  .hero__rail {
+    position: absolute;
+    top: 2rem;
+    bottom: 2rem;
+    width: 1px;
+    background: linear-gradient(180deg, transparent 0%, var(--outline-variant) 18%, var(--outline-variant) 82%, transparent 100%);
+    opacity: 0.7;
+  }
+
+  .hero__rail--left {
+    left: 0;
+  }
+
+  .hero__rail--right {
+    right: 0;
+  }
+
+  .hero__ring {
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .hero__beam {
+    position: absolute;
+    top: 14%;
+    bottom: 12%;
+    width: 18rem;
+    opacity: 0.24;
+    filter: blur(18px);
+    background: linear-gradient(180deg, transparent, var(--accent-glow), transparent);
+  }
+
+  .hero__beam--left {
+    left: -6rem;
+    transform: rotate(-10deg);
+  }
+
+  .hero__beam--right {
+    right: -4rem;
+    transform: rotate(18deg);
+  }
+
+  .hero__ring--outer {
+    top: 4%;
+    right: 8%;
+    width: min(36vw, 380px);
+    height: min(36vw, 380px);
+  }
+
+  .hero__ring--inner {
+    top: calc(4% + 28px);
+    right: calc(8% + 28px);
+    width: min(29vw, 324px);
+    height: min(29vw, 324px);
+    border-style: dashed;
+    opacity: 0.5;
+  }
+
+  .hero__constellation {
+    inset: 0;
+    z-index: 0;
+    opacity: 0.8;
+  }
+
+  .hero__constellation-dot,
+  .hero__constellation-line {
+    position: absolute;
+    display: block;
+  }
+
+  .hero__constellation-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--accent) 65%, white 35%);
+    box-shadow: 0 0 24px var(--accent-glow);
+    animation: pulse-glow 3.4s ease-in-out infinite;
+  }
+
+  .hero__constellation-line {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--outline-strong) 70%, var(--accent)), transparent);
+    transform-origin: left center;
+  }
+
+  .hero__constellation-dot--1 {
+    top: 17%;
+    right: 31%;
+  }
+
+  .hero__constellation-dot--2 {
+    top: 26%;
+    right: 18%;
+  }
+
+  .hero__constellation-dot--3 {
+    top: 40%;
+    right: 26%;
+  }
+
+  .hero__constellation-line--1 {
+    top: 17.6%;
+    right: 18.5%;
+    width: 11rem;
+    transform: rotate(24deg);
+  }
+
+  .hero__constellation-line--2 {
+    top: 29.7%;
+    right: 21%;
+    width: 7rem;
+    transform: rotate(-39deg);
+  }
+
+  .hero__grid {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    min-height: calc(100vh - 14rem);
+  }
+
+  .hero__content,
+  .hero__panel {
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero__content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1.1rem;
+    max-width: 58rem;
+    min-width: 0;
+  }
+
+  .hero__content::before {
+    content: '';
+    position: absolute;
+    top: 8%;
+    left: -1.2rem;
+    width: 1px;
+    height: 5.5rem;
+    background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--accent) 65%, white 35%), transparent);
+    opacity: 0.65;
+  }
+
+  .hero__intro,
+  .hero__identity {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    flex-wrap: wrap;
+  }
+
+  .hero__clock {
+    color: var(--text-faint);
+  }
+
+  .hero__status {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.45rem 0.75rem;
+    border: 1px solid var(--outline);
+    border-radius: 999px;
+    background: var(--surface-high);
+  }
+
+  .hero__status::after {
+    content: '';
+    position: absolute;
+    inset: auto 0.75rem -1px auto;
+    width: 2.6rem;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 74%, white 26%));
+    opacity: 0.75;
+  }
+
+  .hero__status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 16px rgba(74, 222, 128, 0.36);
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  .hero__title {
+    display: flex;
+    flex-direction: column;
+    font-size: clamp(4rem, 12vw, 8.4rem);
+  }
+
+  .hero__title-accent {
+    position: relative;
+    color: var(--accent);
+    font-style: italic;
+  }
+
+  .hero__title-accent::after {
+    content: '';
+    position: absolute;
+    left: 0.08em;
+    bottom: -0.1em;
+    width: 1.55em;
+    height: 0.08em;
+    border-radius: 999px;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 72%, white 28%), transparent);
+    animation: line-breathe 4.6s ease-in-out infinite;
+    transform-origin: left center;
+  }
+
+  .hero__lede {
+    max-width: 40rem;
+    color: var(--text-muted);
+    font-size: 1.08rem;
+    line-height: 1.8;
+    text-wrap: balance;
+  }
+
+  .hero__support {
+    max-width: 38rem;
+    color: var(--text-faint);
+    line-height: 1.75;
+  }
+
+  .hero__support::before {
+    content: '';
+    display: block;
+    width: 5.5rem;
+    height: 1px;
+    margin-bottom: 0.9rem;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--outline-strong) 68%, var(--accent)), transparent);
+  }
+
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.85rem;
+    margin-top: 0.4rem;
+  }
+
+  .overview {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-top: 4rem;
+    margin-bottom: 1rem;
+  }
+
+  @media (min-width: 980px) {
+    .overview {
+      grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+    }
+  }
+
+  .overview__main,
+  .overview__location {
+    padding: 1.5rem;
+  }
+
+  .overview__header {
+    margin-bottom: 1.4rem;
+  }
+
+  .overview__header h2 {
+    margin-top: 0.5rem;
+    font-size: 1.9rem;
+  }
+
+  .overview__intro {
+    max-width: 34rem;
+    margin-top: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.75;
+  }
+
+  .overview__tech-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.9rem;
+  }
+
+  @media (min-width: 760px) {
+    .overview__tech-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  .overview__tech-item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    padding: 1rem;
+    border: 1px solid var(--outline);
+    border-radius: 16px;
+    background: var(--surface-high);
+    transition: transform var(--transition-base), border-color var(--transition-base), background var(--transition-base);
+  }
+
+  .overview__tech-item::before,
+  .overview__tech-item::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+  }
+
+  .overview__tech-item::before {
+    top: 0.7rem;
+    right: 0.7rem;
+    width: 1rem;
+    height: 1rem;
+    border-top: 1px solid color-mix(in srgb, var(--outline-strong) 78%, transparent);
+    border-right: 1px solid color-mix(in srgb, var(--outline-strong) 78%, transparent);
+    opacity: 0.65;
+  }
+
+  .overview__tech-item::after {
+    left: 1rem;
+    right: 1rem;
+    bottom: 0.85rem;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent-soft) 80%, white 20%), transparent);
+    opacity: 0;
+    transition: opacity var(--transition-base);
+  }
+
+  .overview__tech-item:hover {
+    transform: translateY(-4px);
+    border-color: var(--outline-strong);
+    background: color-mix(in srgb, var(--surface-highest) 72%, var(--surface-high));
+  }
+
+  .overview__tech-item:hover::after {
+    opacity: 0.8;
+  }
+
+  .overview__tech-glow {
+    position: absolute;
+    inset: auto auto -1.2rem -1.2rem;
+    width: 5rem;
+    height: 5rem;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+    opacity: 0.65;
+    pointer-events: none;
+  }
+
+  .overview__tech-item img {
+    opacity: 0.9;
+    transition: transform var(--transition-base), opacity var(--transition-fast);
+  }
+
+  .overview__tech-item:hover img {
+    transform: translateY(-2px) rotate(-4deg);
+    opacity: 1;
+  }
+
+  .overview__tech-name {
+    color: var(--text-primary);
+    font-family: var(--font-headline);
+    font-size: 1.2rem;
+    letter-spacing: -0.03em;
+  }
+
+  .overview__location {
+    position: relative;
+    overflow: hidden;
+    min-height: 320px;
+  }
+
+  .overview__location::before,
+  .overview__location::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .overview__location::before {
+    inset: 0.9rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    mask-image: linear-gradient(135deg, black 0 32%, transparent 54%, transparent 100%);
+  }
+
+  .overview__location::after {
+    top: -10%;
+    right: -12%;
+    width: 11rem;
+    height: 11rem;
+    border-radius: 50%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--ambient) 78%, transparent) 0%, transparent 68%);
+    opacity: 0.8;
+  }
+
+  .overview__location-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.45;
+    filter: grayscale(0.22) saturate(0.9);
+    transform: scale(1.04);
+    transition: transform 1.6s cubic-bezier(0.16, 1, 0.3, 1), filter var(--transition-slow);
+  }
+
+  .overview__location:hover .overview__location-image {
+    transform: scale(1.08);
+    filter: grayscale(0.08) saturate(1);
+  }
+
+  .overview__location-overlay {
+    position: relative;
+    z-index: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    padding: 1.2rem;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.08) 0%, var(--spotify-scrim) 100%);
+  }
+
+  .overview__location-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--text-primary);
+    font-family: var(--font-headline);
+    font-size: 1.75rem;
+    letter-spacing: -0.04em;
+  }
+
+  .overview__location-weather {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.8rem;
+    width: fit-content;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 18px;
+    background: rgba(11, 11, 16, 0.62);
+  }
+
+  .overview__location-weather-icon {
+    font-size: 1.7rem;
+  }
+
+  .overview__location-weather-temp {
+    color: var(--text-primary);
+    font-family: var(--font-headline);
+    font-size: 1.15rem;
+    line-height: 1;
+    letter-spacing: -0.04em;
+  }
+
+  .overview__location-overlay p {
+    max-width: 24rem;
+    color: color-mix(in srgb, var(--text-body) 88%, white);
+    line-height: 1.7;
+  }
+
+  .pgp {
+    margin-bottom: 5rem;
+  }
+
+  .pgp__card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+
+  @media (min-width: 900px) {
+    .pgp__card {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+  }
+
+  .pgp__copy {
+    position: relative;
+    z-index: 1;
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 38rem;
+  }
+
+  .pgp__head {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.95rem;
+  }
+
+  .pgp__grid {
+    position: absolute;
+    inset: 0;
+    opacity: 0.1;
+    background-image:
+      linear-gradient(to right, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+    background-size: 26px 26px;
+    mask-image: linear-gradient(180deg, black, transparent 90%);
+    pointer-events: none;
+  }
+
+  .pgp__badge {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.55rem;
+    height: 3.55rem;
+    border: 1px solid color-mix(in srgb, var(--outline-strong) 76%, transparent);
+    border-radius: 1.1rem;
+    background:
+      radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--accent-glow) 32%, transparent) 0%, transparent 62%),
+      linear-gradient(180deg, color-mix(in srgb, var(--panel-soft) 70%, transparent), color-mix(in srgb, var(--panel-strong) 88%, transparent));
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 0 24px color-mix(in srgb, var(--accent-glow) 20%, transparent);
+    overflow: hidden;
+  }
+
+  .pgp__badge::before,
+  .pgp__badge::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+  }
+
+  .pgp__badge::before {
+    inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 18px 18px;
+    opacity: 0.22;
+    mask-image: linear-gradient(180deg, black, transparent 100%);
+  }
+
+  .pgp__badge::after {
+    top: 0.55rem;
+    left: 0.55rem;
+    width: 0.8rem;
+    height: 0.8rem;
+    border-top: 1px solid color-mix(in srgb, var(--outline-strong) 74%, transparent);
+    border-left: 1px solid color-mix(in srgb, var(--outline-strong) 74%, transparent);
+    opacity: 0.8;
+  }
+
+  .pgp__badge-ring {
+    top: 50%;
+    left: 50%;
+    width: 2.5rem;
+    height: 2.5rem;
+    transform: translate(-50%, -50%);
+    opacity: 0.2;
+  }
+
+  .pgp__badge-icon {
+    position: relative;
+    z-index: 1;
+    color: color-mix(in srgb, var(--accent) 72%, white 28%);
+    font-size: 1.2rem;
+    font-variation-settings: 'FILL' 0, 'wght' 260, 'GRAD' 0, 'opsz' 20;
+  }
+
+  .pgp__title {
+    margin-top: 0.35rem;
+    color: var(--text-primary);
+    font-family: var(--font-headline);
+    font-size: 1.45rem;
+    letter-spacing: -0.04em;
+    overflow-wrap: anywhere;
+  }
+
+  .pgp__desc {
+    margin-top: 0.4rem;
+    max-width: 32rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  .pgp__actions {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .projects {
+    margin-bottom: 5rem;
+  }
+
+  .projects__title {
+    margin-top: 0.4rem;
+    font-size: 1.5rem;
+  }
+
+  .projects__intro {
+    max-width: 28rem;
+    margin-top: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  .projects__link {
+    color: var(--text-muted);
+    position: relative;
+    transition: color var(--transition-fast), transform var(--transition-fast);
+  }
+
+  .projects__link::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.45rem;
+    height: 1px;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 72%, white 28%), transparent);
+    transform: scaleX(0.3);
+    transform-origin: left center;
+    opacity: 0.65;
+    transition: transform var(--transition-base), opacity var(--transition-base);
+  }
+
+  .projects__link:hover {
+    color: var(--text-primary);
+    transform: translateX(2px);
+  }
+
+  .projects__link:hover::after {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+
+  .projects__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  @media (min-width: 720px) {
+    .projects__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1120px) {
+    .projects__grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .projects__loading {
+    display: contents;
+  }
+
+  .projects__skeleton {
+    min-height: 220px;
+    background:
+      linear-gradient(110deg, rgba(255, 255, 255, 0.04) 8%, rgba(255, 255, 255, 0.11) 18%, rgba(255, 255, 255, 0.04) 33%),
+      linear-gradient(180deg, var(--panel-soft) 0%, var(--panel-strong) 100%);
+    background-size: 200% 100%;
+    animation: project-shimmer 1.4s linear infinite;
+  }
+
+  @keyframes project-shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  @media (max-width: 980px) {
+    .hero__grid {
+      min-height: auto;
+    }
+
+    .hero__ring {
+      display: none;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .home {
+      padding-top: 8rem;
+    }
+
+    .hero {
+      min-height: auto;
+      padding-top: 2rem;
+    }
+
+    .hero__beam,
+    .hero__constellation {
+      display: none;
+    }
+
+    .hero__content::before {
+      display: none;
+    }
+
+    .hero__rail--right {
+      display: none;
+    }
+
+    .pgp__head {
+      gap: 0.8rem;
+    }
+
+    .pgp__badge {
+      width: 3.2rem;
+      height: 3.2rem;
+      border-radius: 1rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero__status-dot,
+    .hero__constellation-dot,
+    .projects__skeleton {
+      animation: none;
+    }
+
+    .hero__title-accent::after {
+      animation: none;
+    }
+  }
+</style>
+
+<script>
+  async function loadProjectsFallback() {
+    const grid = document.getElementById('projects-grid');
+    const loading = document.getElementById('projects-loading');
+    if (!grid || !loading) return;
+
+    try {
+      const res = await fetch('/api/github');
+      if (!res.ok) throw new Error('github');
+      const data = await res.json();
+
+      if (!Array.isArray(data.repos) || data.repos.length === 0) {
+        throw new Error('empty');
+      }
+
+      const langColors: Record<string, string> = {
+        Go: '#00ADD8',
+        Python: '#3776AB',
+        JavaScript: '#F7DF1E',
+        TypeScript: '#3178C6',
+        Rust: '#CE422B',
+        C: '#555555',
+        'C++': '#f34b7d',
+        Shell: '#89e051',
+        HTML: '#e34c26',
+        CSS: '#563d7c',
+        Nix: '#7e7eff',
+        Lua: '#000080',
+      };
+
+      const escapeHtml = (value: string) => {
+        const div = document.createElement('div');
+        div.textContent = value || '';
+        return div.innerHTML;
+      };
+
+      grid.innerHTML = data.repos
+        .map(
+          (repo: any) => `
+            <a href="${escapeHtml(repo.url)}" target="_blank" rel="noopener" class="project-card card card-paper">
+              <div class="project-card__glow"></div>
+              <div class="project-card__grid"></div>
+              <div class="project-card__header">
+                <div class="project-card__badge label-sm">
+                  <span class="material-symbols-outlined" style="font-size:14px">deployed_code</span>
+                  Repository
+                </div>
+                <span class="material-symbols-outlined project-card__arrow">north_east</span>
+              </div>
+              <h3 class="project-card__name">${escapeHtml(repo.name)}</h3>
+              ${repo.description ? `<p class="project-card__desc">${escapeHtml(repo.description)}</p>` : ''}
+              <div class="project-card__meta">
+                ${
+                  repo.language
+                    ? `<div class="project-card__lang"><span class="project-card__lang-dot" style="background:${langColors[repo.language] || '#888'}"></span><span>${escapeHtml(repo.language)}</span></div>`
+                    : '<div></div>'
+                }
+                <div class="project-card__stats">
+                  ${repo.stars > 0 ? `<div class="project-card__stat"><span class="material-symbols-outlined" style="font-size:14px">star</span><span>${repo.stars}</span></div>` : ''}
+                  ${repo.forks > 0 ? `<div class="project-card__stat"><span class="material-symbols-outlined" style="font-size:14px">fork_right</span><span>${repo.forks}</span></div>` : ''}
+                </div>
+              </div>
+            </a>
+          `
+        )
+        .join('');
+    } catch {
+      grid.innerHTML = `
+        <div class="card card-paper" style="padding:2rem; grid-column:1/-1;">
+          <span class="label-upper">Repository feed unavailable</span>
+          <p style="margin-top:0.65rem; color:var(--text-muted); line-height:1.7;">
+            GitHub could not be loaded right now. The source archive is still available directly.
+          </p>
+          <a href="https://github.com/cempack" target="_blank" rel="noopener" class="btn-ghost" style="margin-top:1rem; width:fit-content;">Visit GitHub</a>
+        </div>
+      `;
+    }
+  }
+
+  loadProjectsFallback();
+
+  function updateClock() {
+    const clock = document.getElementById('hero-clock');
+    const greeting = document.getElementById('hero-greeting');
+    if (!clock && !greeting) return;
+
+    const now = new Date();
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZone: 'Europe/Paris',
+      timeZoneName: 'short',
+    }).formatToParts(now);
+
+    const hour = Number(parts.find((part) => part.type === 'hour')?.value || '0');
+    const minute = parts.find((part) => part.type === 'minute')?.value || '00';
+    const zone = (parts.find((part) => part.type === 'timeZoneName')?.value || 'CET').toUpperCase();
+
+    if (clock) {
+      clock.textContent = `${String(hour).padStart(2, '0')}:${minute} ${zone}`;
+    }
+
+    if (greeting) {
+      greeting.textContent =
+        hour >= 5 && hour < 12
+          ? 'Good morning'
+          : hour >= 12 && hour < 18
+            ? 'Good afternoon'
+            : hour >= 18 && hour < 22
+              ? 'Good evening'
+              : 'Late night';
+    }
+  }
+
+  updateClock();
+  window.setInterval(updateClock, 30000);
+</script>

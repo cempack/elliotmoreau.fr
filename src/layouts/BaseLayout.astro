@@ -1,0 +1,358 @@
+---
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import CommandBar from '../components/CommandBar.astro';
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  activePage?: string;
+}
+
+const {
+  title = 'Elliot Moreau',
+  description = 'Student developer building systems at the intersection of efficiency and elegance.',
+  activePage = 'home',
+} = Astro.props;
+
+const themes = [
+  { id: 'nord', label: 'Nord', color: '#88c0d0' },
+  { id: 'crimson', label: 'Crimson', color: '#ff4444' },
+  { id: 'midnight', label: 'Midnight', color: '#7c6cff' },
+  { id: 'monokai', label: 'Monokai', color: '#a6e22e' },
+  { id: 'dracula', label: 'Dracula', color: '#bd93f9' },
+  { id: 'solarized', label: 'Solarized', color: '#268bd2' },
+];
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="author" content="Elliot Moreau" />
+    <meta name="theme-color" content="#88c0d0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdn.simpleicons.org" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      rel="stylesheet"
+    />
+
+    <title>{title} — elliotmoreau.fr</title>
+
+    <script is:inline>
+      (function () {
+        const root = document.documentElement;
+        const theme = localStorage.getItem('theme') || 'nord';
+        const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
+        const lowThreads = typeof navigator.hardwareConcurrency === 'number' && navigator.hardwareConcurrency <= 4;
+        const lowMemory = typeof navigator.deviceMemory === 'number' && navigator.deviceMemory <= 4;
+        const performanceMode = prefersReduced || isCoarsePointer || lowThreads || lowMemory ? 'lite' : 'full';
+
+        root.setAttribute('data-theme', theme);
+        root.setAttribute('data-motion', prefersReduced ? 'reduced' : 'full');
+        root.setAttribute('data-performance', performanceMode);
+      })();
+    </script>
+  </head>
+  <body>
+    <div class="scroll-progress" id="scroll-progress"></div>
+    <div class="cursor-dot" id="cursor-dot"></div>
+    <div class="cursor-ring" id="cursor-ring"></div>
+
+    <div class="site-shell">
+      <div class="site-shell__veil"></div>
+      <div class="site-shell__gradient site-shell__gradient--north"></div>
+      <div class="site-shell__gradient site-shell__gradient--center"></div>
+      <div class="site-shell__gradient site-shell__gradient--south"></div>
+      <div class="site-shell__beams" aria-hidden="true"></div>
+      <div class="site-shell__grid"></div>
+      <div class="grain-overlay" aria-hidden="true"></div>
+
+      <Nav activePage={activePage} />
+
+      <div class="site-shell__main">
+        <slot />
+      </div>
+
+      <Footer />
+      <CommandBar />
+    </div>
+
+      <button class="back-to-top" id="back-to-top" aria-label="Back to top" type="button">
+      <span class="material-symbols-outlined" style="font-size:18px">arrow_upward</span>
+    </button>
+
+    <div class="theme-picker" id="theme-picker">
+      <div class="theme-picker__panel" id="theme-panel">
+        {themes.map((theme) => (
+          <button class="theme-picker__option" data-theme-id={theme.id}>
+            <span class="theme-picker__swatch" style={`background:${theme.color}`}></span>
+            {theme.label}
+          </button>
+        ))}
+      </div>
+      <button class="theme-picker__toggle" id="theme-toggle" aria-label="Change theme" type="button" aria-expanded="false">
+        <span class="material-symbols-outlined" style="font-size:18px">palette</span>
+      </button>
+    </div>
+
+    <script>
+      const root = document.documentElement;
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const finePointerQuery = window.matchMedia('(pointer: fine)');
+      const themeColors: Record<string, string> = {
+        crimson: '#ff4444',
+        midnight: '#7c6cff',
+        monokai: '#a6e22e',
+        dracula: '#bd93f9',
+        nord: '#88c0d0',
+        solarized: '#268bd2',
+      };
+
+      function setThemeMetaColor(id: string) {
+        const color = themeColors[id] || '#0a0606';
+        const themeMeta = document.querySelector('meta[name="theme-color"]');
+        if (themeMeta) {
+          themeMeta.setAttribute('content', color);
+        }
+      }
+
+      function updateFavicon(id: string) {
+        const accent = themeColors[id] || '#ff4444';
+        const svg =
+          `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">` +
+          `<rect width="32" height="32" rx="8" fill="${accent}"/>` +
+          `<text x="16" y="22" text-anchor="middle" font-family="monospace" font-size="18" font-weight="700" fill="#050505">E</text>` +
+          `</svg>`;
+        const link = document.querySelector('link[rel="icon"]') as HTMLLinkElement | null;
+        if (link) {
+          link.href = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+        }
+      }
+
+      function setTheme(id: string) {
+        root.setAttribute('data-theme', id);
+        localStorage.setItem('theme', id);
+        document.querySelectorAll('.theme-picker__option').forEach((button) => {
+          button.classList.toggle('active', (button as HTMLElement).dataset.themeId === id);
+        });
+        setThemeMetaColor(id);
+        updateFavicon(id);
+        window.dispatchEvent(new CustomEvent('themechange', { detail: { theme: id } }));
+      }
+
+      function computePerformanceMode() {
+        const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
+        const lowThreads =
+          typeof navigator.hardwareConcurrency === 'number' && navigator.hardwareConcurrency <= 4;
+        const lowMemory = typeof navigator.deviceMemory === 'number' && navigator.deviceMemory <= 4;
+        const reduced = prefersReducedMotion.matches;
+        return coarsePointer || lowThreads || lowMemory || reduced ? 'lite' : 'full';
+      }
+
+      function applyEnvironmentFlags() {
+        root.setAttribute('data-motion', prefersReducedMotion.matches ? 'reduced' : 'full');
+        root.setAttribute('data-performance', computePerformanceMode());
+      }
+
+      applyEnvironmentFlags();
+      setTheme(localStorage.getItem('theme') || 'nord');
+
+      if ('addEventListener' in prefersReducedMotion) {
+        prefersReducedMotion.addEventListener('change', applyEnvironmentFlags);
+        finePointerQuery.addEventListener('change', applyEnvironmentFlags);
+      } else {
+        prefersReducedMotion.addListener(applyEnvironmentFlags);
+        finePointerQuery.addListener(applyEnvironmentFlags);
+      }
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('is-visible');
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.08, rootMargin: '0px 0px -10% 0px' }
+      );
+
+      document.querySelectorAll('.animate-on-scroll').forEach((element) => observer.observe(element));
+
+      const scrollBar = document.getElementById('scroll-progress');
+      const backToTop = document.getElementById('back-to-top');
+      let scrollTicking = false;
+
+      function onScroll() {
+        if (scrollTicking) return;
+        scrollTicking = true;
+
+        requestAnimationFrame(() => {
+          const scrollY = window.scrollY;
+          const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+
+          if (scrollBar) {
+            const progress = maxScroll > 0 ? scrollY / maxScroll : 0;
+            scrollBar.style.setProperty('transform', `scaleX(${progress})`);
+          }
+
+          if (backToTop) {
+            backToTop.classList.toggle('is-visible', scrollY > 640);
+          }
+
+          scrollTicking = false;
+        });
+      }
+
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+
+      backToTop?.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      const toggle = document.getElementById('theme-toggle');
+      const panel = document.getElementById('theme-panel');
+
+      toggle?.addEventListener('click', () => {
+        const isOpen = panel?.classList.toggle('is-open');
+        toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      });
+
+      document.querySelectorAll('.theme-picker__option').forEach((button) => {
+        button.addEventListener('click', () => {
+          const id = (button as HTMLElement).dataset.themeId;
+          if (!id) return;
+          setTheme(id);
+          panel?.classList.remove('is-open');
+          toggle?.setAttribute('aria-expanded', 'false');
+        });
+      });
+
+      document.addEventListener('click', (event) => {
+        const picker = document.getElementById('theme-picker');
+        if (picker && !picker.contains(event.target as Node)) {
+          panel?.classList.remove('is-open');
+          toggle?.setAttribute('aria-expanded', 'false');
+        }
+      });
+
+      const greeting = document.getElementById('hero-greeting');
+      if (greeting) {
+        const hourParts = new Intl.DateTimeFormat('en-GB', {
+          hour: '2-digit',
+          hour12: false,
+          timeZone: 'Europe/Paris',
+        }).formatToParts(new Date());
+        const hour = Number(hourParts.find((part) => part.type === 'hour')?.value || '0');
+
+        greeting.textContent =
+          hour >= 5 && hour < 12
+            ? 'Good morning'
+            : hour >= 12 && hour < 18
+              ? 'Good afternoon'
+              : hour >= 18 && hour < 22
+                ? 'Good evening'
+                : 'Late night';
+      }
+
+      if (finePointerQuery.matches && root.dataset.performance !== 'lite') {
+        const dot = document.getElementById('cursor-dot');
+        const ring = document.getElementById('cursor-ring');
+        const dotOffset = 3.5;
+        const ringOffset = 18;
+        let mouseX = 0;
+        let mouseY = 0;
+        let ringX = 0;
+        let ringY = 0;
+        let rafId = 0;
+        let cursorVisible = false;
+        let lastMoveAt = 0;
+        let hasInitialized = false;
+
+        const loop = () => {
+          if (!cursorVisible || document.hidden) {
+            rafId = 0;
+            return;
+          }
+
+          ringX += (mouseX - ringX) * 0.42;
+          ringY += (mouseY - ringY) * 0.42;
+          ring?.style.setProperty('transform', `translate3d(${ringX - ringOffset}px, ${ringY - ringOffset}px, 0)`);
+
+          if (Date.now() - lastMoveAt > 900) {
+            cursorVisible = false;
+            dot?.classList.remove('is-active');
+            ring?.classList.remove('is-active');
+            rafId = 0;
+            return;
+          }
+
+          rafId = requestAnimationFrame(loop);
+        };
+
+        const ensureLoop = () => {
+          if (!rafId) {
+            rafId = requestAnimationFrame(loop);
+          }
+        };
+
+        document.addEventListener(
+          'pointermove',
+          (event) => {
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+            lastMoveAt = Date.now();
+            cursorVisible = true;
+            if (!hasInitialized) {
+              ringX = mouseX;
+              ringY = mouseY;
+              ring?.style.setProperty('transform', `translate3d(${ringX - ringOffset}px, ${ringY - ringOffset}px, 0)`);
+              hasInitialized = true;
+            }
+            dot?.classList.add('is-active');
+            ring?.classList.add('is-active');
+            dot?.style.setProperty('transform', `translate3d(${mouseX - dotOffset}px, ${mouseY - dotOffset}px, 0)`);
+            ensureLoop();
+          },
+          { passive: true }
+        );
+
+        document.addEventListener('mouseleave', () => {
+          cursorVisible = false;
+          dot?.classList.remove('is-active');
+          ring?.classList.remove('is-active');
+        });
+
+        const hoverSelector = 'a, button, [role="button"]';
+
+        document.addEventListener('pointerover', (event) => {
+          const target = event.target as Element | null;
+          ring?.classList.toggle('hover', Boolean(target?.closest(hoverSelector)));
+        });
+
+        document.addEventListener('pointerout', (event) => {
+          const relatedTarget = event.relatedTarget as Element | null;
+          ring?.classList.toggle('hover', Boolean(relatedTarget?.closest(hoverSelector)));
+        });
+
+        document.addEventListener('visibilitychange', () => {
+          if (document.hidden) {
+            cursorVisible = false;
+            dot?.classList.remove('is-active');
+            ring?.classList.remove('is-active');
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

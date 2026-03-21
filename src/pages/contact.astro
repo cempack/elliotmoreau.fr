@@ -1,0 +1,681 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { socialLinks } from '../data/socials';
+
+const pgpEmail = 'hello@elliotm.fr';
+const pgpKeyFull = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+xjMEab2+ChYJKwYBBAHaRw8BAQdAevWjB0Qn2SFRIr5e0H+koAcM+w5boZ9W
+NbtUtQbtBL/NI2hlbGxvQGVsbGlvdG0uZnIgPGhlbGxvQGVsbGlvdG0uZnI+
+wsARBBMWCgCDBYJpvb4KAwsJBwkQtGTGNDlMU/pFFAAAAAAAHAAgc2FsdEBu
+b3RhdGlvbnMub3BlbnBncGpzLm9yZzF9AdV4LjjPQJhnefyP1Zhsvdq96tyg
+GgfCeqrRxgqhAxUKCAQWAAIBAhkBApsDAh4BFiEE+4nhJ/fFsItdHWv0tGTG
+NDlMU/oAAKh5AQCdxfL9MIVxMRt3RrqzqrgRLsjdd8R/COmMVLa0BI8M5AD8
+Drdl9SR6XL6I1MbldM9w1UwAGhL9CkiDWvET8eGeKQjOOARpvb4KEgorBgEE
+AZdVAQUBAQdA1AJAaHkPOQMbeJ2pP+/1f6WqusqIhLOSnWq34Cjc8iIDAQgH
+wr4EGBYKAHAFgmm9vgoJELRkxjQ5TFP6RRQAAAAAABwAIHNhbHRAbm90YXRp
+b25zLm9wZW5wZ3Bqcy5vcmcJBVjxcR2LoPx6VGYD3Sdwc30qF4NC7bg+FEnE
+ZfMYOgKbDBYhBPuJ4Sf3xbCLXR1r9LRkxjQ5TFP6AACbJgEAqWtvAO+QEZL7
+07mFSfbnWKlK/x6kWcNPd89/yl5d6a4A/ixqLcac4NoOckIZVjfV7EcaJ1zF
+Hjv9tmzmdf2EfncN
+=KBWI
+-----END PGP PUBLIC KEY BLOCK-----`;
+
+const directSocials = socialLinks.filter((social) => social.id !== 'rss');
+const now = new Date();
+const cetTime = now.toLocaleTimeString('en-GB', {
+  timeZone: 'Europe/Paris',
+  hour: '2-digit',
+  minute: '2-digit',
+});
+---
+
+<BaseLayout title="Contact" description="Get in touch via encrypted channels or social platforms." activePage="contact">
+  <main class="contact-page container">
+    <header class="contact-header animate-on-scroll">
+      <div class="contact-header__ornaments ornament-layer" aria-hidden="true">
+        <span class="ornament-corner ornament-corner--tl"></span>
+        <span class="ornament-hairline contact-header__line"></span>
+        <span class="ornament-dot contact-header__dot"></span>
+      </div>
+      <span class="label-upper">Open a secure line</span>
+      <h1 class="text-display contact-header__title" aria-label="Connect">
+        <span class="accent-serif">Connect.</span>
+      </h1>
+      <p class="contact-header__desc">
+        Encrypted communication is preferred.
+      </p>
+      <a href="https://www.openpgp.org/" target="_blank" rel="noopener">Learn more about Open PGP</a>
+    </header>
+
+    <section class="contact-grid">
+      <div class="email-card card card-paper animate-on-scroll stagger-1">
+        <div class="email-card__layers" aria-hidden="true">
+          <span class="ornament-grid-mask"></span>
+          <span class="ornament-corner ornament-corner--tl"></span>
+          <span class="email-card__beam"></span>
+          <span class="email-card__orb"></span>
+          <span class="email-card__ring email-card__ring--outer"></span>
+          <span class="email-card__ring email-card__ring--inner"></span>
+          <span class="ornament-icon-node email-card__shield-node">
+            <span class="material-symbols-outlined">shield_lock</span>
+          </span>
+          <span class="email-card__trace email-card__trace--1"></span>
+          <span class="email-card__trace email-card__trace--2"></span>
+          <span class="email-card__glyph">@</span>
+        </div>
+
+        <div class="email-card__content">
+          <span class="label-upper">Primary directive</span>
+          <h2 class="email-card__address">{pgpEmail}</h2>
+          <p class="email-card__desc">For collaborations, introductions, and encrypted correspondence.</p>
+        </div>
+
+        <button class="btn-ghost email-card__copy" id="copy-email" data-email={pgpEmail}>
+          <span class="material-symbols-outlined" style="font-size:16px">content_copy</span>
+          Copy email
+        </button>
+      </div>
+
+      <div class="contact-socials card card-paper animate-on-scroll stagger-2">
+        <div class="contact-socials__ornaments ornament-layer" aria-hidden="true">
+          <span class="ornament-grid-mask"></span>
+          <span class="ornament-scanline"></span>
+          <span class="ornament-corner ornament-corner--tr"></span>
+          <span class="ornament-icon-node contact-socials__icon-node">
+            <span class="material-symbols-outlined">hub</span>
+          </span>
+          <span class="ornament-hairline contact-socials__line"></span>
+        </div>
+        <div class="contact-socials__head">
+          <div>
+            <span class="label-upper">Digital presence</span>
+            <h2 class="text-title contact-socials__title">Elsewhere on the network</h2>
+          </div>
+        </div>
+
+        <div class="contact-socials__list">
+          {directSocials.map((social) => (
+            <a
+              href={social.href}
+              target="_blank"
+              rel={social.rel ? `${social.rel} noopener` : 'noopener'}
+              class="contact-socials__item"
+            >
+              <div class="contact-socials__item-left">
+                <span class="contact-socials__item-icon">
+                  <img src={social.icon} width="18" height="18" alt={social.label} loading="lazy" />
+                </span>
+                <span class="contact-socials__item-label">{social.label}</span>
+              </div>
+              <span class="material-symbols-outlined contact-socials__item-arrow">north_east</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="pgp-section animate-on-scroll stagger-3 deferred-section" id="pgp">
+      <div class="section-header">
+        <div class="section-header__left">
+          <span class="material-symbols-outlined">key</span>
+          <div>
+            <span class="label-upper">Verification block</span>
+            <h2 class="text-title contact-section-title">GPG Public Key</h2>
+          </div>
+        </div>
+
+        <a href="/hello@elliotm.fr.asc" download="hello@elliotm.fr.asc" class="btn-primary">
+          <span class="material-symbols-outlined" style="font-size:14px">download</span>
+          Download .asc
+        </a>
+      </div>
+
+      <div class="pgp-block card card-paper">
+        <div class="pgp-block__ornaments ornament-layer" aria-hidden="true">
+          <span class="ornament-grid-mask"></span>
+          <span class="ornament-scanline"></span>
+          <span class="ornament-corner ornament-corner--br"></span>
+          <span class="ornament-icon-node pgp-block__icon-node">
+            <span class="material-symbols-outlined">key</span>
+          </span>
+          <span class="ornament-hairline pgp-block__line"></span>
+        </div>
+        <pre><code id="pgp-code">{pgpKeyFull}</code></pre>
+        <div class="pgp-block__actions">
+          <button class="btn-ghost" id="copy-pgp">
+            <span class="material-symbols-outlined" style="font-size:14px">content_copy</span>
+            Copy block
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="contact-location animate-on-scroll stagger-4 deferred-section">
+      <div class="contact-location__text card card-paper">
+        <div class="contact-location__text-ornaments ornament-layer" aria-hidden="true">
+          <span class="ornament-corner ornament-corner--tl"></span>
+          <span class="ornament-hairline contact-location__text-line"></span>
+        </div>
+        <span class="label-upper">Base of operations</span>
+        <h3 class="text-title contact-section-title">France</h3>
+        <p>
+          Operating on Central European Time.
+        </p>
+        <div class="contact-location__time">
+          <span class="material-symbols-outlined" style="font-size:18px">schedule</span>
+          <span class="font-accent">Current local time: {cetTime} CET</span>
+        </div>
+      </div>
+
+      <div class="contact-location__image card card-paper">
+        <div class="contact-location__image-ornaments ornament-layer" aria-hidden="true">
+          <span class="ornament-ring contact-location__image-ring"></span>
+          <span class="ornament-ring ornament-ring--dashed contact-location__image-ring contact-location__image-ring--2"></span>
+          <span class="ornament-icon-node contact-location__image-icon">
+            <span class="material-symbols-outlined">location_on</span>
+          </span>
+          <span class="ornament-dot contact-location__image-dot"></span>
+        </div>
+        <img
+          src="https://images.unsplash.com/photo-1431274172761-fca41d930114?w=900&q=80&auto=format"
+          alt="Paris city lights"
+          class="contact-location__img"
+          loading="lazy"
+        />
+        <div class="contact-location__overlay"></div>
+      </div>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .contact-page {
+    padding-top: 10rem;
+    padding-bottom: 4rem;
+  }
+
+  .contact-header {
+    position: relative;
+    margin-bottom: 3rem;
+  }
+
+  .contact-header__line {
+    left: 0;
+    top: 0;
+    width: 7rem;
+  }
+
+  .contact-header__dot {
+    top: 1.1rem;
+    right: 10%;
+  }
+
+  .contact-header__title {
+    margin-top: 0.8rem;
+    font-size: clamp(3.5rem, 10vw, 6rem);
+  }
+
+  .contact-header__desc {
+    max-width: 38rem;
+    margin-top: 1rem;
+    color: var(--text-muted);
+    font-size: 1.08rem;
+    line-height: 1.8;
+  }
+
+  .contact-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-bottom: 4rem;
+  }
+
+  @media (min-width: 980px) {
+    .contact-grid {
+      grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+    }
+  }
+
+  .email-card,
+  .contact-socials {
+    position: relative;
+    padding: 1.5rem;
+  }
+
+  .email-card {
+    --email-ornament-gutter: clamp(5rem, 9vw, 6.4rem);
+    min-height: 320px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+  }
+
+  .email-card__layers {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .email-card__beam {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 2.5rem;
+    width: 1px;
+    background: linear-gradient(180deg, transparent 0%, var(--outline-variant) 20%, var(--outline-variant) 80%, transparent 100%);
+  }
+
+  .email-card__orb {
+    position: absolute;
+    right: 10%;
+    top: 12%;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--ambient) 0%, transparent 70%);
+    filter: blur(18px);
+  }
+
+  .email-card__ring {
+    position: absolute;
+    top: 7.4rem;
+    left: 1.5rem;
+    width: 5.8rem;
+    height: 5.8rem;
+    border-radius: 50%;
+    border: 1px solid color-mix(in srgb, var(--outline-strong) 82%, transparent);
+    opacity: 0.54;
+  }
+
+  .email-card__ring--inner {
+    top: 8.85rem;
+    left: 2.9rem;
+    width: 3.35rem;
+    height: 3.35rem;
+    border-style: dashed;
+    animation: spin-vinyl 18s linear infinite;
+  }
+
+  .email-card__shield-node {
+    position: absolute;
+    top: 9.85rem;
+    left: 4rem;
+    width: 1.95rem;
+    height: 1.95rem;
+    z-index: 1;
+  }
+
+  .email-card__trace {
+    position: absolute;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent-soft) 88%, white 12%), transparent);
+    opacity: 0.55;
+  }
+
+  .email-card__trace--1 {
+    top: 9.9rem;
+    left: 7.3rem;
+    width: 4.4rem;
+    transform: rotate(-16deg);
+  }
+
+  .email-card__trace--2 {
+    top: 12.45rem;
+    left: 6.45rem;
+    width: 2.8rem;
+    transform: rotate(24deg);
+  }
+
+  .email-card__glyph {
+    position: absolute;
+    right: -1rem;
+    bottom: -4rem;
+    color: rgba(255, 255, 255, 0.05);
+    font-family: var(--font-headline);
+    font-size: min(26rem, 50vw);
+    line-height: 1;
+  }
+
+  .email-card__content,
+  .email-card__copy {
+    position: relative;
+    z-index: 1;
+  }
+
+  .email-card__content {
+    max-width: min(100%, 42rem);
+    padding-left: var(--email-ornament-gutter);
+  }
+
+  .email-card__address {
+    margin-top: 0.55rem;
+    color: var(--text-primary);
+    font-family: var(--font-headline);
+    font-size: clamp(1.7rem, 5vw, 2.9rem);
+    line-height: 0.95;
+    letter-spacing: -0.05em;
+    overflow-wrap: anywhere;
+  }
+
+  .email-card__desc {
+    max-width: 28rem;
+    margin-top: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  .email-card__copy {
+    width: fit-content;
+    margin-left: var(--email-ornament-gutter);
+  }
+
+  .contact-socials__head {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    min-height: 2.2rem;
+    padding-left: 3rem;
+  }
+
+  .contact-socials__title,
+  .contact-section-title {
+    margin-top: 0.45rem;
+    font-size: 1.55rem;
+  }
+
+  .contact-socials__list {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .contact-socials__line {
+    left: 4.35rem;
+    right: 40%;
+    top: 4.2rem;
+  }
+
+  .contact-socials__icon-node {
+    top: 1.35rem;
+    left: 1.4rem;
+  }
+
+  .contact-socials__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    transition: transform var(--transition-fast), color var(--transition-fast);
+  }
+
+  .contact-socials__item:first-child {
+    border-top: none;
+  }
+
+  .contact-socials__item:hover {
+    transform: translateX(4px);
+  }
+
+  .contact-socials__item-left {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .contact-socials__item-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    border: 1px solid var(--outline);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .contact-socials__item-icon img {
+    opacity: 0.82;
+  }
+
+  .contact-socials__item-label {
+    color: var(--text-primary);
+    font-family: var(--font-headline);
+    font-size: 1.2rem;
+    letter-spacing: -0.03em;
+  }
+
+  .contact-socials__item-arrow {
+    color: var(--text-faint);
+    transition: transform var(--transition-fast), color var(--transition-fast);
+  }
+
+  .contact-socials__item:hover .contact-socials__item-arrow {
+    color: var(--text-primary);
+    transform: translate(2px, -2px);
+  }
+  .pgp-section {
+    margin-bottom: 4rem;
+  }
+
+  .pgp-block {
+    position: relative;
+    padding: 1.5rem;
+  }
+
+  .pgp-block__line {
+    left: 4.3rem;
+    right: 38%;
+    top: 1.15rem;
+  }
+
+  .pgp-block__icon-node {
+    top: 1.2rem;
+    left: 1.45rem;
+  }
+
+  .pgp-block pre {
+    position: relative;
+    z-index: 1;
+    overflow-x: auto;
+    padding-top: 2.2rem;
+  }
+
+  .pgp-block code {
+    color: var(--text-muted);
+    font-family: var(--font-label);
+    font-size: 0.72rem;
+    line-height: 1.65;
+  }
+
+  .pgp-block__actions {
+    position: relative;
+    z-index: 1;
+    margin-top: 1rem;
+  }
+
+  .contact-location {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  @media (min-width: 980px) {
+    .contact-location {
+      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+      align-items: stretch;
+    }
+  }
+
+  .contact-location__text,
+  .contact-location__image {
+    padding: 1.5rem;
+  }
+
+  .contact-location__text {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .contact-location__text-line {
+    left: 1.5rem;
+    right: 44%;
+    bottom: 1.2rem;
+  }
+
+  .contact-location__text p {
+    margin-top: 0.9rem;
+    color: var(--text-muted);
+    line-height: 1.8;
+  }
+
+  .contact-location__time {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    color: var(--text-primary);
+  }
+
+  .contact-location__image {
+    position: relative;
+    overflow: hidden;
+    min-height: 340px;
+  }
+
+  .contact-location__img,
+  .contact-location__overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .contact-location__img {
+    object-fit: cover;
+    opacity: 0.62;
+    filter: saturate(0.92) contrast(1.05);
+    transition: transform 1.6s cubic-bezier(0.16, 1, 0.3, 1), filter var(--transition-slow);
+  }
+
+  .contact-location__image:hover .contact-location__img {
+    transform: scale(1.06);
+    filter: saturate(1) contrast(1.08);
+  }
+
+  .contact-location__overlay {
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.08) 0%, var(--spotify-scrim) 100%);
+  }
+
+  .contact-location__image-ring {
+    top: 1.1rem;
+    right: 1.1rem;
+    width: 5.4rem;
+    height: 5.4rem;
+    opacity: 0.5;
+  }
+
+  .contact-location__image-ring--2 {
+    top: 2rem;
+    right: 2rem;
+    width: 3.6rem;
+    height: 3.6rem;
+  }
+
+  .contact-location__image-icon {
+    top: 2.8rem;
+    right: 2.8rem;
+    width: 1.9rem;
+    height: 1.9rem;
+  }
+
+  .contact-location__image-dot {
+    top: 1.1rem;
+    right: 1.1rem;
+  }
+
+  @media (max-width: 768px) {
+    .email-card {
+      --email-ornament-gutter: 4.15rem;
+      min-height: 280px;
+    }
+
+    .email-card__ring {
+      top: 6.8rem;
+      left: 1rem;
+      width: 4.9rem;
+      height: 4.9rem;
+    }
+
+    .email-card__ring--inner {
+      top: 8rem;
+      left: 2.15rem;
+      width: 3rem;
+      height: 3rem;
+    }
+
+    .email-card__shield-node {
+      top: 8.85rem;
+      left: 3.1rem;
+      width: 1.75rem;
+      height: 1.75rem;
+    }
+
+    .email-card__trace--1,
+    .email-card__trace--2 {
+      opacity: 0.34;
+    }
+
+    .contact-socials__head {
+      min-height: 0;
+      padding-left: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .email-card__ring--inner {
+      animation: none;
+    }
+  }
+</style>
+
+<script>
+  document.getElementById('copy-email')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget as HTMLButtonElement;
+    const email = button.dataset.email || '';
+
+    try {
+      await navigator.clipboard.writeText(email);
+      const original = button.innerHTML;
+      button.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px">check</span> Copied';
+      window.setTimeout(() => {
+        button.innerHTML = original;
+      }, 1600);
+    } catch {
+      // Clipboard access can fail silently.
+    }
+  });
+
+  document.getElementById('copy-pgp')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget as HTMLButtonElement;
+    const key = document.getElementById('pgp-code')?.textContent || '';
+
+    try {
+      await navigator.clipboard.writeText(key);
+      const original = button.innerHTML;
+      button.innerHTML = '<span class="material-symbols-outlined" style="font-size:14px">check</span> Copied';
+      window.setTimeout(() => {
+        button.innerHTML = original;
+      }, 1600);
+    } catch {
+      // Clipboard access can fail silently.
+    }
+  });
+</script>

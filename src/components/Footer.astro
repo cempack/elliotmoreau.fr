@@ -1,0 +1,220 @@
+---
+import { socialLinks } from '../data/socials';
+
+const year = new Date().getFullYear();
+const footerSocials = socialLinks;
+---
+
+<footer class="footer">
+  <div class="footer__inner container">
+    <div class="footer__top">
+      <div class="footer__eyebrow">
+        <span class="label-upper">Privacy is a human right</span>
+        <span class="footer__copy">© {year} Elliot Moreau.</span>
+      </div>
+
+      <div class="footer__socials">
+        {footerSocials.map((social) => (
+          <a
+            href={social.href}
+            class="footer__social-link"
+            target={social.href.startsWith('/') ? undefined : '_blank'}
+            rel={social.rel ? `${social.rel} noopener` : social.href.startsWith('/') ? undefined : 'noopener'}
+            aria-label={social.label}
+            title={social.label}
+          >
+            <span class="sr-only">{social.label}</span>
+            {social.id === 'rss' ? (
+              <span class="material-symbols-outlined" style="font-size:18px" aria-hidden="true">rss_feed</span>
+            ) : (
+              <img src={social.icon} width="16" height="16" alt="" aria-hidden="true" loading="lazy" />
+            )}
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <div class="footer__contact card">
+      <div class="footer__contact-row">
+        <span class="label-sm">Primary channel</span>
+        <span class="footer__email">hello@elliotm.fr</span>
+      </div>
+
+      <div class="footer__contact-row">
+        <span class="label-sm">Current status</span>
+        <div class="footer__status" id="footer-status">
+          <div class="footer__status-dot"></div>
+          <span id="footer-status-text">Loading…</span>
+        </div>
+      </div>
+
+      <div class="footer__shortcut">
+        <span class="label-sm">Navigation</span>
+        <div class="footer__shortcut-key">
+          <kbd>⌘K</kbd>
+          <span>Instant navigation</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    position: relative;
+    z-index: 3;
+    margin-top: 2.25rem;
+    padding: 3rem 0 4rem;
+  }
+
+  .footer__inner {
+    display: flex;
+    flex-direction: column;
+    gap: 1.35rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--outline);
+  }
+
+  .footer__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .footer__eyebrow {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .footer__copy {
+    color: color-mix(in srgb, var(--text-muted) 92%, white);
+    font-family: var(--font-label);
+    font-size: 0.66rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .footer__contact {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    padding: 1.1rem 1.2rem;
+  }
+
+  .footer__contact-row,
+  .footer__shortcut {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .footer__email,
+  .footer__status {
+    color: var(--text-primary);
+    font-family: var(--font-label);
+    font-size: 0.76rem;
+  }
+
+  .footer__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .footer__status-dot {
+    width: 7px;
+    height: 7px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 12px rgba(74, 222, 128, 0.4);
+  }
+
+  .footer__shortcut {
+    color: var(--text-faint);
+    font-family: var(--font-label);
+    font-size: 0.66rem;
+  }
+
+  .footer__shortcut-key {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .footer__shortcut kbd {
+    width: fit-content;
+    padding: 0.15rem 0.4rem;
+    border: 1px solid var(--outline);
+    border-radius: 999px;
+    background: var(--surface-high);
+    color: var(--text-primary);
+    font-size: 0.55rem;
+  }
+
+  .footer__socials {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: flex-end;
+  }
+
+  .footer__social-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--outline);
+    border-radius: 50%;
+    background: var(--surface-high);
+    color: var(--text-muted);
+    transition: transform var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
+  }
+
+  .footer__social-link:hover {
+    transform: translateY(-1px);
+    border-color: var(--outline-strong);
+    background: var(--surface);
+  }
+
+  .footer__social-link img {
+    opacity: 0.88;
+    transition: opacity var(--transition-fast);
+  }
+
+  .footer__social-link:hover img {
+    opacity: 1;
+  }
+
+  @media (max-width: 900px) {
+    .footer__contact {
+      grid-template-columns: 1fr;
+    }
+
+    .footer__socials {
+      justify-content: flex-start;
+    }
+  }
+</style>
+
+<script>
+  async function loadStatus() {
+    const statusText = document.getElementById('footer-status-text');
+    if (!statusText) return;
+
+    try {
+      const res = await fetch('/api/status');
+      if (!res.ok) throw new Error('status');
+      const data = await res.json();
+      statusText.textContent = data.status || 'Available';
+    } catch {
+      statusText.textContent = 'Available';
+    }
+  }
+
+  loadStatus();
+</script>

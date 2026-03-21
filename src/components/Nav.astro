@@ -1,0 +1,366 @@
+---
+import { socialLinks } from '../data/socials';
+
+interface Props {
+  activePage?: string;
+}
+
+const { activePage = 'home' } = Astro.props;
+
+const links = [
+  { label: 'Home', href: '/', id: 'home' },
+  { label: 'Blog', href: '/blog', id: 'blog' },
+  { label: 'Contact', href: '/contact', id: 'contact' },
+];
+
+const overlaySocials = socialLinks.filter((social) => ['github', 'youtube', 'mastodon', 'spotify'].includes(social.id));
+---
+
+<nav class="nav" id="main-nav">
+  <div class="nav__inner container">
+    <a href="/" class="nav__logo">
+      <span class="nav__logo-mark"></span>
+      <span>elliotmoreau.fr</span>
+    </a>
+
+    <div class="nav__links" id="nav-links">
+      {links.map((link, index) => (
+        <a href={link.href} class={`nav__link ${activePage === link.id ? 'nav__link--active' : ''}`}>
+          <span class="nav__link-index label-sm">0{index + 1}</span>
+          <span>{link.label}</span>
+        </a>
+      ))}
+    </div>
+
+    <div class="nav__actions">
+      <button class="nav__cmdk" id="nav-cmdk" aria-label="Open Command Bar">
+        <span class="material-symbols-outlined" style="font-size:16px">search</span>
+        <span>Command Bar</span>
+        <kbd class="nav__kbd">⌘K</kbd>
+      </button>
+      <a href="/rss.xml" class="nav__icon" aria-label="RSS Feed" title="RSS Feed">
+        <span class="sr-only">RSS Feed</span>
+        <span class="material-symbols-outlined" aria-hidden="true">rss_feed</span>
+      </a>
+      <button class="nav__burger" id="nav-burger" aria-label="Menu">
+        <span class="material-symbols-outlined">menu</span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<div class="nav-mobile-overlay" id="nav-mobile-overlay">
+  <div class="nav-mobile-overlay__glow"></div>
+  <div class="nav-mobile-overlay__inner">
+    <button class="nav-mobile-overlay__close" id="nav-mobile-close" aria-label="Close">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+
+    <div class="nav-mobile-overlay__eyebrow label-upper">Navigation Matrix</div>
+
+    <div class="nav-mobile-overlay__links">
+      {links.map((link, index) => (
+        <a href={link.href} class={`nav-mobile-overlay__link stagger-${index + 1}`}>
+          <span class="nav-mobile-overlay__index label-sm">0{index + 1}</span>
+          <span>{link.label}</span>
+        </a>
+      ))}
+    </div>
+
+    <div class="nav-mobile-overlay__socials">
+      {overlaySocials.map((social) => (
+        <a href={social.href} target="_blank" rel={social.rel ? `${social.rel} noopener` : 'noopener'}>
+          <img src={social.icon} width="15" height="15" alt={social.label} loading="lazy" />
+          <span>{social.shortLabel || social.label}</span>
+        </a>
+      ))}
+    </div>
+  </div>
+</div>
+
+<style>
+  .nav {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 10000;
+    padding-top: 1rem;
+  }
+
+  .nav__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    border: 1px solid var(--outline);
+    border-radius: 999px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0%, transparent 100%),
+      color-mix(in srgb, var(--bg-veil) 92%, transparent);
+    backdrop-filter: blur(26px);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .nav__logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.8rem;
+    font-family: var(--font-headline);
+    font-size: 0.98rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.04em;
+  }
+
+  .nav__logo-mark {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--accent) 70%, white) 0%, var(--accent) 70%, transparent 72%);
+    box-shadow: 0 0 20px var(--accent-glow);
+  }
+
+  .nav__links {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .nav__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.55rem 0.95rem;
+    border-radius: 999px;
+    color: var(--text-muted);
+    transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+  }
+
+  .nav__link:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.045);
+    transform: translateY(-1px);
+  }
+
+  .nav__link--active {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .nav__link-index {
+    color: var(--text-ghost);
+  }
+
+  .nav__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .nav__cmdk {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--outline);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-muted);
+    font-family: var(--font-label);
+    font-size: 0.55rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    transition: border-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+  }
+
+  .nav__cmdk:hover,
+  .nav__icon:hover {
+    color: var(--text-primary);
+    border-color: var(--outline-strong);
+    transform: translateY(-1px);
+  }
+
+  .nav__kbd {
+    padding: 0.15rem 0.35rem;
+    border: 1px solid var(--outline);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-faint);
+    font-family: var(--font-label);
+    font-size: 0.5rem;
+  }
+
+  .nav__icon,
+  .nav__burger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 1px solid var(--outline);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-muted);
+    transition: border-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+  }
+
+  .nav__burger {
+    display: none;
+  }
+
+  .nav-mobile-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10020;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--bg) 90%, transparent);
+    backdrop-filter: blur(30px);
+    opacity: 0;
+    transition: opacity var(--transition-base);
+  }
+
+  .nav-mobile-overlay.is-open {
+    display: flex;
+    opacity: 1;
+  }
+
+  .nav-mobile-overlay__glow {
+    position: absolute;
+    inset: 15% 12%;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--ambient) 0%, transparent 68%);
+    filter: blur(18px);
+    pointer-events: none;
+  }
+
+  .nav-mobile-overlay__inner {
+    position: relative;
+    z-index: 1;
+    width: min(32rem, calc(100vw - 2rem));
+    padding: 5rem 1.5rem 2rem;
+    border: 1px solid var(--outline);
+    border-radius: 28px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%),
+      color-mix(in srgb, var(--panel-strong) 94%, transparent);
+    box-shadow: var(--shadow-panel);
+    text-align: center;
+  }
+
+  .nav-mobile-overlay__close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    border: 1px solid var(--outline);
+    border-radius: 50%;
+    color: var(--text-primary);
+  }
+
+  .nav-mobile-overlay__eyebrow {
+    margin-bottom: 1.2rem;
+  }
+
+  .nav-mobile-overlay__links {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .nav-mobile-overlay__link {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0.8rem;
+    font-family: var(--font-headline);
+    font-size: clamp(2.2rem, 10vw, 3.5rem);
+    font-weight: 700;
+    letter-spacing: -0.05em;
+    color: var(--text-primary);
+  }
+
+  .nav-mobile-overlay__index {
+    color: var(--text-ghost);
+  }
+
+  .nav-mobile-overlay__socials {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 2rem;
+  }
+
+  .nav-mobile-overlay__socials a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.85rem;
+    border: 1px solid var(--outline);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-muted);
+    font-family: var(--font-label);
+    font-size: 0.58rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .nav-mobile-overlay__socials img {
+    opacity: 0.75;
+  }
+
+  @media (max-width: 980px) {
+    .nav__cmdk span:not(.material-symbols-outlined) {
+      display: none;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .nav {
+      padding-top: 0.75rem;
+    }
+
+    .nav__inner {
+      border-radius: 24px;
+    }
+
+    .nav__links,
+    .nav__icon {
+      display: none;
+    }
+
+    .nav__burger {
+      display: inline-flex;
+    }
+
+    .nav__cmdk {
+      padding-inline: 0.7rem;
+    }
+  }
+</style>
+
+<script>
+  const burger = document.getElementById('nav-burger');
+  const overlay = document.getElementById('nav-mobile-overlay');
+  const close = document.getElementById('nav-mobile-close');
+
+  burger?.addEventListener('click', () => overlay?.classList.add('is-open'));
+  close?.addEventListener('click', () => overlay?.classList.remove('is-open'));
+  overlay?.addEventListener('click', (event) => {
+    if (event.target === overlay) {
+      overlay.classList.remove('is-open');
+    }
+  });
+
+  document.getElementById('nav-cmdk')?.addEventListener('click', () => {
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }));
+  });
+</script>

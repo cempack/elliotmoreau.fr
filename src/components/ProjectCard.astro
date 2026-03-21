@@ -1,0 +1,248 @@
+---
+interface Props {
+  name: string;
+  description: string;
+  url: string;
+  language: string;
+  stars: number;
+  forks: number;
+}
+
+const { name, description, url, language, stars, forks } = Astro.props;
+
+const langColors: Record<string, string> = {
+  Go: '#00ADD8',
+  Python: '#3776AB',
+  JavaScript: '#F7DF1E',
+  TypeScript: '#3178C6',
+  Rust: '#CE422B',
+  C: '#555555',
+  'C++': '#f34b7d',
+  Shell: '#89e051',
+  HTML: '#e34c26',
+  CSS: '#563d7c',
+  Nix: '#7e7eff',
+  Lua: '#000080',
+};
+---
+
+<a href={url} target="_blank" rel="noopener" class="project-card card card-paper">
+  <div class="project-card__glow"></div>
+  <div class="project-card__grid"></div>
+
+  <div class="project-card__header">
+    <div class="project-card__badge label-sm">
+      <span class="material-symbols-outlined" style="font-size:14px">deployed_code</span>
+      Repository
+    </div>
+    <span class="material-symbols-outlined project-card__arrow">north_east</span>
+  </div>
+
+  <h3 class="project-card__name">{name}</h3>
+  {description && <p class="project-card__desc">{description}</p>}
+
+  <div class="project-card__meta">
+    {language && (
+      <div class="project-card__lang">
+        <span class="project-card__lang-dot" style={`background:${langColors[language] || '#888'}`}></span>
+        <span>{language}</span>
+      </div>
+    )}
+
+    <div class="project-card__stats">
+      {stars > 0 && (
+        <div class="project-card__stat">
+          <span class="material-symbols-outlined" style="font-size:14px">star</span>
+          <span>{stars}</span>
+        </div>
+      )}
+      {forks > 0 && (
+        <div class="project-card__stat">
+          <span class="material-symbols-outlined" style="font-size:14px">fork_right</span>
+          <span>{forks}</span>
+        </div>
+      )}
+    </div>
+  </div>
+</a>
+
+<style>
+  .project-card {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-height: 220px;
+    padding: 1.5rem;
+  }
+
+  .project-card::before,
+  .project-card::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+  }
+
+  .project-card::before {
+    top: 0.8rem;
+    right: 0.8rem;
+    width: 1.2rem;
+    height: 1.2rem;
+    border-top: 1px solid color-mix(in srgb, var(--outline-strong) 75%, transparent);
+    border-right: 1px solid color-mix(in srgb, var(--outline-strong) 75%, transparent);
+    opacity: 0.72;
+  }
+
+  .project-card::after {
+    left: 1.5rem;
+    right: 1.5rem;
+    bottom: 4.55rem;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent-soft) 86%, white 14%), transparent);
+    opacity: 0;
+    transition: opacity var(--transition-base);
+  }
+
+  .project-card__glow {
+    position: absolute;
+    top: -18%;
+    right: -12%;
+    width: 10rem;
+    height: 10rem;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--accent-glow) 0%, transparent 72%);
+    opacity: 0.65;
+    pointer-events: none;
+  }
+
+  .project-card__grid {
+    position: absolute;
+    inset: 0;
+    opacity: 0.12;
+    background-image:
+      linear-gradient(to right, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: linear-gradient(180deg, black 0%, transparent 100%);
+    pointer-events: none;
+  }
+
+  .project-card__grid::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 0 58%, rgba(255, 255, 255, 0.03) 62%, transparent 66%);
+    transform: translateY(-130%);
+    animation: scan-drift 9s linear infinite;
+    opacity: 0.5;
+  }
+
+  .project-card__header,
+  .project-card__meta,
+  .project-card__stats {
+    position: relative;
+    z-index: 1;
+  }
+
+  .project-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .project-card__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.42rem;
+    width: fit-content;
+    padding: 0.35rem 0.6rem;
+    border: 1px solid var(--outline);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .project-card__arrow {
+    color: var(--text-faint);
+    transition: transform var(--transition-fast), color var(--transition-fast);
+  }
+
+  .project-card:hover .project-card__arrow {
+    color: var(--text-primary);
+    transform: translate(2px, -2px);
+  }
+
+  .project-card__name {
+    position: relative;
+    z-index: 1;
+    color: var(--text-primary);
+    font-family: var(--font-headline);
+    font-size: 1.35rem;
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+  }
+
+  .project-card__desc {
+    position: relative;
+    z-index: 1;
+    color: var(--text-muted);
+    font-size: 0.92rem;
+    line-height: 1.65;
+  }
+
+  .project-card__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .project-card__lang,
+  .project-card__stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--text-muted);
+    font-family: var(--font-label);
+    font-size: 0.64rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .project-card__lang-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.18);
+  }
+
+  .project-card__stats {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .project-card:hover .project-card__glow {
+    opacity: 0.95;
+  }
+
+  .project-card:hover::after {
+    opacity: 0.75;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .project-card__grid::after {
+      animation: none;
+      display: none;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .project-card__meta {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+</style>

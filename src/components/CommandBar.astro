@@ -1,0 +1,391 @@
+---
+// CommandBar.astro — Spotlight-style command palette (Cmd+K / Ctrl+K)
+---
+
+<div class="cmdk-overlay" id="cmdk-overlay">
+  <div class="cmdk" id="cmdk">
+    <div class="cmdk__search">
+      <span class="material-symbols-outlined cmdk__search-icon">search</span>
+      <input 
+        type="text" 
+        class="cmdk__input" 
+        id="cmdk-input" 
+        placeholder="Type a command…" 
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <kbd class="cmdk__kbd">ESC</kbd>
+    </div>
+    <div class="cmdk__divider"></div>
+    <div class="cmdk__list" id="cmdk-list">
+      <!-- Items rendered by JS -->
+    </div>
+    <div class="cmdk__footer">
+      <div class="cmdk__footer-hint">
+        <kbd>↑↓</kbd> navigate
+      </div>
+      <div class="cmdk__footer-hint">
+        <kbd>↵</kbd> select
+      </div>
+      <div class="cmdk__footer-hint">
+        <kbd>esc</kbd> close
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .cmdk-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 20vh;
+  }
+
+  .cmdk-overlay.is-open {
+    display: flex;
+  }
+
+  .cmdk {
+    width: 100%;
+    max-width: 520px;
+    background: var(--surface);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03) inset;
+    overflow: hidden;
+    animation: scale-in 0.15s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .cmdk__search {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+  }
+
+  .cmdk__search-icon {
+    color: var(--text-muted);
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .cmdk__input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    caret-color: var(--accent);
+  }
+
+  .cmdk__input::placeholder {
+    color: var(--text-faint);
+  }
+
+  .cmdk__kbd {
+    font-family: var(--font-label);
+    font-size: 0.55rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--radius-sm);
+    background: var(--surface-high);
+    border: 1px solid var(--outline-variant);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+
+  .cmdk__divider {
+    height: 1px;
+    background: var(--outline-variant);
+  }
+
+  .cmdk__list {
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 0.5rem;
+  }
+
+  :global(.cmdk__item) {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: var(--radius-md);
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    color: var(--text-body);
+    transition: all 80ms ease;
+    cursor: none;
+  }
+
+  :global(.cmdk__item:hover),
+  :global(.cmdk__item.is-active) {
+    background: var(--surface-high);
+    color: var(--text-primary);
+  }
+
+  :global(.cmdk__item-icon) {
+    font-size: 18px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    width: 20px;
+    text-align: center;
+  }
+
+  :global(.cmdk__item.is-active .cmdk__item-icon) {
+    color: var(--accent);
+  }
+
+  :global(.cmdk__item-label) {
+    flex: 1;
+  }
+
+  :global(.cmdk__item-shortcut) {
+    font-family: var(--font-label);
+    font-size: 0.5rem;
+    color: var(--text-faint);
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  :global(.cmdk__item-shortcut kbd) {
+    padding: 0.15rem 0.35rem;
+    border-radius: 3px;
+    background: var(--surface-highest);
+    border: 1px solid var(--outline-variant);
+  }
+
+  :global(.cmdk__group-label) {
+    font-family: var(--font-label);
+    font-size: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text-faint);
+    padding: 0.75rem 0.75rem 0.35rem;
+  }
+
+  .cmdk__footer {
+    display: flex;
+    gap: 1rem;
+    padding: 0.6rem 1rem;
+    border-top: 1px solid var(--outline-variant);
+    background: var(--surface-low);
+  }
+
+  .cmdk__footer-hint {
+    font-family: var(--font-label);
+    font-size: 0.5rem;
+    color: var(--text-faint);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    letter-spacing: 0.05em;
+  }
+
+  .cmdk__footer-hint kbd {
+    font-family: var(--font-label);
+    font-size: 0.5rem;
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    background: var(--surface-highest);
+    border: 1px solid var(--outline-variant);
+    color: var(--text-muted);
+  }
+</style>
+
+<script>
+  const overlay = document.getElementById('cmdk-overlay');
+  const input = document.getElementById('cmdk-input') as HTMLInputElement;
+  const list = document.getElementById('cmdk-list');
+  let activeIndex = 0;
+  let currentResults: CmdItem[] = [];
+
+  interface CmdItem {
+    icon: string;
+    label: string;
+    shortcut?: string;
+    group: string;
+    action: () => void;
+  }
+
+  const commands: CmdItem[] = [
+    // Navigation
+    { icon: 'home', label: 'Go to Home', shortcut: 'G H', group: 'Navigation', action: () => window.location.href = '/' },
+    { icon: 'article', label: 'Go to Blog', shortcut: 'G B', group: 'Navigation', action: () => window.location.href = '/blog' },
+    { icon: 'mail', label: 'Go to Contact', shortcut: 'G C', group: 'Navigation', action: () => window.location.href = '/contact' },
+    { icon: 'terminal', label: 'Go to Projects', shortcut: 'G P', group: 'Navigation', action: () => { window.location.href = '/#projects'; } },
+
+    // Actions
+    { icon: 'download', label: 'Download PGP Key', group: 'Actions', action: () => { const a = document.createElement('a'); a.href = '/hello@elliotm.fr.asc'; a.download = 'hello@elliotm.fr.asc'; a.click(); } },
+    { icon: 'content_copy', label: 'Copy Email', group: 'Actions', action: () => { navigator.clipboard.writeText('hello@elliotm.fr'); } },
+
+    // Socials
+    { icon: 'code', label: 'Open GitHub', group: 'Socials', action: () => window.open('https://github.com/cempack', '_blank') },
+    { icon: 'play_circle', label: 'Open YouTube', group: 'Socials', action: () => window.open('https://youtube.com/cempack', '_blank') },
+    { icon: 'forum', label: 'Open Mastodon', group: 'Socials', action: () => window.open('https://mastodon.social/@cempack', '_blank') },
+    { icon: 'music_note', label: 'Open Spotify', group: 'Socials', action: () => window.open('https://open.spotify.com/user/31a6a3od3rg52u6yz53ubapsxfgu', '_blank') },
+
+    // Theme
+    { icon: 'palette', label: 'Theme: Crimson', group: 'Themes', action: () => setTheme('crimson') },
+    { icon: 'palette', label: 'Theme: Midnight', group: 'Themes', action: () => setTheme('midnight') },
+    { icon: 'palette', label: 'Theme: Monokai', group: 'Themes', action: () => setTheme('monokai') },
+    { icon: 'palette', label: 'Theme: Dracula', group: 'Themes', action: () => setTheme('dracula') },
+    { icon: 'palette', label: 'Theme: Nord', group: 'Themes', action: () => setTheme('nord') },
+    { icon: 'palette', label: 'Theme: Solarized', group: 'Themes', action: () => setTheme('solarized') },
+  ];
+
+  function setTheme(id: string) {
+    document.documentElement.setAttribute('data-theme', id);
+    localStorage.setItem('theme', id);
+    // Also update favicon
+    const colors: Record<string, string> = {
+      crimson: '#ff4444', midnight: '#7c6cff', monokai: '#a6e22e',
+      dracula: '#bd93f9', nord: '#88c0d0', solarized: '#268bd2',
+    };
+    const accent = colors[id] || '#ff4444';
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="${accent}"/><text x="16" y="23" text-anchor="middle" font-family="monospace" font-weight="bold" font-size="20" fill="#000">E</text></svg>`;
+    const link = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
+    if (link) link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+    // Update active states in theme picker
+    document.querySelectorAll('.theme-picker__option').forEach(b => {
+      b.classList.toggle('active', (b as HTMLElement).dataset.themeId === id);
+    });
+    close();
+  }
+
+  function open() {
+    overlay?.classList.add('is-open');
+    input?.focus();
+    activeIndex = 0;
+    if (input) input.value = '';
+    render('');
+  }
+
+  function close() {
+    overlay?.classList.remove('is-open');
+    if (input) input.value = '';
+  }
+
+  function render(query: string) {
+    if (!list) return;
+    const q = query.toLowerCase();
+    const filtered = commands.filter(c =>
+      c.label.toLowerCase().includes(q) || c.group.toLowerCase().includes(q)
+    );
+    currentResults = filtered;
+
+    // Group items
+    const groups = new Map<string, CmdItem[]>();
+    filtered.forEach(c => {
+      if (!groups.has(c.group)) groups.set(c.group, []);
+      groups.get(c.group)!.push(c);
+    });
+
+    let html = '';
+    let idx = 0;
+    groups.forEach((items, group) => {
+      html += `<div class="cmdk__group-label">${group}</div>`;
+      items.forEach(item => {
+        html += `<div class="cmdk__item ${idx === activeIndex ? 'is-active' : ''}" data-index="${idx}">
+          <span class="material-symbols-outlined cmdk__item-icon">${item.icon}</span>
+          <span class="cmdk__item-label">${item.label}</span>
+          ${item.shortcut ? `<span class="cmdk__item-shortcut">${item.shortcut.split(' ').map(k => `<kbd>${k}</kbd>`).join('')}</span>` : ''}
+        </div>`;
+        idx++;
+      });
+    });
+
+    if (filtered.length === 0) {
+      html = '<div style="padding:2rem;text-align:center;color:var(--text-faint);font-size:0.8rem;font-family:var(--font-label)">No results found</div>';
+    }
+
+    list.innerHTML = html;
+  }
+
+  // Events
+  input?.addEventListener('input', () => {
+    activeIndex = 0;
+    render(input.value);
+  });
+
+  overlay?.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
+
+  function getFiltered() {
+    return currentResults;
+  }
+
+  list?.addEventListener('click', (event) => {
+    const item = (event.target as HTMLElement | null)?.closest('.cmdk__item') as HTMLElement | null;
+    if (!item) return;
+
+    const index = Number(item.dataset.index || '0');
+    const command = currentResults[index];
+    if (!command) return;
+
+    command.action();
+    close();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    // Cmd+K / Ctrl+K
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      if (overlay?.classList.contains('is-open')) {
+        close();
+      } else {
+        open();
+      }
+      return;
+    }
+
+    if (!overlay?.classList.contains('is-open')) {
+      // G-prefixed shortcuts (only when not in an input)
+      if (e.key === 'g' && !(document.activeElement instanceof HTMLInputElement || document.activeElement instanceof HTMLTextAreaElement)) {
+        const handler = (e2: KeyboardEvent) => {
+          document.removeEventListener('keydown', handler);
+          if (e2.key === 'h') { window.location.href = '/'; }
+          else if (e2.key === 'b') { window.location.href = '/blog'; }
+          else if (e2.key === 'c') { window.location.href = '/contact'; }
+          else if (e2.key === 'p') { window.location.href = '/#projects'; }
+        };
+        document.addEventListener('keydown', handler, { once: true });
+        setTimeout(() => document.removeEventListener('keydown', handler), 1000);
+      }
+      return;
+    }
+
+    if (e.key === 'Escape') {
+      close();
+      return;
+    }
+
+    const filtered = getFiltered();
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      activeIndex = Math.min(activeIndex + 1, filtered.length - 1);
+      render(input?.value || '');
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      activeIndex = Math.max(activeIndex - 1, 0);
+      render(input?.value || '');
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (filtered[activeIndex]) {
+        filtered[activeIndex].action();
+        close();
+      }
+    }
+  });
+</script>

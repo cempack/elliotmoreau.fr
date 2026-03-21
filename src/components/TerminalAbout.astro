@@ -1,0 +1,315 @@
+---
+---
+
+<section class="terminal-section animate-on-scroll deferred-section" id="terminal-about">
+  <div class="terminal card card-paper">
+    <div class="terminal__bar">
+      <div class="terminal__dots">
+        <span class="terminal__dot terminal__dot--red"></span>
+        <span class="terminal__dot terminal__dot--yellow"></span>
+        <span class="terminal__dot terminal__dot--green"></span>
+      </div>
+      <div class="terminal__title-block">
+        <span class="label-upper">Field Notes</span>
+        <span class="terminal__title">elliot@fedora ~ %</span>
+      </div>
+    </div>
+
+    <div class="terminal__body">
+      <div class="terminal__gutter ornament-layer" aria-hidden="true">
+        <span class="terminal__gutter-line"></span>
+        <span class="ornament-icon-node terminal__gutter-icon">
+          <span class="material-symbols-outlined">terminal</span>
+        </span>
+      </div>
+      <div class="terminal__line">
+        <span class="terminal__prompt">$</span>
+        <span class="terminal__cmd">cat about.md</span>
+      </div>
+      <div class="terminal__output" id="terminal-output"></div>
+      <div class="terminal__cursor-line">
+        <span class="terminal__prompt">$</span>
+        <span class="terminal__blinking-cursor">▊</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .terminal-section {
+    margin-bottom: 5rem;
+  }
+
+  .terminal {
+    overflow: hidden;
+  }
+
+  .terminal::before,
+  .terminal::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+  }
+
+  .terminal::before {
+    top: 0.9rem;
+    right: 1rem;
+    width: 4.2rem;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 70%, white 30%));
+    opacity: 0.85;
+  }
+
+  .terminal::after {
+    bottom: 1rem;
+    left: 1.3rem;
+    width: 1px;
+    height: 3.2rem;
+    background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--success) 78%, white 22%), transparent);
+    opacity: 0.55;
+  }
+
+  .terminal__bar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.3rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .terminal__dots {
+    display: flex;
+    gap: 6px;
+  }
+
+  .terminal__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  .terminal__dot--red {
+    background: #ff5f57;
+  }
+
+  .terminal__dot--yellow {
+    background: #febc2e;
+  }
+
+  .terminal__dot--green {
+    background: #28c840;
+  }
+
+  .terminal__title-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .terminal__title {
+    color: var(--text-faint);
+    font-family: var(--font-label);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+  }
+
+  .terminal__body {
+    position: relative;
+    min-height: 220px;
+    padding: 1.5rem;
+    font-family: var(--font-label);
+    font-size: 0.82rem;
+    line-height: 1.8;
+    background:
+      radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--accent-glow) 42%, transparent) 0%, transparent 26%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.01), transparent 22%);
+  }
+
+  .terminal__body::before,
+  .terminal__body::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+  }
+
+  .terminal__body::before {
+    inset: 0;
+    background-image: linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    background-size: 100% 22px;
+    opacity: 0.12;
+  }
+
+  .terminal__body::after {
+    inset: 0;
+    background: linear-gradient(180deg, transparent 0 64%, rgba(255, 255, 255, 0.06) 68%, transparent 72%);
+    transform: translateY(-130%);
+    animation: scan-drift 11s linear infinite;
+    opacity: 0.32;
+  }
+
+  .terminal__gutter-line {
+    position: absolute;
+    top: 3.1rem;
+    bottom: 1.4rem;
+    left: 1.2rem;
+    width: 1px;
+    background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--success) 76%, white 24%), transparent);
+    opacity: 0.46;
+  }
+
+  .terminal__gutter-icon {
+    left: 0.35rem;
+    top: 5.2rem;
+    width: 1.85rem;
+    height: 1.85rem;
+    color: color-mix(in srgb, var(--success) 84%, white 16%);
+    border-color: color-mix(in srgb, var(--success) 34%, white 10%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 0 18px rgba(74, 222, 128, 0.12);
+  }
+
+  .terminal__line,
+  .terminal__cursor-line {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .terminal__line {
+    margin-bottom: 1rem;
+  }
+
+  .terminal__prompt {
+    flex-shrink: 0;
+    color: var(--success);
+    font-weight: 600;
+  }
+
+  .terminal__cmd {
+    color: var(--text-primary);
+  }
+
+  .terminal__output {
+    position: relative;
+    z-index: 1;
+    margin-bottom: 1rem;
+    padding-left: 1.9rem;
+    color: var(--text-body);
+    white-space: pre-wrap;
+  }
+
+  .terminal__cursor-line {
+    padding-left: 1.9rem;
+  }
+
+  :global(.terminal__highlight) {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  :global(.terminal__quote) {
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .terminal__blinking-cursor {
+    color: var(--success);
+    animation: pulse-glow 1s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .terminal__blinking-cursor,
+    .terminal__body::after {
+      animation: none;
+    }
+  }
+</style>
+
+<script>
+  const terminalOutput = document.getElementById('terminal-output');
+  const terminalSection = document.getElementById('terminal-about');
+
+  const lines = [
+    '→ Been coding since I was <span class="terminal__highlight">12 years old</span>.',
+    '→ Always loved computers — bought a domain and published an app on the Play Store before I was legally old enough',
+    '→ Passionate about <span class="terminal__highlight">politics</span> and <span class="terminal__highlight">geopolitics</span>.',
+    '→ Systems thinker. Privacy advocate. Linux daily.',
+    '',
+    '<span class="terminal__quote">"The only true wisdom is in knowing you know nothing."</span>',
+    '<span class="terminal__quote">— Socrates</span>',
+  ];
+
+  let terminalStarted = false;
+
+  function stripTags(text: string): string {
+    return text.replace(/<[^>]*>/g, '');
+  }
+
+  function appendTypedLine(line: string, index: number) {
+    return new Promise<void>((resolve) => {
+      if (!terminalOutput) {
+        resolve();
+        return;
+      }
+
+      if (line === '') {
+        terminalOutput.append(document.createTextNode('\n'));
+        window.setTimeout(resolve, 80);
+        return;
+      }
+
+      const plainText = stripTags(line);
+      const span = document.createElement('span');
+      terminalOutput.appendChild(span);
+      terminalOutput.append(document.createTextNode('\n'));
+
+      if (document.documentElement.dataset.motion === 'reduced') {
+        span.innerHTML = line;
+        resolve();
+        return;
+      }
+
+      let charIndex = 0;
+
+      const tick = () => {
+        charIndex += 1;
+        span.textContent = plainText.slice(0, charIndex);
+
+        if (charIndex < plainText.length) {
+          window.setTimeout(tick, 12 + (index % 3) * 8);
+        } else {
+          span.innerHTML = line;
+          window.setTimeout(resolve, 90);
+        }
+      };
+
+      tick();
+    });
+  }
+
+  async function runTerminalSequence() {
+    if (!terminalOutput || terminalStarted) return;
+    terminalStarted = true;
+
+    for (let index = 0; index < lines.length; index += 1) {
+      await appendTypedLine(lines[index], index);
+    }
+  }
+
+  if (terminalSection) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            runTerminalSequence();
+            observer.disconnect();
+          }
+        });
+      },
+      { threshold: 0.35 }
+    );
+
+    observer.observe(terminalSection);
+  }
+</script>
