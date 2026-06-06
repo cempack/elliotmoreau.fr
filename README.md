@@ -1,6 +1,6 @@
 # elliotmoreau.fr
 
-Personal website built with [Astro](https://astro.build) featuring editorial dark design, Spotify & GitHub API integrations, and a markdown blog.
+Personal website built with [Astro](https://astro.build) featuring editorial dark design, Deezer & GitHub API integrations, and a markdown blog.
 
 ## Getting Started
 
@@ -38,19 +38,10 @@ npm run new:post -- "Your Post Title"
 
 There is also a starter file at `src/blog/_template.md`. Files beginning with `_` are ignored by the blog collection, so the template will not be published.
 
-## Spotify Setup
-
-1. Run `node scripts/spotify-auth.mjs`
-2. Authorize in the browser
-3. Copy the `SPOTIFY_REFRESH_TOKEN` to `.env`
-
 ## Environment Variables
 
 ```
 GITHUB_TOKEN=
-SPOTIFY_CLIENT_ID=
-SPOTIFY_CLIENT_SECRET=
-SPOTIFY_REFRESH_TOKEN=
 ```
 
 ## Deployment (Vercel)
@@ -67,9 +58,6 @@ The site uses [Astro SSR](https://docs.astro.build/en/guides/on-demand-rendering
    | Name | Notes |
    |------|--------|
    | `GITHUB_TOKEN` | Fine-grained or classic PAT with repo read access |
-   | `SPOTIFY_CLIENT_ID` | From Spotify Developer Dashboard |
-   | `SPOTIFY_CLIENT_SECRET` | From Spotify Developer Dashboard |
-   | `SPOTIFY_REFRESH_TOKEN` | From `node scripts/spotify-auth.mjs` |
 
 5. Deploy. Point your domain **elliotmoreau.fr** in **Project → Settings → Domains** (DNS at your registrar as instructed by Vercel).
 
@@ -87,5 +75,5 @@ The CLI is not bundled in this repo (keeps `npm audit` clean); `npm run deploy` 
 - **Framework**: Astro (SSR with Vercel adapter)
 - **Styling**: Vanilla CSS with editorial design system
 - **Fonts**: Inter, Space Grotesk, Playfair Display
-- **APIs**: GitHub (repos), Spotify (now playing, top artists)
+- **APIs**: GitHub (repos), Deezer (flow, top artists)
 - **Blog**: Markdown with Astro content collections

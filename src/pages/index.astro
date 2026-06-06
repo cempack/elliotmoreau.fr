@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ProjectCard from '../components/ProjectCard.astro';
-import SpotifyWidget from '../components/SpotifyWidget.astro';
+import DeezerWidget from '../components/DeezerWidget.astro';
 import GlobeWidget from '../components/GlobeWidget.astro';
 import TerminalAbout from '../components/TerminalAbout.astro';
 import { fetchGithubRepos } from '../lib/github';
@@ -259,7 +259,7 @@ try {
     </section>
 
     <section class="container animate-on-scroll stagger-5 deferred-section">
-      <SpotifyWidget />
+      <DeezerWidget />
     </section>
   </main>
 </BaseLayout>

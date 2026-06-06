@@ -1,0 +1,629 @@
+---
+---
+
+<section class="deezer-section animate-on-scroll deferred-section" id="deezer-widget">
+  <div class="deezer-header">
+    <div class="deezer-header__left">
+      <svg class="deezer-icon" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
+      </svg>
+      <div>
+        <span class="label-upper deezer-header__eyebrow">Audio Presence</span>
+        <h2 class="text-title deezer-header__title">Soundscape</h2>
+      </div>
+    </div>
+    <span class="deezer-label label-sm">Live feed</span>
+  </div>
+
+  <div class="deezer-bento" id="deezer-bento-grid" aria-live="polite">
+    <div class="deezer-bento__main card card-paper">
+      <div class="deezer-now__loading">
+        <div class="deezer-now__skeleton"></div>
+        <div class="deezer-now__skeleton-text">
+          <div class="skeleton-line" style="width:60%"></div>
+          <div class="skeleton-line" style="width:38%"></div>
+          <div class="skeleton-line" style="width:80%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .deezer-section {
+    margin-bottom: 2.5rem;
+  }
+
+  .deezer-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.6rem;
+  }
+
+  .deezer-header__left {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+  }
+
+  .deezer-header__title {
+    font-size: 1.45rem;
+  }
+
+  .deezer-header__eyebrow {
+    display: block;
+    margin-bottom: 0.3rem;
+    color: color-mix(in srgb, var(--text-muted) 96%, white);
+  }
+
+  .deezer-icon {
+    color: #1e88e5;
+    filter: drop-shadow(0 0 14px rgba(30, 136, 229, 0.25));
+  }
+
+  .deezer-label {
+    color: color-mix(in srgb, var(--text-faint) 98%, white);
+  }
+
+  .deezer-bento {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  @media (min-width: 880px) {
+    .deezer-bento {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-auto-rows: 190px;
+    }
+  }
+
+  :global(.deezer-bento__main) {
+    grid-column: span 2;
+    position: relative;
+    display: flex;
+    min-height: 260px;
+    padding: 1.35rem;
+    background: var(--deezer-card);
+  }
+
+  @media (min-width: 880px) {
+    :global(.deezer-bento__main) {
+      grid-row: span 2;
+      min-height: auto;
+      padding: 1.8rem;
+    }
+  }
+
+  :global(.deezer-main__backdrop) {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+
+  :global(.deezer-main__backdrop::after) {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--deezer-overlay);
+  }
+
+  :global(.deezer-main__blur) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.38;
+    filter: blur(24px) saturate(1.08);
+    transform: scale(1.14);
+  }
+
+  :global(.deezer-main__mesh) {
+    display: none;
+  }
+
+  :global(.deezer-main__content) {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    width: 100%;
+  }
+
+  :global(.deezer-main__top) {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  :global(.deezer-main__artwrap) {
+    position: relative;
+    width: 96px;
+    height: 96px;
+  }
+
+  @media (min-width: 880px) {
+    :global(.deezer-main__artwrap) {
+      width: 132px;
+      height: 132px;
+    }
+  }
+
+  :global(.deezer-main__art) {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 18px;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+  }
+
+  :global(.deezer-main__vinyl) {
+    position: absolute;
+    top: 50%;
+    right: -24%;
+    width: 82%;
+    height: 82%;
+    border-radius: 50%;
+    transform: translateY(-50%);
+    background: radial-gradient(circle, #191919 26%, #0e0e0e 28%, #242424 57%, #121212 60%);
+    box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.08), 0 10px 30px rgba(0, 0, 0, 0.3);
+  }
+
+  :global(.deezer-main__status) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.45rem 0.8rem;
+    border-radius: 999px;
+    border: 1px solid var(--deezer-badge-border);
+    background: var(--deezer-badge-bg);
+    color: var(--deezer-badge-text);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+  }
+
+  :global(.deezer-main__status .label-sm) {
+    color: inherit;
+  }
+
+  :global(.eq-bars) {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 10px;
+  }
+
+  :global(.eq-bar) {
+    width: 2px;
+    border-radius: 999px;
+    background: currentColor;
+  }
+
+  @keyframes eq-1 {
+    0%,
+    100% {
+      height: 4px;
+    }
+    50% {
+      height: 10px;
+    }
+  }
+
+  @keyframes eq-2 {
+    0%,
+    100% {
+      height: 8px;
+    }
+    50% {
+      height: 3px;
+    }
+  }
+
+  @keyframes eq-3 {
+    0%,
+    100% {
+      height: 5px;
+    }
+    50% {
+      height: 9px;
+    }
+  }
+
+  :global(.eq-bar:nth-child(1)) {
+    animation: eq-1 0.6s ease-in-out infinite;
+  }
+
+  :global(.eq-bar:nth-child(2)) {
+    animation: eq-2 0.8s ease-in-out infinite;
+  }
+
+  :global(.eq-bar:nth-child(3)) {
+    animation: eq-3 0.5s ease-in-out infinite;
+  }
+
+  :global(.deezer-main__status.is-paused .eq-bar) {
+    animation-play-state: paused;
+    height: 3px !important;
+  }
+
+  :global(.deezer-main__body) {
+    margin-top: auto;
+  }
+
+  :global(.deezer-main__eyebrow) {
+    display: inline-flex;
+    margin-bottom: 0.65rem;
+    padding: 0.35rem 0.6rem;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+    background: rgba(8, 8, 8, 0.22);
+    color: color-mix(in srgb, var(--text-muted) 94%, white);
+  }
+
+  :global(.deezer-main__track) {
+    color: var(--text-primary);
+    font-family: var(--font-headline);
+    font-size: clamp(1.8rem, 4vw, 2.65rem);
+    line-height: 0.96;
+    letter-spacing: -0.05em;
+    max-width: 18rem;
+    text-wrap: balance;
+    text-shadow: 0 8px 26px rgba(0, 0, 0, 0.45);
+  }
+
+  :global(.deezer-main__artist) {
+    margin-top: 0.45rem;
+    color: color-mix(in srgb, var(--text-body) 94%, white);
+    font-size: 0.98rem;
+    text-shadow: 0 6px 20px rgba(0, 0, 0, 0.42);
+  }
+
+  :global(.deezer-main__progress) {
+    margin-top: 1.2rem;
+    height: 4px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: var(--deezer-progress-bg);
+  }
+
+  :global(.deezer-main__progress-fill) {
+    height: 100%;
+    border-radius: inherit;
+    background: var(--deezer-progress-fill);
+    box-shadow: 0 0 18px color-mix(in srgb, var(--deezer-progress-fill) 35%, transparent);
+    transition: width 1s linear;
+  }
+
+  :global(.deezer-bento__artist) {
+    position: relative;
+    overflow: hidden;
+    min-height: 168px;
+  }
+
+  :global(.deezer-bento__artist::after) {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--deezer-artist-scrim);
+  }
+
+  :global(.deezer-bento__artist-img),
+  :global(.deezer-bento__artist-placeholder) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  :global(.deezer-bento__artist-img) {
+    object-fit: cover;
+    filter: grayscale(0.14) saturate(1.05);
+    transition: transform var(--transition-slow), filter var(--transition-slow);
+  }
+
+  :global(.deezer-bento__artist:hover .deezer-bento__artist-img) {
+    transform: scale(1.04);
+    filter: grayscale(0) saturate(1.08);
+  }
+
+  :global(.deezer-bento__artist-placeholder) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--surface) 0%, var(--surface-high) 100%);
+    color: var(--text-primary);
+    font-family: var(--font-headline);
+    font-size: 4rem;
+  }
+
+  :global(.deezer-bento__artist-info) {
+    position: absolute;
+    inset: auto 0 0 0;
+    z-index: 2;
+    padding: 1rem;
+    text-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+    background: linear-gradient(180deg, transparent 0%, rgba(8, 8, 12, 0.54) 55%, rgba(8, 8, 12, 0.7) 100%);
+  }
+
+  :global(.deezer-bento__artist-name) {
+    display: block;
+    color: var(--text-primary);
+    font-family: var(--font-headline);
+    font-size: 1.2rem;
+    line-height: 1;
+    letter-spacing: -0.04em;
+  }
+
+  :global(.deezer-bento__artist-genre) {
+    display: block;
+    margin-top: 0.3rem;
+    color: color-mix(in srgb, var(--text-body) 98%, white);
+    font-family: var(--font-label);
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .deezer-now__loading {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    width: 100%;
+  }
+
+  .deezer-now__skeleton,
+  .skeleton-line {
+    background: linear-gradient(110deg, rgba(255, 255, 255, 0.06) 8%, rgba(255, 255, 255, 0.14) 18%, rgba(255, 255, 255, 0.06) 33%);
+    background-size: 200% 100%;
+    animation: deezer-shimmer 1.5s linear infinite;
+  }
+
+  .deezer-now__skeleton {
+    width: 96px;
+    height: 96px;
+    flex-shrink: 0;
+    border-radius: 18px;
+  }
+
+  .deezer-now__skeleton-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    width: 100%;
+  }
+
+  .skeleton-line {
+    height: 12px;
+    border-radius: 999px;
+  }
+
+  @keyframes deezer-shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .deezer-now__skeleton,
+    .skeleton-line,
+    :global(.eq-bar) {
+      animation: none !important;
+    }
+  }
+</style>
+
+<script>
+  const deezerSection = document.getElementById('deezer-widget');
+  const deezerGrid = document.getElementById('deezer-bento-grid');
+
+  let deezerPollId: number | undefined;
+  let deezerVisible = false;
+  let deezerHydrated = false;
+  let lastSnapshot = '';
+
+  function escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text || '';
+    return div.innerHTML;
+  }
+
+  function renderArtistImage(artist: any): string {
+    const image = artist?.picture_xl || artist?.picture_big || artist?.picture_medium || artist?.picture_small;
+    if (image) {
+      return `<img class="deezer-bento__artist-img" src="${escapeHtml(image)}" alt="${escapeHtml(artist.name)}" loading="lazy" />`;
+    }
+
+    return `<div class="deezer-bento__artist-placeholder">${escapeHtml(artist.name?.charAt(0) || '?')}</div>`;
+  }
+
+  function getAlbumArt(track: any): string {
+    return track?.album?.cover_xl || track?.album?.cover_big || track?.album?.cover_medium || track?.album?.cover_small || '';
+  }
+
+  function getArtistName(track: any): string {
+    return track?.artist?.name || '';
+  }
+
+  function buildMainCard(data: any): string {
+    // Try to get the most recent track from flow (Deezer's version of recently played)
+    const recentTrack = data.flow?.[0];
+    
+    if (recentTrack) {
+      const albumArt = getAlbumArt(recentTrack);
+      const artistName = getArtistName(recentTrack);
+      const trackName = recentTrack.title || recentTrack.title_short || 'Unknown Track';
+      
+      return `
+        <div class="deezer-bento__main card card-paper">
+          <div class="deezer-main__backdrop">
+            ${albumArt ? `<img class="deezer-main__blur" src="${escapeHtml(albumArt)}" alt="" />` : ''}
+            <div class="deezer-main__mesh"></div>
+          </div>
+          <div class="deezer-main__content">
+            <div class="deezer-main__top">
+              <div class="deezer-main__artwrap">
+                ${albumArt ? `<img class="deezer-main__art" src="${escapeHtml(albumArt)}" alt="Album cover" loading="lazy" />` : `<div class="deezer-main__art"></div>`}
+                <div class="deezer-main__vinyl"></div>
+              </div>
+              <div class="deezer-main__status is-paused">
+                <span class="label-sm">Recent listen</span>
+              </div>
+            </div>
+            <div class="deezer-main__body">
+              <span class="deezer-main__eyebrow label-sm">From your flow</span>
+              <div class="deezer-main__track">${escapeHtml(trackName)}</div>
+              <div class="deezer-main__artist">${escapeHtml(artistName)}</div>
+              <div class="deezer-main__progress">
+                <div class="deezer-main__progress-fill" style="width:100%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Fallback to saved tracks
+    if (data.savedTracks?.[0]) {
+      const track = data.savedTracks[0];
+      const albumArt = getAlbumArt(track);
+      const artistName = getArtistName(track);
+      const trackName = track.title || track.title_short || 'Unknown Track';
+      
+      return `
+        <div class="deezer-bento__main card card-paper">
+          <div class="deezer-main__backdrop">
+            ${albumArt ? `<img class="deezer-main__blur" src="${escapeHtml(albumArt)}" alt="" />` : ''}
+            <div class="deezer-main__mesh"></div>
+          </div>
+          <div class="deezer-main__content">
+            <div class="deezer-main__top">
+              <div class="deezer-main__artwrap">
+                ${albumArt ? `<img class="deezer-main__art" src="${escapeHtml(albumArt)}" alt="Album cover" loading="lazy" />` : `<div class="deezer-main__art"></div>`}
+                <div class="deezer-main__vinyl"></div>
+              </div>
+              <div class="deezer-main__status is-paused">
+                <span class="label-sm">Saved track</span>
+              </div>
+            </div>
+            <div class="deezer-main__body">
+              <span class="deezer-main__eyebrow label-sm">From your collection</span>
+              <div class="deezer-main__track">${escapeHtml(trackName)}</div>
+              <div class="deezer-main__artist">${escapeHtml(artistName)}</div>
+              <div class="deezer-main__progress">
+                <div class="deezer-main__progress-fill" style="width:100%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="deezer-bento__main card card-paper">
+        <div class="deezer-main__content" style="justify-content:flex-end">
+          <span class="deezer-main__eyebrow label-sm">Signal offline</span>
+          <div class="deezer-main__track">No recent Deezer activity</div>
+          <div class="deezer-main__artist">The feed will return when something starts playing again.</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function buildArtistCards(data: any): string {
+    const artists = data.topArtists?.slice(0, 4) || [];
+    return artists
+      .map(
+        (artist: any) => `
+          <a href="${escapeHtml(artist.link || '#')}" target="_blank" rel="noopener" class="deezer-bento__artist card card-paper">
+            ${renderArtistImage(artist)}
+            <div class="deezer-bento__artist-info">
+              <span class="deezer-bento__artist-name">${escapeHtml(artist.name)}</span>
+              <span class="deezer-bento__artist-genre">${escapeHtml(artist.nb_fan ? `${artist.nb_fan.toLocaleString()} fans` : 'Artist')}</span>
+            </div>
+          </a>
+        `
+      )
+      .join('');
+  }
+
+  async function renderDeezer(force = false) {
+    if (!deezerGrid || document.hidden || !deezerVisible) return;
+
+    try {
+      const res = await fetch('/api/deezer');
+      if (!res.ok) throw new Error('deezer');
+      const data = await res.json();
+      const snapshot = JSON.stringify({
+        flow: data.flow?.[0]?.id || null,
+        artists: (data.topArtists || []).slice(0, 4).map((artist: any) => artist.id),
+      });
+
+      if (!force && snapshot === lastSnapshot) {
+        return;
+      }
+
+      lastSnapshot = snapshot;
+      deezerGrid.innerHTML = buildMainCard(data) + buildArtistCards(data);
+      deezerHydrated = true;
+    } catch {
+      if (!deezerHydrated && deezerGrid) {
+        deezerGrid.innerHTML = `
+          <div class="deezer-bento__main card card-paper">
+            <div class="deezer-main__content" style="justify-content:flex-end">
+              <span class="deezer-main__eyebrow label-sm">Feed unavailable</span>
+              <div class="deezer-main__track">Deezer integration is resting</div>
+              <div class="deezer-main__artist">The rest of the site stays fully interactive while this reconnects.</div>
+            </div>
+          </div>
+        `;
+      }
+    }
+  }
+
+  function startDeezerPolling() {
+    if (deezerPollId || !deezerVisible || document.hidden) return;
+    renderDeezer(!deezerHydrated);
+    deezerPollId = window.setInterval(() => renderDeezer(), 30000);
+  }
+
+  function stopDeezerPolling() {
+    if (deezerPollId) {
+      clearInterval(deezerPollId);
+      deezerPollId = undefined;
+    }
+  }
+
+  if (deezerSection) {
+    const deezerObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          deezerVisible = entry.isIntersecting;
+          if (deezerVisible) {
+            startDeezerPolling();
+          } else {
+            stopDeezerPolling();
+          }
+        });
+      },
+      { threshold: 0.2 }
+    );
+
+    deezerObserver.observe(deezerSection);
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      stopDeezerPolling();
+    } else if (deezerVisible) {
+      startDeezerPolling();
+    }
+  });
+</script>

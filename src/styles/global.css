@@ -37,15 +37,15 @@
   --success: #4ade80;
   --error: #ffb4ab;
 
-  --spotify-card: rgba(21, 13, 13, 0.88);
-  --spotify-scrim: rgba(11, 6, 6, 0.84);
-  --spotify-overlay: linear-gradient(180deg, rgba(13, 8, 8, 0.06) 0%, rgba(13, 8, 8, 0.86) 100%);
-  --spotify-badge-bg: rgba(17, 36, 24, 0.72);
-  --spotify-badge-border: rgba(29, 185, 84, 0.28);
-  --spotify-badge-text: #b9ffd4;
-  --spotify-progress-bg: rgba(255, 255, 255, 0.14);
-  --spotify-progress-fill: #3ddb7d;
-  --spotify-artist-scrim: linear-gradient(180deg, rgba(8, 5, 5, 0.08) 0%, rgba(8, 5, 5, 0.38) 42%, rgba(8, 5, 5, 0.94) 100%);
+  --deezer-card: rgba(21, 13, 13, 0.88);
+  --deezer-scrim: rgba(11, 6, 6, 0.84);
+  --deezer-overlay: linear-gradient(180deg, rgba(13, 8, 8, 0.06) 0%, rgba(13, 8, 8, 0.86) 100%);
+  --deezer-badge-bg: rgba(17, 26, 42, 0.72);
+  --deezer-badge-border: rgba(30, 136, 229, 0.28);
+  --deezer-badge-text: #88c9f4;
+  --deezer-progress-bg: rgba(255, 255, 255, 0.14);
+  --deezer-progress-fill: #1e88e5;
+  --deezer-artist-scrim: linear-gradient(180deg, rgba(8, 5, 5, 0.08) 0%, rgba(8, 5, 5, 0.38) 42%, rgba(8, 5, 5, 0.94) 100%);
 }
 
 [data-theme='midnight'] {
@@ -80,15 +80,15 @@
   --success: #4ade80;
   --error: #ffb4ab;
 
-  --spotify-card: rgba(10, 13, 22, 0.96);
-  --spotify-scrim: rgba(7, 9, 15, 0.9);
-  --spotify-overlay: linear-gradient(180deg, rgba(10, 12, 18, 0.18) 0%, rgba(7, 9, 15, 0.94) 100%);
-  --spotify-badge-bg: rgba(11, 31, 23, 0.84);
-  --spotify-badge-border: rgba(29, 185, 84, 0.24);
-  --spotify-badge-text: #deffea;
-  --spotify-progress-bg: rgba(255, 255, 255, 0.22);
-  --spotify-progress-fill: #52f08f;
-  --spotify-artist-scrim: linear-gradient(180deg, rgba(8, 10, 16, 0.08) 0%, rgba(8, 10, 16, 0.34) 42%, rgba(8, 10, 16, 0.98) 100%);
+  --deezer-card: rgba(10, 13, 22, 0.96);
+  --deezer-scrim: rgba(7, 9, 15, 0.9);
+  --deezer-overlay: linear-gradient(180deg, rgba(10, 12, 18, 0.18) 0%, rgba(7, 9, 15, 0.94) 100%);
+  --deezer-badge-bg: rgba(11, 26, 38, 0.84);
+  --deezer-badge-border: rgba(30, 136, 229, 0.24);
+  --deezer-badge-text: #88c9f4;
+  --deezer-progress-bg: rgba(255, 255, 255, 0.22);
+  --deezer-progress-fill: #1e88e5;
+  --deezer-artist-scrim: linear-gradient(180deg, rgba(8, 10, 16, 0.08) 0%, rgba(8, 10, 16, 0.34) 42%, rgba(8, 10, 16, 0.98) 100%);
 }
 
 [data-theme='monokai'] {
@@ -123,15 +123,15 @@
   --success: #b3ee43;
   --error: #f97382;
 
-  --spotify-card: rgba(31, 33, 29, 0.9);
-  --spotify-scrim: rgba(21, 23, 19, 0.84);
-  --spotify-overlay: linear-gradient(180deg, rgba(24, 26, 23, 0.06) 0%, rgba(21, 23, 19, 0.88) 100%);
-  --spotify-badge-bg: rgba(21, 35, 17, 0.76);
-  --spotify-badge-border: rgba(179, 238, 67, 0.26);
-  --spotify-badge-text: #e7ffba;
-  --spotify-progress-bg: rgba(255, 255, 255, 0.14);
-  --spotify-progress-fill: #9be25a;
-  --spotify-artist-scrim: linear-gradient(180deg, rgba(21, 23, 19, 0.06) 0%, rgba(21, 23, 19, 0.32) 42%, rgba(21, 23, 19, 0.96) 100%);
+  --deezer-card: rgba(31, 33, 29, 0.9);
+  --deezer-scrim: rgba(21, 23, 19, 0.84);
+  --deezer-overlay: linear-gradient(180deg, rgba(24, 26, 23, 0.06) 0%, rgba(21, 23, 19, 0.88) 100%);
+  --deezer-badge-bg: rgba(21, 26, 38, 0.76);
+  --deezer-badge-border: rgba(30, 136, 229, 0.26);
+  --deezer-badge-text: #88c9f4;
+  --deezer-progress-bg: rgba(255, 255, 255, 0.14);
+  --deezer-progress-fill: #1e88e5;
+  --deezer-artist-scrim: linear-gradient(180deg, rgba(21, 23, 19, 0.06) 0%, rgba(21, 23, 19, 0.32) 42%, rgba(21, 23, 19, 0.96) 100%);
 }
 
 [data-theme='dracula'] {
@@ -166,15 +166,15 @@
   --success: #50fa7b;
   --error: #ff6b81;
 
-  --spotify-card: rgba(26, 23, 39, 0.9);
-  --spotify-scrim: rgba(20, 18, 29, 0.84);
-  --spotify-overlay: linear-gradient(180deg, rgba(24, 20, 35, 0.08) 0%, rgba(20, 18, 29, 0.9) 100%);
-  --spotify-badge-bg: rgba(18, 34, 27, 0.74);
-  --spotify-badge-border: rgba(80, 250, 123, 0.24);
-  --spotify-badge-text: #d7ffe1;
-  --spotify-progress-bg: rgba(255, 255, 255, 0.18);
-  --spotify-progress-fill: #66ed90;
-  --spotify-artist-scrim: linear-gradient(180deg, rgba(20, 18, 29, 0.06) 0%, rgba(20, 18, 29, 0.32) 42%, rgba(20, 18, 29, 0.96) 100%);
+  --deezer-card: rgba(26, 23, 39, 0.9);
+  --deezer-scrim: rgba(20, 18, 29, 0.84);
+  --deezer-overlay: linear-gradient(180deg, rgba(24, 20, 35, 0.08) 0%, rgba(20, 18, 29, 0.9) 100%);
+  --deezer-badge-bg: rgba(18, 26, 38, 0.74);
+  --deezer-badge-border: rgba(30, 136, 229, 0.24);
+  --deezer-badge-text: #88c9f4;
+  --deezer-progress-bg: rgba(255, 255, 255, 0.18);
+  --deezer-progress-fill: #1e88e5;
+  --deezer-artist-scrim: linear-gradient(180deg, rgba(20, 18, 29, 0.06) 0%, rgba(20, 18, 29, 0.32) 42%, rgba(20, 18, 29, 0.96) 100%);
 }
 
 :root:not([data-theme]),
@@ -210,15 +210,15 @@
   --success: #a3be8c;
   --error: #d97788;
 
-  --spotify-card: rgba(25, 33, 41, 0.9);
-  --spotify-scrim: rgba(17, 24, 31, 0.82);
-  --spotify-overlay: linear-gradient(180deg, rgba(19, 26, 34, 0.08) 0%, rgba(17, 24, 31, 0.9) 100%);
-  --spotify-badge-bg: rgba(17, 36, 28, 0.74);
-  --spotify-badge-border: rgba(163, 190, 140, 0.24);
-  --spotify-badge-text: #e2f3d4;
-  --spotify-progress-bg: rgba(255, 255, 255, 0.18);
-  --spotify-progress-fill: #8dd3ab;
-  --spotify-artist-scrim: linear-gradient(180deg, rgba(17, 24, 31, 0.06) 0%, rgba(17, 24, 31, 0.32) 42%, rgba(17, 24, 31, 0.96) 100%);
+  --deezer-card: rgba(25, 33, 41, 0.9);
+  --deezer-scrim: rgba(17, 24, 31, 0.82);
+  --deezer-overlay: linear-gradient(180deg, rgba(19, 26, 34, 0.08) 0%, rgba(17, 24, 31, 0.9) 100%);
+  --deezer-badge-bg: rgba(17, 26, 38, 0.74);
+  --deezer-badge-border: rgba(30, 136, 229, 0.24);
+  --deezer-badge-text: #88c9f4;
+  --deezer-progress-bg: rgba(255, 255, 255, 0.18);
+  --deezer-progress-fill: #1e88e5;
+  --deezer-artist-scrim: linear-gradient(180deg, rgba(17, 24, 31, 0.06) 0%, rgba(17, 24, 31, 0.32) 42%, rgba(17, 24, 31, 0.96) 100%);
 }
 
 [data-theme='solarized'] {
@@ -253,15 +253,15 @@
   --success: #98b746;
   --error: #e16864;
 
-  --spotify-card: rgba(9, 35, 43, 0.9);
-  --spotify-scrim: rgba(7, 24, 30, 0.82);
-  --spotify-overlay: linear-gradient(180deg, rgba(8, 27, 33, 0.08) 0%, rgba(7, 24, 30, 0.92) 100%);
-  --spotify-badge-bg: rgba(15, 39, 29, 0.76);
-  --spotify-badge-border: rgba(152, 183, 70, 0.24);
-  --spotify-badge-text: #e6f0c4;
-  --spotify-progress-bg: rgba(255, 255, 255, 0.18);
-  --spotify-progress-fill: #58c88d;
-  --spotify-artist-scrim: linear-gradient(180deg, rgba(7, 24, 30, 0.06) 0%, rgba(7, 24, 30, 0.32) 42%, rgba(7, 24, 30, 0.96) 100%);
+  --deezer-card: rgba(9, 35, 43, 0.9);
+  --deezer-scrim: rgba(7, 24, 30, 0.82);
+  --deezer-overlay: linear-gradient(180deg, rgba(8, 27, 33, 0.08) 0%, rgba(7, 24, 30, 0.92) 100%);
+  --deezer-badge-bg: rgba(15, 26, 38, 0.76);
+  --deezer-badge-border: rgba(30, 136, 229, 0.24);
+  --deezer-badge-text: #88c9f4;
+  --deezer-progress-bg: rgba(255, 255, 255, 0.18);
+  --deezer-progress-fill: #1e88e5;
+  --deezer-artist-scrim: linear-gradient(180deg, rgba(7, 24, 30, 0.06) 0%, rgba(7, 24, 30, 0.32) 42%, rgba(7, 24, 30, 0.96) 100%);
 }
 
 :root {
