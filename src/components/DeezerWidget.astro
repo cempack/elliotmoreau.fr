@@ -5,15 +5,14 @@
   <div class="deezer-header">
     <div class="deezer-header__left">
       <svg class="deezer-icon" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-        <circle cx="12" cy="12" r="10"/>
-        <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
+        <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm7.338 16.913c-.21.32-.618.376-.938.166-2.64-1.696-6.24-2.04-10.44-1.162-.44.105-.896-.144-.996-.564-.1-.54.132-1.05.576-1.26 4.56-1.02 8.7-1.02 11.82 0 .36.18.48.6.3.96-.18.3-.54.39-.84.18-2.82-1.74-6.18-2.04-10.14-1.14-.42.18-.48.66-.3.96.18.24.6.3.9.12 3.66.84 6.72.42 9.24-.84.42-.24.96-.18 1.26.12zM12 8.1c-2.34 0-4.2 1.86-4.2 4.2s1.86 4.2 4.2 4.2 4.2-1.86 4.2-4.2-1.86-4.2-4.2-4.2zm0 6.9c-1.44 0-2.6-1.16-2.6-2.6s1.16-2.6 2.6-2.6 2.6 1.16 2.6 2.6-1.16 2.6-2.6 2.6z"/>
       </svg>
       <div>
-        <span class="label-upper deezer-header__eyebrow">Audio Presence</span>
-        <h2 class="text-title deezer-header__title">Soundscape</h2>
+        <span class="label-upper deezer-header__eyebrow">Now Playing</span>
+        <h2 class="text-title deezer-header__title">Deezer</h2>
       </div>
     </div>
-    <span class="deezer-label label-sm">Live feed</span>
+    <span class="deezer-label label-sm">My Music</span>
   </div>
 
   <div class="deezer-bento" id="deezer-bento-grid" aria-live="polite">
@@ -453,13 +452,13 @@
   }
 
   function buildMainCard(data: any): string {
-    // Try to get the most recent track from flow (Deezer's version of recently played)
-    const recentTrack = data.flow?.[0];
+    // Use saved tracks (liked songs) as the main display
+    const savedTrack = data.savedTracks?.[0];
     
-    if (recentTrack) {
-      const albumArt = getAlbumArt(recentTrack);
-      const artistName = getArtistName(recentTrack);
-      const trackName = recentTrack.title || recentTrack.title_short || 'Unknown Track';
+    if (savedTrack) {
+      const albumArt = getAlbumArt(savedTrack);
+      const artistName = getArtistName(savedTrack);
+      const trackName = savedTrack.title || savedTrack.title_short || 'Unknown Track';
       
       return `
         <div class="deezer-bento__main card card-paper">
@@ -474,11 +473,11 @@
                 <div class="deezer-main__vinyl"></div>
               </div>
               <div class="deezer-main__status is-paused">
-                <span class="label-sm">Recent listen</span>
+                <span class="label-sm">Liked</span>
               </div>
             </div>
             <div class="deezer-main__body">
-              <span class="deezer-main__eyebrow label-sm">From your flow</span>
+              <span class="deezer-main__eyebrow label-sm">From your library</span>
               <div class="deezer-main__track">${escapeHtml(trackName)}</div>
               <div class="deezer-main__artist">${escapeHtml(artistName)}</div>
               <div class="deezer-main__progress">
@@ -490,9 +489,9 @@
       `;
     }
 
-    // Fallback to saved tracks
-    if (data.savedTracks?.[0]) {
-      const track = data.savedTracks[0];
+    // Fallback to flow (recent tracks)
+    if (data.flow?.[0]) {
+      const track = data.flow[0];
       const albumArt = getAlbumArt(track);
       const artistName = getArtistName(track);
       const trackName = track.title || track.title_short || 'Unknown Track';
@@ -510,11 +509,11 @@
                 <div class="deezer-main__vinyl"></div>
               </div>
               <div class="deezer-main__status is-paused">
-                <span class="label-sm">Saved track</span>
+                <span class="label-sm">Recent</span>
               </div>
             </div>
             <div class="deezer-main__body">
-              <span class="deezer-main__eyebrow label-sm">From your collection</span>
+              <span class="deezer-main__eyebrow label-sm">From your flow</span>
               <div class="deezer-main__track">${escapeHtml(trackName)}</div>
               <div class="deezer-main__artist">${escapeHtml(artistName)}</div>
               <div class="deezer-main__progress">
@@ -538,8 +537,33 @@
   }
 
   function buildArtistCards(data: any): string {
-    const artists = data.topArtists?.slice(0, 4) || [];
-    return artists
+    // Use artists from recently played tracks (flow) instead of followed artists
+    const flowTracks = data.flow || [];
+    const uniqueArtists: any[] = [];
+    const seenArtistIds = new Set();
+    
+    // Extract unique artists from flow tracks
+    for (const track of flowTracks) {
+      const artist = track?.artist;
+      if (artist && artist.id && !seenArtistIds.has(artist.id)) {
+        seenArtistIds.add(artist.id);
+        uniqueArtists.push(artist);
+        if (uniqueArtists.length >= 4) break;
+      }
+    }
+    
+    // Fallback to top artists if flow doesn't have enough
+    if (uniqueArtists.length < 4 && data.topArtists) {
+      for (const artist of data.topArtists) {
+        if (artist && artist.id && !seenArtistIds.has(artist.id)) {
+          seenArtistIds.add(artist.id);
+          uniqueArtists.push(artist);
+          if (uniqueArtists.length >= 4) break;
+        }
+      }
+    }
+    
+    return uniqueArtists
       .map(
         (artist: any) => `
           <a href="${escapeHtml(artist.link || '#')}" target="_blank" rel="noopener" class="deezer-bento__artist card card-paper">
@@ -562,8 +586,9 @@
       if (!res.ok) throw new Error('deezer');
       const data = await res.json();
       const snapshot = JSON.stringify({
-        flow: data.flow?.[0]?.id || null,
-        artists: (data.topArtists || []).slice(0, 4).map((artist: any) => artist.id),
+        savedTrack: data.savedTracks?.[0]?.id || null,
+        flowTrack: data.flow?.[0]?.id || null,
+        artists: (data.flow || []).slice(0, 4).map((t: any) => t?.artist?.id).filter(Boolean),
       });
 
       if (!force && snapshot === lastSnapshot) {
