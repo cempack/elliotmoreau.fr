@@ -10,7 +10,7 @@ import { PixelLabel } from "@/components/PixelLabel";
 import { Reveal } from "@/components/Reveal";
 import { Tilt } from "@/components/Tilt";
 import { TtfxText } from "@/components/TtfxText";
-import { PixelQuilt } from "@/components/PixelQuilt";
+import { PixelPlanet } from "@/components/PixelPlanet";
 import { CardSparkles, GLYPH_CODE, GLYPH_STAR, PixelGlyph } from "@/components/glyphs";
 
 type Sort = "recent" | "stars";
@@ -243,7 +243,7 @@ export default function Work() {
                   />
                 ) : (
                   <span className="pixel-dots absolute inset-0 flex items-center justify-center p-8">
-                    <PixelQuilt
+                    <PixelPlanet
                       seed={featured.name}
                       className="h-40 w-auto drop-shadow-[0_0_24px_rgba(167,192,128,0.25)] transition-transform duration-500 group-hover:scale-[1.04] sm:h-48"
                     />
@@ -281,7 +281,7 @@ export default function Work() {
                           className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-105"
                         />
                       ) : (
-                        <PixelQuilt seed={r.name} className="h-full w-full p-1.5" />
+                        <PixelPlanet seed={r.name} className="h-full w-full p-1.5" />
                       )}
                     </span>
                     <span className="min-w-0 flex-1">

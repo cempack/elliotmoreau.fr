@@ -10,7 +10,7 @@ import { Tilt } from "./Tilt";
 import { TtfxText } from "./TtfxText";
 import { BackdropWord } from "./BackdropWord";
 import { SubscribeForm } from "./SubscribeForm";
-import { PixelQuilt } from "./PixelQuilt";
+import { PixelPlanet } from "./PixelPlanet";
 import { GLYPH_MAIL, PixelGlyph } from "./glyphs";
 
 const BLOG_URL = process.env.NEXT_PUBLIC_BLOG_URL || "https://blog.elliotmoreau.fr";
@@ -165,7 +165,7 @@ export function BlogSection() {
                             className="absolute left-6 top-6 text-ember"
                           />
                         )}
-                        <PixelQuilt
+                        <PixelPlanet
                           seed={lead.slug}
                           className="h-40 w-auto drop-shadow-[0_0_24px_rgba(167,192,128,0.25)] transition-transform duration-500 group-hover:scale-[1.04] sm:h-48 lg:h-56"
                         />
@@ -188,7 +188,7 @@ export function BlogSection() {
                         className="group flex items-center gap-3 border-t border-line px-2 py-4 transition-colors last:border-b hover:bg-ink-2 sm:gap-4 sm:px-3"
                       >
                         <span className="block h-12 w-12 shrink-0 overflow-hidden rounded-[8px] border border-line bg-ink transition-colors group-hover:border-ember/50">
-                          <PixelQuilt seed={p.slug} className="h-full w-full p-1.5" />
+                          <PixelPlanet seed={p.slug} className="h-full w-full p-1.5" />
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className="block truncate font-mono text-[15px] text-bone transition-colors group-hover:text-ember">
