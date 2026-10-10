@@ -18,7 +18,12 @@ import { PixelWordmark } from "@/components/PixelWordmark";
  * name on a loop. Click the name to restart the loop. First paint is an SSR
  * pixel wordmark (never fallback text); screen readers get the plain heading.
  */
-export function HeroNameFx() {
+export function HeroNameFx({
+  className = "h-[88svh] min-h-[480px]",
+}: {
+  /** sizing of the stage; the field fills whatever box it's given */
+  className?: string;
+} = {}) {
   const { t } = useLang();
   const boxRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -202,7 +207,7 @@ export function HeroNameFx() {
       onPointerMove={tilt}
       onPointerLeave={untilt}
       title={t("hero.replay")}
-      className="relative h-[88svh] min-h-[480px] w-full cursor-pointer [perspective:900px]"
+      className={`relative w-full cursor-pointer [perspective:900px] ${className}`}
     >
       {/* screen-reader heading; sighted users get the pixel wordmark below */}
       <h1 className="sr-only">

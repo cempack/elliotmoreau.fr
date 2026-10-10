@@ -1,28 +1,26 @@
 import type { Metadata } from "next";
-import { Fraunces, Archivo, JetBrains_Mono } from "next/font/google";
+import { Fraunces, Archivo, Inter, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import { LanguageProvider } from "@/lib/i18n";
-import { SoundProvider } from "@/lib/sound";
-import { Nav } from "@/components/Nav";
-import { Footer } from "@/components/Footer";
-import { PixelSky } from "@/components/PixelSky";
-import { ClickStamps } from "@/components/ClickStamps";
-import { PixelDust } from "@/components/PixelDust";
-import { ToastProvider } from "@/components/Toasts";
-import { SmoothScroll } from "@/components/SmoothScroll";
 
 const display = Fraunces({
   variable: "--font-display",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
   style: ["normal", "italic"],
+  axes: ["opsz", "SOFT"],
 });
 
 const sans = Archivo({
   variable: "--font-sans",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
+});
+
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  axes: ["opsz"],
 });
 
 const mono = JetBrains_Mono({
@@ -49,30 +47,22 @@ export const metadata: Metadata = {
   },
 };
 
+// runs before first paint: a returning visitor this session skips the intro
+const INTRO_SCRIPT = `try{if(sessionStorage.getItem("em-intro"))document.documentElement.dataset.intro="done"}catch(e){}`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"
-      className={`${display.variable} ${sans.variable} ${mono.variable} h-full antialiased`}
+      suppressHydrationWarning
+      className={`${display.variable} ${sans.variable} ${inter.variable} ${mono.variable} h-full antialiased`}
     >
       <head>
         <link rel="me" href="https://mastodon.social/@cempack" />
+        <script dangerouslySetInnerHTML={{ __html: INTRO_SCRIPT }} />
       </head>
-      <body className="grain vignette flex min-h-full flex-col bg-ink text-bone">
-        <SmoothScroll />
-        <PixelSky />
-        <div aria-hidden className="bg-hills" />
-        <PixelDust />
-        <LanguageProvider>
-          <SoundProvider>
-            <ToastProvider>
-              <Nav />
-              <main className="relative z-10 flex-1 pt-14">{children}</main>
-              <Footer />
-              <ClickStamps />
-            </ToastProvider>
-          </SoundProvider>
-        </LanguageProvider>
+      <body className="flex min-h-full flex-col bg-ink text-bone">
+        <LanguageProvider>{children}</LanguageProvider>
         <Analytics />
       </body>
     </html>

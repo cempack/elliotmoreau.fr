@@ -3,23 +3,50 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 
+export type SoundKind =
+  | "hover"
+  | "click"
+  | "page"
+  | "select"
+  | "toggle"
+  | "success"
+  | "open"
+  | "close"
+  | "tick";
+
 type SoundCtx = {
   muted: boolean;
   toggle: () => void;
-  blip: (kind: "hover" | "click" | "page" | "select") => void;
+  blip: (kind: SoundKind) => void;
 };
 
 const Ctx = createContext<SoundCtx>({ muted: false, toggle: () => {}, blip: () => {} });
 
-// Tiny synthesized UI sounds — no assets, no background bed.
-export function SoundProvider({ children }: { children: React.ReactNode }) {
+/**
+ * Tiny synthesized UI sounds — no assets, no background bed.
+ * `delegated` wires the legacy hover/click/page sounds on every control;
+ * without it, sound plays only where a component calls `blip()` for a
+ * meaningful event (toggle, copy, open/close, success).
+ */
+export function SoundProvider({
+  children,
+  delegated = true,
+}: {
+  children: React.ReactNode;
+  delegated?: boolean;
+}) {
   // First render must match the server; sync the saved mute after paint.
   const [muted, setMuted] = useState(false);
+
+  // blip reads the ref, so a toggle → blip in the same tick sees the new state
+  const mutedRef = useRef(false);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => {
       try {
-        setMuted(localStorage.getItem("em-sound") === "off");
+        const m = localStorage.getItem("em-sound") === "off";
+        mutedRef.current = m;
+        setMuted(m);
       } catch {}
     });
     return () => cancelAnimationFrame(id);
@@ -31,12 +58,12 @@ export function SoundProvider({ children }: { children: React.ReactNode }) {
   const firstPath = useRef(true);
 
   const toggle = useCallback(() => {
-    setMuted((m) => {
-      try {
-        localStorage.setItem("em-sound", m ? "on" : "off");
-      } catch {}
-      return !m;
-    });
+    const next = !mutedRef.current;
+    mutedRef.current = next;
+    setMuted(next);
+    try {
+      localStorage.setItem("em-sound", next ? "off" : "on");
+    } catch {}
   }, []);
 
   const ensureCtx = () => {
@@ -51,8 +78,8 @@ export function SoundProvider({ children }: { children: React.ReactNode }) {
   };
 
   const blip = useCallback(
-    (kind: "hover" | "click" | "page" | "select") => {
-      if (muted) return;
+    (kind: SoundKind) => {
+      if (mutedRef.current) return;
       try {
         const ctx = ensureCtx();
         if (!ctx || ctx.state === "suspended") return;
@@ -70,6 +97,11 @@ export function SoundProvider({ children }: { children: React.ReactNode }) {
           click: { f0: 620, f1: 920, dur: 0.07, vol: 0.05, type: "triangle" as const },
           page: { f0: 340, f1: 660, dur: 0.16, vol: 0.05, type: "sine" as const },
           select: { f0: 880, f1: 1320, dur: 0.12, vol: 0.05, type: "sine" as const },
+          toggle: { f0: 520, f1: 780, dur: 0.08, vol: 0.045, type: "triangle" as const },
+          success: { f0: 660, f1: 1320, dur: 0.18, vol: 0.05, type: "sine" as const },
+          open: { f0: 420, f1: 840, dur: 0.12, vol: 0.04, type: "sine" as const },
+          close: { f0: 760, f1: 380, dur: 0.1, vol: 0.035, type: "sine" as const },
+          tick: { f0: 1600, f1: 1500, dur: 0.025, vol: 0.02, type: "square" as const },
         }[kind];
         osc.type = cfg.type;
         osc.frequency.setValueAtTime(cfg.f0, now);
@@ -81,7 +113,7 @@ export function SoundProvider({ children }: { children: React.ReactNode }) {
         osc.stop(now + cfg.dur + 0.02);
       } catch {}
     },
-    [muted]
+    []
   );
 
   // unlock the context on first gesture (autoplay policy)
@@ -99,6 +131,7 @@ export function SoundProvider({ children }: { children: React.ReactNode }) {
   // a new control — sliding across children of the same link, or down a
   // list item by item faster than the throttle, stays quiet.
   useEffect(() => {
+    if (!delegated) return;
     const onOver = (e: MouseEvent) => {
       const el = (e.target as HTMLElement).closest?.("a,button,[data-sound]");
       if (!el || el === lastHoverEl.current) return;
@@ -123,16 +156,17 @@ export function SoundProvider({ children }: { children: React.ReactNode }) {
       document.removeEventListener("mouseout", onOut);
       document.removeEventListener("pointerdown", onDown);
     };
-  }, [blip]);
+  }, [blip, delegated]);
 
   // page-change sweep
   useEffect(() => {
+    if (!delegated) return;
     if (firstPath.current) {
       firstPath.current = false;
       return;
     }
     blip("page");
-  }, [pathname, blip]);
+  }, [pathname, blip, delegated]);
 
   const value = useMemo(() => ({ muted, toggle, blip }), [muted, toggle, blip]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
