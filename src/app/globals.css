@@ -1,303 +1,192 @@
 @import "tailwindcss";
 
+/* ─────────────────────────── emOS · Nocturne ───────────────────────────
+   A personal OS made of glass and pixels. Cool indigo night, warm paper
+   text, one loud signal colour (lime) and three supporting lights. Every
+   text colour is solid (no opacity) and clears 4.5:1 on ink-900. */
 @theme {
-  /* everforest dark medium: forest greens on deep bark */
-  --color-ink: #232a2e;
-  --color-ink-2: #2d353b;
-  --color-panel: #343f44;
-  --color-line: #465359;
-  --color-bone: #d3c6aa;
-  --color-sage: #9da9a0;
-  --color-faint: #8d998c;
-  --color-ember: #a7c080;
-  --color-ember-deep: #4f6240;
-  --color-glacier: #83c092;
-  --color-moss: #425047;
-  --color-rust: #e67e80;
+  --color-ink-950: #05060a;
+  --color-ink-900: #0a0b12;
+  --color-ink-800: #11131c;
+  --color-ink-700: #1a1d29;
+  --color-ink-600: #262a3a;
+  --color-ink-500: #3a3f55;
 
-  --font-display: "Fraunces", "Georgia", serif;
-  --font-sans: "Archivo", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --color-label: #f5f2ec;
+  --color-label-2: #c3c5cf;
+  --color-label-3: #9196a6;
+
+  --color-signal: #c6ff5e; /* lime: the one loud colour */
+  --color-signal-deep: #8fd11f;
+  --color-ion: #8be9ff; /* cyan: links, live data */
+  --color-lilac: #b3a4ff; /* sky, secondary accents */
+  --color-ember: #ffb86b; /* sun, moon, warmth */
+  --color-flare: #ff5f7e; /* live dot, errors, close */
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, "SF Mono", monospace;
+
+  /* type scale: tracking tightens and leading closes as size grows */
+  --text-display: clamp(3.5rem, 10vw, 10rem);
+  --text-display--line-height: 0.9;
+  --text-display--letter-spacing: -0.05em;
+  --text-title-1: clamp(2.25rem, 5vw, 4rem);
+  --text-title-1--line-height: 1;
+  --text-title-1--letter-spacing: -0.04em;
+  --text-title-2: clamp(1.625rem, 2.8vw, 2.375rem);
+  --text-title-2--line-height: 1.08;
+  --text-title-2--letter-spacing: -0.03em;
+  --text-title-3: 1.25rem;
+  --text-title-3--line-height: 1.2;
+  --text-title-3--letter-spacing: -0.018em;
+  --text-headline: 1.0625rem;
+  --text-headline--line-height: 1.35;
+  --text-headline--letter-spacing: -0.012em;
+  --text-body: 1.0625rem;
+  --text-body--line-height: 1.55;
+  --text-body--letter-spacing: -0.006em;
+  --text-callout: 0.9375rem;
+  --text-callout--line-height: 1.45;
+  --text-callout--letter-spacing: -0.004em;
+  --text-footnote: 0.8125rem;
+  --text-footnote--line-height: 1.4;
+  --text-footnote--letter-spacing: 0;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1.35;
+  --text-caption--letter-spacing: 0.01em;
+
+  --radius-window: 22px;
+  --radius-card: 18px;
+  --radius-control: 12px;
+
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-quint: cubic-bezier(0.64, 0, 0.78, 0);
+  /* critically damped spring (~0.35s) for CSS-only transitions */
+  --ease-spring: linear(0, 0.157 4.6%, 0.452 11%, 0.703 18.2%, 0.86 25.2%, 0.946 32.3%, 0.985 40%, 0.998 50%, 1);
+}
+
+/* materials: tint + blur + saturation + a lit rim. Thicker surfaces read
+   heavier (more blur, deeper shadow). The refracting Liquid Glass variant
+   lives in components/os/Glass.tsx; these are the frosted base. */
+:root {
+  --glass-tint: rgba(22, 25, 38, 0.46);
+  --glass-tint-thick: rgba(16, 18, 28, 0.66);
+  --glass-rim: rgba(255, 255, 255, 0.16);
+  --glass-rim-strong: rgba(255, 255, 255, 0.28);
+  --glass-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.65);
+  --glass-shadow-thick: 0 40px 120px -40px rgba(0, 0, 0, 0.8);
+  --hairline: rgba(255, 255, 255, 0.1);
+  --menubar-h: 2.75rem;
+  --dock-h: 4.75rem;
+
+  /* foundation component defaults (palette, sheet, cursor, segmented) */
+  --ui-bg: var(--color-ink-900);
+  --ui-surface: var(--glass-tint-thick);
+  --ui-border: var(--hairline);
+  --ui-text: var(--color-label);
+  --ui-muted: var(--color-label-3);
+  --ui-accent: var(--color-signal);
+  --ui-accent-ink: var(--color-ink-950);
+  --ui-radius: 20px;
+  --ui-font: var(--font-inter), system-ui, sans-serif;
+  --ui-blur: 28px;
+}
+
+@utility glass-thin {
+  background: var(--glass-tint);
+  backdrop-filter: blur(14px) saturate(1.7);
+  box-shadow: inset 0 1px 0 var(--glass-rim), inset 0 0 0 1px var(--hairline);
+}
+@utility glass {
+  background: var(--glass-tint);
+  backdrop-filter: blur(24px) saturate(1.8);
+  box-shadow: inset 0 1px 0 var(--glass-rim-strong), inset 0 0 0 1px var(--hairline), var(--glass-shadow);
+}
+@utility glass-thick {
+  background: var(--glass-tint-thick);
+  backdrop-filter: blur(40px) saturate(1.9);
+  box-shadow: inset 0 1px 0 var(--glass-rim-strong), inset 0 0 0 1px var(--hairline), var(--glass-shadow-thick);
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass-tint: rgba(22, 25, 38, 0.97);
+    --glass-tint-thick: rgba(16, 18, 28, 0.98);
+  }
+  .glass-thin,
+  .glass,
+  .glass-thick {
+    backdrop-filter: none;
+  }
+}
+@media (prefers-contrast: more) {
+  :root {
+    --hairline: rgba(255, 255, 255, 0.45);
+    --glass-tint: rgba(10, 11, 18, 0.96);
+    --glass-tint-thick: rgba(10, 11, 18, 0.98);
+    --color-label-3: #c3c5cf;
+  }
 }
 
 html {
-  /* inertial scrolling is owned by Lenis (SmoothScroll) — no CSS smooth */
+  background: var(--color-ink-950);
+  color: var(--color-label);
+  color-scheme: dark;
+  /* inertial scrolling is owned by Lenis — no CSS smooth scroll */
   scroll-behavior: auto;
-  /* Lenis clips overflow while stopped (palette, sheets): keep the gutter
-     so classic scrollbars don't shift the layout */
+  /* Lenis clips overflow while stopped (Spotlight, sheets): keep the
+     gutter so classic scrollbars don't shift the layout */
   scrollbar-gutter: stable;
+  -webkit-text-size-adjust: 100%;
 }
-
 body {
-  background: var(--color-ink);
-  color: var(--color-bone);
   font-family: var(--font-sans);
+  font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased;
-  /* clip, not hidden: no scroll container, so sticky descendants keep working */
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  /* clip, not hidden: no scroll container, sticky descendants keep working */
   overflow-x: clip;
 }
-
 ::selection {
-  background: var(--color-ember);
-  color: #232a2e;
+  background: var(--color-signal);
+  color: var(--color-ink-950);
 }
-
-/* themed keyboard focus, visible everywhere without shouting */
 :focus-visible {
-  outline: 2px solid var(--color-ember);
-  outline-offset: 2px;
+  outline: 2px solid var(--color-signal);
+  outline-offset: 3px;
+  border-radius: 6px;
 }
-
-/* thin dark scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #3d484d transparent;
+  scrollbar-color: var(--color-ink-500) transparent;
 }
-
-/* cinematic grade over the pixel sky: seats the content without burying
-   the scene — light touch top and bottom, clear air in the middle */
-.bg-hills {
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+p {
+  text-wrap: pretty;
+}
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+.skip-link {
   position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  opacity: 1;
+  left: 12px;
+  top: 8px;
+  z-index: 2147483600;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--color-signal);
+  color: var(--color-ink-950);
+  font: 600 14px/1 var(--font-sans);
+  transform: translateY(-160%);
+  transition: transform 0.2s var(--ease-out-quint);
 }
-.bg-hills::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(to bottom, rgba(10, 15, 17, 0.28), transparent 26%, transparent 68%, rgba(10, 15, 17, 0.38)),
-    radial-gradient(120% 90% at 50% 10%, transparent 55%, rgba(10, 14, 16, 0.4) 100%);
-}
-
-/* film grain + vignette overlay */
-.grain::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  pointer-events: none;
-  opacity: 0.07;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
-}
-
-.vignette::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background: radial-gradient(120% 90% at 50% 10%, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
-}
-
-/* single restrained brass glow for the hero */
-.hero-glow {
-  background:
-    radial-gradient(52rem 30rem at 82% -6%, rgba(219, 188, 127, 0.07), transparent 62%),
-    radial-gradient(40rem 26rem at 8% 12%, rgba(131, 192, 146, 0.05), transparent 60%);
-}
-
-.outline-word {
-  color: transparent;
-  -webkit-text-stroke: 1px rgba(211, 198, 170, 0.16);
-}
-
-/* marquee divider */
-@keyframes marquee-x {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
-}
-.marquee-track {
-  animation: marquee-x 60s linear infinite;
-  will-change: transform;
-}
-
-/* equalizer bars */
-@keyframes eq-bounce {
-  0%, 100% { transform: scaleY(0.3); }
-  50% { transform: scaleY(1); }
-}
-.eq-bar {
-  transform-origin: bottom;
-  animation: eq-bounce 0.9s steps(4, jump-none) infinite;
-}
-.eq-paused .eq-bar {
-  animation-play-state: paused;
-  transform: scaleY(0.25);
-}
-
-/* avatar pop: the portrait bursts out on hover, pixel-stepped */
-@keyframes avatar-pop {
-  0% { transform: scale(1) rotate(0deg); }
-  35% { transform: scale(1.4) rotate(-8deg); }
-  60% { transform: scale(1.12) rotate(4deg); }
-  80% { transform: scale(1.28) rotate(-2deg); }
-  100% { transform: scale(1.18) rotate(0deg); }
-}
-.group:hover .avatar-pop {
-  animation: avatar-pop 0.5s steps(5, jump-none) forwards;
-  border-color: var(--color-ember);
-  box-shadow: 0 0 0 3px rgba(167, 192, 128, 0.25), 0 6px 18px -6px rgba(167, 192, 128, 0.5);
-}
-/* sleepy buddy: a little z floats up on loop */
-@keyframes buddy-zzz {
-  0% { transform: translate(-50%, 0); opacity: 0; }
-  25% { opacity: 1; }
-  100% { transform: translate(-10%, -14px); opacity: 0; }
-}
-.buddy-zzz {
-  animation: buddy-zzz 2.2s steps(6, jump-none) infinite;
-}
-/* pixel arrow nudge — marches on card hover */
-@keyframes pixel-nudge {
-  0%, 100% { transform: translateX(0); }
-  50% { transform: translateX(5px); }
-}
-.group:hover .pixel-arrow {
-  animation: pixel-nudge 0.7s steps(3, jump-none) infinite;
-  color: var(--color-ember);
-}
-/* corner sparkles that wake on card hover */
-@keyframes pixel-twinkle {
-  0%, 100% { opacity: 0.15; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.35); }
-}
-.pixel-spark {
-  opacity: 0;
-  transition: opacity 0.25s;
-}
-.group:hover .pixel-spark {
-  opacity: 1;
-  animation: pixel-twinkle 1.1s steps(2, jump-none) infinite;
-}
-.group:hover .pixel-spark.d2 {
-  animation-delay: 0.35s;
-}
-
-/* dotted pixel texture for the single-post feature panel */
-.pixel-dots {
-  background-image: radial-gradient(rgba(167, 192, 128, 0.16) 1.5px, transparent 1.5px);
-  background-size: 14px 14px;
-}
-
-/* slow scroll entrances on a long expo ease — staggered via --reveal-delay */
-.reveal {
-  opacity: 0;
-  transform: translateY(var(--reveal-y, 26px));
-  transition:
-    opacity 0.9s ease-out var(--reveal-delay, 0ms),
-    transform 1s cubic-bezier(0.16, 1, 0.3, 1) var(--reveal-delay, 0ms);
-  will-change: opacity, transform;
-}
-.reveal.is-visible {
-  opacity: 1;
+.skip-link:focus-visible {
   transform: none;
-  will-change: auto;
-}
-
-/* `lift`: cards settle from a breath smaller — same expo, no bounce */
-.reveal[data-preset="lift"] {
-  transform: translateY(calc(var(--reveal-y, 26px) * 0.7)) scale(0.965);
-}
-.reveal[data-preset="lift"].is-visible {
-  opacity: 1;
-  transform: none;
-  will-change: auto;
-}
-
-/* `focus`: headers drift up out of a soft blur */
-.reveal[data-preset="focus"] {
-  filter: blur(10px);
-}
-.reveal[data-preset="focus"].is-visible {
-  animation: reveal-focus 1s cubic-bezier(0.16, 1, 0.3, 1) var(--reveal-delay, 0ms) both;
-}
-@keyframes reveal-focus {
-  0% { opacity: 0; transform: translateY(var(--reveal-y, 26px)); filter: blur(10px); }
-  100% { opacity: 1; transform: none; filter: blur(0); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .reveal,
-  .reveal[data-preset] {
-    animation: none;
-    transition: none;
-    opacity: 1;
-    transform: none;
-    filter: none;
-  }
-}
-
-/* omarchy-os motion kit: the distro's easeOutQuint + quick curves,
-   windowsIn popin, layers fade */
-@keyframes os-toast-in {
-  from {
-    opacity: 0;
-    transform: translateX(16px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-@keyframes os-osd-pop {
-  0% {
-    opacity: 0;
-    transform: translateY(8px) scale(0.9);
-  }
-  100% {
-    opacity: 1;
-    transform: none;
-  }
-}
-@keyframes os-route-in {
-  from {
-    opacity: 0;
-    transform: translateY(14px) scale(0.985);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-/* mako notification slides in from the edge */
-.os-toast {
-  animation: os-toast-in 0.22s cubic-bezier(0.23, 1, 0.32, 1);
-}
-.os-toast.leaving {
-  opacity: 0;
-  transform: translateX(8px);
-  transition:
-    opacity 0.13s cubic-bezier(0.15, 0, 0.1, 1),
-    transform 0.13s cubic-bezier(0.15, 0, 0.1, 1);
-}
-/* swayOSD volume pop */
-.os-osd {
-  animation: os-osd-pop 0.18s cubic-bezier(0.23, 1, 0.32, 1);
-}
-/* route change pops in like a new window */
-.os-route {
-  animation: os-route-in 0.24s cubic-bezier(0.23, 1, 0.32, 1);
-}
-
-/* now-playing progress */
-.progress-fill {
-  transition: width 1s linear;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-  .marquee-track { animation: none; }
-  .group:hover .pixel-arrow,
-  .group:hover .pixel-spark,
-  .group:hover .avatar-pop { animation: none; }
-  .eq-bar { animation: none; transform: scaleY(0.4); }
-  .reveal { opacity: 1; transform: none; transition: none; }
-  .progress-fill { transition: none; }
-  .os-toast,
-  .os-osd,
-  .os-route { animation: none; }
 }
 
 /* ───────────────────────── foundation (lab + next site) ─────────────────────────
@@ -307,7 +196,7 @@ body {
 :root {
   --ui-bg: #1e2326;
   --ui-surface: rgba(45, 53, 59, 0.82);
-  --ui-border: rgba(211, 198, 170, 0.14);
+  --ui-border: rgba(245, 242, 236, 0.14);
   --ui-text: #d3c6aa;
   --ui-muted: #9da9a0;
   --ui-accent: #a7c080;
@@ -357,7 +246,7 @@ html.has-cursor:has(dialog[open]) :is(a, button, [role="option"], [role="button"
   border-radius: 999px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--cursor-ring, rgba(211, 198, 170, 0.55));
+  border: 1px solid var(--cursor-ring, rgba(245, 242, 236, 0.55));
   background: var(--cursor-fill, transparent);
   mix-blend-mode: var(--cursor-blend, normal);
 }
@@ -416,7 +305,7 @@ html.has-cursor:has(dialog[open]) :is(a, button, [role="option"], [role="button"
   overflow: visible;
 }
 .em-palette::backdrop {
-  background: rgba(10, 13, 15, 0.45);
+  background: rgba(5, 6, 10, 0.5);
   backdrop-filter: blur(6px);
   transition: opacity 0.25s ease;
 }
@@ -517,7 +406,7 @@ html.has-cursor:has(dialog[open]) :is(a, button, [role="option"], [role="button"
 .em-sheet-scrim {
   position: absolute;
   inset: 0;
-  background: rgba(8, 11, 12, 0.55);
+  background: rgba(5, 6, 10, 0.55);
 }
 .em-sheet {
   position: absolute;
@@ -544,7 +433,7 @@ html.has-cursor:has(dialog[open]) :is(a, button, [role="option"], [role="button"
   height: 5px;
   margin: 10px auto 4px;
   border-radius: 999px;
-  background: rgba(211, 198, 170, 0.3);
+  background: rgba(245, 242, 236, 0.3);
 }
 .em-sheet-content {
   overflow: auto;
@@ -658,80 +547,22 @@ html[data-intro="done"] .em-intro {
   }
 }
 
-/* lab-only chrome (removed with /lab) */
-.lab-switcher {
-  position: fixed;
-  left: 16px;
-  bottom: calc(16px + env(safe-area-inset-bottom));
-  z-index: 95;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 4px;
-  border-radius: 999px;
-  background: rgba(20, 24, 26, 0.78);
-  border: 1px solid rgba(211, 198, 170, 0.16);
-  backdrop-filter: blur(16px) saturate(1.6);
-  font: 600 12px/1 var(--font-inter), system-ui, sans-serif;
-  color: #9da9a0;
-  box-shadow: 0 12px 40px -14px rgba(0, 0, 0, 0.7);
+
+/* page transitions (shell owns the specifics; these are safe defaults) */
+::view-transition-old(root) {
+  animation: 160ms var(--ease-in-quint) both vt-fade-out;
 }
-.lab-switcher-home {
-  padding: 8px 10px;
-  font: 500 11px/1 var(--font-mono), monospace;
-  letter-spacing: 0.04em;
-}
-.lab-switcher-item {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 999px;
-}
-.lab-switcher-item[aria-current="page"] {
-  color: #1e2326;
-}
-.lab-switcher-thumb {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: #a7c080;
-}
-.lab-switcher-chip {
-  margin: 0 6px 0 4px;
-  padding: 5px 8px;
-  border-radius: 999px;
-  background: rgba(230, 126, 128, 0.14);
-  color: #e69a9b;
-  font-weight: 500;
-  font-size: 11px;
-}
-::view-transition-old(.lab-fade) {
-  animation: 180ms cubic-bezier(0.4, 0, 1, 1) both vt-fade-out;
-}
-::view-transition-new(.lab-fade) {
-  animation: 320ms cubic-bezier(0.16, 1, 0.3, 1) 80ms both vt-rise-in;
+::view-transition-new(root) {
+  animation: 340ms var(--ease-out-quint) 60ms both vt-rise-in;
 }
 @keyframes vt-fade-out {
   to {
     opacity: 0;
-    scale: 0.985;
   }
 }
 @keyframes vt-rise-in {
   from {
     opacity: 0;
-    translate: 0 14px;
+    translate: 0 10px;
   }
-}
-::view-transition-group(lab-switcher) {
-  animation: none;
-  z-index: 100;
-}
-::view-transition-old(lab-switcher) {
-  display: none;
-}
-::view-transition-new(lab-switcher) {
-  animation: none;
 }

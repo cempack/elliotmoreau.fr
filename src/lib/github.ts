@@ -1,3 +1,4 @@
+import "server-only";
 // Server-only GitHub helper with minute-scale in-memory cache.
 
 const API = "https://api.github.com";

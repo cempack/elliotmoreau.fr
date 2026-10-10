@@ -1,3 +1,4 @@
+import "server-only";
 import { createHmac } from "node:crypto";
 
 // Server-only Ghost wiring: latest posts over the public Content API,

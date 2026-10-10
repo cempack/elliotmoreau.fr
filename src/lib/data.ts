@@ -1,3 +1,5 @@
+import "server-only";
+import { cache } from "react";
 import { getLatestPosts, type GhostPost } from "./ghost";
 import { getActivity, getRepos, type ActivityInfo, type RepoInfo } from "./github";
 import { getSpotifyStatus, type SpotifyStatus } from "./spotify";
@@ -5,7 +7,7 @@ import { FIXTURE_ACTIVITY, FIXTURE_POSTS, FIXTURE_REPOS, FIXTURE_SPOTIFY } from 
 
 export type Source = "live" | "sample" | "none";
 
-export type HomeData = {
+export type SiteData = {
   posts: GhostPost[];
   spotify: SpotifyStatus | null;
   repos: RepoInfo[];
@@ -13,17 +15,23 @@ export type HomeData = {
   sources: Record<"posts" | "spotify" | "repos" | "activity", Source>;
 };
 
-const fixturesAllowed = (asked: boolean) =>
-  asked && process.env.VERCEL_ENV !== "production" && process.env.EM_NO_FIXTURES !== "1";
+/** @deprecated lab-era name */
+export type HomeData = SiteData;
+
+// sample data stands in for unreachable sources everywhere except production
+const fixturesAllowed = () =>
+  process.env.VERCEL_ENV !== "production" && process.env.EM_NO_FIXTURES !== "1";
 
 /**
- * Everything the home page shows, fetched on the server. Each live source
- * falls back to sample data on its own (dev only) when it's unreachable.
+ * Everything the OS shows, fetched on the server once per render (each
+ * source keeps its own revalidate window). A source that's down or
+ * unconfigured falls back to sample data outside production, or to an
+ * empty value the UI has a designed state for.
  */
-export async function getHomeData({ allowFixtures = false } = {}): Promise<HomeData> {
-  const fx = fixturesAllowed(allowFixtures);
+export const getSiteData = cache(async (): Promise<SiteData> => {
+  const fx = fixturesAllowed();
   const [posts, spotify, repos, activity] = await Promise.all([
-    getLatestPosts(3),
+    getLatestPosts(12),
     getSpotifyStatus().catch(() => null),
     getRepos(),
     getActivity(),
@@ -44,4 +52,7 @@ export async function getHomeData({ allowFixtures = false } = {}): Promise<HomeD
     activity: a,
     sources: { posts: ps, spotify: ss, repos: rs, activity: as },
   };
-}
+});
+
+/** @deprecated lab-era alias */
+export const getHomeData = (_opts?: { allowFixtures?: boolean }) => getSiteData();

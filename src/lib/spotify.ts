@@ -1,3 +1,4 @@
+import "server-only";
 // Server-only Spotify helper: refresh-token flow, short cache.
 
 const TOKEN_URL = "https://accounts.spotify.com/api/token";
