@@ -1,0 +1,132 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import { PLACES, type Place } from "@/lib/places";
+import { tileFor } from "./geo";
+import { TILE_H, TILE_W } from "./landmass";
+
+type RGB = [number, number, number];
+const hex = (h: string): RGB => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+
+const SEA_DEEP = hex("#090c24");
+const SEA = hex("#0f1438");
+const SHALLOW = hex("#1a2358");
+const SURF = hex("#2b3a7a");
+const WAVE = hex("#1c2560");
+const GRID = hex("#222a62");
+const LAND_LO = hex("#2c3064");
+const LAND = hex("#3d4388");
+const LAND_HI = hex("#5258a8");
+const COAST = hex("#8f86e6");
+const INK = hex("#05060a");
+const MARK: Record<string, RGB> = { home: hex("#c6ff5e"), been: hex("#ffb86b"), want: hex("#8be9ff") };
+
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+const bayer = (x: number, y: number) => (BAYER[((y & 3) << 2) | (x & 3)] + 0.5) / 16;
+
+/** Paints the postcard map of a place into a TILE_W × TILE_H canvas. */
+function paintMap(place: Place, ctx: CanvasRenderingContext2D) {
+  const W = TILE_W;
+  const H = TILE_H;
+  const tile = tileFor(place);
+  const land = tile.land;
+  const at = (x: number, y: number) => (x < 0 || y < 0 || x >= W || y >= H ? 0 : land[y * W + x]);
+
+  // distance to the coast, in pixels, up to 3 (sea side only)
+  const near = new Uint8Array(W * H).fill(9);
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      if (at(x, y)) continue;
+      let best = 9;
+      for (let dy = -3; dy <= 3; dy++)
+        for (let dx = -3; dx <= 3; dx++) {
+          if (!at(x + dx, y + dy)) continue;
+          const d = Math.max(Math.abs(dx), Math.abs(dy));
+          if (d < best) best = d;
+        }
+      near[y * W + x] = best;
+    }
+
+  const img = ctx.createImageData(W, H);
+  const d = img.data;
+  const put = (x: number, y: number, c: RGB) => {
+    if (x < 0 || y < 0 || x >= W || y >= H) return;
+    const i = (y * W + x) * 4;
+    d[i] = c[0];
+    d[i + 1] = c[1];
+    d[i + 2] = c[2];
+    d[i + 3] = 255;
+  };
+
+  // graticule step: 5° for close-ups, 10° for continents
+  const step = tile.dLon * W > 40 ? 10 : 5;
+  const isGrid = (x: number, y: number) => {
+    const lon = tile.west + (x + 0.5) * tile.dLon;
+    const lat = tile.north - (y + 0.5) * tile.dLat;
+    const gx = Math.abs(lon / step - Math.round(lon / step)) * step < tile.dLon / 2;
+    const gy = Math.abs(lat / step - Math.round(lat / step)) * step < tile.dLat / 2;
+    return (gx && y % 2 === 0) || (gy && x % 2 === 0);
+  };
+
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const b = bayer(x, y);
+      // light falls from the top left
+      const lightT = 1 - (x / W) * 0.55 - (y / H) * 0.45;
+      if (at(x, y)) {
+        const coast = !at(x - 1, y) || !at(x, y - 1) || !at(x + 1, y) || !at(x, y + 1);
+        const lit = !at(x - 1, y) || !at(x, y - 1);
+        if (coast && lit) put(x, y, COAST);
+        else if (coast) put(x, y, LAND_HI);
+        else put(x, y, lightT * 1.4 - 0.2 > b ? (lightT > 0.72 && b < 0.3 ? LAND_HI : LAND) : LAND_LO);
+      } else {
+        const n = near[y * W + x];
+        if (n === 1) put(x, y, b < 0.5 ? SURF : SHALLOW);
+        else if (n === 2) put(x, y, b < 0.55 ? SHALLOW : SEA);
+        else if (isGrid(x, y)) put(x, y, GRID);
+        else if (y % 4 === 1 && (x + (y >> 2) * 5) % 11 < 2) put(x, y, WAVE);
+        else put(x, y, lightT * 0.9 > b ? SEA : SEA_DEEP);
+      }
+    }
+  }
+
+  // every place inside the frame; this one last and largest
+  const px = (p: Place) => ({
+    x: Math.floor((p.lon - tile.west) / tile.dLon),
+    y: Math.floor((tile.north - p.lat) / tile.dLat),
+  });
+  for (const p of PLACES) {
+    if (p.id === place.id) continue;
+    const { x, y } = px(p);
+    if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1) continue;
+    const c = MARK[p.home ? "home" : p.status];
+    put(x, y, c);
+    put(x + 1, y, c);
+    put(x, y + 1, c);
+    put(x + 1, y + 1, c);
+  }
+  const { x, y } = px(place);
+  const c = MARK[place.home ? "home" : place.status];
+  for (let dy = -3; dy <= 3; dy++)
+    for (let dx = -3; dx <= 3; dx++) {
+      const r = Math.max(Math.abs(dx), Math.abs(dy));
+      if (place.status === "want") {
+        if (r === 2) put(x + dx, y + dy, c);
+        else if (r === 3 || r === 1) put(x + dx, y + dy, INK);
+      } else if (r <= 1) put(x + dx, y + dy, c);
+      else if (r === 2) put(x + dx, y + dy, INK);
+    }
+  if (place.status !== "want") put(x, y, INK);
+
+  ctx.putImageData(img, 0, 0);
+}
+
+/** A crisp pixel map of a place, drawn once (static canvas). */
+export function PixelMap({ place, className = "" }: { place: Place; className?: string }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const ctx = ref.current?.getContext("2d");
+    if (ctx) paintMap(place, ctx);
+  }, [place]);
+  return <canvas ref={ref} width={TILE_W} height={TILE_H} aria-hidden className={className} />;
+}

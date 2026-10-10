@@ -1,14 +1,23 @@
 "use client";
 
+import "./desktop.css";
 import type { SiteData } from "@/lib/data";
-import { HeroNameFx } from "@/components/HeroNameFx";
+import { DesktopScene } from "./desktop/DesktopScene";
+import { Story } from "./story/Story";
 
-/** Placeholder — replaced by the home/desktop builder. */
-export function Desktop({ data }: { data: SiteData }) {
+/**
+ * `/`: the Desktop. The first screen is the desktop scene (wordmark,
+ * hello.txt, widgets, icons); the scroll story continues below it.
+ * Live data comes from the shell's SiteDataProvider, so the scene reads
+ * it where it's needed.
+ */
+// `data` is the same payload the shell's SiteDataProvider holds
+export function Desktop(props: { data: SiteData }) {
+  void props;
   return (
-    <div className="pt-[var(--menubar-h)]">
-      <HeroNameFx className="h-[80svh] min-h-[420px]" />
-      <p className="px-6 pb-40 text-body text-label-2">{data.posts[0]?.title}</p>
-    </div>
+    <>
+      <DesktopScene />
+      <Story />
+    </>
   );
 }

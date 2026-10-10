@@ -1,11 +1,249 @@
-// Strings for the now app. Owned by whoever builds that app: add keys
-// to `en` and the type forces the same keys in `fr`.
+// Strings for the Now app (/now). Hand-written content (focus, books,
+// setup…) lives in src/content/now.ts; this file is UI copy only.
+// Templates use {placeholders}; values stay plain strings.
 const en = {
-  placeholder: "now",
+  kicker: "What I’m up to",
+  live: "Live",
+  where: "Paris, France",
+  /** the headline; {doing} comes from content (e.g. "building emOS") */
+  sentence: {
+    playing: "Right now I’m {doing}, listening to {track}, and it’s {time} in Paris.",
+    paused: "Right now I’m {doing}, between two songs, and it’s {time} in Paris.",
+    quiet: "Right now I’m {doing}, and it’s {time} in Paris.",
+  },
+  whatIs: "What’s a now page?",
+  updated: "Updated {date}",
+  today: "today",
+  yesterday: "yesterday",
+  daysAgo: "{n} days ago",
+
+  board: {
+    label: "Dashboard",
+    arrange: "Arrange",
+    done: "Done",
+    reset: "Reset layout",
+    hintFine: "Drag any widget to rearrange.",
+    hintTouch: "Touch and hold a widget to move it.",
+    hintArrange: "Drag the handles, or use the keyboard.",
+    saved: "Layout saved on this device.",
+    move: "Move {name}",
+    instructions: "Press Space to pick it up. Arrow keys move it, Space drops it, Escape cancels.",
+    picked: "Picked up {name}. Position {pos} of {total}.",
+    moved: "{name}, position {pos} of {total}.",
+    dropped: "{name} dropped at position {pos} of {total}.",
+    cancelled: "Move cancelled. {name} is back at position {pos}.",
+    resetDone: "Layout reset.",
+  },
+
+  widgets: {
+    listening: "Listening",
+    here: "Here & now",
+    building: "Building",
+    pulse: "Pulse",
+    setup: "Setup",
+    reading: "Reading & learning",
+    writing: "Writing",
+  },
+
+  listening: {
+    playing: "Playing",
+    paused: "Paused",
+    last: "Last played",
+    progress: "{elapsed} of {total}",
+    open: "Open “{title}” on Spotify",
+    topArtists: "Top artists · last 6 months",
+    rank: "Number {n}",
+    nothing: "Nothing playing right now.",
+    nothingBody: "When something’s on, it shows up here as it plays.",
+    profile: "Spotify profile",
+  },
+
+  here: {
+    sky: "{phase} in Paris",
+    pinned: "{phase}, pinned",
+    phases: { dawn: "Dawn", day: "Day", dusk: "Dusk", night: "Night" },
+    forYou: "It’s {here} here, {you} for you.",
+    same: "Same time zone as you.",
+    ahead: "Paris is {n} ahead of you.",
+    behind: "Paris is {n} behind you.",
+    clockLabel: "Paris time",
+  },
+
+  building: {
+    focus: "Focus",
+    source: "Source",
+    lastPush: "Last push",
+    recent: "Recent repos",
+    pushedTo: "Pushed to {repo}",
+    none: "No public pushes lately.",
+    profile: "GitHub profile",
+    all: "All projects",
+  },
+
+  pulse: {
+    caption: "Each blip is a real, timestamped event: the latest push to each repo, and every post. Newest on the right.",
+    push: "Push",
+    post: "Post",
+    now: "Now",
+    pushTo: "Pushed to {name}",
+    published: "Published “{name}”",
+    ticks: { day: "1 day", week: "1 wk", month: "1 mo", quarter: "3 mo", half: "6 mo", year: "1 yr" },
+    empty: "Nothing public to show yet.",
+  },
+
+  setup: {
+    caption: "Copied by hand from my machine.",
+    repos: "Repos",
+    langs: "Languages",
+    time: "Local time",
+    reposValue: "{n} public",
+    palette: "Nocturne palette",
+  },
+
+  reading: {
+    books: "Reading",
+    learning: "Learning",
+    status: { reading: "reading", rereading: "rereading", next: "up next", finished: "finished" },
+    none: "Nothing on the nightstand.",
+  },
+
+  writing: {
+    drafting: "Drafting",
+    draft: "draft",
+    latest: "Latest post",
+    minutes: "{n} min read",
+    read: "Read “{title}” on the blog",
+    all: "All writing",
+    none: "Nothing published yet.",
+    blog: "Visit the blog",
+  },
+
+  footer: {
+    about: "This is a now page, in the spirit of nownownow.com.",
+    sources: "Music from Spotify, pushes from GitHub, posts from the blog.",
+  },
 };
 
 const fr: typeof en = {
-  placeholder: "now",
+  kicker: "Ce que je fais en ce moment",
+  live: "En direct",
+  where: "Paris, France",
+  sentence: {
+    playing: "En ce moment, {doing}, j’écoute {track}, et il est {time} à Paris.",
+    paused: "En ce moment, {doing}, entre deux morceaux, et il est {time} à Paris.",
+    quiet: "En ce moment, {doing}, et il est {time} à Paris.",
+  },
+  whatIs: "C’est quoi, une page /now ?",
+  updated: "Mis à jour le {date}",
+  today: "aujourd’hui",
+  yesterday: "hier",
+  daysAgo: "il y a {n} jours",
+
+  board: {
+    label: "Tableau de bord",
+    arrange: "Organiser",
+    done: "OK",
+    reset: "Réinitialiser la disposition",
+    hintFine: "Faites glisser un widget pour le déplacer.",
+    hintTouch: "Maintenez un widget appuyé pour le déplacer.",
+    hintArrange: "Utilisez les poignées, ou le clavier.",
+    saved: "Disposition enregistrée sur cet appareil.",
+    move: "Déplacer {name}",
+    instructions: "Espace pour le saisir. Les flèches le déplacent, Espace le pose, Échap annule.",
+    picked: "{name} saisi. Position {pos} sur {total}.",
+    moved: "{name}, position {pos} sur {total}.",
+    dropped: "{name} posé en position {pos} sur {total}.",
+    cancelled: "Déplacement annulé. {name} revient en position {pos}.",
+    resetDone: "Disposition réinitialisée.",
+  },
+
+  widgets: {
+    listening: "En écoute",
+    here: "Ici et maintenant",
+    building: "En chantier",
+    pulse: "Pouls",
+    setup: "Ma config",
+    reading: "Lire, apprendre",
+    writing: "Écriture",
+  },
+
+  listening: {
+    playing: "En lecture",
+    paused: "En pause",
+    last: "Dernière écoute",
+    progress: "{elapsed} sur {total}",
+    open: "Ouvrir « {title} » sur Spotify",
+    topArtists: "Artistes favoris · 6 derniers mois",
+    rank: "Numéro {n}",
+    nothing: "Rien en lecture pour l’instant.",
+    nothingBody: "Dès que la musique tourne, elle s’affiche ici en direct.",
+    profile: "Profil Spotify",
+  },
+
+  here: {
+    sky: "{phase} à Paris",
+    pinned: "{phase}, épinglé",
+    phases: { dawn: "Aube", day: "Jour", dusk: "Crépuscule", night: "Nuit" },
+    forYou: "Il est {here} ici, {you} chez vous.",
+    same: "Nous sommes sur le même fuseau.",
+    ahead: "Paris a {n} d’avance sur vous.",
+    behind: "Paris a {n} de retard sur vous.",
+    clockLabel: "Heure de Paris",
+  },
+
+  building: {
+    focus: "Priorité",
+    source: "Code source",
+    lastPush: "Dernier push",
+    recent: "Dépôts récents",
+    pushedTo: "Push sur {repo}",
+    none: "Aucun push public récemment.",
+    profile: "Profil GitHub",
+    all: "Tous les projets",
+  },
+
+  pulse: {
+    caption: "Chaque pic est un vrai événement daté : le dernier push de chaque dépôt, et chaque article. Le plus récent à droite.",
+    push: "Push",
+    post: "Article",
+    now: "Maintenant",
+    pushTo: "Push sur {name}",
+    published: "Publié : « {name} »",
+    ticks: { day: "1 jour", week: "1 sem.", month: "1 mois", quarter: "3 mois", half: "6 mois", year: "1 an" },
+    empty: "Rien de public à montrer pour l’instant.",
+  },
+
+  setup: {
+    caption: "Recopié à la main depuis ma machine.",
+    repos: "Dépôts",
+    langs: "Langages",
+    time: "Heure locale",
+    reposValue: "{n} publics",
+    palette: "Palette Nocturne",
+  },
+
+  reading: {
+    books: "Je lis",
+    learning: "J’apprends",
+    status: { reading: "en cours", rereading: "relecture", next: "à suivre", finished: "terminé" },
+    none: "Rien sur la table de chevet.",
+  },
+
+  writing: {
+    drafting: "En brouillon",
+    draft: "brouillon",
+    latest: "Dernier article",
+    minutes: "{n} min de lecture",
+    read: "Lire « {title} » sur le blog",
+    all: "Tous les textes",
+    none: "Rien de publié pour l’instant.",
+    blog: "Voir le blog",
+  },
+
+  footer: {
+    about: "Ceci est une page /now, dans l’esprit de nownownow.com.",
+    sources: "Musique via Spotify, pushs via GitHub, articles via le blog.",
+  },
 };
 
 export default { en, fr };
