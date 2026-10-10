@@ -1,0 +1,178 @@
+/* ─────────────────────────── emOS · Liquid Glass ───────────────────────────
+   The material lives on an inset pane (z-index −1 inside the element's own
+   stacking context), never on the element: Chromium shifts an SVG backdrop
+   filter's origin by the element's ink overflow, so shadows and overflowing
+   children stay off the filtered layer. Everything is in a low-priority
+   layer so consumers' position / z-index / radius always win. */
+
+@layer components {
+  .os-glass {
+    --os-glass-tint: rgba(18, 21, 34, 0.42);
+    /* frosted fallback: chained small blurs. One big radius gets
+       downsampled by the compositor and aliases the dithered wallpaper
+       into bands; two small passes stay smooth. */
+    --os-glass-frost: blur(10px) blur(10px);
+    --os-glass-rblur: 2.5px;
+    --os-glass-sat: 1.8;
+    --os-glass-hi: 0.34;
+    --os-glass-shadow: 0 1px 1px rgba(0, 0, 0, 0.18), 0 22px 50px -24px rgba(0, 0, 0, 0.7);
+    position: relative;
+    z-index: 0;
+  }
+  .os-glass[data-glass="thin"] {
+    --os-glass-tint: rgba(26, 29, 45, 0.34);
+    --os-glass-frost: blur(10px);
+    --os-glass-rblur: 1.25px;
+    --os-glass-hi: 0.3;
+    --os-glass-shadow: 0 1px 1px rgba(0, 0, 0, 0.16), 0 10px 24px -14px rgba(0, 0, 0, 0.6);
+  }
+  .os-glass[data-glass="thick"] {
+    --os-glass-tint: rgba(13, 15, 25, 0.64);
+    --os-glass-frost: blur(12px) blur(12px);
+    --os-glass-rblur: 10px;
+    --os-glass-sat: 1.9;
+    --os-glass-hi: 0.38;
+    --os-glass-shadow: 0 1px 2px rgba(0, 0, 0, 0.22), 0 46px 110px -40px rgba(0, 0, 0, 0.85);
+  }
+
+  /* the bright day sky would wash out light text: the glass darkens */
+  html[data-sky="day"] .os-glass {
+    --os-glass-tint: rgba(8, 18, 36, 0.5);
+  }
+  html[data-sky="day"] .os-glass[data-glass="thin"] {
+    --os-glass-tint: rgba(10, 22, 42, 0.44);
+  }
+  html[data-sky="day"] .os-glass[data-glass="thick"] {
+    --os-glass-tint: rgba(6, 14, 30, 0.7);
+  }
+  html[data-sky="dawn"] .os-glass,
+  html[data-sky="dusk"] .os-glass {
+    --os-glass-tint: rgba(20, 14, 34, 0.46);
+  }
+  html[data-sky="dawn"] .os-glass[data-glass="thick"],
+  html[data-sky="dusk"] .os-glass[data-glass="thick"] {
+    --os-glass-tint: rgba(14, 10, 26, 0.66);
+  }
+
+  .os-glass[data-glass-shadow] {
+    box-shadow: var(--os-glass-shadow);
+  }
+
+  /* the material: tint, top-lit gradient, blur or refraction, inner light */
+  .os-glass-pane {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.075) 0%,
+        rgba(255, 255, 255, 0.02) 34%,
+        rgba(255, 255, 255, 0) 60%,
+        rgba(255, 255, 255, 0.025) 100%
+      ),
+      var(--os-glass-tint);
+    backdrop-filter: var(--os-glass-frost) saturate(var(--os-glass-sat));
+    box-shadow:
+      inset 0 1px 0.5px rgba(255, 255, 255, var(--os-glass-hi)),
+      inset 1px 0 0.5px rgba(255, 255, 255, calc(var(--os-glass-hi) * 0.3)),
+      inset 0 -1px 0.5px rgba(255, 255, 255, 0.07),
+      inset 0 16px 26px -24px rgba(255, 255, 255, 0.2),
+      inset 0 -26px 40px -30px rgba(0, 0, 0, 0.5);
+  }
+  /* real refraction: the displacement first, then a light blur on top */
+  .os-glass-pane[data-live] {
+    backdrop-filter: var(--os-glass-filter) blur(var(--os-glass-rblur)) saturate(var(--os-glass-sat)) brightness(1.04);
+  }
+
+  /* specular rim: hot where the light lands (top-left), a faint return at
+     the bottom-right, almost nothing on the flanks */
+  .os-glass::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    pointer-events: none;
+    background: linear-gradient(
+      158deg,
+      rgba(255, 255, 255, 0.55) 0%,
+      rgba(255, 255, 255, 0.16) 18%,
+      rgba(255, 255, 255, 0.04) 46%,
+      rgba(255, 255, 255, 0.06) 74%,
+      rgba(255, 255, 255, 0.26) 100%
+    );
+    mask:
+      linear-gradient(#000 0 0) content-box exclude,
+      linear-gradient(#000 0 0);
+  }
+  .os-glass[data-glass="thin"]::after {
+    opacity: 0.8;
+  }
+
+  /* pointer sheen: a fixed-size soft light moved by transform only, clipped
+     to the surface (no blend modes: they would isolate the backdrop) */
+  .os-glass-sheen {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .os-glass-sheen-blob {
+    position: absolute;
+    left: -220px;
+    top: -220px;
+    width: 440px;
+    height: 440px;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.035) 55%, transparent);
+    opacity: 0;
+    transition: opacity 0.45s var(--ease-out-quint);
+  }
+  .os-glass-sheen-blob[data-on] {
+    opacity: 1;
+  }
+
+  .os-glass-defs {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .os-glass-pane,
+    .os-glass-pane[data-live] {
+      backdrop-filter: none;
+      background: #151826;
+    }
+    .os-glass[data-glass="thin"] > .os-glass-pane {
+      background: #1a1d2b;
+    }
+    .os-glass[data-glass="thick"] > .os-glass-pane {
+      background: #10121c;
+    }
+  }
+
+  @media (prefers-contrast: more) {
+    .os-glass-pane,
+    .os-glass-pane[data-live] {
+      backdrop-filter: none;
+      background: #0a0b12;
+    }
+    .os-glass::after {
+      background: rgba(255, 255, 255, 0.5);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .os-glass-sheen-blob {
+      transition: none;
+    }
+  }
+}

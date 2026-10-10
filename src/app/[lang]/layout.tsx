@@ -10,7 +10,8 @@ import { SoundProvider } from "@/lib/sound";
 import { ToastProvider } from "@/components/Toasts";
 import { MotionProvider } from "@/components/motion/MotionProvider";
 import { OSShell } from "@/components/os/OSShell";
-import { SKY_SCRIPT } from "@/components/os/sky";
+import { SKY_SCRIPT } from "@/components/os/sky-script";
+import { InlineScript } from "@/components/InlineScript";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"], axes: ["opsz"] });
 const mono = JetBrains_Mono({ variable: "--font-jetbrains", subsets: ["latin"], weight: ["400", "500", "600"] });
@@ -65,7 +66,7 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
     <html lang={lang} suppressHydrationWarning className={`${inter.variable} ${mono.variable}`}>
       <head>
         <link rel="me" href="https://mastodon.social/@cempack" />
-        <script dangerouslySetInnerHTML={{ __html: SKY_SCRIPT + INTRO_SCRIPT }} />
+        <InlineScript html={SKY_SCRIPT + INTRO_SCRIPT} />
       </head>
       <body className="min-h-svh bg-ink-950 text-label">
         <a href="#content" className="skip-link">

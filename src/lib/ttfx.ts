@@ -10,11 +10,13 @@ export type TtfxTone = "bone" | "ember" | "glacier" | "sage";
 
 const GLYPHS = [..."アイウエオカキクケコサシスセソ0123456789XYZ<>*+#$%&@?/\\|"];
 
+// Nocturne resting inks for flat labels: bone is the paper-white text
+// colour, so a settled label hands back to plain text without a shift
 const LOCKED: Record<TtfxTone, string> = {
-  bone: "#D3C6AA",
-  ember: "#A7C080",
-  glacier: "#83C092",
-  sage: "#7FBBB3",
+  bone: "#F5F2EC",
+  ember: "#FFB86B",
+  glacier: "#8BE9FF",
+  sage: "#C6FF5E",
 };
 
 function mulberry32(seed: number) {
@@ -92,44 +94,46 @@ const BAYER = [
 
 const FIELD = {
   bg: [0, 0, 0, 0] as const, // transparent: the page shows through
-  dim: "#3D484D",
-  mid: "#7A8478",
-  lit: "#D3C6AA",
-  hover: "#A7C080",
-  crest: "#CFE3B8",
-  extrude: "#1E2326", // far step of the in-canvas 3D solid, receding up-back
-  extrudeNear: "#333F45", // near step: moonlit slate sides
-  extrudeTop: "#EDEAD8", // top-face light on skyline edges
+  dim: "#2B2E52", // indigo lattice
+  mid: "#5F5E9E", // lilac dusk
+  lit: "#F5F2EC", // paper white
+  hover: "#C6FF5E", // signal lime under the light
+  crest: "#ECFFC8", // white-hot lime
+  extrude: "#0C0D22", // far step of the in-canvas 3D solid, receding up-back
+  extrudeNear: "#1F2050", // near step: moonlit indigo sides
+  extrudeTop: "#FBF9F4", // top-face light on skyline edges
 };
 
-// Everforest accents: disturbance frontiers wear the full forest,
-// not just honey.
+// Nocturne lights: disturbance frontiers wear every accent — flare, ember,
+// signal, lilac, ion — over paper white.
 const THEME = {
-  red: "#E67E80",
-  green: "#A7C080",
-  yellow: "#A7C080",
-  blue: "#7FBBB3",
-  cyan: "#83C092",
-  bone: "#D3C6AA",
+  red: "#FF5F7E",
+  green: "#C6FF5E",
+  yellow: "#FFB86B",
+  blue: "#B3A4FF",
+  cyan: "#8BE9FF",
+  bone: "#F5F2EC",
 };
 const BRIGHTS = [THEME.red, THEME.yellow, THEME.green, THEME.blue, THEME.cyan, THEME.bone];
 
 // every effect wears its own rest identity: five inks over the shared
-// 5/2/4/3/5 band counts, all pulled from the Everforest table — so no
-// two effects ever rest in the same colours
+// band counts, all pulled from Nocturne (paper crest, a lit middle, an
+// indigo foot) — so no two effects ever rest in the same colours.
+// Decrypt is the canonical stack (WORDMARK_BANDS): the entrance hands off
+// from the SSR wordmark without a colour jump.
 type Palette = [string, string, string, string, string];
 const PALETTES: Record<GridEffect, Palette> = {
-  "grid-decrypt": ["#D3C6AA", "#A7C080", "#A7C080", "#7A8478", "#475258"],
-  "grid-matrix": ["#D3C6AA", "#A7C080", "#83C092", "#7A8478", "#475258"],
-  "grid-laser": ["#D3C6AA", "#9DA9A0", "#7FBBB3", "#7A8478", "#475258"],
-  "grid-blackhole": ["#D3C6AA", "#A7C080", "#E67E80", "#7A8478", "#475258"],
-  "grid-waves": ["#D3C6AA", "#7FBBB3", "#83C092", "#7A8478", "#475258"],
-  "grid-beams": ["#D3C6AA", "#CFE3B8", "#A7C080", "#7A8478", "#475258"],
-  "grid-rings": ["#D3C6AA", "#9DA9A0", "#A7C080", "#7A8478", "#475258"],
-  "grid-spotlights": ["#D3C6AA", "#E69875", "#A7C080", "#7A8478", "#475258"],
-  "grid-fireworks": ["#D3C6AA", "#A7C080", "#A7C080", "#7A8478", "#475258"],
-  "grid-colorshift": ["#D3C6AA", "#A7C080", "#A7C080", "#7A8478", "#475258"],
-  "grid-prism": ["#D3C6AA", "#D3C6AA", "#E67E80", "#7FBBB3", "#475258"],
+  "grid-decrypt": ["#F5F2EC", "#C6FF5E", "#9BEBD3", "#988AF0", "#48478E"],
+  "grid-matrix": ["#F5F2EC", "#C6FF5E", "#8FD11F", "#5F5E9E", "#393B78"],
+  "grid-laser": ["#F5F2EC", "#C3C5CF", "#8BE9FF", "#5F5E9E", "#393B78"],
+  "grid-blackhole": ["#F5F2EC", "#C6FF5E", "#FF5F7E", "#7A6FCC", "#393B78"],
+  "grid-waves": ["#F5F2EC", "#8BE9FF", "#B3A4FF", "#6E66C2", "#393B78"],
+  "grid-beams": ["#F5F2EC", "#ECFFC8", "#C6FF5E", "#5F5E9E", "#393B78"],
+  "grid-rings": ["#F5F2EC", "#B3A4FF", "#C6FF5E", "#6E66C2", "#393B78"],
+  "grid-spotlights": ["#F5F2EC", "#FFB86B", "#C6FF5E", "#5F5E9E", "#393B78"],
+  "grid-fireworks": ["#F5F2EC", "#C6FF5E", "#FFB86B", "#5F5E9E", "#393B78"],
+  "grid-colorshift": ["#F5F2EC", "#C6FF5E", "#8BE9FF", "#B3A4FF", "#393B78"],
+  "grid-prism": ["#F5F2EC", "#F5F2EC", "#FF5F7E", "#8BE9FF", "#393B78"],
 };
 const stopsFrom = (pal: Palette): [number, string][] =>
   WORDMARK_BANDS.map(([n], k) => [n, pal[k]] as [number, string]);
@@ -880,9 +884,9 @@ export function playHeroField(
       if (!sheenGrad || sheenAmt !== restSheen) {
         sheenAmt = restSheen;
         const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1 / m);
-        g.addColorStop(0, `rgba(167,192,128,${0.15 * restSheen})`);
-        g.addColorStop(0.6, `rgba(167,192,128,${0.06 * restSheen})`);
-        g.addColorStop(1, "rgba(167,192,128,0)");
+        g.addColorStop(0, `rgba(170,176,255,${0.15 * restSheen})`);
+        g.addColorStop(0.6, `rgba(170,176,255,${0.06 * restSheen})`);
+        g.addColorStop(1, "rgba(170,176,255,0)");
         sheenGrad = g;
       }
       ctx.save();
@@ -895,17 +899,17 @@ export function playHeroField(
 
     if (cy.effect === "grid-beams" && !holding && beamX > -0.15 * W && beamX < 1.15 * W) {
       const grad = ctx.createLinearGradient(beamX - 34, 0, beamX + 34, 0);
-      grad.addColorStop(0, "rgba(167,192,128,0)");
-      grad.addColorStop(0.5, "rgba(167,192,128,0.22)");
-      grad.addColorStop(1, "rgba(167,192,128,0)");
+      grad.addColorStop(0, "rgba(198,255,94,0)");
+      grad.addColorStop(0.5, "rgba(198,255,94,0.22)");
+      grad.addColorStop(1, "rgba(198,255,94,0)");
       ctx.fillStyle = grad;
       ctx.fillRect(beamX - 34, 0, 68, H);
     }
     if (cy.effect === "grid-laser" && !holding && laserY > -0.1 * H && laserY < 1.1 * H) {
       const grad = ctx.createLinearGradient(0, laserY - 30, 0, laserY + 30);
-      grad.addColorStop(0, "rgba(211,198,170,0)");
-      grad.addColorStop(0.5, "rgba(211,198,170,0.25)");
-      grad.addColorStop(1, "rgba(211,198,170,0)");
+      grad.addColorStop(0, "rgba(245,242,236,0)");
+      grad.addColorStop(0.5, "rgba(245,242,236,0.25)");
+      grad.addColorStop(1, "rgba(245,242,236,0)");
       ctx.fillStyle = grad;
       ctx.fillRect(0, laserY - 30, W, 60);
     }

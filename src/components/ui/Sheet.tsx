@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useSyncExternalStore } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { animate, m, useMotionValue, useTransform } from "motion/react";
 import { lenisRef } from "@/lib/lenisRef";
@@ -8,6 +8,10 @@ import { project, rubberband, spring } from "@/lib/motion";
 import { useSound } from "@/lib/sound";
 
 type Sample = { y: number; t: number };
+
+const DismissCtx = createContext<() => void>(() => {});
+/** Inside a Sheet: animate it out along its exit path, then onClose fires. */
+export const useSheetDismiss = () => useContext(DismissCtx);
 
 function velocityOf(history: Sample[]) {
   if (history.length < 2) return 0;
@@ -159,7 +163,7 @@ function SheetBody({
       >
         <div className="em-sheet-grabber" aria-hidden />
         <div className="em-sheet-content" data-sheet-scroll data-lenis-prevent>
-          {children}
+          <DismissCtx.Provider value={dismiss}>{children}</DismissCtx.Provider>
         </div>
       </m.div>
     </div>

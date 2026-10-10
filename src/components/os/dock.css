@@ -1,0 +1,458 @@
+/* ─────────────────────────── emOS · dock ───────────────────────────
+   Desktop: a glass shelf of pixel tiles that magnifies under the pointer.
+   Phone: an iOS-style tab bar. Both hold still through page transitions
+   and step aside politely for sheets and the on-screen keyboard.
+
+   Geometry (desktop): 48px icons, 6px gaps, shelf padding 9/10/11, 8px
+   off the bottom edge → 76px = var(--dock-h). */
+
+/* ── desktop dock ─────────────────────────────────────────────────── */
+
+.os-dock {
+  position: fixed;
+  z-index: 50;
+  inset-inline: 0;
+  bottom: 0;
+  width: max-content;
+  margin-inline: auto;
+  /* the gap under the shelf and a little side slack belong to the hover
+     zone, so skimming the screen edge doesn't drop the magnification */
+  padding: 0 12px 8px;
+  view-transition-name: os-dock;
+  transition: transform 0.5s var(--ease-out-quint);
+}
+
+.os-dock-shelf {
+  position: relative;
+  padding: 9px 10px 11px;
+}
+
+/* the glass plate stretches (scaleX) by exactly what the icons gained;
+   the shadow lives here, the refracting material on the inset child */
+.os-dock-plate {
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  transform-origin: 50% 50%;
+  box-shadow:
+    0 22px 48px -20px rgb(0 0 0 / 0.75),
+    0 2px 8px -3px rgb(0 0 0 / 0.45);
+}
+.os-dock-glass,
+.os-dock-solid {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+/* during a view transition the dock is captured on its own and its
+   backdrop goes blank: swap in a solid twin of the glass for those
+   frames so it never flashes clear */
+.os-dock-solid {
+  background: rgb(15 17 27 / 0.95);
+  box-shadow:
+    inset 0 1px 0 var(--glass-rim-strong),
+    inset 0 0 0 1px var(--hairline);
+  opacity: 0;
+}
+html:active-view-transition .os-dock-solid {
+  opacity: 1;
+}
+
+.os-dock-list {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.os-dock-item {
+  position: relative;
+  flex: none;
+  width: 48px;
+  height: 48px;
+}
+
+/* each tile spills a little of its colour onto the shelf, like light
+   through tinted glass */
+.os-dock-item::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -9px;
+  width: 52px;
+  height: 18px;
+  margin-left: -26px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--tile, transparent), transparent);
+  opacity: 0.32;
+  pointer-events: none;
+}
+
+.os-dock-sep {
+  position: relative;
+  flex: none;
+  align-self: center;
+  width: 1px;
+  height: 34px;
+  margin-inline: 5px;
+  background: linear-gradient(transparent, rgb(255 255 255 / 0.24) 22%, rgb(255 255 255 / 0.24) 78%, transparent);
+}
+
+.os-dock-link {
+  display: block;
+  width: 48px;
+  height: 48px;
+  border-radius: 13px;
+  outline-offset: 4px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.os-dock-icon {
+  display: block;
+  width: 48px;
+  height: 48px;
+  transform-origin: 50% 100%;
+}
+.os-dock-bounce,
+.os-dock-press {
+  display: block;
+  width: 48px;
+  height: 48px;
+}
+/* press lands on pointer-down, springs back on release */
+.os-dock-press {
+  transition:
+    transform 0.32s var(--ease-spring),
+    filter 0.32s ease-out;
+}
+.os-dock-link[data-pressed] .os-dock-press {
+  transform: scale(0.9);
+  filter: brightness(0.75);
+  transition-duration: 0.06s;
+}
+
+/* running / active indicator */
+.os-dock-dot {
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: var(--color-signal);
+  box-shadow:
+    0 0 4px rgb(198 255 94 / 0.9),
+    0 0 10px 1px rgb(198 255 94 / 0.45);
+  opacity: 0;
+  transform: scale(0.2);
+  transition:
+    opacity 0.3s ease-out,
+    transform 0.5s var(--ease-out-quint);
+  pointer-events: none;
+}
+.os-dock-dot[data-on] {
+  opacity: 1;
+  transform: none;
+}
+
+/* tooltip: a small glass pill that rides above the (magnified) icon */
+.os-dock-tipwrap {
+  position: absolute;
+  left: -64px;
+  right: -64px;
+  bottom: calc(100% + 12px);
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.os-dock-tip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 7px 6px 12px;
+  border-radius: 999px;
+  font: 500 13px/1 var(--font-sans);
+  letter-spacing: -0.003em;
+  color: var(--color-label);
+  white-space: nowrap;
+  background: rgb(20 23 35 / 0.66);
+  backdrop-filter: blur(18px) saturate(1.7);
+  box-shadow:
+    inset 0 1px 0 var(--glass-rim),
+    inset 0 0 0 1px var(--hairline),
+    0 12px 28px -12px rgb(0 0 0 / 0.75);
+  opacity: 0;
+  transform: translateY(5px) scale(0.94);
+  transform-origin: 50% 100%;
+  transition:
+    opacity 0.12s ease-out,
+    transform 0.24s var(--ease-out-quint);
+}
+.os-dock-kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 6px;
+  font: 500 12px/1 var(--font-mono);
+  color: var(--color-label-2);
+  background: rgb(255 255 255 / 0.06);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+}
+@media (hover: hover) {
+  .os-dock-item:hover .os-dock-tip {
+    opacity: 1;
+    transform: none;
+  }
+}
+.os-dock-item:has(.os-dock-link:focus-visible) .os-dock-tip {
+  opacity: 1;
+  transform: none;
+}
+
+/* ── phone tab bar ────────────────────────────────────────────────── */
+
+.os-tabbar {
+  display: none;
+  position: fixed;
+  z-index: 50;
+  inset-inline: 0;
+  bottom: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  view-transition-name: os-tabbar;
+  transition: transform 0.45s var(--ease-out-quint);
+}
+.os-tabbar-glass {
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+}
+.os-tabbar-list {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  height: 60px;
+  padding: 5px 4px;
+}
+.os-tabbar-item {
+  display: flex;
+  min-width: 0;
+}
+.os-tabbar-link {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border-radius: 16px;
+  outline-offset: -2px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+/* the current tab sits under a soft glass lens that slides between tabs */
+.os-tabbar-lens {
+  position: absolute;
+  inset: 0 2px;
+  border-radius: 16px;
+  background: rgb(255 255 255 / 0.08);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.14),
+    inset 0 0 0 1px rgb(255 255 255 / 0.05);
+}
+.os-tabbar-icon,
+.os-tabbar-label {
+  position: relative;
+}
+.os-tabbar-icon,
+.os-tabbar-press {
+  display: block;
+  width: 32px;
+  height: 32px;
+}
+.os-tabbar-press {
+  transition: transform 0.32s var(--ease-spring);
+}
+.os-tabbar-link[data-pressed] .os-tabbar-press {
+  transform: scale(0.86);
+  transition-duration: 0.06s;
+}
+.os-tabbar-label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 500 12px/14px var(--font-sans);
+  letter-spacing: 0.004em;
+  color: var(--color-label-3);
+  transition: color 0.2s ease-out;
+}
+.os-tabbar-link[aria-current="page"] .os-tabbar-label {
+  color: var(--color-label);
+  font-weight: 600;
+}
+
+/* More sheet */
+.os-more {
+  --sheet-bg: var(--glass-tint-thick);
+}
+.os-more-title {
+  margin: 4px 0 14px;
+  font: 600 1.25rem/1.2 var(--font-display);
+  letter-spacing: -0.018em;
+  color: var(--color-label);
+}
+.os-more-list {
+  display: grid;
+  gap: 8px;
+}
+.os-more-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 68px;
+  padding: 11px 16px 11px 12px;
+  border-radius: 20px;
+  text-align: left;
+  color: var(--color-label);
+  background: rgb(255 255 255 / 0.04);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  transition:
+    transform 0.32s var(--ease-spring),
+    background-color 0.2s ease-out;
+  -webkit-tap-highlight-color: transparent;
+}
+.os-more-row:active {
+  transform: scale(0.98);
+  background: rgb(255 255 255 / 0.08);
+  transition-duration: 0.06s;
+}
+.os-more-row[aria-current="page"],
+.os-more-row[aria-pressed="true"] {
+  box-shadow: inset 0 0 0 1px rgb(198 255 94 / 0.4);
+}
+.os-more-text {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+.os-more-name {
+  font: 600 17px/1.25 var(--font-sans);
+  letter-spacing: -0.012em;
+}
+.os-more-hint {
+  font: 400 13px/1.35 var(--font-sans);
+  color: var(--color-label-3);
+}
+.os-more-chev {
+  flex: none;
+  color: var(--color-label-3);
+}
+
+/* ── breakpoint: the dock becomes the tab bar ─────────────────────── */
+
+@media (max-width: 767px) {
+  /* --dock-h for the tab bar lives in globals.css */
+  .os-dock {
+    display: none;
+  }
+  .os-tabbar {
+    display: block;
+  }
+  /* get out of the keyboard's way while typing */
+  html:has(
+      :is(
+          input:not([type="checkbox"], [type="radio"], [type="range"], [type="button"], [type="submit"], [type="reset"], [type="color"], [type="file"]),
+          textarea,
+          [contenteditable="true"]
+        ):focus
+    )
+    .os-tabbar {
+    transform: translateY(calc(100% + 8px));
+  }
+}
+
+/* a sheet covers the bottom of the screen: step aside under it */
+html:has(.em-sheet-root) .os-dock,
+html:has(.em-sheet-root) .os-tabbar {
+  transform: translateY(calc(100% + 24px));
+}
+
+/* ── view transitions: persistent chrome holds still ─────────────── */
+
+::view-transition-group(os-dock),
+::view-transition-group(os-tabbar) {
+  z-index: 50;
+  animation: none;
+}
+::view-transition-new(os-dock),
+::view-transition-new(os-tabbar) {
+  animation: none;
+}
+::view-transition-old(os-dock),
+::view-transition-old(os-tabbar) {
+  animation: none;
+  opacity: 0;
+}
+
+/* ── preferences ──────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .os-dock,
+  .os-tabbar,
+  .os-dock-press,
+  .os-tabbar-press,
+  .os-dock-dot,
+  .os-dock-tip,
+  .os-more-row {
+    transition-duration: 0.01s;
+  }
+  .os-dock-link[data-pressed] .os-dock-press,
+  .os-tabbar-link[data-pressed] .os-tabbar-press {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .os-dock-tip {
+    background: rgb(20 23 35 / 0.97);
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .os-dock-tip,
+  .os-tabbar-lens,
+  .os-more-row {
+    box-shadow: inset 0 0 0 1px var(--hairline);
+  }
+  .os-dock-tip {
+    background: var(--color-ink-900);
+  }
+  .os-dock-sep {
+    background: var(--hairline);
+  }
+}
+
+@media (forced-colors: active) {
+  .os-dock-dot {
+    background: CanvasText;
+    box-shadow: none;
+  }
+  .os-dock-tip,
+  .os-tabbar-lens,
+  .os-more-row {
+    border: 1px solid CanvasText;
+  }
+  .os-dock-sep {
+    background: CanvasText;
+  }
+}

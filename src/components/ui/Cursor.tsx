@@ -12,11 +12,13 @@ const RING_SPRING = { stiffness: 520, damping: 46, mass: 0.6 };
  * (no lag on the thing you aim with); the ring follows on a critically
  * damped spring and morphs into a label over `[data-cursor="Label"]`.
  * Native cursor stays on touch, under reduced motion and forced colors.
+ * Elements under `[data-cursor-hide]` get the dot only (no ring).
  */
 export function Cursor({ variant = "ring" }: { variant?: Variant }) {
   const [enabled, setEnabled] = useState(false);
   const [label, setLabel] = useState<string | null>(null);
   const [hovering, setHovering] = useState(false);
+  const [suppressed, setSuppressed] = useState(false);
   const [down, setDown] = useState(false);
   const [hidden, setHidden] = useState(true);
   const dotRef = useRef<HTMLDivElement>(null);
@@ -55,6 +57,8 @@ export function Cursor({ variant = "ring" }: { variant?: Variant }) {
       const t = e.target as Element | null;
       const labelled = t?.closest?.("[data-cursor]") as HTMLElement | null;
       setLabel(labelled?.dataset.cursor || null);
+      // surfaces with their own pointer feedback (the magnifying dock) opt out
+      setSuppressed(!!t?.closest?.("[data-cursor-hide]"));
       setHovering(!!t?.closest?.("a,button,[role=button],[data-cursor],input,textarea,select,label"));
     };
     const onDown = () => setDown(true);
@@ -81,7 +85,12 @@ export function Cursor({ variant = "ring" }: { variant?: Variant }) {
   const scale = down ? 0.82 : 1;
 
   return (
-    <div aria-hidden className={`em-cursor em-cursor--${variant}`} data-hidden={hidden || undefined}>
+    <div
+      aria-hidden
+      className={`em-cursor em-cursor--${variant}`}
+      data-hidden={hidden || undefined}
+      data-suppressed={suppressed || undefined}
+    >
       <m.div
         className="em-cursor-ring"
         style={{ x: rx, y: ry }}

@@ -8,7 +8,8 @@ import type { Place } from "@/lib/places";
 
 const LAND_W = 360;
 const LAND_H = 180;
-const GREENS = ["#425047", "#4f6240", "#A7C080", "#83C092"];
+// land inks, dim → bright: indigo plains, a few ion and lilac highlights
+const GREENS = ["#33376A", "#4A5096", "#8BE9FF", "#B3A4FF"];
 
 let landGrid: Uint8Array | null = null;
 
@@ -221,7 +222,7 @@ export function PixelGlobe({
       }
 
       // dotted sphere rim
-      ctx.strokeStyle = "rgba(211,198,170,0.22)";
+      ctx.strokeStyle = "rgba(179,164,255,0.28)";
       ctx.lineWidth = 2;
       ctx.setLineDash([6, 7]);
       ctx.beginPath();
@@ -252,19 +253,19 @@ export function PixelGlobe({
         const qy = Math.round(p.y);
         if (want) {
           ctx.globalAlpha = isSel ? 1 : 0.75;
-          ctx.strokeStyle = isSel ? "#FFFFFF" : "#83C092";
+          ctx.strokeStyle = isSel ? "#F5F2EC" : "#8BE9FF";
           ctx.lineWidth = 2;
           ctx.strokeRect(qx - 5, qy - 5, 10, 10);
         } else {
           ctx.globalAlpha = 1;
-          ctx.fillStyle = place.home ? "#CFE3B8" : "#A7C080";
+          ctx.fillStyle = place.home ? "#C6FF5E" : "#FFB86B";
           ctx.fillRect(qx - 4, qy - 4, 8, 8);
-          ctx.fillStyle = "#232A2E";
+          ctx.fillStyle = "#0A0B12";
           ctx.fillRect(qx - 1, qy - 1, 3, 3);
         }
         if (isSel) {
           ctx.globalAlpha = blink;
-          ctx.strokeStyle = "#FFFFFF";
+          ctx.strokeStyle = "#F5F2EC";
           ctx.lineWidth = 2;
           const o = 10;
           const l = 6;

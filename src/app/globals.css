@@ -78,7 +78,7 @@
   --glass-shadow-thick: 0 40px 120px -40px rgba(0, 0, 0, 0.8);
   --hairline: rgba(255, 255, 255, 0.1);
   --menubar-h: 2.75rem;
-  --dock-h: 4.75rem;
+  --dock-h: 4.75rem; /* 76px desktop dock */
 
   /* foundation component defaults (palette, sheet, cursor, segmented) */
   --ui-bg: var(--color-ink-900);
@@ -91,6 +91,13 @@
   --ui-radius: 20px;
   --ui-font: var(--font-inter), system-ui, sans-serif;
   --ui-blur: 28px;
+}
+
+@media (max-width: 767px) {
+  :root {
+    /* the dock becomes an iOS-style tab bar */
+    --dock-h: calc(60px + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 @utility glass-thin {
@@ -225,6 +232,10 @@ html.has-cursor [contenteditable="true"] {
 }
 .em-cursor[data-hidden] {
   opacity: 0;
+}
+.em-cursor[data-suppressed] .em-cursor-ring {
+  opacity: 0;
+  transition: opacity 0.15s;
 }
 /* a modal dialog sits in the top layer, above any z-index: hand the
    pointer back to the native cursor while one is open */

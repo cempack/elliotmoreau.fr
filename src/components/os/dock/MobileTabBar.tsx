@@ -1,0 +1,205 @@
+"use client";
+
+import Link from "next/link";
+import { useRef, useState } from "react";
+import { usePathname } from "next/navigation";
+import { m } from "motion/react";
+import { useI18n } from "@/i18n/client";
+import { useReduced } from "@/hooks/env";
+import { spring } from "@/lib/motion";
+import { usePalette } from "@/components/ui/CommandPalette";
+import { Sheet } from "@/components/ui/Sheet";
+import { APPS, appForPath, type AppId } from "../apps";
+import { AppIcon, type IconId } from "../icons";
+import { Glass } from "../Glass";
+import { useTerminal } from "../Terminal";
+import { bounce, isPlainClick, markLaunch, pressHandlers, scrollToTop } from "./launch";
+
+/** The five apps that earn a tab; the rest live behind More. */
+const PRIMARY: AppId[] = ["home", "work", "writing", "atlas", "contact"];
+const TAB_ICON = 32;
+
+function Lens({ reduced }: { reduced: boolean }) {
+  return (
+    <m.span
+      layoutId="os-tabbar-lens"
+      className="os-tabbar-lens"
+      aria-hidden
+      transition={reduced ? { duration: 0 } : spring.default}
+    />
+  );
+}
+
+function TabFace({ app, label }: { app: IconId; label: string }) {
+  return (
+    <>
+      <span className="os-tabbar-icon" data-dock-bounce>
+        <span className="os-tabbar-press">
+          <AppIcon app={app} size={TAB_ICON} />
+        </span>
+      </span>
+      <span className="os-tabbar-label">{label}</span>
+    </>
+  );
+}
+
+function Chevron() {
+  return (
+    <svg className="os-more-chev" width="8" height="14" viewBox="0 0 8 14" aria-hidden focusable="false">
+      <path d="M1.5 1.5 6.5 7l-5 5.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/** Ask the Sheet to leave along its own path (it dismisses on Escape). */
+function dismissSheet() {
+  window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+}
+
+/**
+ * The phone dock (<768px): an iOS-style tab bar, full-width glass over
+ * the home indicator. Five apps get a tab, with labels and a lens that
+ * slides to the current one; More opens a flingable sheet with Now,
+ * Terminal and Search.
+ */
+export function MobileTabBar() {
+  const { t, path } = useI18n();
+  const active = appForPath(usePathname());
+  const term = useTerminal();
+  const palette = usePalette();
+  const reduced = useReduced();
+  const [more, setMore] = useState(false);
+  const after = useRef<(() => void) | null>(null);
+
+  const inMore = !PRIMARY.includes(active.id);
+  const now = APPS.find((a) => a.id === "now")!;
+
+  const launch = (e: React.MouseEvent<HTMLElement>, on: boolean) => {
+    if (!isPlainClick(e)) return;
+    if (on) {
+      e.preventDefault();
+      scrollToTop();
+      return;
+    }
+    const tab = e.currentTarget;
+    markLaunch(tab.querySelector("[data-dock-bounce]"));
+    bounce(tab.querySelector("[data-dock-bounce]"), 7);
+  };
+
+  /** close the sheet, then run `fn` once it has left */
+  const thenClose = (fn: () => void) => {
+    after.current = fn;
+    dismissSheet();
+  };
+
+  return (
+    <>
+      <nav aria-label={t.dock.label} className="os-tabbar" data-os-dock="">
+        <Glass thickness="regular" className="os-tabbar-glass" aria-hidden />
+        <ul className="os-tabbar-list">
+          {PRIMARY.map((id) => {
+            const app = APPS.find((a) => a.id === id)!;
+            const on = active.id === id;
+            return (
+              <li key={id} className="os-tabbar-item" data-dock-launch={id}>
+                <Link
+                  href={path(app.path)}
+                  transitionTypes={["app-open"]}
+                  className="os-tabbar-link"
+                  aria-current={on ? "page" : undefined}
+                  onClick={(e) => launch(e, on)}
+                  {...pressHandlers}
+                >
+                  {on && <Lens reduced={reduced} />}
+                  <TabFace app={id} label={t.shell.apps[app.label]} />
+                </Link>
+              </li>
+            );
+          })}
+          <li className="os-tabbar-item">
+            <button
+              type="button"
+              className="os-tabbar-link"
+              aria-haspopup="dialog"
+              aria-expanded={more}
+              aria-current={inMore ? "page" : undefined}
+              onClick={() => setMore(true)}
+              {...pressHandlers}
+            >
+              {inMore && <Lens reduced={reduced} />}
+              <TabFace app="more" label={t.dock.more} />
+            </button>
+          </li>
+        </ul>
+      </nav>
+
+      <Sheet
+        open={more}
+        label={t.dock.moreTitle}
+        className="os-more"
+        onClose={() => {
+          setMore(false);
+          const fn = after.current;
+          after.current = null;
+          fn?.();
+        }}
+      >
+        <h2 className="os-more-title">{t.dock.moreTitle}</h2>
+        <ul className="os-more-list">
+          <li data-dock-launch="now">
+            <Link
+              href={path(now.path)}
+              transitionTypes={["app-open"]}
+              className="os-more-row"
+              aria-current={active.id === "now" ? "page" : undefined}
+              onClick={(e) => {
+                if (!isPlainClick(e)) return;
+                if (active.id === "now") {
+                  e.preventDefault();
+                  thenClose(scrollToTop);
+                  return;
+                }
+                markLaunch(e.currentTarget.querySelector("[data-dock-bounce]"));
+                dismissSheet();
+              }}
+            >
+              <span data-dock-bounce>
+                <AppIcon app="now" size={44} />
+              </span>
+              <span className="os-more-text">
+                <span className="os-more-name">{t.shell.apps.now}</span>
+                <span className="os-more-hint">{t.dock.nowHint}</span>
+              </span>
+              <Chevron />
+            </Link>
+          </li>
+          <li>
+            <button
+              type="button"
+              className="os-more-row"
+              aria-pressed={term.open}
+              onClick={() => thenClose(() => term.setOpen(true))}
+            >
+              <AppIcon app="terminal" size={44} />
+              <span className="os-more-text">
+                <span className="os-more-name">{t.shell.apps.terminal}</span>
+                <span className="os-more-hint">{t.dock.terminalHint}</span>
+              </span>
+              <Chevron />
+            </button>
+          </li>
+          <li>
+            <button type="button" className="os-more-row" onClick={() => thenClose(palette.open)}>
+              <AppIcon app="spotlight" size={44} />
+              <span className="os-more-text">
+                <span className="os-more-name">{t.dock.search}</span>
+                <span className="os-more-hint">{t.dock.searchHint}</span>
+              </span>
+              <Chevron />
+            </button>
+          </li>
+        </ul>
+      </Sheet>
+    </>
+  );
+}

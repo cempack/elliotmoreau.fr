@@ -24,9 +24,9 @@ const SPAN_ROWS = 2 * GLYPH_H + 1;
 const PITCH_ROWS = GLYPH_H + 1;
 
 // voxel relief tones, shared with the canvas engine's FIELD table
-const SOLID_FAR = "#1E2326";
-const SOLID_NEAR = "#333F45";
-const TOP_FACE = "#EDEAD8";
+const SOLID_FAR = "#0C0D22";
+const SOLID_NEAR = "#1F2050";
+const TOP_FACE = "#FBF9F4";
 
 type Rect = { x: number; y: number; fill: string };
 

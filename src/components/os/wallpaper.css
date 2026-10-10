@@ -1,0 +1,230 @@
+/* ───────────────────────── emOS wallpaper ─────────────────────────
+   Fixed pixel landscape at z-index 0. Until the canvas paints, a CSS
+   gradient keyed on html[data-sky] (set before first paint) shows the
+   right sky with a suggestion of the ridges, so the very first frame is
+   already correct. */
+
+.os-wallpaper {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100lvh;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+  background: linear-gradient(
+    180deg,
+    #04050c 0%,
+    #070a1e 26%,
+    #0b0f2a 44%,
+    #15163a 58%,
+    #1d1a45 66%,
+    #15163a 69%,
+    #10112e 74%,
+    #0b0b23 79%,
+    #080a20 82%,
+    #04040b 100%
+  );
+}
+html[data-sky="dawn"] .os-wallpaper {
+  background: linear-gradient(
+    180deg,
+    #0a0a22 0%,
+    #2c1c4e 22%,
+    #8a4a6b 44%,
+    #d9776b 60%,
+    #f29a6b 67%,
+    #6e3a68 69%,
+    #3b2150 74%,
+    #29163f 79%,
+    #3a2048 82%,
+    #0c0716 100%
+  );
+}
+html[data-sky="day"] .os-wallpaper {
+  background: linear-gradient(
+    180deg,
+    #071b36 0%,
+    #0f3e6b 20%,
+    #2f7fa8 45%,
+    #6fb8d2 60%,
+    #9ed8e6 67%,
+    #6c9ac0 69%,
+    #2f5b8a 74%,
+    #22406c 79%,
+    #2a6290 82%,
+    #0a1a30 100%
+  );
+}
+html[data-sky="dusk"] .os-wallpaper {
+  background: linear-gradient(
+    180deg,
+    #08061a 0%,
+    #2a1048 22%,
+    #7a2a5e 44%,
+    #e0625c 60%,
+    #ff8a5b 67%,
+    #62204f 69%,
+    #2a0f40 74%,
+    #1c0a2f 79%,
+    #2a1040 82%,
+    #070310 100%
+  );
+}
+
+.os-wallpaper-canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  opacity: 0;
+  image-rendering: pixelated;
+}
+.os-wallpaper-canvas[data-on] {
+  opacity: 1;
+}
+/* the newest frame sits on top and fades in over the previous one */
+.os-wallpaper-canvas[data-front] {
+  z-index: 1;
+  transition: opacity 700ms var(--ease-out-quint);
+}
+
+.os-wallpaper-life {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+/* a bright star that glints: a pixel plus four dimmer arms */
+.os-wallpaper-twinkle {
+  position: absolute;
+  width: var(--c);
+  height: var(--c);
+  background: var(--tw);
+  box-shadow:
+    var(--c) 0 0 0 color-mix(in srgb, var(--tw) 42%, transparent),
+    calc(var(--c) * -1) 0 0 0 color-mix(in srgb, var(--tw) 42%, transparent),
+    0 var(--c) 0 0 color-mix(in srgb, var(--tw) 42%, transparent),
+    0 calc(var(--c) * -1) 0 0 color-mix(in srgb, var(--tw) 42%, transparent);
+  opacity: 0;
+  animation: os-wp-twinkle 4s ease-in-out infinite both;
+}
+@keyframes os-wp-twinkle {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  40% {
+    opacity: 0.95;
+  }
+  52% {
+    opacity: 0.35;
+  }
+  64% {
+    opacity: 0.9;
+  }
+  82% {
+    opacity: 0.15;
+  }
+}
+
+/* a rare shooting star: a pixel head with a stepped trail, moving in whole
+   art pixels (down-left at 1:2) */
+.os-wallpaper-meteor {
+  position: absolute;
+  width: calc(var(--c) * 2);
+  height: var(--c);
+  background: #f5f2ec;
+  box-shadow:
+    calc(var(--c) * 2) calc(var(--c) * -1) 0 0 rgba(245, 242, 236, 0.75),
+    calc(var(--c) * 4) calc(var(--c) * -2) 0 0 rgba(198, 255, 94, 0.5),
+    calc(var(--c) * 6) calc(var(--c) * -3) 0 0 rgba(139, 233, 255, 0.32),
+    calc(var(--c) * 8) calc(var(--c) * -4) 0 0 rgba(179, 164, 255, 0.18);
+  opacity: 0;
+  animation: os-wp-meteor 31s 9s infinite both;
+}
+@keyframes os-wp-meteor {
+  0%,
+  94% {
+    opacity: 0;
+    transform: translate(0, 0);
+    animation-timing-function: steps(20, end);
+  }
+  94.6% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(var(--c) * -40), calc(var(--c) * 20));
+  }
+}
+
+/* an aircraft crossing right to left, one art pixel per step */
+.os-wallpaper-plane {
+  position: absolute;
+  left: 0;
+  width: var(--c);
+  height: var(--c);
+  transform: translateX(calc(var(--c) * (var(--n) + 2)));
+  animation: os-wp-plane 260s steps(var(--n), end) 4s infinite both;
+}
+@keyframes os-wp-plane {
+  0% {
+    transform: translateX(calc(var(--c) * (var(--n) + 2)));
+  }
+  62%,
+  100% {
+    transform: translateX(calc(var(--c) * -14));
+  }
+}
+.os-wallpaper-plane-light {
+  position: absolute;
+  inset: 0;
+  background: #ff5f7e;
+  box-shadow: calc(var(--c) * 2) 0 0 0 #f5f2ec;
+  opacity: 0.2;
+  animation: os-wp-blink 1.7s steps(1, end) infinite;
+}
+@keyframes os-wp-blink {
+  0% {
+    opacity: 1;
+  }
+  10% {
+    opacity: 0.22;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  58% {
+    opacity: 0.22;
+  }
+}
+/* by day: a white glint pulling a fading contrail */
+.os-wallpaper-plane[data-day] .os-wallpaper-plane-light {
+  background: #ffffff;
+  opacity: 0.9;
+  animation: none;
+  box-shadow:
+    var(--c) 0 0 0 rgba(255, 255, 255, 0.55),
+    calc(var(--c) * 2) 0 0 0 rgba(255, 255, 255, 0.4),
+    calc(var(--c) * 3) 0 0 0 rgba(255, 255, 255, 0.3),
+    calc(var(--c) * 5) 0 0 0 rgba(255, 255, 255, 0.2),
+    calc(var(--c) * 7) 0 0 0 rgba(255, 255, 255, 0.12),
+    calc(var(--c) * 10) 0 0 0 rgba(255, 255, 255, 0.06);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .os-wallpaper-twinkle {
+    animation: none;
+    opacity: 0.6;
+  }
+  .os-wallpaper-meteor,
+  .os-wallpaper-plane {
+    display: none;
+  }
+  .os-wallpaper-canvas[data-front] {
+    transition-duration: 200ms;
+  }
+}

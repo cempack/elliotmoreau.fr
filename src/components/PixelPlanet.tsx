@@ -1,7 +1,7 @@
 /**
  * PixelPlanet: a deterministic micro-planet identicon from any seed string.
  * A banded planet or cratered moon with rings, a moonlet and a starfield,
- * painted on a 64px canvas in Everforest inks — a sibling of the hero moon.
+ * painted on a 64px canvas in Nocturne inks — a sibling of the wallpaper moon.
  * Same seed = same sky. Transparent background: card panels show through.
  */
 "use client";
@@ -55,18 +55,18 @@ const mix = (a: RGB, b: RGB, t: number): RGB => [
   a[2] + (b[2] - a[2]) * t,
 ];
 
-const STAR_INKS = ["#d3c6aa", "#d3c6aa", "#a7c080", "#83c092", "#7fbbb3", "#e6e0c8"].map(hex);
-const STAR_RARE = ["#e69875", "#e67e80", "#dbbc7f"].map(hex);
-const NEBULAE = ["#33544a", "#2c4a40", "#3d5238"].map(hex);
+const STAR_INKS = ["#f5f2ec", "#f5f2ec", "#c3c5cf", "#8be9ff", "#b3a4ff", "#c6ff5e"].map(hex);
+const STAR_RARE = ["#ffb86b", "#ff5f7e", "#ffd9a3"].map(hex);
+const NEBULAE = ["#2c2a66", "#1d3358", "#3d2460"].map(hex);
 
 type Family = { base: RGB; band: RGB; rim: RGB; moon: boolean };
 const FAMILIES: { f: Family; w: number }[] = [
-  { f: { base: hex("#c9d4a8"), band: hex("#a9b787"), rim: hex("#f0f5da"), moon: true }, w: 0.22 },
-  { f: { base: hex("#83c092"), band: hex("#5da386"), rim: hex("#d9f1e3"), moon: false }, w: 0.2 },
-  { f: { base: hex("#7fbbb3"), band: hex("#5c978f"), rim: hex("#d3efea"), moon: false }, w: 0.2 },
-  { f: { base: hex("#dbbc7f"), band: hex("#bd9a5a"), rim: hex("#f4e7c6"), moon: false }, w: 0.13 },
-  { f: { base: hex("#6f8f9e"), band: hex("#546f7d"), rim: hex("#cfdee4"), moon: false }, w: 0.13 },
-  { f: { base: hex("#e69875"), band: hex("#c47452"), rim: hex("#f7dcc6"), moon: false }, w: 0.12 },
+  { f: { base: hex("#d6d1e4"), band: hex("#aaa3c8"), rim: hex("#f5f2ec"), moon: true }, w: 0.22 },
+  { f: { base: hex("#b3a4ff"), band: hex("#7d6cdc"), rim: hex("#ece8ff"), moon: false }, w: 0.2 },
+  { f: { base: hex("#8be9ff"), band: hex("#4aa9cf"), rim: hex("#e2fbff"), moon: false }, w: 0.2 },
+  { f: { base: hex("#ffb86b"), band: hex("#d98a48"), rim: hex("#ffe7c8"), moon: false }, w: 0.13 },
+  { f: { base: hex("#b8ec6a"), band: hex("#82b83c"), rim: hex("#efffd2"), moon: false }, w: 0.13 },
+  { f: { base: hex("#ff8aa0"), band: hex("#d9566f"), rim: hex("#ffdde4"), moon: false }, w: 0.12 },
 ];
 
 export function paintPlanet(seed: string, ctx: CanvasRenderingContext2D) {
@@ -250,7 +250,7 @@ export function paintPlanet(seed: string, ctx: CanvasRenderingContext2D) {
     }
     if (ok) {
       const mr = 2.5 + rng() * 2.5;
-      const mc = rng() < 0.5 ? hex("#d3c6aa") : fam.base;
+      const mc = rng() < 0.5 ? hex("#e6e1d6") : fam.base;
       const craterX = mx + (rng() - 0.5) * mr;
       const craterY = my + (rng() - 0.5) * mr;
       for (let y = Math.floor(my - mr - 1); y <= my + mr + 1; y++) {
@@ -273,7 +273,7 @@ export function paintPlanet(seed: string, ctx: CanvasRenderingContext2D) {
     const oy = 6 + rng() * (S / 2);
     const dirx = rng() < 0.5 ? 1 : -1;
     const len = 5 + Math.floor(rng() * 3);
-    const col = hex("#e8e2c8");
+    const col = hex("#f5f2ec");
     dot(ox, oy, col, 0.95);
     for (let i = 1; i <= len; i++) {
       dot(ox - dirx * i, oy + Math.round(i * 0.5), col, 0.7 * (1 - i / (len + 1)));

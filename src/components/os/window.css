@@ -1,0 +1,720 @@
+/* ─────────────────────────── emOS · app window ───────────────────────────
+   The frame every app renders inside. A thick Liquid Glass slab floating
+   between the menu bar and the Dock, lit along its rim by the app's
+   accent. The title bar sticks under the menu bar; content scrolls with
+   the page. Phones: a full-screen sheet with a grabber. */
+
+.os-win {
+  --os-win-bar-h: 3.25rem;
+  --os-win-gap: 1.25rem;
+  --os-win-gutter: clamp(1rem, 5.5vw, 5rem);
+  --os-win-max: 80rem;
+  --os-win-side-w: 15rem;
+  --os-win-sticky-top: calc(var(--menubar-h) + var(--os-win-bar-h));
+  --os-win-dock-room: calc(var(--dock-h) + 1.75rem + env(safe-area-inset-bottom));
+  position: relative;
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+  align-self: center;
+  width: calc(100% - 2 * var(--os-win-gutter));
+  max-width: var(--os-win-max);
+  min-height: calc(100svh - var(--menubar-h) - var(--os-win-gap) - var(--os-win-dock-room));
+  margin: calc(var(--menubar-h) + var(--os-win-gap)) auto var(--os-win-dock-room);
+  border-radius: var(--radius-window);
+  overflow: clip;
+  color: var(--color-label);
+  box-shadow:
+    0 0 0 0.5px color-mix(in oklab, var(--os-win-accent) 26%, transparent),
+    0 -24px 80px -44px color-mix(in oklab, var(--os-win-accent) 60%, transparent),
+    0 70px 140px -50px rgba(0, 0, 0, 0.85),
+    0 28px 56px -30px rgba(0, 0, 0, 0.65);
+}
+.os-win[data-zoomed] {
+  --os-win-gutter: 0.625rem;
+  --os-win-gap: 0.625rem;
+  --os-win-max: 200rem;
+}
+.os-win[data-dragging] {
+  will-change: transform;
+}
+
+/* material: the refracting glass sits on its own inset layer, under
+   everything; a pool of accent light gathers under the top edge */
+.os-win-glass {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.os-win-glow {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 0;
+  height: 18rem;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 100% at 50% 0%, color-mix(in oklab, var(--os-win-accent) 13%, transparent), transparent 72%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 6rem);
+}
+/* lit rim: accent along the top edge, fading down the sides */
+.os-win-rim {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  padding: 1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--os-win-accent) 80%, white) 0,
+    color-mix(in oklab, var(--os-win-accent) 34%, transparent) 4.5rem,
+    color-mix(in oklab, var(--os-win-accent) 10%, transparent) 16rem,
+    rgba(255, 255, 255, 0.05) 30rem
+  );
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0.62;
+  transition: opacity 0.35s var(--ease-out-quint);
+}
+.os-win[data-grabbed] .os-win-rim {
+  opacity: 1;
+}
+.os-win-sentinel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+/* ── title bar ── */
+.os-win-bar {
+  position: sticky;
+  top: var(--menubar-h);
+  z-index: 3;
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 1rem;
+  height: var(--os-win-bar-h);
+  padding: 0 0.875rem 0 1.125rem;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+.os-win[data-grabbed] .os-win-bar {
+  cursor: grabbing;
+}
+.os-win-bar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, rgba(13, 15, 24, 0.88), rgba(13, 15, 24, 0.76));
+  backdrop-filter: blur(22px) saturate(1.7);
+  box-shadow: inset 0 -1px 0 var(--hairline);
+  opacity: 0;
+  transition: opacity 0.22s var(--ease-out-quint);
+}
+.os-win-bar[data-stuck]::before {
+  opacity: 1;
+}
+.os-win-bar::after {
+  content: "";
+  position: absolute;
+  inset: auto 1.125rem 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--hairline) 12%, var(--hairline) 88%, transparent);
+  pointer-events: none;
+  transition: opacity 0.22s;
+}
+.os-win-bar[data-stuck]::after {
+  opacity: 0;
+}
+
+/* traffic lights: flare / ember / signal, pixel glyphs on hover or focus */
+.os-win-lights {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 0.5rem;
+}
+.os-win-light {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 999px;
+  background: var(--os-light);
+  color: rgba(5, 6, 10, 0.78);
+  box-shadow:
+    inset 0 0 0 0.5px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 0 10px -2px color-mix(in oklab, var(--os-light) 55%, transparent);
+  cursor: pointer;
+}
+.os-win-light::before {
+  /* generous hit area without visual weight */
+  content: "";
+  position: absolute;
+  inset: -0.25rem;
+  border-radius: 999px;
+}
+.os-win-light::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: #000;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.os-win-light:active::after {
+  opacity: 0.22;
+}
+.os-win-light svg {
+  position: relative;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.os-win-lights:hover svg,
+.os-win-lights:focus-within svg {
+  opacity: 1;
+}
+.os-win-light:focus-visible {
+  outline-offset: 2px;
+  border-radius: 999px;
+}
+.os-win-light--close {
+  --os-light: var(--color-flare);
+}
+.os-win-light--min {
+  --os-light: var(--color-ember);
+}
+.os-win-light--zoom {
+  --os-light: var(--color-signal);
+}
+
+.os-win-heading {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.625rem;
+}
+.os-win-heading > :first-child {
+  flex: none;
+}
+.os-win-title {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--text-headline);
+  font-weight: 600;
+  line-height: var(--text-headline--line-height);
+  letter-spacing: var(--text-headline--letter-spacing);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.os-win-sub {
+  flex: none;
+  color: var(--color-label-3);
+  font-size: var(--text-footnote);
+  white-space: nowrap;
+}
+.os-win-sub--path {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0;
+}
+.os-win-toolbar {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+/* phone chrome (hidden on desktop) */
+.os-win-grabber,
+.os-win-x {
+  display: none;
+}
+.os-win-x {
+  flex: none;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin: 0 -0.375rem 0 auto;
+  border-radius: 999px;
+  color: var(--color-label-2);
+}
+.os-win-x > span {
+  display: grid;
+  place-items: center;
+  width: 1.875rem;
+  height: 1.875rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+}
+.os-win-toolbar + .os-win-x {
+  margin-left: 0;
+}
+
+/* ── body: sidebar + content ── */
+.os-win-body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+.os-win-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .os-win-body[data-has-side] {
+    flex-direction: row;
+    background: linear-gradient(
+      90deg,
+      rgba(5, 6, 10, 0.16) 0 var(--os-win-side-w),
+      var(--hairline) var(--os-win-side-w) calc(var(--os-win-side-w) + 1px),
+      transparent calc(var(--os-win-side-w) + 1px)
+    );
+  }
+  .os-win-side {
+    position: sticky;
+    top: var(--os-win-sticky-top);
+    flex: none;
+    align-self: flex-start;
+    width: var(--os-win-side-w);
+    max-height: calc(100svh - var(--os-win-sticky-top) - var(--os-win-dock-room));
+    padding: 0.75rem 0.75rem 1.5rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+@media (max-width: 1023px) {
+  .os-win-side {
+    display: flex;
+    padding: 0.125rem 1rem 0.875rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    scroll-padding-inline: 1rem;
+    mask-image: linear-gradient(90deg, transparent 0, #000 0.875rem, #000 calc(100% - 0.875rem), transparent 100%);
+  }
+  .os-win-side::-webkit-scrollbar {
+    display: none;
+  }
+  .os-win-side :is(ul, ol, [role="list"], [role="tablist"]) {
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 0.375rem;
+    width: max-content;
+    margin: 0;
+  }
+  .os-win-side [data-win-hide-compact] {
+    display: none;
+  }
+}
+
+/* WinNav: source list on ≥lg, segmented strip below */
+.os-win-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.os-win-nav-item {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  min-height: 2.25rem;
+  padding: 0.375rem 0.625rem;
+  border-radius: var(--radius-control);
+  color: var(--color-label-2);
+  font-size: var(--text-callout);
+  line-height: 1.2;
+  text-align: left;
+  transition: color 0.2s;
+}
+.os-win-nav-item::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  border-radius: inherit;
+  background: rgba(255, 255, 255, 0.05);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.os-win-nav-item:hover {
+  color: var(--color-label);
+}
+.os-win-nav-item:hover::after {
+  opacity: 1;
+}
+.os-win-nav-item[data-active] {
+  color: var(--color-label);
+}
+.os-win-nav-thumb {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: color-mix(in oklab, var(--os-win-accent) 14%, rgba(255, 255, 255, 0.03));
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--os-win-accent) 30%, transparent);
+}
+.os-win-nav-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1rem;
+  color: var(--color-label-3);
+}
+.os-win-nav-item[data-active] .os-win-nav-icon {
+  color: var(--os-win-accent);
+}
+.os-win-nav-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.os-win-nav-count {
+  margin-left: auto;
+  color: var(--color-label-3);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+@media (max-width: 1023px) {
+  .os-win-nav-item {
+    width: auto;
+    padding: 0.375rem 0.875rem;
+    border-radius: 999px;
+    white-space: nowrap;
+    box-shadow: inset 0 0 0 1px var(--hairline);
+  }
+  .os-win-nav-item::after {
+    opacity: 1;
+  }
+  .os-win-nav-item[data-active] {
+    color: var(--color-ink-950);
+  }
+  .os-win-nav-item[data-active] .os-win-nav-icon,
+  .os-win-nav-item[data-active] .os-win-nav-count {
+    color: var(--color-ink-900);
+  }
+  .os-win-nav-thumb {
+    background: var(--os-win-accent);
+    box-shadow: none;
+  }
+  .os-win-nav-count {
+    margin-left: 0.125rem;
+  }
+}
+
+/* touch: bigger lights and targets */
+@media (pointer: coarse) {
+  .os-win-lights {
+    gap: 1.5rem;
+  }
+  .os-win-light {
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+  .os-win-light::before {
+    inset: -0.8125rem;
+  }
+  .os-win-light svg {
+    opacity: 1;
+    scale: 1.4;
+  }
+  .os-win-nav-item::before {
+    content: "";
+    position: absolute;
+    inset: -0.3125rem 0;
+  }
+}
+@media (pointer: coarse) and (min-width: 1024px) {
+  .os-win-nav-item {
+    min-height: 2.75rem;
+  }
+}
+
+/* ── phone: a full-screen sheet below the compact menu bar ── */
+@media (max-width: 767px) {
+  .os-win {
+    --os-win-bar-h: 3.875rem;
+    --os-win-gap: 0.5rem;
+    --os-win-gutter: 0px;
+    --os-win-dock-room: 0px;
+    border-radius: var(--radius-window) var(--radius-window) 0 0;
+    min-height: calc(100svh - var(--menubar-h) - var(--os-win-gap));
+    box-shadow:
+      0 -0.5px 0 color-mix(in oklab, var(--os-win-accent) 30%, transparent),
+      0 -20px 60px -30px color-mix(in oklab, var(--os-win-accent) 55%, transparent),
+      0 -10px 40px -10px rgba(0, 0, 0, 0.6);
+  }
+  .os-win-rim {
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--os-win-accent) 80%, white) 0,
+      color-mix(in oklab, var(--os-win-accent) 22%, transparent) 3rem,
+      transparent 10rem
+    );
+  }
+  .os-win-main {
+    padding-bottom: calc(var(--dock-h) + env(safe-area-inset-bottom) + 1rem);
+  }
+  .os-win-bar {
+    gap: 0.75rem;
+    padding: 0.625rem 0.75rem 0 1rem;
+    cursor: default;
+  }
+  .os-win-bar::after {
+    inset-inline: 1rem;
+  }
+  .os-win-lights,
+  .os-win-sub--path {
+    display: none;
+  }
+  .os-win-grabber {
+    display: block;
+    position: absolute;
+    top: 0.4375rem;
+    left: 50%;
+    width: 2.25rem;
+    height: 0.3125rem;
+    border-radius: 999px;
+    background: rgba(245, 242, 236, 0.34);
+    translate: -50% 0;
+  }
+  .os-win-x {
+    display: grid;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .os-win {
+    box-shadow:
+      0 0 0 1px var(--hairline),
+      0 40px 100px -40px rgba(0, 0, 0, 0.9);
+  }
+  .os-win-rim {
+    opacity: 1;
+  }
+  .os-win-bar::before {
+    background: var(--color-ink-900);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .os-win-bar::before {
+    background: var(--color-ink-900);
+    backdrop-filter: none;
+  }
+}
+
+/* ─────────────────────────── page transitions ───────────────────────────
+   React <ViewTransition> classes on the window (AppWindow), keyed by the
+   navigation's transition type. Entering: app-open (grows out of its Dock
+   icon) or app-in (fades). Leaving: app-close (shrinks back into the icon
+   along the same path), app-leave (recedes while another app opens) or
+   app-out (fades).
+
+   The window is captured in isolation, so its own glass can't see the
+   wallpaper: the ::view-transition-group carries the frosted backdrop and
+   the shadow instead, and is cut to what is on screen below the menu bar
+   (geometry from window/dock.ts in --os-vt-in-* / --os-vt-out-*). The
+   group is what scales; `translate` undoes the scale's effect on its
+   positioning transform, so it scales about the Dock icon exactly. */
+
+::view-transition-group(.app-open),
+::view-transition-group(.app-in) {
+  top: var(--os-vt-in-t);
+  height: var(--os-vt-in-vis);
+  transform-origin: var(--os-vt-in-ox) var(--os-vt-in-oy);
+}
+::view-transition-group(.app-close),
+::view-transition-group(.app-leave),
+::view-transition-group(.app-out) {
+  top: var(--os-vt-out-t);
+  height: var(--os-vt-out-vis);
+  transform-origin: var(--os-vt-out-ox) var(--os-vt-out-oy);
+}
+::view-transition-group(.app-open),
+::view-transition-group(.app-in),
+::view-transition-group(.app-close),
+::view-transition-group(.app-leave),
+::view-transition-group(.app-out) {
+  border-radius: var(--radius-window);
+  background: rgba(10, 11, 18, 0.18);
+  backdrop-filter: blur(40px) saturate(1.9);
+  box-shadow:
+    0 60px 120px -50px rgba(0, 0, 0, 0.8),
+    0 24px 48px -28px rgba(0, 0, 0, 0.6);
+}
+::view-transition-image-pair(.app-open),
+::view-transition-image-pair(.app-in) {
+  inset: auto;
+  top: calc(-1 * var(--os-vt-in-t));
+  left: 0;
+  width: 100%;
+  height: var(--os-vt-in-h);
+}
+::view-transition-image-pair(.app-close),
+::view-transition-image-pair(.app-leave),
+::view-transition-image-pair(.app-out) {
+  inset: auto;
+  top: calc(-1 * var(--os-vt-out-t));
+  left: 0;
+  width: 100%;
+  height: var(--os-vt-out-h);
+}
+::view-transition-new(.app-open),
+::view-transition-new(.app-in) {
+  clip-path: inset(var(--os-vt-in-t) 0 var(--os-vt-in-cb) 0 round var(--radius-window));
+  animation: none;
+}
+::view-transition-old(.app-close),
+::view-transition-old(.app-leave),
+::view-transition-old(.app-out) {
+  clip-path: inset(var(--os-vt-out-t) 0 var(--os-vt-out-cb) 0 round var(--radius-window));
+  animation: none;
+}
+
+/* app-open: out of the Dock on a critically damped spring curve, opacity
+   in early; app-close: the same path back, fading out late */
+::view-transition-group(.app-open) {
+  animation:
+    560ms
+      linear(0, 0.014 2%, 0.051 4%, 0.103 6%, 0.163 8%, 0.228 10%, 0.327 13%, 0.422 16%, 0.537 20%, 0.636 24%, 0.717 28%, 0.796 33%, 0.855 38%, 0.905 44%, 0.939 50%, 0.964 57%, 0.98 65%, 0.991 75%, 0.996 87%, 1)
+      both os-vt-grow,
+    200ms cubic-bezier(0.2, 0, 0, 1) both os-vt-in;
+}
+::view-transition-group(.app-close) {
+  animation:
+    480ms
+      linear(0, 0.014 2%, 0.051 4%, 0.103 6%, 0.163 8%, 0.228 10%, 0.327 13%, 0.422 16%, 0.537 20%, 0.636 24%, 0.717 28%, 0.796 33%, 0.855 38%, 0.905 44%, 0.939 50%, 0.964 57%, 0.98 65%, 0.991 75%, 0.996 87%, 1)
+      both os-vt-shrink,
+    220ms cubic-bezier(0.4, 0, 1, 1) 150ms both os-vt-out;
+}
+::view-transition-group(.app-leave) {
+  transform-origin: 50% 50%;
+  animation:
+    320ms cubic-bezier(0.2, 0, 0, 1) both os-vt-recede,
+    200ms cubic-bezier(0.4, 0, 1, 1) 90ms both os-vt-out;
+}
+/* plain cross-fade: the old window holds until the new one covers it */
+::view-transition-group(.app-in) {
+  animation: 180ms cubic-bezier(0.2, 0, 0, 1) both os-vt-in;
+}
+::view-transition-group(.app-out) {
+  animation: 160ms cubic-bezier(0.4, 0, 1, 1) 70ms both os-vt-out;
+}
+
+/* when a window comes or goes, the rest of the page is captured too (React
+   would otherwise leave it live under the overlay, out of reach of the
+   group's backdrop) and cross-fades in place: identical pixels stay put,
+   so same duration + easing on both sides */
+:root[data-os-vt]:active-view-transition {
+  view-transition-name: root !important;
+}
+:root[data-os-vt]::view-transition-group(root) {
+  opacity: 1 !important;
+}
+:root::view-transition-old(root) {
+  animation: 260ms cubic-bezier(0.33, 0, 0.67, 1) both os-vt-out;
+}
+:root::view-transition-new(root) {
+  animation: 260ms cubic-bezier(0.33, 0, 0.67, 1) both os-vt-in;
+}
+
+/* persistent chrome, when given a view-transition-name: stays put, above
+   the windows, and updates live */
+::view-transition-group(os-menubar),
+::view-transition-group(os-dock) {
+  z-index: 50;
+  animation: none;
+}
+::view-transition-old(os-menubar),
+::view-transition-old(os-dock) {
+  display: none;
+}
+::view-transition-new(os-menubar),
+::view-transition-new(os-dock) {
+  animation: none;
+}
+
+@keyframes os-vt-grow {
+  from {
+    scale: 0.6;
+    translate: calc(0.4 * var(--os-vt-in-gx)) calc(0.4 * var(--os-vt-in-gy) + 1.75rem);
+  }
+}
+@keyframes os-vt-shrink {
+  to {
+    scale: 0.6;
+    translate: calc(0.4 * var(--os-vt-out-gx)) calc(0.4 * var(--os-vt-out-gy) + 1.75rem);
+  }
+}
+@keyframes os-vt-recede {
+  to {
+    scale: 0.96;
+    translate: calc(0.04 * var(--os-vt-out-gx)) calc(0.04 * var(--os-vt-out-gy));
+  }
+}
+@keyframes os-vt-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes os-vt-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  ::view-transition-group(.app-open),
+  ::view-transition-group(.app-in),
+  ::view-transition-group(.app-close),
+  ::view-transition-group(.app-leave),
+  ::view-transition-group(.app-out) {
+    border-radius: var(--radius-window) var(--radius-window) 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(.app-open),
+  ::view-transition-group(.app-in),
+  :root::view-transition-new(root) {
+    animation: 150ms linear both os-vt-in;
+  }
+  ::view-transition-group(.app-close),
+  ::view-transition-group(.app-leave),
+  ::view-transition-group(.app-out),
+  :root::view-transition-old(root) {
+    animation: 150ms linear both os-vt-out;
+  }
+  .os-win-rim,
+  .os-win-bar::before {
+    transition: none;
+  }
+}

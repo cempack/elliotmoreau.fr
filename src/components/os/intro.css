@@ -1,0 +1,577 @@
+/* ─────────────────────── emOS intro: boot → lock → unlock ───────────────────────
+   Everything up to the unlock is CSS keyframes timed from first paint, so
+   the sequence plays before hydration. Timeline (ms):
+     0–820     boot: matrix ignites cell by cell, pixel bar, boot log
+     820–1060  boot fades through into the lock screen
+     860–1400  lock screen settles: clock exhales, date and user rise
+     1940      auto unlock (JS), or any input earlier: the glass lifts away
+   `.em-intro` (globals) already makes the gate fixed, inset 0, z 100, and
+   hides it pre-paint for returning visitors and under reduced motion. */
+
+.os-intro {
+  overflow: hidden;
+  /* a never-hydrated page must not stay locked: get out of the way */
+  animation: os-intro-failsafe 1ms linear 4.5s forwards;
+}
+@keyframes os-intro-failsafe {
+  to {
+    visibility: hidden;
+  }
+}
+
+/* frames rendered again by the exit copy: frozen, no entrance keyframes */
+.os-intro .is-still,
+.os-intro .is-still *,
+.os-intro-exit .is-still,
+.os-intro-exit .is-still * {
+  animation: none !important;
+}
+
+/* ───────── boot ───────── */
+
+.os-intro-boot {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: #000;
+  animation: os-intro-boot-out 240ms var(--ease-in-quint) 820ms both;
+}
+@keyframes os-intro-boot-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+.os-intro-boot-center {
+  --c: 15px;
+  --g: 3px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+  animation: os-intro-boot-zoom 260ms var(--ease-in-quint) 820ms both;
+}
+@keyframes os-intro-boot-zoom {
+  to {
+    transform: scale(1.08);
+  }
+}
+.os-intro-boot-foot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: max(28px, env(safe-area-inset-bottom));
+  text-align: center;
+  font: 500 12px/1 var(--font-mono);
+  letter-spacing: 0.08em;
+  color: var(--color-label-3);
+  animation: os-intro-fade 400ms ease-out 120ms both;
+}
+
+/* the matrix: every cell is an unlit LED; glyph cells carry a lime light
+   (::before) that ignites, with a one-frame white flash (::after) */
+.os-intro-mark {
+  --c: 15px;
+  --g: 3px;
+  display: grid;
+  gap: var(--g);
+}
+.os-intro-mark-cell {
+  position: relative;
+  width: var(--c);
+  height: var(--c);
+  border-radius: max(1px, calc(var(--c) * 0.12));
+  background: #0d0f16;
+}
+.os-intro-mark-cell.is-void {
+  background: transparent;
+}
+.os-intro-mark-cell.is-on::before,
+.os-intro-mark-cell.is-on::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.os-intro-mark-cell.is-on::before {
+  background: var(--color-signal);
+  box-shadow: 0 0 calc(var(--c) * 1.1) rgba(198, 255, 94, 0.28);
+}
+.os-intro-mark-cell.is-glint::before {
+  background: #ecffc9;
+}
+.os-intro-mark-cell.is-on::after {
+  background: #fff;
+  opacity: 0;
+}
+.os-intro-mark.is-boot .os-intro-mark-cell {
+  animation: os-intro-fade 260ms ease-out both;
+}
+.os-intro-mark.is-boot .os-intro-mark-cell.is-on::before {
+  animation: os-intro-ignite 210ms steps(3, end) var(--d) both;
+}
+.os-intro-mark.is-boot .os-intro-mark-cell.is-on::after {
+  animation: os-intro-flash 240ms ease-out var(--d) forwards;
+}
+@keyframes os-intro-ignite {
+  0% {
+    opacity: 0;
+    transform: scale(0.35);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.18);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes os-intro-flash {
+  0% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* progress: one segment per matrix column, same pitch, lit unevenly */
+.os-intro-bar {
+  display: flex;
+  gap: var(--g);
+}
+.os-intro-bar i {
+  position: relative;
+  width: var(--c);
+  height: 4px;
+  background: #14161f;
+}
+.os-intro-bar i::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--color-signal);
+  opacity: 0;
+  animation: os-intro-on 1ms steps(1, end) var(--d) forwards;
+}
+.is-still .os-intro-bar i::before {
+  opacity: 1;
+}
+@keyframes os-intro-on {
+  to {
+    opacity: 1;
+  }
+}
+
+.os-intro-log {
+  position: relative;
+  width: min(360px, 86vw);
+  height: 16px;
+  font: 500 12px/16px var(--font-mono);
+  letter-spacing: 0.02em;
+  color: var(--color-label-3);
+}
+.os-intro-log span {
+  position: absolute;
+  inset: 0;
+  text-align: center;
+  white-space: nowrap;
+  opacity: 0;
+  animation: os-intro-line 280ms steps(1, end) calc(var(--i) * 280ms);
+}
+.os-intro-log span:last-child {
+  animation-fill-mode: forwards;
+}
+.is-still .os-intro-log span:last-child {
+  opacity: 1;
+}
+@keyframes os-intro-line {
+  from,
+  to {
+    opacity: 1;
+  }
+}
+
+/* ───────── lock screen ───────── */
+
+.os-intro-lock {
+  position: absolute;
+  inset: 0;
+  color: var(--color-label);
+}
+
+/* dark glass over the wallpaper, tinted by the live sky phase */
+.os-intro-veil {
+  --os-intro-sky: linear-gradient(180deg, rgba(4, 5, 12, 0.7), rgba(11, 15, 42, 0.6) 55%, rgba(29, 26, 69, 0.66));
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 60% at 50% 34%, rgba(5, 6, 10, 0) 0%, rgba(5, 6, 10, 0.28) 100%),
+    linear-gradient(180deg, rgba(5, 6, 10, 0.5) 0%, rgba(5, 6, 10, 0.12) 46%, rgba(5, 6, 10, 0.62) 100%),
+    var(--os-intro-sky);
+  backdrop-filter: blur(34px) saturate(1.6);
+}
+html[data-sky="dawn"] .os-intro-veil {
+  --os-intro-sky: linear-gradient(
+    180deg,
+    rgba(10, 10, 34, 0.72),
+    rgba(44, 28, 78, 0.6) 45%,
+    rgba(138, 74, 107, 0.55) 78%,
+    rgba(242, 154, 107, 0.5)
+  );
+}
+html[data-sky="day"] .os-intro-veil {
+  --os-intro-sky: linear-gradient(
+    180deg,
+    rgba(7, 27, 54, 0.74),
+    rgba(15, 62, 107, 0.62) 45%,
+    rgba(47, 127, 168, 0.55) 78%,
+    rgba(158, 216, 230, 0.42)
+  );
+}
+html[data-sky="dusk"] .os-intro-veil {
+  --os-intro-sky: linear-gradient(
+    180deg,
+    rgba(8, 6, 26, 0.72),
+    rgba(42, 16, 72, 0.6) 45%,
+    rgba(122, 42, 94, 0.55) 78%,
+    rgba(255, 138, 91, 0.45)
+  );
+}
+@media (prefers-reduced-transparency: reduce) {
+  .os-intro-veil {
+    backdrop-filter: none;
+    background-color: var(--color-ink-950);
+  }
+}
+
+.os-intro-lock-ui {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: max(env(safe-area-inset-top), 7vh) 24px max(env(safe-area-inset-bottom), 6vh);
+  text-align: center;
+}
+
+.os-intro-lockmark {
+  color: var(--color-label);
+}
+.os-intro-padlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.os-intro-padlock svg {
+  display: block;
+}
+.os-intro-padlock-body {
+  color: var(--color-label);
+}
+
+.os-intro-when {
+  margin-top: clamp(20px, 5vh, 56px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.os-intro-date {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font: 600 clamp(1.0625rem, 1.55vw, 1.4rem) / 1.2 var(--font-sans);
+  letter-spacing: -0.012em;
+  color: var(--color-label-2);
+}
+.os-intro-date-text::first-letter {
+  text-transform: uppercase;
+}
+.os-intro-skyglyph {
+  display: inline-grid;
+  color: var(--color-ember);
+}
+.os-intro-skyglyph svg {
+  grid-area: 1 / 1;
+  display: none;
+}
+.os-intro-sky-night,
+html[data-sky="night"] .os-intro-sky-night,
+html[data-sky="day"] .os-intro-sky-day,
+html[data-sky="dawn"] .os-intro-sky-edge,
+html[data-sky="dusk"] .os-intro-sky-edge {
+  display: block;
+}
+html[data-sky]:not([data-sky="night"]) .os-intro-sky-night {
+  display: none;
+}
+
+.os-intro-clock {
+  margin-top: 0.04em;
+  font-family: var(--font-display);
+  font-weight: 200;
+  font-size: clamp(6.75rem, 17.5vw, 15.5rem);
+  line-height: 0.92;
+  letter-spacing: -0.035em;
+  font-variation-settings: "opsz" 32;
+  color: var(--color-label);
+  min-height: 0.92em;
+}
+.os-intro-digits {
+  display: inline-flex;
+  align-items: center;
+}
+/* the one pixel inside the type: a lime square colon */
+.os-intro-colon {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.15em;
+  margin: 0 0.075em;
+  transform: translateY(0.015em);
+}
+.os-intro-colon i {
+  display: block;
+  width: 0.07em;
+  height: 0.07em;
+  background: var(--color-signal);
+  box-shadow: 0 0 0.12em rgba(198, 255, 94, 0.35);
+}
+
+.os-intro-meta {
+  margin-top: clamp(14px, 2.2vh, 22px);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 0.7em;
+  font: 500 12px/1.4 var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-label-3);
+}
+.os-intro-phase {
+  display: none;
+}
+.os-intro-phase--night,
+html[data-sky="night"] .os-intro-phase--night,
+html[data-sky="dawn"] .os-intro-phase--dawn,
+html[data-sky="day"] .os-intro-phase--day,
+html[data-sky="dusk"] .os-intro-phase--dusk {
+  display: inline;
+}
+html[data-sky]:not([data-sky="night"]) .os-intro-phase--night {
+  display: none;
+}
+
+.os-intro-user {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+.os-intro-avatar {
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  border-radius: 999px;
+  color: var(--color-signal);
+  background:
+    radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.14), transparent 55%),
+    linear-gradient(160deg, #23273a, #0b0d15);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 14px 34px -12px rgba(0, 0, 0, 0.7);
+}
+.os-intro-avatar svg {
+  display: block;
+  filter: drop-shadow(0 0 6px rgba(198, 255, 94, 0.3));
+}
+.os-intro-name {
+  margin-top: 12px;
+  font: 600 1.0625rem/1.25 var(--font-sans);
+  letter-spacing: -0.012em;
+}
+.os-intro-hint {
+  margin-top: 6px;
+  width: 100%;
+  font: 500 0.8125rem/1.4 var(--font-sans);
+  color: var(--color-label-3);
+}
+.os-intro-hint-touch {
+  display: none;
+}
+@media (pointer: coarse) {
+  .os-intro-hint-fine {
+    display: none;
+  }
+  .os-intro-hint-touch {
+    display: block;
+  }
+}
+
+/* shimmer: the band and the bright copy move in opposite directions by
+   the same container-relative distance, so the copy stays put on screen */
+.os-intro-shimmer {
+  position: relative;
+  display: block;
+  container-type: inline-size;
+  overflow: hidden;
+}
+.os-intro-shimmer-base {
+  display: block;
+}
+.os-intro-shimmer-band {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 30cqw;
+  overflow: hidden;
+  transform: translateX(-30cqw);
+  mask-image: linear-gradient(90deg, transparent, #000 45%, #000 55%, transparent);
+  animation: os-intro-band 1500ms cubic-bezier(0.45, 0, 0.55, 1) 1060ms infinite;
+}
+.os-intro-shimmer-hi {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100cqw;
+  color: var(--color-label);
+  transform: translateX(30cqw);
+  animation: os-intro-band-inv 1500ms cubic-bezier(0.45, 0, 0.55, 1) 1060ms infinite;
+}
+@keyframes os-intro-band {
+  from {
+    transform: translateX(-30cqw);
+  }
+  to {
+    transform: translateX(100cqw);
+  }
+}
+@keyframes os-intro-band-inv {
+  from {
+    transform: translateX(30cqw);
+  }
+  to {
+    transform: translateX(-100cqw);
+  }
+}
+
+/* entrance: the boot fades through, then the lock screen settles. The
+   clock exhales (weight 560 → 200) as it comes to rest, a kinetic beat. */
+.os-intro-lock:not(.is-still) .os-intro-lockmark {
+  animation: os-intro-rise 520ms var(--ease-out-quint) 880ms both;
+}
+.os-intro-lock:not(.is-still) .os-intro-date {
+  animation: os-intro-rise 560ms var(--ease-out-quint) 900ms both;
+}
+.os-intro-lock:not(.is-still) .os-intro-clock {
+  animation: os-intro-exhale 760ms var(--ease-out-quint) 860ms both;
+}
+.os-intro-lock:not(.is-still) .os-intro-meta {
+  animation: os-intro-rise 560ms var(--ease-out-quint) 980ms both;
+}
+.os-intro-lock:not(.is-still) .os-intro-user {
+  animation: os-intro-rise 620ms var(--ease-out-quint) 1020ms both;
+}
+.os-intro-lock:not(.is-still) .os-intro-in {
+  animation: os-intro-fade 220ms ease-out both;
+}
+@keyframes os-intro-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+@keyframes os-intro-exhale {
+  from {
+    opacity: 0;
+    transform: scale(1.07);
+    font-weight: 560;
+  }
+}
+@keyframes os-intro-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ───────── unlock (exit copy, pointer-transparent) ───────── */
+
+.os-intro-exit {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  overflow: hidden;
+}
+.os-intro-exit-fill {
+  position: absolute;
+  inset: 0;
+}
+.os-intro-settle {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 6, 10, 0.5);
+}
+.os-intro-sheet {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+}
+/* the glass sheet's lit bottom edge, and the shadow it casts as it lifts */
+.os-intro-sheet-edge {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 120px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.42), rgba(0, 0, 0, 0.12) 40%, transparent);
+}
+.os-intro-sheet-edge::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0.1));
+}
+.os-intro-sheet-edge::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -18px;
+  height: 18px;
+  background: linear-gradient(0deg, rgba(255, 255, 255, 0.1), transparent);
+}
+
+/* ───────── small screens ───────── */
+@media (max-width: 640px) {
+  .os-intro-boot-center,
+  .os-intro-mark {
+    --c: 11px;
+    --g: 2px;
+  }
+  .os-intro-boot-center {
+    gap: 24px;
+  }
+  .os-intro-lock-ui {
+    padding-top: max(env(safe-area-inset-top), 9vh);
+  }
+  .os-intro-when {
+    margin-top: 26px;
+  }
+  .os-intro-clock {
+    letter-spacing: -0.04em;
+  }
+  .os-intro-meta {
+    letter-spacing: 0.1em;
+  }
+}
