@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { Fragment, useRef } from "react";
 import { m, useInView, useScroll, useTransform, type MotionValue } from "motion/react";
 
 type Tag = "h1" | "h2" | "h3" | "p" | "span" | "div";
@@ -44,7 +44,10 @@ export function SplitText({
       <span className="sr-only">{text}</span>
       <span aria-hidden className="em-split">
         {words.map((word, wi) => (
-          <span key={wi} className="em-split-word">
+          // the space lives between word masks: inside an inline-block it collapses
+          <Fragment key={wi}>
+          {wi > 0 && " "}
+          <span className="em-split-word">
             {(by === "char" ? Array.from(word) : [word]).map((piece) => {
               const i = index++;
               return mode === "scrub" ? (
@@ -55,16 +58,16 @@ export function SplitText({
                 <m.span
                   key={i}
                   className={`em-split-piece ${pieceClassName}`}
-                  initial={{ y: "110%" }}
-                  animate={inView ? { y: "0%" } : { y: "110%" }}
+                  initial={{ y: "125%" }}
+                  animate={inView ? { y: "0%" } : { y: "125%" }}
                   transition={{ type: "spring", visualDuration: 0.7, bounce: 0, delay: delay + i * stagger }}
                 >
                   {piece}
                 </m.span>
               );
             })}
-            {wi < words.length - 1 && " "}
           </span>
+          </Fragment>
         ))}
       </span>
     </As>
@@ -85,7 +88,7 @@ function ScrubPiece({
   children: React.ReactNode;
 }) {
   const start = (i / Math.max(1, total)) * 0.6;
-  const y = useTransform(progress, [start, start + 0.4], ["110%", "0%"]);
+  const y = useTransform(progress, [start, start + 0.4], ["125%", "0%"]);
   const opacity = useTransform(progress, [start, start + 0.25], [0, 1]);
   return (
     <m.span className={`em-split-piece ${className}`} style={{ y, opacity }}>

@@ -1,19 +1,18 @@
 "use client";
 
-import { LazyMotion, MotionConfig } from "motion/react";
+import { LazyMotion, MotionConfig, domMax } from "motion/react";
 import { spring } from "@/lib/motion";
 
-// full feature set (drag, layout, exit) arrives after first paint
-const loadFeatures = () => import("@/lib/motion-features").then((m) => m.default);
-
 /**
- * Motion for the whole tree: lazy-loaded features (use `m.*`, not
- * `motion.*`), critically damped default spring, and the user's
- * reduced-motion preference honored everywhere.
+ * Motion for the whole tree: `m.*` components with the full feature set
+ * (drag, layout, exit) loaded synchronously — async features re-seed
+ * style-bound motion values when they land, which snaps live gestures
+ * back. Critically damped default spring; the user's reduced-motion
+ * preference honored everywhere.
  */
 export function MotionProvider({ children }: { children: React.ReactNode }) {
   return (
-    <LazyMotion features={loadFeatures}>
+    <LazyMotion features={domMax}>
       <MotionConfig reducedMotion="user" transition={spring.default}>
         {children}
       </MotionConfig>

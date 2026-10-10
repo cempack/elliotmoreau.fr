@@ -74,15 +74,15 @@ export function Marquee({
       onFocus={() => (hover.current = true)}
       onBlur={() => (hover.current = false)}
     >
-      <m.div className="em-marquee-track" style={{ x: reduced ? 0 : x }}>
+      {/* same markup on server and client; reduced motion is handled in CSS
+          (second copy hidden, no transform) so hydration always matches */}
+      <m.div className="em-marquee-track" style={{ x }}>
         <div ref={copyRef} className="em-marquee-copy">
           {children}
         </div>
-        {!reduced && (
-          <div className="em-marquee-copy" aria-hidden inert>
-            {children}
-          </div>
-        )}
+        <div className="em-marquee-copy" aria-hidden inert>
+          {children}
+        </div>
       </m.div>
     </div>
   );

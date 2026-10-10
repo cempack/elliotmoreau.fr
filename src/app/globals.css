@@ -23,6 +23,9 @@
 html {
   /* inertial scrolling is owned by Lenis (SmoothScroll) — no CSS smooth */
   scroll-behavior: auto;
+  /* Lenis clips overflow while stopped (palette, sheets): keep the gutter
+     so classic scrollbars don't shift the layout */
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -334,6 +337,18 @@ html.has-cursor [contenteditable="true"] {
 .em-cursor[data-hidden] {
   opacity: 0;
 }
+/* a modal dialog sits in the top layer, above any z-index: hand the
+   pointer back to the native cursor while one is open */
+html.has-cursor:has(dialog[open]) .em-cursor {
+  opacity: 0;
+}
+html.has-cursor:has(dialog[open]),
+html.has-cursor:has(dialog[open]) * {
+  cursor: auto !important;
+}
+html.has-cursor:has(dialog[open]) :is(a, button, [role="option"], [role="button"]) {
+  cursor: pointer !important;
+}
 .em-cursor-ring {
   position: fixed;
   left: 0;
@@ -368,7 +383,6 @@ html.has-cursor [contenteditable="true"] {
 .em-cursor--glass .em-cursor-ring {
   background: var(--cursor-fill, rgba(255, 255, 255, 0.06));
   backdrop-filter: blur(2px) saturate(1.8) brightness(1.15);
-  -webkit-backdrop-filter: blur(2px) saturate(1.8) brightness(1.15);
   border-color: rgba(255, 255, 255, 0.35);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 6px 20px -8px rgba(0, 0, 0, 0.5);
 }
@@ -404,7 +418,6 @@ html.has-cursor [contenteditable="true"] {
 .em-palette::backdrop {
   background: rgba(10, 13, 15, 0.45);
   backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
   transition: opacity 0.25s ease;
 }
 .em-palette:not([data-visible])::backdrop {
@@ -418,7 +431,6 @@ html.has-cursor [contenteditable="true"] {
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     0 40px 120px -30px rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(var(--ui-blur)) saturate(1.6);
-  -webkit-backdrop-filter: blur(var(--ui-blur)) saturate(1.6);
   overflow: hidden;
   font-family: var(--pal-font, var(--ui-font));
 }
@@ -522,7 +534,6 @@ html.has-cursor [contenteditable="true"] {
   border-bottom: 0;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 -30px 80px -30px rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(var(--ui-blur)) saturate(1.6);
-  -webkit-backdrop-filter: blur(var(--ui-blur)) saturate(1.6);
   touch-action: none;
   outline: none;
   color: var(--ui-text);
@@ -547,10 +558,11 @@ html.has-cursor [contenteditable="true"] {
   display: inline-block;
   white-space: nowrap;
   overflow: clip;
-  overflow-clip-margin: 0.12em;
   vertical-align: top;
-  padding-bottom: 0.08em;
-  margin-bottom: -0.08em;
+  /* the mask extends past tight display leading so ascenders/descenders
+     aren't cut, without letting hidden pieces show */
+  padding: 0.12em 0.04em 0.14em;
+  margin: -0.12em -0.04em -0.14em;
 }
 .em-split-piece {
   display: inline-block;
@@ -571,6 +583,23 @@ html.has-cursor [contenteditable="true"] {
   display: flex;
   flex: none;
   align-items: center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .em-marquee {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .em-marquee-track {
+    transform: none !important;
+    width: auto;
+  }
+  .em-marquee-copy {
+    flex-wrap: wrap;
+    flex: 1;
+  }
+  .em-marquee-copy + .em-marquee-copy {
+    display: none;
+  }
 }
 
 /* segmented control */
@@ -643,7 +672,6 @@ html[data-intro="done"] .em-intro {
   background: rgba(20, 24, 26, 0.78);
   border: 1px solid rgba(211, 198, 170, 0.16);
   backdrop-filter: blur(16px) saturate(1.6);
-  -webkit-backdrop-filter: blur(16px) saturate(1.6);
   font: 600 12px/1 var(--font-inter), system-ui, sans-serif;
   color: #9da9a0;
   box-shadow: 0 12px 40px -14px rgba(0, 0, 0, 0.7);
