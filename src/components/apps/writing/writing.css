@@ -292,6 +292,66 @@
 .app-writing-listpane {
   padding: 0.875rem 0.625rem 1.25rem;
 }
+
+/* the shelf of spines: a pixel band over the list, an aria-hidden mirror of it */
+.app-writing-shelf {
+  position: relative;
+  height: 150px;
+  margin: 0.25rem 0.625rem 0.75rem;
+  overflow: hidden;
+  border-radius: var(--radius-control);
+  background: #0b0d0c;
+  box-shadow: inset 0 0 0 1px rgba(196, 206, 194, 0.08);
+  cursor: grab;
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.app-writing-shelf:active {
+  cursor: grabbing;
+}
+.app-writing-shelf-canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  image-rendering: pixelated;
+}
+/* titles run up the spines as real text, riding their books */
+.app-writing-shelf-title {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 12px;
+  overflow: hidden;
+  color: #bcc2ba;
+  font: 500 12px/12px var(--font-mono);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  transform-origin: 0 0;
+  margin-top: 0;
+  translate: -6px 0;
+  pointer-events: none;
+}
+.app-writing-shelf-callout {
+  position: absolute;
+  top: 6px;
+  max-width: 180px;
+  padding: 4px 7px;
+  border-radius: 6px;
+  background: rgba(10, 12, 11, 0.9);
+  box-shadow: inset 0 0 0 1px rgba(196, 206, 194, 0.16);
+  color: var(--color-label);
+  font-size: 0.75rem;
+  line-height: 1.25;
+  pointer-events: none;
+}
+@media (max-width: 767px) {
+  .app-writing-shelf {
+    height: 144px;
+    margin: 0.25rem 0 0.75rem;
+    border-radius: 0;
+  }
+}
 .app-writing-listhead {
   display: flex;
   align-items: baseline;

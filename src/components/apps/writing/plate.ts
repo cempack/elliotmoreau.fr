@@ -12,6 +12,8 @@
  * blurry sub-cell slides.
  */
 
+import { phaseOf, sunAt } from "@/lib/sun";
+
 type RGB = [number, number, number];
 type Phase = "night" | "dawn" | "day" | "dusk";
 
@@ -112,12 +114,26 @@ function writer(d: Uint8ClampedArray, w: number, h: number) {
   };
 }
 
-/** Paint a W×H-cell plate for a seed, as depth layers. */
+/**
+ * A post's plate seed: its slug (the hills, the stars, the window), and
+ * the sky of the Toulouse hour it went out (the sun's real elevation then),
+ * so list thumbs, the reader plate, the shelf's spines and the kiosk all
+ * show when it was written.
+ */
+export function plateSeed(p: { slug: string; published_at: string }) {
+  const t = Date.parse(p.published_at);
+  return Number.isFinite(t) ? `${p.slug}@${phaseOf(sunAt(t))}` : p.slug;
+}
+
+/** Paint a W×H-cell plate for a seed ("slug" or "slug@phase"), as depth layers. */
 export function paintPlateLayers(seed: string, W: number, H: number): PlateLayers {
   const M = PLATE_MARGIN;
   const LW = W + 2 * M;
-  const rng = mulberry32(seed32(`plate:${seed}`));
-  const phase = PHASE_ORDER[Math.floor(rng() * PHASE_ORDER.length)];
+  const [slug, forced] = seed.split("@");
+  const rng = mulberry32(seed32(`plate:${slug}`));
+  // the roll stays in the sequence either way, so the hills never change
+  const rolled = PHASE_ORDER[Math.floor(rng() * PHASE_ORDER.length)];
+  const phase: Phase = forced && forced in PHASES ? (forced as Phase) : rolled;
   const P = PHASES[phase];
   const skyInk = P.sky.map(hex);
   const horizon = Math.round(H * (0.6 + rng() * 0.06));

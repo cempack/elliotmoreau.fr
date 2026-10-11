@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { MotionValue } from "motion/react";
 import type { GhostPost } from "@/lib/ghost";
-import { bayer, composite, layerOffsets, paintPlateLayers, type PlateLayers } from "./plate";
+import { bayer, composite, layerOffsets, paintPlateLayers, plateSeed, type PlateLayers } from "./plate";
 import { realImage } from "./util";
 
 /** how long the dithered dissolve between two posts' worlds takes */
@@ -194,9 +194,10 @@ export function Plate({ post, animate, shift }: { post: GhostPost; animate: bool
     };
   }, []);
 
+  const seed = plateSeed(post);
   useEffect(() => {
-    rendererRef.current?.sync(post.slug, animate);
-  }, [post.slug, animate]);
+    rendererRef.current?.sync(seed, animate);
+  }, [seed, animate]);
 
   useEffect(() => {
     if (!shift) return;

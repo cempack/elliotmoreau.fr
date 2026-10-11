@@ -14,6 +14,7 @@ import { PixelGlyph } from "@/components/glyphs";
 import { EmptyState } from "./EmptyState";
 import { FolderChips, FolderColumn, Newsletter } from "./Folders";
 import { PostList } from "./PostList";
+import { Shelf } from "./Shelf";
 import { Reader } from "./Reader";
 import { G_LINK } from "./glyphs";
 import { useNavStack, type Settle, type View } from "./useNavStack";
@@ -58,6 +59,8 @@ function whenIdle(fn: () => void) {
  * hydration. Without it a tiny pre-paint script hides the reader copy
  * until the client has caught up.
  */
+const OPENED_KEY = "em-read";
+
 export function WritingApp({ data, initialSlug = null }: { data: SiteData; initialSlug?: string | null }) {
   const { t, path } = useI18n();
   const w = t.writing;
@@ -93,6 +96,7 @@ export function WritingApp({ data, initialSlug = null }: { data: SiteData; initi
     () => (tag ? allPosts.filter((p) => p.tags?.some((x) => x.slug === tag)) : allPosts),
     [allPosts, tag]
   );
+  const visibleSlugs = useMemo(() => new Set(posts.map((p) => p.slug)), [posts]);
   const [picked, setPicked] = useState<string | null>(null);
   const selected = picked ?? linkSlug ?? data.posts[0]?.slug ?? null;
   const post = posts.find((p) => p.slug === selected) ?? posts[0] ?? null;
@@ -190,10 +194,33 @@ export function WritingApp({ data, initialSlug = null }: { data: SiteData; initi
     [reduced]
   );
 
+  // posts this visitor has opened: a ribbon on the shelf (kept on their device only)
+  const [opened, setOpened] = useState<Set<string>>(() => new Set());
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      try {
+        const v = JSON.parse(localStorage.getItem(OPENED_KEY) ?? "[]");
+        if (Array.isArray(v)) setOpened(new Set(v.filter((x): x is string => typeof x === "string")));
+      } catch {}
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, []);
+  const markOpened = useCallback((slug: string) => {
+    setOpened((prev) => {
+      if (prev.has(slug)) return prev;
+      const next = new Set(prev).add(slug);
+      try {
+        localStorage.setItem(OPENED_KEY, JSON.stringify([...next].slice(-60)));
+      } catch {}
+      return next;
+    });
+  }, []);
+
   const select = useCallback(
     (slug: string, opts: { animate?: boolean; url?: boolean } = {}) => {
       const animate = opts.animate ?? true;
       setPicked(slug);
+      markOpened(slug);
       setSwap((s) => (animate ? (s.animate ? s : { ...s, animate: true }) : { epoch: s.epoch + 1, animate: false }));
       window.clearTimeout(urlTimer.current);
       if (opts.url !== false) {
@@ -207,7 +234,7 @@ export function WritingApp({ data, initialSlug = null }: { data: SiteData; initi
         );
       }
     },
-    []
+    [markOpened]
   );
 
   const focusOption = (slug: string) => {
@@ -479,6 +506,16 @@ export function WritingApp({ data, initialSlug = null }: { data: SiteData; initi
                 onPrime={prime}
                 onKeyDown={onListKey}
                 optionRef={optionRef}
+                shelf={
+                  <Shelf
+                    posts={allPosts}
+                    visible={visibleSlugs}
+                    selected={compact ? null : (post?.slug ?? null)}
+                    opened={opened}
+                    onPick={(slug) => onPress(slug, "click")}
+                    label={(p) => p.title}
+                  />
+                }
                 chips={<FolderChips {...folderProps} />}
                 footer={<Newsletter className="app-writing-news--list" />}
               />

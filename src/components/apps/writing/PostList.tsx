@@ -5,6 +5,7 @@ import { m } from "motion/react";
 import type { GhostPost } from "@/lib/ghost";
 import type { Source } from "@/lib/data";
 import { PlateThumb } from "./PlateThumb";
+import { plateSeed } from "./plate";
 import { useI18n } from "@/i18n/client";
 import { spring } from "@/lib/motion";
 import { byYear, countLabel, dateLong, dateShort, fmt } from "./util";
@@ -26,6 +27,8 @@ type Props = {
   onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => void;
   /** registers each row element by slug, for focus management */
   optionRef: (slug: string, el: HTMLElement | null) => void;
+  /** the shelf of spines, under the large title */
+  shelf?: React.ReactNode;
   /** folder chips, under the large title */
   chips?: React.ReactNode;
   footer?: React.ReactNode;
@@ -39,7 +42,7 @@ const modified = (e: React.MouseEvent) => e.metaKey || e.ctrlKey || e.shiftKey |
  * row to row (shared layout). On phones, where a row is a way into the
  * reader and nothing stays selected, a plain list of links.
  */
-export function PostList({ posts, selected, title, source, compact, hrefFor, onPress, onPrime, onKeyDown, optionRef, chips, footer }: Props) {
+export function PostList({ posts, selected, title, source, compact, hrefFor, onPress, onPrime, onKeyDown, optionRef, shelf, chips, footer }: Props) {
   const { t } = useI18n();
   const w = t.writing;
   const id = useId();
@@ -59,7 +62,7 @@ export function PostList({ posts, selected, title, source, compact, hrefFor, onP
         {p.excerpt && <span className="app-writing-row-excerpt">{p.excerpt}</span>}
       </span>
       <span className="app-writing-row-art" aria-hidden>
-        <PlateThumb seed={p.slug} className="app-writing-row-plate" />
+        <PlateThumb seed={plateSeed(p)} className="app-writing-row-plate" />
       </span>
     </>
   );
@@ -77,6 +80,7 @@ export function PostList({ posts, selected, title, source, compact, hrefFor, onP
           </p>
         )}
       </header>
+      {shelf}
       {chips}
 
       {compact ? (

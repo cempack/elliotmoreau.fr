@@ -8,7 +8,7 @@ import { useReduced } from "@/hooks/env";
 import { project, spring, springFrom } from "@/lib/motion";
 import { Glass } from "@/components/os/Glass";
 import { useSiteData } from "@/components/os/SiteData";
-import { composite, paintPlateLayers } from "@/components/apps/writing/plate";
+import { composite, paintPlateLayers, plateSeed } from "@/components/apps/writing/plate";
 import type { GhostPost } from "@/lib/ghost";
 import { useMinute } from "./time";
 
@@ -78,7 +78,7 @@ function Newsprint({ seed, w, h }: { seed: string; w: number; h: number }) {
 function Face({ post, kicker, minutes, date }: { post: GhostPost; kicker: string; minutes: string; date: string }) {
   return (
     <>
-      <Newsprint seed={post.slug} w={60} h={19} />
+      <Newsprint seed={plateSeed(post)} w={60} h={19} />
       <span className="app-home-kiosk-kicker">{kicker}</span>
       <span className="app-home-kiosk-head">{post.title}</span>
       <span className="app-home-kiosk-foot">

@@ -8,6 +8,7 @@ import { timeAgo } from "@/lib/format";
 import type { GhostPost } from "@/lib/ghost";
 import { NOW, loc } from "@/content/now";
 import { PlateThumb } from "@/components/apps/writing/PlateThumb";
+import { plateSeed } from "@/components/apps/writing/plate";
 import { G_ARROW, G_NEXT } from "../bits";
 import { fill, useNow } from "../lib";
 
@@ -78,7 +79,7 @@ export function Writing({ posts }: { posts: GhostPost[] }) {
             aria-label={fill(w.read, { title: latest.title })}
           >
             <span className="app-now-post-plate" aria-hidden>
-              <PlateThumb seed={latest.slug} cols={96} rows={36} className="app-now-post-plate-px" />
+              <PlateThumb seed={plateSeed(latest)} cols={96} rows={36} className="app-now-post-plate-px" />
             </span>
             <span className="app-now-post-text">
               <span className="app-now-post-title">{latest.title}</span>
