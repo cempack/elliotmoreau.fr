@@ -3,7 +3,6 @@
 import "./writing.css";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { m } from "motion/react";
-import type { SiteData } from "@/lib/data";
 import { AppWindow } from "@/components/os/AppWindow";
 import { InlineScript } from "@/components/InlineScript";
 import { useI18n } from "@/i18n/client";
@@ -20,6 +19,7 @@ import { G_LINK } from "./glyphs";
 import { useNavStack, type Settle, type View } from "./useNavStack";
 import { usePageSwipe, type Dir } from "./usePageSwipe";
 import { BLOG_URL, foldersOf } from "./util";
+import { useSiteData } from "@/components/os/SiteData";
 
 const PARAM = "p";
 /** set on <html> before hydration while a deep link waits for the client */
@@ -61,7 +61,8 @@ function whenIdle(fn: () => void) {
  */
 const OPENED_KEY = "em-read";
 
-export function WritingApp({ data, initialSlug = null }: { data: SiteData; initialSlug?: string | null }) {
+export function WritingApp({ initialSlug = null }: { initialSlug?: string | null } = {}) {
+  const data = useSiteData();
   const { t, path } = useI18n();
   const w = t.writing;
   const reduced = useReduced();

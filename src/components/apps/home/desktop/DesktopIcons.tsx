@@ -11,7 +11,7 @@ import { APPS } from "@/components/os/apps";
 import { AppIcon } from "@/components/os/icons";
 import { markLaunch } from "@/components/os/dock/launch";
 import { useTerminal } from "@/components/os/Terminal";
-import { usePalette } from "@/components/ui/CommandPalette";
+import { usePalette } from "@/components/ui/palette";
 import { DESKTOP_ICONS, DesktopGlyph, type DesktopIconId } from "./icons";
 import { desktopMemory, type Cell } from "./store";
 import { FLING, band, intersects, pushSample, releaseVelocity, type Rect, type Sample } from "./physics";

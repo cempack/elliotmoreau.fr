@@ -1,14 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "@/i18n/client";
 import { useHydrated } from "@/hooks/env";
 import { timeAgo } from "@/lib/format";
 import { useSound } from "@/lib/sound";
 import { Glass } from "@/components/os/Glass";
 import { useSiteData } from "@/components/os/SiteData";
-import type { PushDay } from "@/lib/github";
+import type { PushDay, PushHistory } from "@/lib/github";
+
+/** the push history, sent by the home page alone (the shell's data leaves it out) */
+const PushesCtx = createContext<PushHistory | null>(null);
+export const PushesProvider = PushesCtx.Provider;
 
 const fill = (s: string, v: Record<string, string | number>) => s.replace(/\{(\w+)\}/g, (_, k: string) => String(v[k] ?? ""));
 
@@ -72,7 +76,8 @@ function buildWall(today: string, byDay: Map<string, PushDay>, since: string) {
 export function PushWidget() {
   const { t, lang, path } = useI18n();
   const w = t.home.widgets.push;
-  const { activity, pushes } = useSiteData();
+  const { activity } = useSiteData();
+  const pushes = useContext(PushesCtx);
   const hydrated = useHydrated();
   const { blip } = useSound();
   const [active, setActive] = useState<number | null>(null);
@@ -267,7 +272,7 @@ export function PushWidget() {
       <span id="app-home-wall-hint" className="sr-only">
         {w.hint}
       </span>
-      <Link href={href} transitionTypes={["app-open"]} className="app-home-wall-readout" aria-live="polite">
+      <Link prefetch={false} href={href} transitionTypes={["app-open"]} className="app-home-wall-readout" aria-live="polite">
         <span className="app-home-wall-msg" data-empty={!hasAny && !cur ? "" : undefined}>
           {hasAny || cur || activity ? msg : w.empty}
         </span>

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
-import { hasLocale } from "@/i18n";
+import { getNamespaces, hasLocale } from "@/i18n";
+import { I18nScope } from "@/i18n/client";
 import { appMetadata } from "@/i18n/metadata";
-import { getSiteData } from "@/lib/data";
 import { AtlasApp } from "@/components/apps/atlas/AtlasApp";
 
 export const revalidate = 300;
@@ -13,6 +13,10 @@ export function generateMetadata({ params }: PageProps<"/[lang]/atlas">) {
 export default async function AtlasPage({ params }: PageProps<"/[lang]/atlas">) {
   const { lang } = await params;
   if (!hasLocale(lang)) notFound();
-  const data = await getSiteData();
-  return <AtlasApp data={data} />;
+  // the app reads live data from the shell's SiteData; the page sends only its strings
+  return (
+    <I18nScope dict={getNamespaces(lang, "atlas")}>
+      <AtlasApp />
+    </I18nScope>
+  );
 }

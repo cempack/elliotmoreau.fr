@@ -1,7 +1,7 @@
 "use client";
 
 import { animate, type AnimationPlaybackControls } from "motion/react";
-import { useEffect, useId, useRef, useState } from "react";
+import { memo, useEffect, useId, useRef, useState } from "react";
 import { PixelLabel } from "@/components/PixelLabel";
 import { useReduced } from "@/hooks/env";
 import { clamp, project, rubberband, spring } from "@/lib/motion";
@@ -27,7 +27,7 @@ type Artist = { name: string; image: string; url: string };
 /** px of sideways drag per sleeve */
 const PASS = 34;
 
-export function Crate({ artists, labels }: { artists: Artist[]; labels: { title: string; hint: string } }) {
+export const Crate = memo(function Crate({ artists, labels }: { artists: Artist[]; labels: { title: string; hint: string } }) {
   const n = artists.length;
   const id = useId();
   const reduced = useReduced();
@@ -200,4 +200,4 @@ export function Crate({ artists, labels }: { artists: Artist[]; labels: { title:
       </p>
     </div>
   );
-}
+});

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef , memo } from "react";
 import { AnimatePresence, m } from "motion/react";
 import { useReduced } from "@/hooks/env";
 import { springFrom } from "@/lib/motion";
@@ -176,7 +176,7 @@ export function Art({ image, seed, n = 24, className = "" }: { image: string; se
 /** a digit rolls on the house curve, a touch slower than default */
 const ROLL = springFrom(0.42);
 
-export function RollText({ text, className = "" }: { text: string; className?: string }) {
+export const RollText = memo(function RollText({ text, className = "" }: { text: string; className?: string }) {
   const reduced = useReduced();
   return (
     <span className={`app-now-roll tabular ${className}`} aria-hidden>
@@ -198,4 +198,4 @@ export function RollText({ text, className = "" }: { text: string; className?: s
       ))}
     </span>
   );
-}
+});

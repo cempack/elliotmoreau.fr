@@ -1,5 +1,7 @@
 "use client";
 
+import "../menubar-panels.css";
+
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/i18n/client";
 import { useSound } from "@/lib/sound";

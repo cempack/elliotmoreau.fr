@@ -3,7 +3,6 @@
 import "./atlas.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMotionValue, useTransform } from "motion/react";
-import type { SiteData } from "@/lib/data";
 import { AppWindow } from "@/components/os/AppWindow";
 import { Glass } from "@/components/os/Glass";
 import { useI18n } from "@/i18n/client";
@@ -19,6 +18,7 @@ import { Stats } from "./Stats";
 import { Postcards } from "./Postcards";
 import { MapSheet, type Detent } from "./MapSheet";
 import { fmtCoordsL } from "./fmt";
+import { useSiteData } from "@/components/os/SiteData";
 
 /** Layout switch: floating panels around the globe from here up, the
     Maps-style sheet below. Must match the breakpoint in atlas.css. */
@@ -37,7 +37,8 @@ const BESIDE = "(min-width: 768px) and (min-aspect-ratio: 5/4)";
  * three-detent bottom sheet holds it all. The selection lives in the URL
  * hash (/atlas#japan), so a place can be shared.
  */
-export function AtlasApp({ data }: { data: SiteData }) {
+export function AtlasApp() {
+  const data = useSiteData();
   void data; // the Atlas is drawn from lib/places, not from live site data
   const { t, lang } = useI18n();
   const a = t.atlas;

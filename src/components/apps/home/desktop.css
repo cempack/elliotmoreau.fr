@@ -31,7 +31,7 @@
   -webkit-user-select: none;
 }
 /* the home screen doesn't bounce: there is nothing to scroll */
-html:has(.app-home-scene) {
+html[data-home] {
   overscroll-behavior: none;
 }
 .app-home-scene[data-icon-drag] {

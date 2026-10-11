@@ -264,6 +264,9 @@ function Item({
   const radius = view ? (view === "icons" ? 10 : phone ? 8 : 6) : undefined;
   // the plate's frame is warmed by the repo's language colour
   const plateStyle = { "--lang": langColor(repo.language), borderRadius: radius } as React.CSSProperties;
+  // measured only when the item can actually move: a view switch or a new
+  // place in the list (filter, sort); a selection change measures nothing
+  const ld = `${view}:${phone}:${index}`;
 
   return (
     <m.li
@@ -288,36 +291,36 @@ function Item({
       {selected && view !== "icons" && <span className="app-work-hl" aria-hidden />}
       <m.span
         layout
-        transition={{ layout: lt }}
+        layoutDependency={ld} transition={{ layout: lt }}
         className="app-work-plate"
         style={plateStyle}
         data-ql-origin
       >
         <RepoArt name={repo.name} language={repo.language} className="app-work-planet" />
       </m.span>
-      <m.span layout="position" transition={{ layout: lt }} className="app-work-name">
+      <m.span layout="position" layoutDependency={ld} transition={{ layout: lt }} className="app-work-name">
         <span className="app-work-name-text">
           <Marked text={repo.name} terms={terms} />
         </span>
       </m.span>
       <m.span
         layout="position"
-        transition={{ layout: lt }}
+        layoutDependency={ld} transition={{ layout: lt }}
         className="app-work-desc"
         id={`${id}-d`}
         lang={lang === "en" ? undefined : "en"}
       >
         <Marked text={repo.description} terms={terms} />
       </m.span>
-      <m.span layout="position" transition={{ layout: lt }} className="app-work-lang">
+      <m.span layout="position" layoutDependency={ld} transition={{ layout: lt }} className="app-work-lang">
         {repo.language && <span className="app-work-dot" style={{ background: langColor(repo.language) }} aria-hidden />}
         <span className="app-work-lang-name">{repo.language || t.work.item.noLanguage}</span>
       </m.span>
-      <m.span layout="position" transition={{ layout: lt }} className="app-work-stars tabular">
+      <m.span layout="position" layoutDependency={ld} transition={{ layout: lt }} className="app-work-stars tabular">
         <PixelGlyph cells={GLYPH_STAR} size={9} />
         {compact(repo.stars, lang)}
       </m.span>
-      <m.span layout="position" transition={{ layout: lt }} className="app-work-date tabular">
+      <m.span layout="position" layoutDependency={ld} transition={{ layout: lt }} className="app-work-date tabular">
         {hydrated && repo.pushedAt && <Freshness pushedAt={repo.pushedAt} />}
         {hydrated && repo.pushedAt ? timeAgo(repo.pushedAt, lang) : " "}
       </m.span>

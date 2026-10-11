@@ -1,5 +1,7 @@
 "use client";
 
+import { byFill, pxPath } from "@/lib/pxpath";
+
 import { memo, useMemo } from "react";
 import { hashString } from "./lib";
 
@@ -127,8 +129,8 @@ export const PixelCover = memo(function PixelCover({ seed, n = 24, className = "
   }, [seed, n]);
   return (
     <svg className={className} viewBox={`0 0 ${n} ${n}`} preserveAspectRatio="none" shapeRendering="crispEdges" aria-hidden>
-      {runs.map((r) => (
-        <rect key={`${r.x}-${r.y}`} x={r.x} y={r.y} width={r.w} height={1} fill={r.c} />
+      {[...byFill(runs, (r) => r.c)].map(([fill, rs]) => (
+        <path key={fill} d={pxPath(rs)} fill={fill} />
       ))}
     </svg>
   );

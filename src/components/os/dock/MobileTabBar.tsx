@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { m } from "motion/react";
 import { useI18n } from "@/i18n/client";
 import { useReduced } from "@/hooks/env";
 import { spring } from "@/lib/motion";
-import { usePalette } from "@/components/ui/CommandPalette";
+import { usePalette } from "@/components/ui/palette";
 import { Sheet, useSheetDismiss } from "@/components/ui/Sheet";
 import { APPS, appForPath, type AppId } from "../apps";
 import { AppIcon, type IconId } from "../icons";
@@ -57,6 +57,10 @@ function Chevron() {
  * bar slides to the current one; More opens a flingable sheet with Now,
  * Terminal and Search.
  */
+/** fields that bring up the on-screen keyboard */
+const KBD_FIELDS =
+  'input:not([type="checkbox"], [type="radio"], [type="range"], [type="button"], [type="submit"], [type="reset"], [type="color"], [type="file"]), textarea, [contenteditable="true"]';
+
 export function MobileTabBar() {
   const { t, path } = useI18n();
   const active = appForPath(usePathname());
@@ -65,6 +69,20 @@ export function MobileTabBar() {
   const after = useRef<(() => void) | null>(null);
 
   const inMore = !PRIMARY.includes(active.id);
+
+  // typing: the bar steps out of the keyboard's way
+  const [kbd, setKbd] = useState(false);
+  useEffect(() => {
+    const typing = (el: EventTarget | null) => el instanceof HTMLElement && el.matches(KBD_FIELDS);
+    const on = (e: FocusEvent) => setKbd(typing(e.target));
+    const off = (e: FocusEvent) => setKbd(typing(e.relatedTarget));
+    document.addEventListener("focusin", on);
+    document.addEventListener("focusout", off);
+    return () => {
+      document.removeEventListener("focusin", on);
+      document.removeEventListener("focusout", off);
+    };
+  }, []);
 
   const launch = (e: React.MouseEvent<HTMLElement>, on: boolean) => {
     if (!isPlainClick(e)) return;
@@ -80,14 +98,14 @@ export function MobileTabBar() {
 
   return (
     <>
-      <nav aria-label={t.dock.label} className="os-tabbar" data-os-dock="">
+      <nav aria-label={t.dock.label} className="os-tabbar" data-os-dock="" data-kbd={kbd || undefined}>
         <ul className="os-tabbar-list">
           {PRIMARY.map((id) => {
             const app = APPS.find((a) => a.id === id)!;
             const on = active.id === id;
             return (
               <li key={id} className="os-tabbar-item" data-dock-launch={id}>
-                <Link
+                <Link prefetch={false}
                   href={path(app.path)}
                   transitionTypes={["app-open"]}
                   className="os-tabbar-link"
@@ -158,7 +176,7 @@ function MoreList({ active, afterRef }: { active: AppId; afterRef: React.RefObje
       <h2 className="os-more-title">{t.dock.moreTitle}</h2>
       <ul className="os-more-list">
         <li data-dock-launch="now">
-          <Link
+          <Link prefetch={false}
             href={path(now.path)}
             transitionTypes={["app-open"]}
             className="os-more-row"

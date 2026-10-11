@@ -3,25 +3,28 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AnimatePresence, m, useScroll, useTransform } from "motion/react";
+import { AnimatePresence, frame, m, useMotionValue } from "motion/react";
 import { useI18n } from "@/i18n/client";
 import { spring } from "@/lib/motion";
 import { useHydrated, useIsMac } from "@/hooks/env";
 import { useSpotifyStatus } from "@/hooks/useSpotifyStatus";
 import { useHomeTime } from "@/hooks/useHomeTime";
-import { usePalette } from "@/components/ui/CommandPalette";
+import { usePalette } from "@/components/ui/palette";
 import { APPS, appForPath, type AppDef } from "./apps";
 import { AppGlyph } from "./icons";
 import { openWorkspace, useWorkspaces } from "./workspaces";
 import { useSiteData } from "./SiteData";
 import { MenuItem, MenuProvider, useMenu, type Align, type PanelId } from "./menubar/Panel";
-import { AboutPanel } from "./menubar/About";
-import { MusicPanel, MusicTrigger } from "./menubar/Music";
-import { ControlCenterPanel } from "./menubar/ControlCenter";
-import { ClockTrigger, NotificationPanel } from "./menubar/Notifications";
+import dynamic from "next/dynamic";
+import { ClockTrigger, MusicTrigger } from "./menubar/triggers";
 import { ControlIcon, EmosMark, SearchIcon } from "./menubar/glyphs";
 import { fill } from "./menubar/util";
 import "./menubar.css";
+
+const AboutPanel = dynamic(() => import("./menubar/About").then((m) => m.AboutPanel));
+const MusicPanel = dynamic(() => import("./menubar/Music").then((m) => m.MusicPanel));
+const ControlCenterPanel = dynamic(() => import("./menubar/ControlCenter").then((m) => m.ControlCenterPanel));
+const NotificationPanel = dynamic(() => import("./menubar/Notifications").then((m) => m.NotificationPanel));
 
 /**
  * emOS top bar, waybar-style. Left: the emOS mark (About, Restart, Lock)
@@ -94,12 +97,13 @@ function Workspaces({ current }: { current: AppDef }) {
               key={id}
               className="os-menubar-ws-slot"
               layout="position"
+              layoutDependency={ids.join()}
               initial={{ opacity: 0, scale: 0.6 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.6 }}
               transition={spring.snappy}
             >
-              <Link
+              <Link prefetch={false}
                 href={path(a.path)}
                 transitionTypes={["app-open"]}
                 className="os-menubar-ws-btn"
@@ -129,9 +133,16 @@ function Bar() {
   const { time } = useHomeTime();
   const music = useSpotifyStatus(useSiteData().spotify);
 
-  // the bar gains material as content scrolls beneath it
-  const { scrollY } = useScroll();
-  const thick = useTransform(scrollY, [0, 140], [0, 1], { clamp: true });
+  // the bar gains material as content scrolls beneath it: one passive
+  // listener feeding a motion value, read in the frame loop's read phase
+  const thick = useMotionValue(0);
+  useEffect(() => {
+    const read = () => thick.set(Math.min(1, Math.max(0, window.scrollY / 140)));
+    const onScroll = () => frame.read(read);
+    read();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [thick]);
 
   useEffect(() => {
     const onOpen = (e: Event) => {
@@ -152,7 +163,7 @@ function Bar() {
   return (
     // the bar's controls carry their own hover pills: the glass cursor
     // steps back to a dot here instead of blurring the labels
-    <header className="os-menubar" data-open={menu.open ?? undefined}>
+    <header className="os-menubar" data-open={menu.open ?? undefined} data-win={app.id !== "home" || undefined}>
       <div className="os-menubar-bg" aria-hidden />
       <m.div className="os-menubar-tint" style={{ opacity: thick }} aria-hidden />
       <m.div className="os-menubar-edge" style={{ opacity: thick }} aria-hidden />

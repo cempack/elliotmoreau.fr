@@ -8,7 +8,7 @@ import { useI18n } from "@/i18n/client";
 import { stripLocale } from "@/i18n/config";
 import { useSound } from "@/lib/sound";
 import { useReduced } from "@/hooks/env";
-import { usePalette } from "@/components/ui/CommandPalette";
+import { usePalette } from "@/components/ui/palette";
 import { APPS } from "@/components/os/apps";
 import { useSiteData } from "@/components/os/SiteData";
 import { dockIconCenter } from "@/components/os/window/dock";

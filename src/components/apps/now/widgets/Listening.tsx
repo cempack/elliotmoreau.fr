@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { PixelGlyph } from "@/components/glyphs";
 import { useHydrated } from "@/hooks/env";
 import { useI18n } from "@/i18n/client";
@@ -86,7 +86,9 @@ export function Listening({ status, track, playing }: Listen) {
   const rootRef = useRef<HTMLDivElement>(null);
   const on = useOnScreen(rootRef, "40px");
   const progress = useTrackProgress(track, playing, on);
-  const artists = (status?.artists ?? []).slice(0, 5);
+  const artistsAll = status?.artists;
+  const artists = useMemo(() => (artistsAll ?? []).slice(0, 5), [artistsAll]);
+  const crateLabels = useMemo(() => ({ title: l.topArtists, hint: l.crateHint }), [l.topArtists, l.crateHint]);
   const seed = track ? `${track.title} · ${track.artist}` : null;
 
   return (
@@ -129,7 +131,7 @@ export function Listening({ status, track, playing }: Listen) {
         )}
       </div>
 
-      {artists.length > 0 && <Crate artists={artists} labels={{ title: l.topArtists, hint: l.crateHint }} />}
+      {artists.length > 0 && <Crate artists={artists} labels={crateLabels} />}
     </div>
   );
 }

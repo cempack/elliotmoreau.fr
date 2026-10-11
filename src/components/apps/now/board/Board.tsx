@@ -357,9 +357,13 @@ export function Board({
   );
 
   /* ── FLIP: after every order change, everything glides to its new slot ── */
+  // keyed on the order and the carry, not on `board` (a new object every
+  // render): a poll or a clock tick re-renders the board but must not
+  // force a layout read of every widget
+  const { takeAnimate } = board;
   useLayoutEffect(() => {
     liveRef.current = liveOrder;
-    const anim = board.takeAnimate();
+    const anim = takeAnimate();
     const dragging = drag.current?.lifted ? drag.current.id : null;
     for (const [id, it] of items.current) {
       const nx = it.el.offsetLeft;
@@ -417,7 +421,7 @@ export function Board({
         scrollToY(scrollTop() + dy, !reducedRef.current);
       }
     }
-  }, [liveOrder, carry, board, applyDrag, runSettle, gx, gy, gw, gh]);
+  }, [liveOrder, carry, takeAnimate, applyDrag, runSettle, gx, gy, gw, gh]);
 
   // first visit: the first widget lifts a hair and settles, once per
   // device, the moment the board comes into view: it can be picked up

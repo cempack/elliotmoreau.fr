@@ -98,7 +98,7 @@ export function DesktopDock() {
                 data-dock-scale=""
                 data-dock-launch={app.id}
               >
-                <Link
+                <Link prefetch={false}
                   href={path(app.path)}
                   transitionTypes={["app-open"]}
                   className="os-dock-link"

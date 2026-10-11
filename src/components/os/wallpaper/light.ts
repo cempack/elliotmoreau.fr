@@ -1,5 +1,5 @@
 import { moonAt, sunAt } from "@/lib/sun";
-import { MAT, WATER, type City } from "./city";
+import { MAT, WATER, type City } from "./materials";
 import { project } from "./sunClock";
 
 /**

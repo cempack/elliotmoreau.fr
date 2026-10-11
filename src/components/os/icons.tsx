@@ -1,6 +1,7 @@
 "use client";
 
 import type { AppId } from "./apps";
+import { byFill, pxPath } from "@/lib/pxpath";
 
 /**
  * CONTRACT (owner: dock agent)
@@ -348,18 +349,14 @@ function GlyphRects({ id }: { id: IconId }) {
     <>
       {bloom.length > 0 && (
         <g fill={GLYPHS[id].bloom} opacity={0.16}>
-          {bloom.map((r) => (
-            <rect key={`b${r.x}-${r.y}`} x={r.x} y={r.y} width={r.w} height={1} />
-          ))}
+          <path d={pxPath(bloom)} />
         </g>
       )}
       <g fill={C.ink950} opacity={0.42}>
-        {shadow.map((r) => (
-          <rect key={`s${r.x}-${r.y}`} x={r.x} y={r.y} width={r.w} height={1} />
-        ))}
+        <path d={pxPath(shadow)} />
       </g>
-      {runs.map((r) => (
-        <rect key={`${r.x}-${r.y}`} x={r.x} y={r.y} width={r.w} height={1} fill={r.fill} />
+      {[...byFill(runs, (r) => r.fill)].map(([fill, rs]) => (
+        <path key={fill} d={pxPath(rs)} fill={fill} />
       ))}
     </>
   );

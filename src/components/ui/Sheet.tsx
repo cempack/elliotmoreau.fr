@@ -93,8 +93,13 @@ function SheetBody({
     const root = document.documentElement;
     const prevOverflow = root.style.overflow;
     root.style.overflow = "hidden";
+    // the dock and the tab bar step aside under a sheet (dock.css); a count, for stacked sheets
+    root.dataset.sheet = String(Number(root.dataset.sheet || 0) + 1);
     blip("open");
     return () => {
+      const n = Number(root.dataset.sheet || 1) - 1;
+      if (n > 0) root.dataset.sheet = String(n);
+      else delete root.dataset.sheet;
       lenisRef.current?.start();
       root.style.overflow = prevOverflow;
       prevFocus?.focus?.({ preventScroll: true });

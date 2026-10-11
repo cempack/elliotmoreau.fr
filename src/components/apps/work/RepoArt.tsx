@@ -1,3 +1,4 @@
+import { byFill, pxPath } from "@/lib/pxpath";
 import { langColor } from "./model";
 
 /** seeded generator: the same repo always gets the same file */
@@ -43,6 +44,9 @@ function tokens(seed: string): Tok[] {
   return out;
 }
 
+/** the line-number gutter, the same on every file */
+const GUTTER = pxPath(Array.from({ length: LINES }, (_, i) => ({ x: 2, y: 5 + i * 2, w: 2 })));
+
 const TONE = ["var(--color-label-3)", "", "var(--color-signal)", "var(--color-ember)"];
 
 /**
@@ -71,11 +75,9 @@ export function RepoArt({
       {/* the tab, in the language colour */}
       <rect x={2} y={1} width={9} height={2} fill={accent} opacity={0.85} />
       <rect x={0} y={3} width={W} height={0.5} fill="rgb(196 206 194 / 0.14)" />
-      {Array.from({ length: LINES }, (_, i) => (
-        <rect key={`n${i}`} x={2} y={5 + i * 2} width={2} height={1} fill="var(--color-ink-500)" />
-      ))}
-      {toks.map((t, i) => (
-        <rect key={i} x={t.x} y={t.y} width={t.w} height={1} fill={t.tone === 1 ? accent : TONE[t.tone]} />
+      <path d={GUTTER} fill="var(--color-ink-500)" />
+      {[...byFill(toks, (t) => (t.tone === 1 ? accent : TONE[t.tone]))].map(([fill, runs]) => (
+        <path key={fill} d={pxPath(runs)} fill={fill} />
       ))}
       {caret && last && (
         <rect className="em-repo-caret" x={Math.min(W - 2, last.x + last.w + 1)} y={last.y - 0.5} width={0.75} height={2} fill="var(--color-label)" />

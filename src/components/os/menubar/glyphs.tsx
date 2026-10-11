@@ -1,5 +1,7 @@
 "use client";
 
+import { pxPath } from "@/lib/pxpath";
+
 import type { SkyMode } from "../sky";
 
 /**
@@ -59,9 +61,7 @@ export function EmosMark({ size = 18, className = "" }: { size?: number; classNa
       focusable="false"
     >
       <g fill="currentColor">
-        {MARK_TILE.map(([x, y]) => (
-          <rect key={`${x}-${y}`} x={x} y={y} width={1.02} height={1.02} />
-        ))}
+        <path d={pxPath(MARK_TILE.map(([x, y]) => ({ x, y })), 0.02)} />
       </g>
     </svg>
   );
@@ -91,9 +91,7 @@ export function Pixels({
       aria-hidden
       focusable="false"
     >
-      {cells.map(([x, y]) => (
-        <rect key={`${x}-${y}`} x={x} y={y} width={1.02} height={1.02} />
-      ))}
+      <path d={pxPath(cells.map(([x, y]) => ({ x, y })), 0.02)} />
     </svg>
   );
 }

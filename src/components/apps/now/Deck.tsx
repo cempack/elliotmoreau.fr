@@ -39,7 +39,7 @@ const PIVOT = { x: 79, y: 9 };
 const ARM = Math.hypot(PIVOT.x - CX, PIVOT.y - CY) - 2;
 const REST = { x: PIVOT.x + 1, y: PIVOT.y + ARM * 0.92 };
 const MOTOR = ((100 / 3) * 2 * Math.PI) / 60; // 33⅓ rpm in rad/s
-const STEP = 1000 / 30;
+const STEP = 1000 / 15;
 const SPIN_MAX = 30;
 const DOTS = 54;
 /** the swap, in ms: arm up, record out, record in, arm down */
@@ -118,8 +118,74 @@ type Frame = {
   playing: boolean;
 };
 
+/* the plinth, platter and felt never change: paint them once */
+let BASE: Uint8ClampedArray | null = null;
+function baseLayer() {
+  if (BASE) return BASE;
+  const b = new Uint8ClampedArray(W * H * 4);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      let c = x === 0 || y === 0 ? INK.bevelHi : x === W - 1 || y === H - 1 ? INK.bevelLo : INK.plinth;
+      const r = Math.hypot(x + 0.5 - CX, y + 0.5 - CY);
+      if (r <= R_PLATTER) c = INK.platter;
+      if (r <= R_REC) c = Math.floor(r) % 3 === 0 ? INK.feltLo : INK.felt;
+      const o = (y * W + x) * 4;
+      b[o] = c[0];
+      b[o + 1] = c[1];
+      b[o + 2] = c[2];
+      b[o + 3] = 255;
+    }
+  }
+  return (BASE = b);
+}
+/* the record at rest (slide 0) for a given minute count: grooves + sheen don't turn, only the label does */
+const REC = new Map<number, { img: Uint8ClampedArray; label: { o: number; dx: number; dy: number }[] }>();
+function recordLayer(minutes: number) {
+  let hit = REC.get(minutes);
+  if (hit) return hit;
+  const img = new Uint8ClampedArray(baseLayer());
+  const label: { o: number; dx: number; dy: number }[] = [];
+  const bandW = (R_LEAD_IN - R_RUN_OUT) / Math.max(1, minutes);
+  for (let y = Math.floor(CY - R_REC - 1); y <= CY + R_REC + 1; y++) {
+    for (let x = Math.floor(CX - R_REC - 1); x <= CX + R_REC + 1; x++) {
+      if (x < 0 || x >= W || y < 0 || y >= H) continue;
+      const dx = x + 0.5 - CX;
+      const dy = y + 0.5 - CY;
+      const r = Math.hypot(dx, dy);
+      if (r > R_REC) continue;
+      const o = (y * W + x) * 4;
+      if (r <= R_LABEL) {
+        label.push({ o, dx, dy });
+        continue;
+      }
+      let c: RGB;
+      if (r > R_RUN_OUT && r < R_LEAD_IN) {
+        const k = (R_LEAD_IN - r) / bandW;
+        const gap = k - Math.floor(k) > 1 - 1 / bandW;
+        c = gap ? INK.gap : INK.groove[Math.floor(r) & 1];
+      } else c = INK.groove[Math.floor(r) & 1];
+      if (r > R_LABEL + 1 && Math.abs(Math.atan2(dy, dx) + 2.3) < 0.18 && Math.floor(r) & 1) c = INK.sheen;
+      img[o] = c[0];
+      img[o + 1] = c[1];
+      img[o + 2] = c[2];
+      img[o + 3] = 255;
+    }
+  }
+  hit = { img, label };
+  REC.set(minutes, hit);
+  return hit;
+}
+const INKS = new Map<string, { a: RGB; b: RGB }>();
+const inksCached = (seed: string) => {
+  let v = INKS.get(seed);
+  if (!v) INKS.set(seed, (v = inksFor(seed)));
+  return v;
+};
+
 function draw(ctx: CanvasRenderingContext2D, img: ImageData, st: Frame) {
   const d = img.data;
+  const fast = st.record && st.record.slide === 0;
+  d.set(fast ? recordLayer(st.record!.minutes).img : baseLayer());
   const put = (x: number, y: number, c: RGB) => {
     x |= 0;
     y |= 0;
@@ -130,16 +196,6 @@ function draw(ctx: CanvasRenderingContext2D, img: ImageData, st: Frame) {
     d[o + 2] = c[2];
     d[o + 3] = 255;
   };
-  // plinth, platter, the felt slipmat
-  for (let y = 0; y < H; y++) {
-    for (let x = 0; x < W; x++) {
-      let c = x === 0 || y === 0 ? INK.bevelHi : x === W - 1 || y === H - 1 ? INK.bevelLo : INK.plinth;
-      const r = Math.hypot(x + 0.5 - CX, y + 0.5 - CY);
-      if (r <= R_PLATTER) c = INK.platter;
-      if (r <= R_REC) c = Math.floor(r) % 3 === 0 ? INK.feltLo : INK.felt;
-      put(x, y, c);
-    }
-  }
   // the strobe dots on the platter's rim
   for (let k = 0; k < DOTS; k++) {
     const a = st.angle + (k * 2 * Math.PI) / DOTS;
@@ -147,7 +203,22 @@ function draw(ctx: CanvasRenderingContext2D, img: ImageData, st: Frame) {
   }
   put(CX - 0.5, CY - 0.5, INK.spindle);
   const rec = st.record;
-  if (rec) {
+  if (rec && fast) {
+    const inks = inksCached(rec.seed);
+    const cos = Math.cos(-st.angle);
+    const sin = Math.sin(-st.angle);
+    for (const p of recordLayer(rec.minutes).label) {
+      const lx = Math.floor((p.dx * cos - p.dy * sin) / (R_LABEL / 5) + 5);
+      const ly = Math.floor((p.dx * sin + p.dy * cos) / (R_LABEL / 5) + 5);
+      const v = lx >= 0 && ly >= 0 && lx < 10 && ly < 10 ? LABEL[ly][lx] : 0;
+      const c = v === 1 ? inks.a : v === 2 ? inks.b : v === 3 ? INK.gap : INK.groove[1];
+      d[p.o] = c[0];
+      d[p.o + 1] = c[1];
+      d[p.o + 2] = c[2];
+      d[p.o + 3] = 255;
+    }
+    put(CX - 0.5, CY - 0.5, INK.spindle);
+  } else if (rec) {
     const cx = CX - rec.slide;
     const inks = inksFor(rec.seed);
     const cos = Math.cos(-st.angle);

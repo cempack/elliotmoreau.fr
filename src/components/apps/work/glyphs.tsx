@@ -1,3 +1,4 @@
+import { byFill, pxPath } from "@/lib/pxpath";
 import type { Cells } from "@/components/glyphs";
 
 /** Parse a 7×7 (or any) grid of "#"/"." rows into PixelGlyph cells. */
@@ -65,8 +66,8 @@ export function PixelArt({
       shapeRendering="crispEdges"
       className={className}
     >
-      {rects.map((r) => (
-        <rect key={`${r.x}-${r.y}`} x={r.x} y={r.y} width={r.w + 0.02} height={1.02} fill={r.fill} />
+      {[...byFill(rects, (r) => r.fill)].map(([fill, rs]) => (
+        <path key={fill} d={pxPath(rs, 0.02)} fill={fill} />
       ))}
     </svg>
   );

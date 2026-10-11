@@ -50,6 +50,8 @@ const EXIT = { "app-close": "app-close", "app-open": "app-leave", default: "app-
  *   fine): React only runs enter/exit for a ViewTransition that no DOM
  *   node of the changing subtree wraps.
  */
+let firstWindow = true;
+
 export function AppWindow({
   app,
   title,
@@ -103,8 +105,14 @@ export function AppWindow({
   useLayoutEffect(() => {
     const el = winRef.current;
     if (!el) return;
-    setEnterOrigin(el, app, appHref);
-    const raf = requestAnimationFrame(() => setEnterOrigin(el, app, appHref, true));
+    // a hard load has no enter transition to aim: no geometry to write (it would restyle the whole page)
+    const hard = firstWindow;
+    firstWindow = false;
+    let raf = 0;
+    if (!hard) {
+      setEnterOrigin(el, app, appHref);
+      raf = requestAnimationFrame(() => setEnterOrigin(el, app, appHref, true));
+    }
     return () => {
       cancelAnimationFrame(raf);
       setExitOrigin(el, app, appHref);
@@ -180,7 +188,7 @@ export function AppWindow({
         >
           <span className="os-win-grabber" aria-hidden />
           <div className="os-win-lights">
-            <Link
+            <Link prefetch={false}
               href={home}
               transitionTypes={["app-close"]}
               onClick={onCloseClick}
@@ -198,7 +206,7 @@ export function AppWindow({
             >
               <WinIcon kind={zoomed ? "unmax" : "max"} />
             </button>
-            <Link
+            <Link prefetch={false}
               href={home}
               transitionTypes={["app-close"]}
               onClick={onCloseWindow}
@@ -225,7 +233,7 @@ export function AppWindow({
 
           {toolbar && <div className="os-win-toolbar">{toolbar}</div>}
 
-          <Link
+          <Link prefetch={false}
             href={home}
             transitionTypes={["app-close"]}
             onClick={onCloseWindow}

@@ -532,7 +532,7 @@
 
 /* while locked, the top bar and the tab bar step away: the lock is the
    whole screen (they stay inert underneath anyway) */
-html:not([data-intro="done"]):has(.os-intro:not([data-phase="out"])) :is(.os-menubar, .os-tabbar, .os-dock),
-html:has(.os-intro[data-mode="relock"]:not([data-phase="out"])) :is(.os-menubar, .os-tabbar, .os-dock) {
+html[data-intro-up="first"]:not([data-intro="done"]) :is(.os-menubar, .os-tabbar, .os-dock),
+html[data-intro-up="relock"] :is(.os-menubar, .os-tabbar, .os-dock) {
   visibility: hidden;
 }

@@ -26,6 +26,16 @@ import { DeadLetter } from "./DeadLetter";
 import { loadDraft, saveDraft } from "@/components/apps/contact/mail";
 import { suggest } from "@/components/apps/notfound/suggest";
 
+/* Intl formatters are costly to build: build them once */
+let FMTS: { day: (d: Date) => string; dm: (d: Date) => string; hm: (d: Date) => string } | null = null;
+function fmts() {
+  if (FMTS) return FMTS;
+  const tz = { timeZone: "Europe/Paris" } as const;
+  const a = new Intl.DateTimeFormat("en-CA", { ...tz, dateStyle: "short" });
+  const b = new Intl.DateTimeFormat("en-GB", { ...tz, day: "2-digit", month: "2-digit" });
+  const c = new Intl.DateTimeFormat("en-GB", { ...tz, hour: "2-digit", minute: "2-digit", hour12: false });
+  return (FMTS = { day: (d) => a.format(d), dm: (d) => b.format(d), hm: (d) => c.format(d) });
+}
 const SKY_MODES: SkyMode[] = ["auto", "dawn", "day", "dusk", "night"];
 /** 7×7 chevron prompt, for actions */
 const G_ACTION: Cells = [[1, 1], [2, 2], [3, 3], [2, 4], [1, 5]];
@@ -201,13 +211,11 @@ export function useSpotlightCommands(): Command[] {
 
     // the departures board: what's new, each row opening what it shows
     const b = sp.board;
-    const tz = { timeZone: "Europe/Paris" } as const;
-    const day = (d: Date) => new Intl.DateTimeFormat("en-CA", { ...tz, dateStyle: "short" }).format(d);
-    const dm = (d: Date) => new Intl.DateTimeFormat("en-GB", { ...tz, day: "2-digit", month: "2-digit" }).format(d);
-    const hm = (d: Date) => new Intl.DateTimeFormat("en-GB", { ...tz, hour: "2-digit", minute: "2-digit", hour12: false }).format(d);
+    const { day, dm, hm } = fmts();
+    const today = day(new Date());
     const when = (iso: string) => {
       const d = new Date(iso);
-      return day(d) === day(new Date()) ? hm(d) : dm(d);
+      return day(d) === today ? hm(d) : dm(d);
     };
     const board: Command[] = [];
     const post = posts[0];

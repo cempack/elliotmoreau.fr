@@ -2,7 +2,6 @@
 
 import "./now.css";
 import { useEffect, useRef, useState } from "react";
-import type { SiteData } from "@/lib/data";
 import { AppWindow } from "@/components/os/AppWindow";
 import { PixelGlyph } from "@/components/glyphs";
 import { useI18n } from "@/i18n/client";
@@ -21,6 +20,7 @@ import { Pulse, PulseMeta } from "./widgets/Pulse";
 import { Setup, SetupMeta } from "./widgets/Setup";
 import { Reading } from "./widgets/Reading";
 import { Writing } from "./widgets/Writing";
+import { useSiteData } from "@/components/os/SiteData";
 
 /** the reading tile only exists once there is something on the nightstand */
 const HAS_READING = NOW.reading.length > 0 || NOW.learning.length > 0;
@@ -47,7 +47,8 @@ function longDate(iso: string, lang: "en" | "fr") {
  * hand-written content (src/content/now.ts). Nothing here is a made-up
  * metric.
  */
-export function NowApp({ data }: { data: SiteData }) {
+export function NowApp() {
+  const data = useSiteData();
   const { t, lang } = useI18n();
   const n = t.now;
   const { blip } = useSound();

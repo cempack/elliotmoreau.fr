@@ -4,6 +4,7 @@ import { animate, type AnimationPlaybackControls } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { RepoInfo } from "@/lib/github";
 import { PIXEL_GLYPHS } from "@/components/PixelLabel";
+import { cellPaths } from "@/lib/pxpath";
 import { project, spring } from "@/lib/motion";
 import { PINNED, itemId, langColor } from "./model";
 
@@ -240,11 +241,14 @@ function fold(P: Pt, C: Pt, w: number, h: number) {
 }
 
 function StickerArt({ s }: { s: Sticker }) {
-  const art = useMemo(() => paintSticker(s), [s]);
+  const art = useMemo(() => {
+    const a = paintSticker(s);
+    return { W: a.W, H: a.H, paths: cellPaths(a.out, (p) => p.c, 0.02) };
+  }, [s]);
   return (
     <svg viewBox={`0 0 ${art.W} ${art.H}`} width={art.W * s.px} height={art.H * s.px} shapeRendering="crispEdges" aria-hidden className="app-work-sticker-svg">
-      {art.out.map((p, i) => (
-        <rect key={i} x={p.x} y={p.y} width={1.02} height={1.02} fill={p.c} />
+      {art.paths.map((p) => (
+        <path key={p.fill} d={p.d} fill={p.fill} />
       ))}
     </svg>
   );

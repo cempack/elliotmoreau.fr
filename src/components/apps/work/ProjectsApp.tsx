@@ -2,7 +2,6 @@
 
 import "./work.css";
 import { AnimatePresence, LayoutGroup, m } from "motion/react";
-import type { SiteData } from "@/lib/data";
 import { AppWindow } from "@/components/os/AppWindow";
 import { Sheet } from "@/components/ui/Sheet";
 import { useI18n } from "@/i18n/client";
@@ -17,6 +16,7 @@ import { Sidebar } from "./Sidebar";
 import { Toolbar } from "./Toolbar";
 import { WorkProvider, useWork, visibleSearch } from "./store";
 import { fmt, pathFor } from "./model";
+import { useSiteData } from "@/components/os/SiteData";
 
 /**
  * Projects: a Finder for Elliot's GitHub repos. Source list of smart
@@ -27,7 +27,8 @@ import { fmt, pathFor } from "./model";
  * State lives in WorkProvider above the window; the window's slots are
  * small components that read it, so the window frame stays still.
  */
-export function ProjectsApp({ data }: { data: SiteData }) {
+export function ProjectsApp() {
+  const data = useSiteData();
   const hasRepos = data.repos.length > 0;
   return (
     <WorkProvider data={data}>

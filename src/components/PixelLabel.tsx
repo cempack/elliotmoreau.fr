@@ -1,5 +1,7 @@
 "use client";
 
+import { pxPath } from "@/lib/pxpath";
+
 import { memo } from "react";
 
 /**
@@ -120,9 +122,7 @@ export const PixelLabel = memo(function PixelLabel({ text, cell = 3, className }
       className={className}
       aria-hidden={false}
     >
-      {rects.map((rc) => (
-        <rect key={`${rc.x}-${rc.y}`} x={rc.x} y={rc.y} width={1} height={1} />
-      ))}
+      <path d={pxPath(rects)} />
     </svg>
   );
 });

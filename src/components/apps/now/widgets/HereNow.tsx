@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "@/i18n/client";
 import { useSky, type SkyPhase } from "@/components/os/sky";
 import { RollText } from "../bits";
-import { fill, seeded, tzOffset, useNow } from "../lib";
+import { fill, seeded, tzOffset, useClock, useNow } from "../lib";
 
 const PARIS = "Europe/Paris";
 
@@ -197,17 +197,28 @@ export function HereMeta() {
  * the sun or moon where it really is on its arc, the clock with ticking
  * seconds, the date, and your time next to mine.
  */
+const minuteKey = (d: Date) => String(Math.floor(d.getTime() / 60000));
+function Secs() {
+  const now = useNow(1000);
+  const secs = now
+    ? new Intl.DateTimeFormat("en-GB", { timeZone: PARIS, second: "2-digit" }).format(now).padStart(2, "0")
+    : "--";
+  return (
+    <span className="app-now-clock-s tabular" aria-hidden>
+      {secs}
+    </span>
+  );
+}
+
 export function HereNow() {
   const { t, lang } = useI18n();
   const h = t.now.here;
   const { phase, mode, hour } = useSky();
-  const now = useNow(1000);
+  const mk = useClock(minuteKey, 1000);
+  const now = useMemo(() => (mk ? new Date() : null), [mk]);
   const arc = arcFor(phase, hour, mode === "auto");
 
   const paris = now ? hm(now, PARIS) : "--:--";
-  const secs = now
-    ? new Intl.DateTimeFormat("en-GB", { timeZone: PARIS, second: "2-digit" }).format(now).padStart(2, "0")
-    : "--";
   const date = now
     ? new Intl.DateTimeFormat(lang === "fr" ? "fr-FR" : "en-GB", {
         timeZone: PARIS,
@@ -243,9 +254,7 @@ export function HereNow() {
           {h.clockLabel} {paris}
         </span>
         <RollText text={paris} className="app-now-clock-hm" />
-        <span className="app-now-clock-s tabular" aria-hidden>
-          {secs}
-        </span>
+        <Secs />
       </p>
       <p className="app-now-date">{date}</p>
       <p className="app-now-you">{you}</p>

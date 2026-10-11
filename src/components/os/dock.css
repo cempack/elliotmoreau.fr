@@ -291,14 +291,7 @@ html:active-view-transition .os-dock-solid {
     display: block;
   }
   /* get out of the keyboard's way while typing */
-  html:has(
-      :is(
-          input:not([type="checkbox"], [type="radio"], [type="range"], [type="button"], [type="submit"], [type="reset"], [type="color"], [type="file"]),
-          textarea,
-          [contenteditable="true"]
-        ):focus
-    )
-    .os-tabbar {
+  .os-tabbar[data-kbd] {
     transform: translateY(calc(100% + 8px + var(--os-tabbar-gap)));
   }
 }
@@ -343,10 +336,10 @@ html:active-view-transition .os-dock-solid {
 }
 
 /* a sheet covers the bottom of the screen: step aside under it */
-html:has(.em-sheet-root) .os-dock {
+html[data-sheet] .os-dock {
   transform: translateY(calc(100% + 24px));
 }
-html:has(.em-sheet-root) .os-tabbar {
+html[data-sheet] .os-tabbar {
   transform: translateY(calc(100% + 24px + var(--os-tabbar-gap, 0px)));
 }
 

@@ -2,7 +2,6 @@
 
 import "./mail.css";
 import { useEffect, useId, useState, useSyncExternalStore } from "react";
-import type { SiteData } from "@/lib/data";
 import { AppWindow } from "@/components/os/AppWindow";
 import { useI18n } from "@/i18n/client";
 import { useReduced } from "@/hooks/env";
@@ -18,9 +17,10 @@ import { KeyView } from "./KeyView";
 import { HASH, Sidebar, type Box } from "./Sidebar";
 import { G_SEND_UP } from "./glyphs";
 import { draftFile, fill } from "./mail";
+import { useSiteData } from "@/components/os/SiteData";
 
 /** runs while the HTML is parsed, before first paint: which mailbox a shared link asks for */
-const HASH_SCRIPT = `(function(s){var h=location.hash.slice(1);if(h==="${HASH.elsewhere}"||h==="${HASH.key}")s.parentElement.setAttribute("data-hash",h)})(document.currentScript)`;
+const HASH_SCRIPT = `(function(s){var h=location.hash.slice(1);if(h==="${HASH.elsewhere}"||h==="${HASH.key}"){s.parentElement.setAttribute("data-hash",h);document.documentElement.dataset.mailHash=h}})(document.currentScript)`;
 
 function boxFromHash(hash: string): Box {
   const h = hash.replace(/^#/, "");
@@ -44,7 +44,8 @@ function DraftPath() {
  * empty anchors) tells the CSS which mailbox to show, so a shared link
  * never flashes the wrong one.
  */
-export function MailApp({ data }: { data: SiteData }) {
+export function MailApp() {
+  const data = useSiteData();
   const { t } = useI18n();
   const c = t.contact;
   const reduced = useReduced();
@@ -60,6 +61,7 @@ export function MailApp({ data }: { data: SiteData }) {
     queueMicrotask(() => {
       sync();
       setReady(true);
+      delete document.documentElement.dataset.mailHash;
     });
     window.addEventListener("hashchange", sync);
     return () => window.removeEventListener("hashchange", sync);

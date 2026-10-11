@@ -52,6 +52,15 @@ export function DesktopScene() {
     });
   }, []);
 
+  // the home screen doesn't bounce (desktop.css: html[data-home])
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.home = "";
+    return () => {
+      delete root.dataset.home;
+    };
+  }, []);
+
   /* ── when the lock screen lifts (first visit this session), the desk
      rises into place under it and the icons pop in, top to bottom ── */
   useEffect(() => {

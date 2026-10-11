@@ -1,5 +1,7 @@
 "use client";
 
+import "../menubar-panels.css";
+
 import { useState } from "react";
 import { useI18n } from "@/i18n/client";
 import { timeAgo } from "@/lib/format";

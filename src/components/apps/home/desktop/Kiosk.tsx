@@ -154,7 +154,7 @@ export function LatestPostWidget() {
     return (
       <div className="app-home-widget app-home-widget--post app-home-kiosk">
         <Glass thickness="regular" refract={false} aria-hidden className="app-home-widget-glass" />
-        <Link href={path("/writing")} transitionTypes={["app-open"]} className="app-home-kiosk-frame" aria-label={w.ariaEmpty}>
+        <Link prefetch={false} href={path("/writing")} transitionTypes={["app-open"]} className="app-home-kiosk-frame" aria-label={w.ariaEmpty}>
           <span className="app-home-kiosk-sheet app-home-kiosk-blank">
             <span className="app-home-kiosk-head">{w.empty}</span>
           </span>
@@ -319,7 +319,7 @@ export function LatestPostWidget() {
         <div className="app-home-kiosk-sheet app-home-kiosk-under" aria-hidden>
           <Face post={next} {...d1} />
         </div>
-        <Link
+        <Link prefetch={false}
           ref={sheetRef}
           href={href}
           transitionTypes={["app-open"]}

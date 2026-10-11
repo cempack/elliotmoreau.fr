@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
-import { hasLocale } from "@/i18n";
+import { getNamespaces, hasLocale } from "@/i18n";
+import { I18nScope } from "@/i18n/client";
 import { appMetadata } from "@/i18n/metadata";
-import { getSiteData } from "@/lib/data";
 import { MailApp } from "@/components/apps/contact/MailApp";
 
 export const revalidate = 300;
@@ -13,6 +13,10 @@ export function generateMetadata({ params }: PageProps<"/[lang]/contact">) {
 export default async function ContactPage({ params }: PageProps<"/[lang]/contact">) {
   const { lang } = await params;
   if (!hasLocale(lang)) notFound();
-  const data = await getSiteData();
-  return <MailApp data={data} />;
+  // the app reads live data from the shell's SiteData; the page sends only its strings
+  return (
+    <I18nScope dict={getNamespaces(lang, "contact")}>
+      <MailApp />
+    </I18nScope>
+  );
 }

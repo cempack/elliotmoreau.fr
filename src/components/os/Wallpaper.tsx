@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { sunAt } from "@/lib/sun";
 import { SKY_PHASES, useSky, type SkyMode, type SkyPhase } from "./sky";
-import { buildCity, type City } from "./wallpaper/city";
+import type { City } from "./wallpaper/materials";
 import { lampsAt, relight } from "./wallpaper/light";
 import { pinnedMs, project, sunScrub, sunSpot } from "./wallpaper/sunClock";
 import "./wallpaper.css";
@@ -84,7 +84,7 @@ function getWorker() {
 
 function buildOnMain(g: Grid) {
   return new Promise<City>((resolve) => {
-    const run = () => resolve(buildCity(g.W, g.H));
+    const run = () => import("./wallpaper/city").then(({ buildCity }) => resolve(buildCity(g.W, g.H)));
     if (typeof window.requestIdleCallback === "function") window.requestIdleCallback(run, { timeout: 400 });
     else window.setTimeout(run, 16);
   });

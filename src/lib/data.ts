@@ -54,3 +54,13 @@ export const getSiteData = cache(async (): Promise<SiteData> => {
     sources: { posts: ps, spotify: ss, repos: rs, activity: as, pushes: hs },
   };
 });
+
+/**
+ * What the always-mounted shell needs, for the root layout: everything but
+ * the push history, which only the home page's brick wall reads (the home
+ * page sends it itself), so other pages' HTML doesn't carry it.
+ */
+export const getShellData = cache(async (): Promise<SiteData> => {
+  const d = await getSiteData();
+  return { ...d, pushes: null };
+});

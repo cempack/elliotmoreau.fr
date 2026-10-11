@@ -1,5 +1,7 @@
 "use client";
 
+import "../menubar-panels.css";
+
 import { useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -128,7 +130,7 @@ function LanguageTile() {
               <span aria-hidden>{l.toUpperCase()}</span>
             </span>
           ) : (
-            <Link
+            <Link prefetch={false}
               key={l}
               href={switchLocaleHref(pathname, l)}
               hrefLang={l}
@@ -161,7 +163,7 @@ function FocusTile() {
   const c = t.shell.control;
   const menu = useMenu();
   return (
-    <Link
+    <Link prefetch={false}
       href={path("/contact")}
       transitionTypes={["app-open"]}
       className="os-menubar-tile os-menubar-focus"

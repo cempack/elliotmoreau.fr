@@ -37,8 +37,9 @@ import { angleBetween, focusFor, slerp, toVec, worldGrid, type Vec3 } from "./ge
  * - sized by a ResizeObserver, DPR capped at 2, painted on demand: the loop
  *   runs only while something moves, or while `ambient` (lights, flights,
  *   idle drift) and on screen and the tab is visible; ambient-only frames
- *   paint at 30fps (the lights flicker at 1.6Hz), and the halo and orbit
- *   are cached per size;
+ *   paint at 15fps (8 on touch screens; the lights flicker at 1.6Hz) and
+ *   sleep on a timer in between instead of spinning on rAF, and the halo
+ *   and orbit are cached per size;
  * - reduced motion: no ambient motion, no momentum, the camera cuts.
  */
 
@@ -190,7 +191,8 @@ export function AtlasGlobe({
     const tipEl: HTMLSpanElement = tip;
     const ctx0 = cvs.getContext("2d");
     if (!ctx0) return;
-    const ctx: CanvasRenderingContext2D = ctx0;
+    const ctxMain: CanvasRenderingContext2D = ctx0;
+    let ctx: CanvasRenderingContext2D = ctx0;
     const mqReduced = window.matchMedia("(prefers-reduced-motion: reduce)");
     let reduced = mqReduced.matches;
     // phones keep the lights and flights but not the idle drift: it
@@ -473,15 +475,26 @@ export function AtlasGlobe({
 
     // ── projection ──
     const P = { x: 0, y: 0, z: 0, vis: true };
+    let pLon = NaN;
+    let pLat = NaN;
+    let cl = 1;
+    let sl = 0;
+    let ct = 1;
+    let st = 0;
     const project = (v: Vec3, h = 0) => {
       // rotate the centre longitude to the viewer, then tilt by its latitude
-      const cl = Math.cos(-cam.lon);
-      const sl = Math.sin(-cam.lon);
+      // trig once per camera, not per point
+      if (cam.lon !== pLon || cam.lat !== pLat) {
+        pLon = cam.lon;
+        pLat = cam.lat;
+        cl = Math.cos(-cam.lon);
+        sl = Math.sin(-cam.lon);
+        ct = Math.cos(cam.lat);
+        st = Math.sin(cam.lat);
+      }
       const x = v[0] * cl - v[1] * sl; // towards viewer (before tilt)
       const e = v[0] * sl + v[1] * cl; // east
       const n = v[2]; // north
-      const ct = Math.cos(cam.lat);
-      const st = Math.sin(cam.lat);
       const y2 = n * ct - x * st;
       const z2 = n * st + x * ct;
       const k = 1 + h;
@@ -602,6 +615,10 @@ export function AtlasGlobe({
 
     // ── the loop: runs only while needed ──
     let raf = 0;
+    /** an ambient-only frame waiting for its slot */
+    let nap = 0;
+    const AMBIENT_MS = coarse ? 125 : 66;
+    let driftAcc = 0;
     let last = 0;
     let visible = true;
     let pageVisible = document.visibilityState === "visible";
@@ -622,6 +639,10 @@ export function AtlasGlobe({
 
     function wake() {
       dirty = true;
+      if (nap) {
+        window.clearTimeout(nap);
+        nap = 0;
+      }
       if (!raf && visible && pageVisible) {
         last = performance.now();
         raf = requestAnimationFrame(frame);
@@ -683,36 +704,22 @@ export function AtlasGlobe({
       }
       // idle drift over home's flight network
       const homeView = live.current.selectedId === HOME.id;
-      if (ambientOn() && !coarse && homeView && t - lastInteract > 6) cam.lon -= 0.04 * dt;
+      // drift in whole planet cells (one art pixel at the centre)
+      if (ambientOn() && !coarse && homeView && t - lastInteract > 6) {
+        driftAcc += 0.04 * dt;
+        const cellRad = R > 0 ? CELL / R : 0.01;
+        if (driftAcc >= cellRad) {
+          const k = Math.floor(driftAcc / cellRad);
+          cam.lon -= k * cellRad;
+          driftAcc -= k * cellRad;
+        }
+      }
     }
 
-    function paint() {
-      // re-assert the context state every frame: a lost-and-restored 2D
-      // context (GPU reset, memory pressure) comes back with an identity
-      // transform and smoothing on, which would paint a blurry half-size
-      // planet into one corner
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.imageSmoothingEnabled = false;
-      ctx.clearRect(0, 0, W, H);
-      if (!R) return;
-      const amb = ambientOn();
-      const sel = live.current.selectedId;
-
-      // atmosphere and orbit, then the planet
-      paintDeco();
-      paintPlanet(amb);
-
-      // zoomed, routes and markers keep inside the loupe
-      const zoomedIn = zoomShown > 1.001;
-      if (zoomedIn) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(cx, cy, RL + 1, 0, Math.PI * 2);
-        ctx.clip();
-      }
-
-      // routes out of home
-      const homeSel = sel === HOME.id;
+    // the planet and the settled routes in a cached layer; flights and markers on top each frame
+    let stat: HTMLCanvasElement | null = null;
+    let statKey = "";
+    function paintArcs(homeSel: boolean, sel: string, withFlights: boolean, staticPart: boolean, amb: boolean) {
       for (const a of arcs) {
         const focused = homeSel || a.to.id === sel;
         const local = arcClock - (homeSel ? a.delay : 0) - (homeSel ? 0.15 : 0.32);
@@ -723,32 +730,31 @@ export function AtlasGlobe({
         const n = a.pts.length - 1;
         const upto = focused ? Math.floor(eased * n) : n;
         const stride = a.want ? 2 : 1;
-        // an ink casing first, so the route reads over land, sea and lights
-        ctx.fillStyle = "#0a0c0b";
-        for (let k = 0; k <= upto; k += stride) {
-          const p = project(a.pts[k], a.lift[k]);
-          if (!p.vis) continue;
-          ctx.globalAlpha = strength * 0.55;
-          ctx.fillRect(Math.round(p.x / 2) * 2 - 2, Math.round(p.y / 2) * 2 - 2, 4, 4);
-        }
-        for (let k = 0; k <= upto; k += stride) {
-          const p = project(a.pts[k], a.lift[k]);
-          if (!p.vis) continue;
-          ctx.globalAlpha = strength * (0.6 + 0.4 * Math.max(0, p.z));
-          ctx.fillStyle = a.cols[k];
-          ctx.fillRect(Math.round(p.x / 2) * 2 - 1, Math.round(p.y / 2) * 2 - 1, 2, 2);
-        }
-        // the drawing head
-        if (focused && prog > 0 && prog < 1) {
-          const p = project(a.pts[upto], a.lift[upto]);
-          if (p.vis) {
-            ctx.globalAlpha = 1;
-            ctx.fillStyle = PAPER;
+        if (staticPart) {
+          ctx.fillStyle = "#0a0c0b";
+          for (let k = 0; k <= upto; k += stride) {
+            const p = project(a.pts[k], a.lift[k]);
+            if (!p.vis) continue;
+            ctx.globalAlpha = strength * 0.55;
             ctx.fillRect(Math.round(p.x / 2) * 2 - 2, Math.round(p.y / 2) * 2 - 2, 4, 4);
           }
+          for (let k = 0; k <= upto; k += stride) {
+            const p = project(a.pts[k], a.lift[k]);
+            if (!p.vis) continue;
+            ctx.globalAlpha = strength * (0.6 + 0.4 * Math.max(0, p.z));
+            ctx.fillStyle = a.cols[k];
+            ctx.fillRect(Math.round(p.x / 2) * 2 - 1, Math.round(p.y / 2) * 2 - 1, 2, 2);
+          }
+          if (focused && prog > 0 && prog < 1) {
+            const p = project(a.pts[upto], a.lift[upto]);
+            if (p.vis) {
+              ctx.globalAlpha = 1;
+              ctx.fillStyle = PAPER;
+              ctx.fillRect(Math.round(p.x / 2) * 2 - 2, Math.round(p.y / 2) * 2 - 2, 4, 4);
+            }
+          }
         }
-        // flights: a bright pixel and its trail running home → away
-        if (focused && prog >= 1 && amb) {
+        if (withFlights && focused && prog >= 1 && amb) {
           const phase = ((t + a.delay * 9) % PULSE_PERIOD) / PULSE_PERIOD;
           const head = Math.floor(phase * 1.25 * n);
           for (let j = 0; j < 7; j++) {
@@ -762,6 +768,77 @@ export function AtlasGlobe({
             ctx.fillRect(Math.round(p.x / 2) * 2 - s / 2, Math.round(p.y / 2) * 2 - s / 2, s, s);
           }
         }
+      }
+    }
+
+    function paint() {
+      ctx = ctxMain;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.imageSmoothingEnabled = false;
+      ctx.clearRect(0, 0, W, H);
+      if (!R) return;
+      const amb = ambientOn();
+      const sel = live.current.selectedId;
+      const homeSel = sel === HOME.id;
+      const zoomedIn = zoomShown > 1.001;
+      const settled = reduced || arcs.every((a) => {
+        const focused = homeSel || a.to.id === sel;
+        const local = arcClock - (homeSel ? a.delay : 0) - (homeSel ? 0.15 : 0.32);
+        return !focused || local / ARC_DRAW >= 1;
+      });
+      const flick = Math.floor(t * 1.6);
+      const now = performance.now();
+      const skey = settled ? `${cam.lat}|${cam.lon}|${zoomShown}|${R}|${RL}|${cx}|${cy}|${W}|${H}|${dpr}|${sel}|${amb ? flick : -1}|${now - sunAt > 10_000 ? "x" : sunAt}|${geoVer}|${shownFor}` : "";
+      if (skey) {
+        if (skey !== statKey) {
+          stat ??= document.createElement("canvas");
+          if (stat.width !== ctxMain.canvas.width || stat.height !== ctxMain.canvas.height) {
+            stat.width = ctxMain.canvas.width;
+            stat.height = ctxMain.canvas.height;
+          }
+          const sc = stat.getContext("2d");
+          if (sc) {
+            ctx = sc;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.imageSmoothingEnabled = false;
+            ctx.clearRect(0, 0, W, H);
+            paintDeco();
+            paintPlanet(amb);
+            if (zoomedIn) {
+              ctx.save();
+              ctx.beginPath();
+              ctx.arc(cx, cy, RL + 1, 0, Math.PI * 2);
+              ctx.clip();
+            }
+            paintArcs(homeSel, sel, false, true, amb);
+            ctx.globalAlpha = 1;
+            if (zoomedIn) ctx.restore();
+            ctx = ctxMain;
+            statKey = skey;
+          }
+        }
+        if (stat && statKey === skey) {
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.drawImage(stat, 0, 0);
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+        if (zoomedIn) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(cx, cy, RL + 1, 0, Math.PI * 2);
+          ctx.clip();
+        }
+        paintArcs(homeSel, sel, true, false, amb);
+      } else {
+        paintDeco();
+        paintPlanet(amb);
+        if (zoomedIn) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(cx, cy, RL + 1, 0, Math.PI * 2);
+          ctx.clip();
+        }
+        paintArcs(homeSel, sel, true, true, amb);
       }
 
       // markers: while zoomed in on a route, the places off it step back
@@ -831,15 +908,15 @@ export function AtlasGlobe({
 
     function frame(now: number) {
       raf = 0;
-      const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
+      // springs integrate in small steps; ambient frames come 66-125 ms apart
+      const dt = Math.min(busy() ? 0.05 : 0.15, Math.max(0, (now - last) / 1000));
       last = now;
       t += dt;
       arcClock += dt;
       if (shownFor !== live.current.selectedId) buildArcs();
       step(dt);
       const active = busy();
-      // ambient-only (lights, flights, drift): 30fps is plenty
-      if (dirty || active || now - lastPaint > 30) {
+      if (dirty || active || now - lastPaint > AMBIENT_MS - 4) {
         dirty = false;
         lastPaint = now;
         fit();
@@ -848,7 +925,15 @@ export function AtlasGlobe({
         if (drag.id !== -1 && drag.moved) applyDrag();
         paint();
       }
-      if (visible && pageVisible && (active || ambientOn())) raf = requestAnimationFrame(frame);
+      if (!visible || !pageVisible) return;
+      if (active) raf = requestAnimationFrame(frame);
+      else if (ambientOn()) {
+        // ambient only (lights, flights, drift): sleep until the next slot
+        nap = window.setTimeout(() => {
+          nap = 0;
+          if (!raf) raf = requestAnimationFrame(frame);
+        }, Math.max(0, lastPaint + AMBIENT_MS - performance.now() - 8));
+      }
     }
 
     // vectors for lat/lon pairs that never change (markers, graticule)
@@ -1162,6 +1247,7 @@ export function AtlasGlobe({
 
     return () => {
       cancelAnimationFrame(raf);
+      window.clearTimeout(nap);
       ro.disconnect();
       io.disconnect();
       document.removeEventListener("visibilitychange", onVis);

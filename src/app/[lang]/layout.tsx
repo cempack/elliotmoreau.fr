@@ -1,20 +1,17 @@
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
-import { Inter, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
+import { inter, mono } from "@/app/fonts";
 import "../globals.css";
-import { getDict, hasLocale, LOCALES, localePath, SITE_URL } from "@/i18n";
+import { getDict, getShellDict, hasLocale, LOCALES, localePath, SITE_URL } from "@/i18n";
 import { I18nProvider } from "@/i18n/client";
-import { getSiteData } from "@/lib/data";
+import { getShellData } from "@/lib/data";
 import { SoundProvider } from "@/lib/sound";
 import { ToastProvider } from "@/components/Toasts";
 import { MotionProvider } from "@/components/motion/MotionProvider";
 import { OSShell } from "@/components/os/OSShell";
 import { SKY_SCRIPT } from "@/components/os/sky-script";
 import { InlineScript } from "@/components/InlineScript";
-
-const inter = Inter({ variable: "--font-inter", subsets: ["latin"], axes: ["opsz"] });
-const mono = JetBrains_Mono({ variable: "--font-jetbrains", subsets: ["latin"], weight: ["400", "500", "600"] });
 
 export const dynamicParams = false;
 export function generateStaticParams() {
@@ -55,13 +52,16 @@ export async function generateMetadata({ params }: LayoutProps<"/[lang]">): Prom
 
 // before first paint: sky phase from Toulouse time, and skip the intro for
 // returning visitors this session
-const INTRO_SCRIPT = `try{if(sessionStorage.getItem("em-intro"))document.documentElement.dataset.intro="done"}catch(e){}`;
+/* returning this session: no boot. Arriving on the Desktop for the first
+   time: the boot is about to show, so the menu bar and dock step away
+   before the first paint (intro.css), not only once it hydrates */
+const INTRO_SCRIPT = `try{var d=document.documentElement,p=location.pathname;if(sessionStorage.getItem("em-intro"))d.dataset.intro="done";else if(p==="/"||p==="/fr"||p==="/fr/")d.dataset.introUp="first"}catch(e){}`;
 
 export default async function RootLayout({ children, params }: LayoutProps<"/[lang]">) {
   const { lang } = await params;
   if (!hasLocale(lang)) notFound();
-  const dict = getDict(lang);
-  const data = await getSiteData();
+  const dict = getShellDict(lang);
+  const data = await getShellData();
   return (
     <html lang={lang} suppressHydrationWarning className={`${inter.variable} ${mono.variable}`}>
       <head>

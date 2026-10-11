@@ -1,11 +1,11 @@
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import { cookies, headers } from "next/headers";
-import { Inter, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
-import { getDict, hasLocale, LANG_COOKIE, SITE_URL, type Locale } from "@/i18n";
+import { inter, mono } from "@/app/fonts";
+import { getDict, getNamespaces, getShellDict, hasLocale, LANG_COOKIE, SITE_URL, type Locale } from "@/i18n";
 import { I18nProvider } from "@/i18n/client";
-import { getSiteData } from "@/lib/data";
+import { getShellData } from "@/lib/data";
 import { SoundProvider } from "@/lib/sound";
 import { ToastProvider } from "@/components/Toasts";
 import { MotionProvider } from "@/components/motion/MotionProvider";
@@ -26,9 +26,6 @@ import { NotFoundApp } from "@/components/apps/notfound/NotFoundApp";
  * request it sees); an English-root address with a dot in it skips the
  * proxy, so there the visitor's saved language decides, else English.
  */
-
-const inter = Inter({ variable: "--font-inter", subsets: ["latin"], axes: ["opsz"] });
-const mono = JetBrains_Mono({ variable: "--font-jetbrains", subsets: ["latin"], weight: ["400", "500", "600"] });
 
 /** set by src/proxy.ts */
 const LANG_HEADER = "x-em-lang";
@@ -61,8 +58,9 @@ const INTRO_SCRIPT = `try{if(sessionStorage.getItem("em-intro"))document.documen
 
 export default async function GlobalNotFound() {
   const lang = await requestLang();
-  const dict = getDict(lang);
-  const data = await getSiteData();
+  // the shell's strings plus this page's own, as on every other page
+  const dict = { ...getShellDict(lang), ...getNamespaces(lang, "notfound") };
+  const data = await getShellData();
   return (
     <html lang={lang} suppressHydrationWarning className={`${inter.variable} ${mono.variable}`}>
       <head>

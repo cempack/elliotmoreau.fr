@@ -7,6 +7,7 @@ import { useReduced } from "@/hooks/env";
 import type { ActivityInfo, RepoInfo } from "@/lib/github";
 import type { GhostPost } from "@/lib/ghost";
 import { fill, useNow, useOnScreen, useTabHidden } from "../lib";
+import { pxPath } from "@/lib/pxpath";
 
 type Kind = "push" | "post";
 type Ev = { id: string; t: number; kind: Kind; name: string; url: string; detail?: string };
@@ -245,18 +246,11 @@ export function Pulse({ repos, posts, activity }: { repos: RepoInfo[]; posts: Gh
           >
             {/* time ticks along the bottom */}
             <g className="app-now-pulse-ticks">
-              {ticks.map((tk) => (
-                <rect key={tk.label} x={tk.col} y={data.rows - 2} width={1} height={2} />
-              ))}
-              <rect x={data.nowCol} y={data.rows - 2} width={1} height={2} />
+              <path d={pxPath([...ticks.map((tk) => ({ x: tk.col, y: data.rows - 2, h: 2 })), { x: data.nowCol, y: data.rows - 2, h: 2 }])} />
             </g>
             {/* the resting line */}
             <g className="app-now-pulse-base">
-              {data.runs
-                .filter((r) => r.owner < 0)
-                .map((r) => (
-                  <rect key={`${r.x}-${r.y}`} x={r.x} y={r.y} width={r.w} height={r.h} />
-                ))}
+              <path d={pxPath(data.runs.filter((r) => r.owner < 0))} />
             </g>
             {/* one group per event, so each can flare as the scan passes */}
             {events.map((ev, i) => {
@@ -272,9 +266,7 @@ export function Pulse({ repos, posts, activity }: { repos: RepoInfo[]; posts: Gh
                   fill={COLOR[ev.kind]}
                   style={{ animationDelay: `${tScan.toFixed(2)}s` }}
                 >
-                  {runs.map((r) => (
-                    <rect key={`${r.x}-${r.y}`} x={r.x} y={r.y} width={r.w} height={r.h} />
-                  ))}
+                  <path d={pxPath(runs)} />
                 </g>
               );
             })}

@@ -324,7 +324,7 @@ export function HelloWindow({
         </h2>
         <p className="app-home-hello-lead">{h.lead}</p>
         <div className="app-home-hello-ctas">
-          <Link
+          <Link prefetch={false}
             href={path("/work")}
             transitionTypes={["app-open"]}
             onClick={() => blip("open")}
@@ -335,7 +335,7 @@ export function HelloWindow({
               <path d="M2.5 7h8M7 3l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </Link>
-          <Link
+          <Link prefetch={false}
             href={path("/contact")}
             transitionTypes={["app-open"]}
             onClick={() => blip("open")}
@@ -359,7 +359,7 @@ function StatusChips({ label, lang }: { label: string; lang: "en" | "fr" }) {
   return (
     <ul className="app-home-chips" aria-label={label}>
       <li>
-        <Link
+        <Link prefetch={false}
           href={path("/atlas")}
           transitionTypes={["app-open"]}
           className="app-home-chip app-home-chip--link"

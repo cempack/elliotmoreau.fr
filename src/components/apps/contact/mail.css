@@ -159,36 +159,37 @@
 .app-contact-views:not([data-ready]):is([data-hash="pgp"], :has(> #pgp:target)) > [data-view="key"] {
   display: block;
 }
-.app-contact:has(.app-contact-views:not([data-ready]):is([data-hash], :has(> :is(#elsewhere, #pgp):target))) .app-contact-sendtool {
+/* (the pre-paint script marks <html> with data-mail-hash until React takes over) */
+html[data-mail-hash] .app-contact-sendtool {
   display: none;
 }
 /* …and the mailbox list doesn't point at New message meanwhile */
-.app-contact:has(.app-contact-views:not([data-ready]):is([data-hash], :has(> :is(#elsewhere, #pgp):target))) .os-win-nav-thumb {
+html[data-mail-hash] .app-contact .os-win-nav-thumb {
   opacity: 0;
 }
-.app-contact:has(.app-contact-views:not([data-ready]):is([data-hash], :has(> :is(#elsewhere, #pgp):target))) .os-win-nav-item[data-active],
-.app-contact:has(.app-contact-views:not([data-ready]):is([data-hash], :has(> :is(#elsewhere, #pgp):target))) .os-win-nav-item[data-active] :is(.os-win-nav-icon, .os-win-nav-count) {
+html[data-mail-hash] .app-contact .os-win-nav-item[data-active],
+html[data-mail-hash] .app-contact .os-win-nav-item[data-active] :is(.os-win-nav-icon, .os-win-nav-count) {
   color: var(--color-label-3);
 }
-.app-contact:has(.app-contact-views:not([data-ready]):is([data-hash="elsewhere"], :has(> #elsewhere:target))) .os-win-nav-item[href$="#elsewhere"],
-.app-contact:has(.app-contact-views:not([data-ready]):is([data-hash="pgp"], :has(> #pgp:target))) .os-win-nav-item[href$="#pgp"] {
+html[data-mail-hash="elsewhere"] .app-contact .os-win-nav-item[href$="#elsewhere"],
+html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"] {
   color: var(--color-label);
 }
-.app-contact:has(.app-contact-views:not([data-ready]):is([data-hash="elsewhere"], :has(> #elsewhere:target))) .os-win-nav-item[href$="#elsewhere"]::after,
-.app-contact:has(.app-contact-views:not([data-ready]):is([data-hash="pgp"], :has(> #pgp:target))) .os-win-nav-item[href$="#pgp"]::after {
+html[data-mail-hash="elsewhere"] .app-contact .os-win-nav-item[href$="#elsewhere"]::after,
+html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
   opacity: 1;
   background: color-mix(in oklab, var(--os-win-accent) 14%, rgba(255, 255, 255, 0.03));
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--os-win-accent) 30%, transparent);
 }
 @media (max-width: 1023px) {
-  .app-contact:has(.app-contact-views:not([data-ready]):is([data-hash="elsewhere"], :has(> #elsewhere:target))) .os-win-nav-item[href$="#elsewhere"],
-  .app-contact:has(.app-contact-views:not([data-ready]):is([data-hash="elsewhere"], :has(> #elsewhere:target))) .os-win-nav-item[href$="#elsewhere"] *,
-  .app-contact:has(.app-contact-views:not([data-ready]):is([data-hash="pgp"], :has(> #pgp:target))) .os-win-nav-item[href$="#pgp"],
-  .app-contact:has(.app-contact-views:not([data-ready]):is([data-hash="pgp"], :has(> #pgp:target))) .os-win-nav-item[href$="#pgp"] * {
+  html[data-mail-hash="elsewhere"] .app-contact .os-win-nav-item[href$="#elsewhere"],
+  html[data-mail-hash="elsewhere"] .app-contact .os-win-nav-item[href$="#elsewhere"] *,
+  html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"],
+  html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"] * {
     color: var(--color-ink-950);
   }
-  .app-contact:has(.app-contact-views:not([data-ready]):is([data-hash="elsewhere"], :has(> #elsewhere:target))) .os-win-nav-item[href$="#elsewhere"]::after,
-  .app-contact:has(.app-contact-views:not([data-ready]):is([data-hash="pgp"], :has(> #pgp:target))) .os-win-nav-item[href$="#pgp"]::after {
+  html[data-mail-hash="elsewhere"] .app-contact .os-win-nav-item[href$="#elsewhere"]::after,
+  html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
     background: var(--os-win-accent);
     box-shadow: none;
   }

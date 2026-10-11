@@ -1,4 +1,5 @@
 import { bandIndexFor, bandInk, rasterizePixelLine } from "@/lib/pixelword";
+import { byFill, pxPath } from "@/lib/pxpath";
 
 /**
  * The emos logo, the way fastfetch prints a distro's: the boot wordmark's
@@ -24,14 +25,16 @@ const LOGO = (() => {
     y0 += l.rows - l.top + 2;
   }
   const rows = y0 - 2;
-  return { cols, rows, cells: cells.map((c) => ({ ...c, ink: bandInk(bandIndexFor(c.y / (rows - 1))) })) };
+  const inked = cells.map((c) => ({ x: c.x + 0.07, y: c.y + 0.07, w: 0.86, h: 0.86, ink: bandInk(bandIndexFor(c.y / (rows - 1))) }));
+  // one path per band ink, each cell its own square so the gaps stay
+  return { cols, rows, paths: [...byFill(inked, (c) => c.ink)].map(([ink, runs]) => ({ ink, d: pxPath(runs) })) };
 })();
 
 export function EmosLogo({ className = "" }: { className?: string }) {
   return (
     <svg className={className} viewBox={`-0.5 -0.5 ${LOGO.cols + 1} ${LOGO.rows + 1}`} shapeRendering="crispEdges" aria-hidden>
-      {LOGO.cells.map((c) => (
-        <rect key={`${c.x}-${c.y}`} x={c.x + 0.07} y={c.y + 0.07} width={0.86} height={0.86} fill={c.ink} />
+      {LOGO.paths.map((p) => (
+        <path key={p.ink} d={p.d} fill={p.ink} />
       ))}
     </svg>
   );

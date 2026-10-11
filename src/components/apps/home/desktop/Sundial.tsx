@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { byFill, pxPath } from "@/lib/pxpath";
 import { useI18n } from "@/i18n/client";
 import { GLYPH_PIN, PixelGlyph } from "@/components/glyphs";
 import { Glass } from "@/components/os/Glass";
@@ -144,6 +145,7 @@ const STATIC: Cell[] = (() => {
   grid.forEach((c, i) => out.push([i % CW, Math.floor(i / CW), c]));
   return out;
 })();
+const STATIC_PATHS: [string, string][] = [...byFill(STATIC, (q) => q[2])].map(([c, qs]) => [c, pxPath(qs.map(([x, y]) => ({ x, y })), 0.02)]);
 
 /** the shadow wedge along θ: a solid core, dithered flanks widening to the rim */
 function shadowCells(theta: number): Cell[] {
@@ -359,7 +361,7 @@ export function ClockWidget() {
   return (
     <div className="app-home-widget app-home-widget--s app-home-widget--clock">
       <Glass thickness="regular" refract={false} aria-hidden className="app-home-widget-glass" />
-      <Link
+      <Link prefetch={false}
         href={path("/now")}
         transitionTypes={["app-open"]}
         className="app-home-widget-hit"
@@ -388,11 +390,11 @@ export function ClockWidget() {
         }}
       >
         <svg viewBox={`0 0 ${CW} ${CH}`} shapeRendering="crispEdges" aria-hidden focusable="false">
-          {STATIC.map(([x, y, c]) => (
-            <rect key={`${x}-${y}`} x={x} y={y} width={1.02} height={1.02} fill={c} />
+          {STATIC_PATHS.map(([c, d]) => (
+            <path key={c} d={d} fill={c} />
           ))}
-          {cells.map(([x, y, c], i) => (
-            <rect key={`d${i}`} x={x} y={y} width={1.02} height={1.02} fill={c} />
+          {[...byFill(cells, (q) => q[2])].map(([c, qs]) => (
+            <path key={c} d={pxPath(qs.map(([x, y]) => ({ x, y })), 0.02)} fill={c} />
           ))}
         </svg>
       </div>

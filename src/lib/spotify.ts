@@ -55,16 +55,29 @@ async function sp<T>(path: string): Promise<{ status: number; json: T | null }> 
   return { status: 200, json: (await res.json()) as T };
 }
 
+type SpImage = { url?: string; width?: number | null };
+
+/**
+ * The smallest of Spotify's renditions (640/300/64 for albums, 640/320/160
+ * for artists) that still covers `min` device pixels; every use on the site
+ * is a small sleeve or a dithered thumbnail, never the 640.
+ */
+function pick(images: SpImage[] | undefined, min: number) {
+  const ok = (images ?? []).filter((i) => i.url);
+  const fits = ok.filter((i) => (i.width ?? 0) >= min).sort((a, b) => (a.width ?? 0) - (b.width ?? 0));
+  return (fits[0] ?? ok[0])?.url ?? "";
+}
+
 type SpTrack = {
   name?: string;
   artists?: { name?: string }[];
-  album?: { name?: string; images?: { url?: string }[] };
+  album?: { name?: string; images?: SpImage[] };
   external_urls?: { spotify?: string };
   duration_ms?: number;
 };
 type SpNow = { is_playing?: boolean; progress_ms?: number; item?: SpTrack | null };
 type SpRecent = { items?: { track?: SpTrack; played_at?: string }[] };
-type SpArtists = { items?: { name?: string; images?: { url?: string }[]; external_urls?: { spotify?: string } }[] };
+type SpArtists = { items?: { name?: string; images?: SpImage[]; external_urls?: { spotify?: string } }[] };
 
 export type TrackInfo = {
   title: string;
@@ -83,7 +96,8 @@ function toTrack(t: SpTrack | undefined, extra?: Partial<TrackInfo>): TrackInfo 
     title: t.name,
     artist: (t.artists ?? []).map((a) => a.name).filter(Boolean).join(", "),
     album: t.album?.name ?? "",
-    image: t.album?.images?.[0]?.url ?? "",
+    // the deck sleeve is 152 CSS px: 300 covers it at 2x
+    image: pick(t.album?.images, 300),
     url: t.external_urls?.spotify ?? "",
     progressMs: 0,
     durationMs: t.duration_ms ?? 0,
@@ -120,7 +134,8 @@ export async function getSpotifyStatus(): Promise<SpotifyStatus | null> {
     .slice(0, 5)
     .map((a) => ({
       name: a.name as string,
-      image: a.images?.[0]?.url ?? "",
+      // crate sleeves reach 136 CSS px on a wide phone
+      image: pick(a.images, 272),
       url: a.external_urls?.spotify ?? "",
     }));
   return { now, recent, artists };

@@ -9,7 +9,8 @@ import type { SpotifyStatus } from "@/lib/spotify";
  * never disagree.
  *
  * - Until the first poll answers, everyone shows the server's seed.
- * - The first subscriber starts ONE poller: it fetches right away, then
+ * - The first subscriber starts ONE poller: it fetches once the page is
+ *   idle after load (right away on a later remount), then
  *   every 30s while the tab is visible, and again when the tab comes back
  *   (if the last answer is stale). The last unsubscribe stops it.
  * - When the endpoint says it's disabled (no tokens, as in dev) or fails,
@@ -47,16 +48,35 @@ const onVisibility = () => {
   if (!document.hidden) load();
 };
 
+const hasIdle = () => typeof window.requestIdleCallback === "function";
+let idle = 0;
+const cancelIdle = () => {
+  if (!idle) return;
+  if (hasIdle()) window.cancelIdleCallback(idle);
+  else window.clearTimeout(idle);
+  idle = 0;
+};
+
 function subscribe(listener: () => void) {
   listeners.add(listener);
   if (listeners.size === 1) {
-    load();
+    if (lastFetch > 0) load();
+    else {
+      // the very first poll waits for the page to settle: the seed is
+      // already on screen, and hydration shouldn't share its frame
+      const first = () => {
+        idle = 0;
+        load();
+      };
+      idle = hasIdle() ? window.requestIdleCallback(first, { timeout: 3000 }) : window.setTimeout(first, 2000);
+    }
     timer = window.setInterval(() => load(true), POLL_MS);
     document.addEventListener("visibilitychange", onVisibility);
   }
   return () => {
     listeners.delete(listener);
     if (listeners.size === 0) {
+      cancelIdle();
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisibility);
     }

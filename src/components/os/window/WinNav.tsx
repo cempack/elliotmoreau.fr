@@ -61,15 +61,20 @@ export function WinNavItem({
 
   // keep the active segment in view when the strip scrolls sideways
   useEffect(() => {
-    if (!active) return;
-    const li = ref.current;
-    const strip = li?.closest<HTMLElement>(".os-win-side");
-    if (!li || !strip || getComputedStyle(strip).overflowX !== "auto") return;
-    const a = li.getBoundingClientRect();
-    const b = strip.getBoundingClientRect();
-    if (a.left >= b.left + 12 && a.right <= b.right - 12) return;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    strip.scrollBy({ left: a.left - b.left - (b.width - a.width) / 2, behavior: reduced ? "auto" : "smooth" });
+    // only the compact strip (<1024px) scrolls sideways; the rect reads wait for the
+    // next frame so they never force a layout inside the commit
+    if (!active || !window.matchMedia("(max-width: 1023px)").matches) return;
+    const raf = requestAnimationFrame(() => {
+      const li = ref.current;
+      const strip = li?.closest<HTMLElement>(".os-win-side");
+      if (!li || !strip || strip.scrollWidth <= strip.clientWidth) return;
+      const a = li.getBoundingClientRect();
+      const b = strip.getBoundingClientRect();
+      if (a.left >= b.left + 12 && a.right <= b.right - 12) return;
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      strip.scrollBy({ left: a.left - b.left - (b.width - a.width) / 2, behavior: reduced ? "auto" : "smooth" });
+    });
+    return () => cancelAnimationFrame(raf);
   }, [active]);
 
   const body = (

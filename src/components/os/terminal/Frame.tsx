@@ -242,6 +242,11 @@ export function DesktopWindow({
             tabIndex={-1}
             aria-label={t.system.term.dialog}
             style={{ width: w, height: h }}
+            // focus in the terminal dims the app window's lights (an attribute, not an html:has rule)
+            onFocus={() => (document.documentElement.dataset.termFocus = "")}
+            onBlur={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node | null)) delete document.documentElement.dataset.termFocus;
+            }}
             onKeyDown={(e) => {
               if (e.key === "Escape") {
                 e.stopPropagation();

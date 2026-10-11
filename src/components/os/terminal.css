@@ -87,7 +87,7 @@
     inset 0 0 0 1px rgba(176, 204, 134, 0.16);
 }
 .os-term-win:not(:focus-within) .os-win-lights:not(:hover) .os-win-light,
-html:has(.os-term-win:focus-within) .os-win .os-win-lights:not(:hover) .os-win-light {
+html[data-term-focus] .os-win .os-win-lights:not(:hover) .os-win-light {
   --os-light: var(--color-ink-500);
   box-shadow:
     inset 0 0 0 0.5px rgba(0, 0, 0, 0.28),

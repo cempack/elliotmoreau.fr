@@ -1,5 +1,7 @@
 "use client";
 
+import { byFill, pxPath } from "@/lib/pxpath";
+
 import { AppIcon, glyphCell } from "@/components/os/icons";
 import type { AppId } from "@/components/os/apps";
 import type { Cells } from "@/components/glyphs";
@@ -111,12 +113,10 @@ function ReadmeGlyph({ size }: { size: number }) {
         style={{ display: "block", overflow: "visible" }}
       >
         <g fill={C.ink} opacity={0.5}>
-          {shadow.map((r) => (
-            <rect key={`s${r.x}-${r.y}`} x={r.x} y={r.y} width={r.w} height={1} />
-          ))}
+          <path d={pxPath(shadow)} />
         </g>
-        {runs.map((r) => (
-          <rect key={`${r.x}-${r.y}`} x={r.x} y={r.y} width={r.w} height={1} fill={r.fill} />
+        {[...byFill(runs, (r) => r.fill)].map(([fill, rs]) => (
+          <path key={fill} d={pxPath(rs)} fill={fill} />
         ))}
       </svg>
     </span>

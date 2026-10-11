@@ -142,7 +142,7 @@ export function Writing({ posts }: { posts: GhostPost[] }) {
         </div>
       )}
 
-      <Link href={path("/writing")} transitionTypes={["app-open"]} className="app-now-more">
+      <Link prefetch={false} href={path("/writing")} transitionTypes={["app-open"]} className="app-now-more">
         {w.all}
         <PixelGlyph cells={G_NEXT} size={10} />
       </Link>

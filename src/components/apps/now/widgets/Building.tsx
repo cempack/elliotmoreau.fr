@@ -98,7 +98,7 @@ export function Building({ activity, repos }: { activity: ActivityInfo | null; r
         <div className="app-now-build-repos">
           <p className="app-now-label">
             {b.recent}
-            <Link href={path("/work")} transitionTypes={["app-open"]} className="app-now-label-aside app-now-label-link">
+            <Link prefetch={false} href={path("/work")} transitionTypes={["app-open"]} className="app-now-label-aside app-now-label-link">
               {b.all}
               <PixelGlyph cells={G_ARROW} size={7} />
             </Link>
