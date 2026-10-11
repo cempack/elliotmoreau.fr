@@ -207,7 +207,11 @@ export function useDeck({ count, reduced, onSnap }: { count: number; reduced: bo
           gr.dragging = true;
           // re-anchor so the first frame of the drag doesn't jump the slop
           gr.sx = e.clientX;
-          e.currentTarget.setPointerCapture(e.pointerId);
+          try {
+            e.currentTarget.setPointerCapture(e.pointerId);
+          } catch {
+            // synthetic or already-released pointer: track without capture
+          }
           e.currentTarget.dataset.dragging = "";
         } else if (Math.abs(dy) > 10) {
           if (gr.el) delete gr.el.dataset.pressed;

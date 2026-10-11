@@ -8,16 +8,17 @@ import { TILE_H, TILE_W } from "./landmass";
 type RGB = [number, number, number];
 const hex = (h: string): RGB => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
 
-const SEA_DEEP = hex("#090c24");
-const SEA = hex("#0f1438");
-const SHALLOW = hex("#1a2358");
-const SURF = hex("#2b3a7a");
-const WAVE = hex("#1c2560");
-const GRID = hex("#222a62");
-const LAND_LO = hex("#2c3064");
-const LAND = hex("#3d4388");
-const LAND_HI = hex("#5258a8");
-const COAST = hex("#8f86e6");
+const SEA_DEEP = hex("#090c27");
+const SEA = hex("#0d1233");
+const SHALLOW = hex("#152054");
+const SURF = hex("#22327a");
+const WAVE = hex("#121a48");
+const GRID = hex("#18215a");
+const LAND_LO = hex("#4a50a8");
+const LAND = hex("#5c64c2");
+const LAND_HI = hex("#7880dc");
+const COAST = hex("#b3a4ff");
+const SHADOW = hex("#3a3f8e");
 const INK = hex("#05060a");
 const MARK: Record<string, RGB> = { home: hex("#c6ff5e"), been: hex("#ffb86b"), want: hex("#8be9ff") };
 
@@ -74,10 +75,10 @@ function paintMap(place: Place, ctx: CanvasRenderingContext2D) {
       // light falls from the top left
       const lightT = 1 - (x / W) * 0.55 - (y / H) * 0.45;
       if (at(x, y)) {
-        const coast = !at(x - 1, y) || !at(x, y - 1) || !at(x + 1, y) || !at(x, y + 1);
         const lit = !at(x - 1, y) || !at(x, y - 1);
-        if (coast && lit) put(x, y, COAST);
-        else if (coast) put(x, y, LAND_HI);
+        const shade = !at(x + 1, y) || !at(x, y + 1);
+        if (lit) put(x, y, COAST);
+        else if (shade) put(x, y, SHADOW);
         else put(x, y, lightT * 1.4 - 0.2 > b ? (lightT > 0.72 && b < 0.3 ? LAND_HI : LAND) : LAND_LO);
       } else {
         const n = near[y * W + x];

@@ -75,6 +75,7 @@ export function DesktopScene() {
       };
       const sw = stage.clientWidth;
       let k: number;
+      let shift = 0;
       if (phone) {
         k = sw / b.fitW;
       } else {
@@ -90,17 +91,58 @@ export function DesktopScene() {
         const flowRows = Math.max(1, Math.floor((scene.clientHeight - top - bottom - reserve) / ch));
         const flowCols = Math.ceil(DESKTOP_ICONS.length / flowRows);
         const rail = Math.max(0, right + flowCols * cw + 16 - pad);
-        const availW = sw - 2 * rail;
+        // wide screens keep the name centred on the screen (symmetric
+        // gutters); narrow ones centre it in the room left of the icons
+        const symmetric = sw - 2 * rail >= 0.62 * b.fitW;
+        const availW = symmetric ? sw - 2 * rail : sw - rail;
+        shift = symmetric ? 0 : -rail / 2;
         k = Math.min(availW / b.fitW, stage.clientHeight / b.fitH);
       }
       k = Math.max(0.3, Math.min(k, phone ? 1 : 1.32));
       scene.style.setProperty("--app-home-k", k.toFixed(4));
+      scene.style.setProperty("--app-home-hero-x", `${Math.round(shift)}px`);
     };
     fit();
     const ro = new ResizeObserver(fit);
     ro.observe(stage);
     ro.observe(scene);
     return () => ro.disconnect();
+  }, []);
+
+  /* ── when the lock screen lifts (first visit this session), the desk
+     rises into place under it and the icons pop in, top to bottom ── */
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const intro = document.querySelector(".em-intro");
+    if (!intro || !intro.getClientRects().length) return;
+    const play = () => {
+      const scene = sceneRef.current;
+      if (!scene) return;
+      const ease = "linear(0, 0.157 4.6%, 0.452 11%, 0.703 18.2%, 0.86 25.2%, 0.946 32.3%, 0.985 40%, 0.998 50%, 1)";
+      const desk = Array.from(scene.querySelectorAll<HTMLElement>(".app-home-widget, .app-home-hello-slot")).filter(
+        (el) => el.getClientRects().length
+      );
+      // left to right, as the eye reads the desk
+      desk.sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left);
+      desk.forEach((el, i) =>
+        el.animate([{ transform: "translateY(64px) scale(0.965)" }, { transform: "none" }], {
+          duration: 1100,
+          delay: 60 + i * 70,
+          easing: ease,
+          fill: "backwards",
+        })
+      );
+      scene.querySelectorAll<HTMLElement>(".app-home-icon").forEach((el, i) =>
+        el.animate([{ opacity: 0, scale: "0.55" }, { opacity: 1, scale: "1" }], {
+          duration: 700,
+          delay: 220 + i * 55,
+          easing: ease,
+          fill: "backwards",
+        })
+      );
+    };
+    window.addEventListener("em:intro-done", play, { once: true });
+    return () => window.removeEventListener("em:intro-done", play);
   }, []);
 
   /* HeroNameFx reads its replay hint from the legacy dictionary, which has
@@ -222,11 +264,14 @@ export function DesktopScene() {
     if (!g.additive) setSelected(new Set());
   };
 
-  /* ── leaving: the desk drifts up a touch faster than the name recedes ── */
+  /* ── leaving: the camera tilts down onto the desk. The name rises away
+     a little faster than the page and shrinks into the distance; the desk
+     lags a touch, heavier. They part, never overlap (no glass over the
+     living wordmark). ── */
   const { scrollY } = useScroll();
-  const deskY = useTransform(scrollY, [0, 900], [0, -90], { clamp: true });
-  const heroY = useTransform(scrollY, [0, 900], [0, 140], { clamp: true });
-  const heroS = useTransform(scrollY, [0, 900], [1, 0.9], { clamp: true });
+  const deskY = useTransform(scrollY, [0, 900], [0, 60], { clamp: true });
+  const heroY = useTransform(scrollY, [0, 900], [0, -170], { clamp: true });
+  const heroS = useTransform(scrollY, [0, 900], [1, 0.84], { clamp: true });
   const hintO = useTransform(scrollY, [0, 120], [1, 0], { clamp: true });
 
   const toStory = () => {

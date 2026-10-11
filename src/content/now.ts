@@ -72,20 +72,20 @@ export const NOW = {
       title: "Practical Typography",
       author: "Matthew Butterick",
       status: "rereading",
-      note: { en: "The spacing chapters, again.", fr: "Les chapitres sur l’espacement, encore." },
+      note: { en: "The spacing chapters, again.", fr: "Les chapitres sur l’espacement." },
       url: "https://practicaltypography.com",
     },
     {
       title: "The Design of Everyday Things",
       author: "Don Norman",
       status: "reading",
-      note: { en: "Affordances, before I add another gesture.", fr: "Les affordances, avant d’ajouter un geste de plus." },
+      note: { en: "Affordances, before another gesture.", fr: "Les affordances, avant un geste de plus." },
     },
     {
       title: "Crafting Interpreters",
       author: "Robert Nystrom",
       status: "next",
-      note: { en: "So the terminal here can grow a real shell.", fr: "Pour que le terminal d’ici ait un jour un vrai shell." },
+      note: { en: "For a real shell in the terminal.", fr: "Pour un vrai shell dans le terminal." },
       url: "https://craftinginterpreters.com",
     },
   ] satisfies Book[],
@@ -94,7 +94,7 @@ export const NOW = {
   learning: [
     {
       label: { en: "Spring physics for interfaces", fr: "La physique des ressorts dans les interfaces" },
-      note: { en: "Damping, response, and when a bounce is earned.", fr: "Amortissement, réponse, et quand un rebond se mérite." },
+      note: { en: "Damping, response, earned bounces.", fr: "Amortissement, réponse, rebonds mérités." },
     },
     {
       label: { en: "SVG filters and refraction", fr: "Filtres SVG et réfraction" },
@@ -102,7 +102,7 @@ export const NOW = {
     },
     {
       label: { en: "Basic Japanese", fr: "Les bases du japonais" },
-      note: { en: "For the trip I keep planning.", fr: "Pour le voyage que je prépare depuis trop longtemps." },
+      note: { en: "For the trip I keep planning.", fr: "Pour le voyage que je repousse." },
     },
   ] satisfies Learning[],
 
@@ -114,7 +114,7 @@ export const NOW = {
     },
     {
       title: { en: "Liquid Glass in the browser", fr: "Le Liquid Glass dans le navigateur" },
-      note: { en: "What refracts, what fakes it, and why.", fr: "Ce qui réfracte vraiment, ce qui fait semblant, et pourquoi." },
+      note: { en: "What refracts, what fakes it, and why.", fr: "Ce qui réfracte, ce qui triche, et pourquoi." },
     },
   ] satisfies Draft[],
 

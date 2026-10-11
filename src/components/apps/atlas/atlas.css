@@ -7,7 +7,7 @@
 
 .app-atlas {
   --app-atlas-stage-h: calc(100svh - var(--menubar-h) - var(--os-win-gap) - var(--os-win-dock-room) - var(--os-win-bar-h));
-  --app-atlas-peek: 116px;
+  --app-atlas-peek: 124px;
   --app-atlas-sheet-bottom: 12px;
   --app-atlas-home: var(--color-signal);
   --app-atlas-been: var(--color-ember);
@@ -833,7 +833,7 @@
 .app-atlas-pc-scrim {
   position: absolute;
   inset: 0;
-  background: linear-gradient(0deg, rgba(5, 6, 10, 0.94) 0%, rgba(5, 6, 10, 0.72) 30%, rgba(5, 6, 10, 0) 62%);
+  background: linear-gradient(0deg, rgba(5, 6, 10, 0.95) 0%, rgba(5, 6, 10, 0.78) 26%, rgba(5, 6, 10, 0.2) 50%, rgba(5, 6, 10, 0) 60%);
   pointer-events: none;
 }
 .app-atlas-pc-chip {
@@ -981,15 +981,25 @@
   }
 }
 
-.app-atlas-sheet {
-  --os-glass-tint: rgba(10, 11, 20, 0.74);
+/* the sheet slides inside a clip that ends where it rests, so the part
+   below never shows through the translucent tab bar */
+.app-atlas-sheet-clip {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
   bottom: var(--app-atlas-sheet-bottom);
   left: 0.5rem;
   z-index: 2;
+  overflow: hidden;
+  border-radius: 1.625rem;
+  pointer-events: none;
+}
+.app-atlas-sheet {
+  --os-glass-tint: rgba(10, 11, 20, 0.74);
+  position: absolute;
+  inset: 0;
   display: flex;
+  pointer-events: auto;
   flex-direction: column;
   border-radius: 1.625rem;
   touch-action: none;
@@ -999,7 +1009,7 @@
   will-change: transform;
 }
 @media (min-width: 768px) {
-  .app-atlas-sheet {
+  .app-atlas-sheet-clip {
     right: auto;
     left: 0.75rem;
     width: min(25rem, 50%);
@@ -1106,12 +1116,12 @@
 }
 .app-atlas-card[data-compact] .app-atlas-stamp {
   --tile: 8px;
-  width: 64px;
-  height: 80px;
+  width: 80px;
+  height: 96px;
 }
 .app-atlas-card[data-compact] .app-atlas-stamp-planet {
-  width: 48px;
-  height: 48px;
+  width: 64px;
+  height: 64px;
 }
 .app-atlas-card[data-compact] .app-atlas-stamp-iso {
   top: 3px;

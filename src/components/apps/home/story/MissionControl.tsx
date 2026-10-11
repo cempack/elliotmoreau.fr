@@ -24,15 +24,15 @@ const WINDOWS: { id: WinId; flight: number }[] = [
   { id: "work", flight: 0 },
   { id: "writing", flight: 1 },
   { id: "now", flight: 2 },
-  { id: "atlas", flight: 3 },
-  { id: "contact", flight: 4 },
+  { id: "contact", flight: 3 },
+  { id: "atlas", flight: 4 },
 ];
 
 /** Where the pile sits in depth, and when the flight runs (scroll progress). */
 const PILE_SCALE = 0.3;
-const FLY_FROM = 0.2;
-const FLY_STAGGER = 0.055;
-const FLY_SPAN = 0.34;
+const FLY_FROM = 0.33;
+const FLY_STAGGER = 0.05;
+const FLY_SPAN = 0.32;
 
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
@@ -50,7 +50,7 @@ export function MissionControl({ music }: { music: Music }) {
   const { t } = useI18n();
   const s = t.story.mc;
   const reduced = useReduced();
-  const roomy = useMedia("(min-width: 1024px) and (min-height: 660px)");
+  const roomy = useMedia("(min-width: 1024px) and (min-height: 740px)");
   const pinned = roomy && !reduced;
 
   const wrapRef = useRef<HTMLElement>(null);
@@ -58,7 +58,10 @@ export function MissionControl({ music }: { music: Music }) {
   const [offsets, setOffsets] = useState<Offset[]>([]);
 
   const { scrollYProgress: p } = useScroll({ target: wrapRef, offset: ["start end", "end end"] });
-  const headOpacity = useTransform(p, [0.12, 0.3], [0, 1]);
+  // function transforms throughout: range transforms of a scroll progress
+  // get hardware-accelerated onto a native ScrollTimeline whose range
+  // ignores these offsets
+  const headOpacity = useTransform(p, (v) => clamp01((v - 0.08) / 0.2));
 
   // each window's way back to the pile: grid centre minus its own centre,
   // from offset* (layout boxes, untouched by the transforms they drive)
@@ -85,7 +88,7 @@ export function MissionControl({ music }: { music: Music }) {
       ref={wrapRef}
       className="app-story-mc"
       data-mode={pinned ? "pin" : "flow"}
-      data-veil="0.58"
+      data-veil="0.5"
       aria-labelledby="story-mc-title"
     >
       <div className="app-story-mc-stage">
@@ -94,7 +97,7 @@ export function MissionControl({ music }: { music: Music }) {
             n={1}
             kicker={s.kicker}
             titleId="story-mc-title"
-            title={pinned ? <KineticTitle text={s.title} p={p} from={0.1} to={0.44} /> : <SplitText text={s.title} by="word" stagger={0.05} />}
+            title={pinned ? <KineticTitle text={s.title} p={p} from={0.1} to={0.4} /> : <SplitText text={s.title} by="word" stagger={0.05} />}
             lede={s.lede}
           />
         </m.div>

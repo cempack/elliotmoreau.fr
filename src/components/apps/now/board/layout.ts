@@ -112,8 +112,10 @@ export function measure(board: HTMLElement, items: Map<string, HTMLElement>): Me
   const spans = new Map<string, Span>();
   for (const [id, el] of items) {
     const ics = getComputedStyle(el);
-    const c = Number(/span (\d+)/.exec(ics.gridColumnEnd)?.[1] ?? 1);
-    const r = Number(/span (\d+)/.exec(ics.gridRowEnd)?.[1] ?? 1);
+    // `grid-column: span 2` computes as start "span 2", end "auto"
+    const span = (a: string, b: string) => Number(/span (\d+)/.exec(a)?.[1] ?? /span (\d+)/.exec(b)?.[1] ?? 1);
+    const c = span(ics.gridColumnStart, ics.gridColumnEnd);
+    const r = span(ics.gridRowStart, ics.gridRowEnd);
     spans.set(id, { c, r });
   }
   return {

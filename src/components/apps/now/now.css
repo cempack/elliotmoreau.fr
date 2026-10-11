@@ -134,7 +134,7 @@
 .app-now-sentence {
   margin: 0;
   color: var(--color-label);
-  font-size: clamp(2rem, 1.15rem + 3.1cqi, 4.25rem);
+  font-size: clamp(2.125rem, 0.9rem + 4.5cqi, 5.25rem);
   font-weight: 640;
   line-height: 1.06;
   letter-spacing: -0.038em;
@@ -174,8 +174,8 @@ a.app-now-tok:hover {
   color: var(--color-label);
 }
 .app-now-tok-cava {
-  margin-right: 0.22em;
-  vertical-align: 0.02em;
+  margin-right: 0.2em;
+  vertical-align: 0.04em;
 }
 
 .app-now-intro {
@@ -405,7 +405,8 @@ a.app-now-tok:hover {
     inset 0 1px 0 rgba(255, 255, 255, 0.07);
   transition: box-shadow 0.25s;
 }
-.app-now-w[data-lifted] .app-now-w-card {
+.app-now-w[data-lifted] .app-now-w-card,
+.app-now-w[data-settling] .app-now-w-card {
   background:
     radial-gradient(110% 70% at 0% 0%, color-mix(in oklab, var(--app-now-accent) 12%, transparent), transparent 62%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02) 38%, rgba(255, 255, 255, 0.01)),
@@ -553,7 +554,7 @@ a.app-now-tok:hover {
 }
 .app-now-listen-art {
   flex: none;
-  width: clamp(6.5rem, 30cqi, 10.5rem);
+  width: clamp(6.5rem, 36cqi, 13rem);
   border-radius: 14px;
   transition: transform 0.35s var(--ease-out-quint);
 }
@@ -796,11 +797,13 @@ li:first-child .app-now-artist-rank {
   83% { transform: translateY(20px); }
 }
 .app-now-tok-cava {
-  height: 0.5em;
-  gap: 0.05em;
+  height: 32px;
 }
-.app-now-tok-cava .app-now-cava-col {
-  width: 0.1em;
+@container app-now (max-width: 619px) {
+  /* 3px cells: still whole pixels */
+  .app-now-tok-cava {
+    zoom: 0.75;
+  }
 }
 
 /* ───────────────────────── Here & now ───────────────────────── */
@@ -813,14 +816,16 @@ li:first-child .app-now-artist-rank {
 }
 .app-now-sky {
   position: relative;
-  flex: none;
-  aspect-ratio: 64 / 34;
+  flex: 1 1 auto;
+  min-height: 8.5rem;
   overflow: hidden;
   border-radius: 12px;
   background: var(--color-ink-900);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 .app-now-sky-canvas {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
@@ -853,8 +858,8 @@ li:first-child .app-now-artist-rank {
   display: flex;
   align-items: baseline;
   gap: 0.375rem;
-  margin: auto 0 0;
-  padding-top: 0.875rem;
+  margin: 0;
+  padding-top: 1rem;
   color: var(--color-label);
 }
 .app-now-clock-hm {
@@ -1116,13 +1121,15 @@ li:first-child .app-now-artist-rank {
   bottom: 0;
   left: 0;
   width: 18%;
+  /* an oscilloscope sweep: a soft wake behind one crisp pixel column */
   background: linear-gradient(
     90deg,
     transparent,
-    color-mix(in oklab, var(--color-ion) 6%, transparent) 60%,
-    color-mix(in oklab, var(--color-ion) 16%, transparent) 97%,
-    transparent
+    color-mix(in oklab, var(--color-ion) 5%, transparent) 55%,
+    color-mix(in oklab, var(--color-ion) 13%, transparent) calc(100% - 3px),
+    color-mix(in oklab, var(--color-ion) 60%, transparent) calc(100% - 3px)
   );
+  mask: linear-gradient(180deg, transparent, #000 22%, #000 78%, transparent);
 }
 .app-now-pulse-plot[data-run] .app-now-pulse-scan {
   opacity: 1;
@@ -1231,6 +1238,13 @@ li:first-child .app-now-artist-rank {
   flex-direction: column;
   min-width: 0;
 }
+.app-now-fetch-prompt {
+  margin: 0 0 0.5rem;
+  color: var(--color-label-3);
+}
+.app-now-fetch-prompt span {
+  color: var(--color-signal);
+}
 .app-now-fetch-user {
   margin: 0;
   color: var(--color-label-3);
@@ -1252,7 +1266,7 @@ li:first-child .app-now-artist-rank {
 .app-now-fetch-rows > div {
   display: flex;
   gap: 0.75rem;
-  line-height: 1.62;
+  line-height: 1.72;
 }
 .app-now-fetch-rows dt {
   flex: none;
@@ -1445,6 +1459,16 @@ a.app-now-book:hover .app-now-spine {
   letter-spacing: -0.01em;
   line-height: 1.25;
 }
+.app-now-post-excerpt {
+  display: -webkit-box;
+  margin-top: 0.375rem;
+  overflow: hidden;
+  color: var(--color-label-3);
+  font-size: var(--text-footnote);
+  line-height: 1.4;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
 .app-now-post-meta {
   display: block;
   margin-top: 0.375rem;
@@ -1466,6 +1490,17 @@ a.app-now-book:hover .app-now-spine {
 }
 .app-now-more:hover {
   color: var(--color-label);
+}
+
+/* in the grid, tiles have fixed heights: hand-written notes keep to a line */
+@container app-now (min-width: 620px) {
+  .app-now-book-note,
+  .app-now-learn-note,
+  .app-now-draft-note {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 /* ───────────────────────── footer ───────────────────────── */
@@ -1503,8 +1538,8 @@ a.app-now-book:hover .app-now-spine {
   .app-now-artists-list {
     gap: 0.5rem;
   }
-  .app-now-here .app-now-clock {
-    padding-top: 1rem;
+  .app-now-sky {
+    min-height: 11.5rem;
   }
   .app-now-fetch {
     gap: 1rem;
@@ -1516,6 +1551,24 @@ a.app-now-book:hover .app-now-spine {
   .app-now-artists,
   .app-now-more {
     margin-top: 0.25rem;
+  }
+}
+@container app-now-w (min-width: 480px) {
+  .app-now-fetch {
+    font-size: 0.875rem;
+  }
+  .app-now-fetch-rows > div {
+    line-height: 1.78;
+  }
+}
+@container app-now-w (max-width: 240px) {
+  .app-now-build-body {
+    -webkit-line-clamp: 2;
+  }
+  .app-now-book-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 @container app-now-w (max-width: 380px) {
@@ -1539,6 +1592,25 @@ a.app-now-book:hover .app-now-spine {
   .app-now-intro {
     font-size: var(--text-callout);
     margin-top: 1.125rem;
+  }
+}
+
+/* touch: every link and control is at least 44px tall */
+@media (pointer: coarse) {
+  .app-now-repo,
+  .app-now-more {
+    min-height: 2.75rem;
+  }
+  .app-now-label-link {
+    position: relative;
+  }
+  .app-now-label-link::before {
+    content: "";
+    position: absolute;
+    inset: -0.875rem -0.5rem;
+  }
+  .app-now-pulse-hits li {
+    width: 2rem;
   }
 }
 

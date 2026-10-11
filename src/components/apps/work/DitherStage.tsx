@@ -17,16 +17,18 @@ type RGB = [number, number, number];
 /** inks from deepest to brightest; level 0 stays transparent */
 const TONES: Record<"ion" | "lilac", RGB[]> = {
   ion: [
-    [16, 24, 44],
-    [21, 37, 66],
-    [27, 55, 92],
-    [36, 78, 118],
+    [15, 22, 42],
+    [20, 36, 66],
+    [27, 56, 96],
+    [38, 84, 128],
+    [56, 116, 158],
   ],
   lilac: [
-    [22, 19, 46],
-    [33, 27, 70],
-    [48, 37, 98],
-    [66, 52, 128],
+    [21, 18, 44],
+    [32, 26, 70],
+    [47, 37, 100],
+    [66, 52, 134],
+    [92, 74, 166],
   ],
 };
 
@@ -78,7 +80,7 @@ export function DitherStage({
           const nx = (x + 0.5 - cx) / rx;
           const ny = (y + 0.5 - cy) / ry;
           const dist = Math.sqrt(nx * nx + ny * ny);
-          const v = Math.max(0, 1 - dist) ** 1.35;
+          const v = Math.max(0, 1 - dist) ** 1.15;
           const lvl = Math.min(levels, Math.floor(v * levels + bayer(x, y)));
           const i = (y * cols + x) * 4;
           if (lvl > 0) {

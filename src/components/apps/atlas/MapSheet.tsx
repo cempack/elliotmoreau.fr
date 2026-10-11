@@ -144,10 +144,13 @@ export function MapSheet({
       if (globe) {
         const gh = globe.offsetHeight;
         const gw = globe.offsetWidth;
-        const top = sheet.offsetTop + (H - half) - 12; // sheet top at half, in stage px
+        const clip = sheet.parentElement as HTMLElement;
+        const beside = clip.offsetLeft + clip.offsetWidth <= globe.offsetLeft + 1;
+        const top = clip.offsetTop + (H - half) - 12; // sheet top at half, in stage px
         const avail = Math.max(80, top);
-        metrics.shift.set(Math.max(0, gh / 2 - avail / 2));
-        metrics.shrink.set(Math.max(0, 1 - Math.min(1, avail / Math.min(gw, gh))));
+        // tablets: the sheet floats beside the globe, nothing to dodge
+        metrics.shift.set(beside ? 0 : Math.max(0, gh / 2 - avail / 2));
+        metrics.shrink.set(beside ? 0 : Math.max(0, 1 - Math.min(1, avail / Math.min(gw, gh))));
       }
       if (!entered.current) {
         entered.current = true;
@@ -168,12 +171,10 @@ export function MapSheet({
   }, [globeRef, metrics, reduced, y, yFor]);
 
   // a new place: show its card
-  const firstPlace = useRef(true);
+  const shownPlace = useRef(place.id);
   useEffect(() => {
-    if (firstPlace.current) {
-      firstPlace.current = false;
-      return;
-    }
+    if (shownPlace.current === place.id) return;
+    shownPlace.current = place.id;
     if (detentRef.current !== "half") goTo("half");
     else scrollRef.current?.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
   }, [place.id, goTo, reduced]);
@@ -289,6 +290,7 @@ export function MapSheet({
   };
 
   return (
+    <div className="app-atlas-sheet-clip">
     <m.div
       ref={sheetRef}
       className="app-atlas-sheet"
@@ -333,5 +335,6 @@ export function MapSheet({
         {children}
       </div>
     </m.div>
+    </div>
   );
 }

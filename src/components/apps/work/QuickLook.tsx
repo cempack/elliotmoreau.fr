@@ -133,7 +133,14 @@ export function QuickLook({
       oy.set(o.y);
       os.set(o.s);
     }
-    const anim = animate(p, 1, reduced ? { duration: 0.15, ease: "linear" } : ZOOM);
+    // start the clock once the (invisible, p = 0) panel has painted: the
+    // first top-layer paint can be slow, and the zoom shouldn't skip ahead
+    let anim: ReturnType<typeof animate> | null = null;
+    let raf = requestAnimationFrame(() => {
+      raf = requestAnimationFrame(() => {
+        if (!closing.current) anim = animate(p, 1, reduced ? { duration: 0.15, ease: "linear" } : ZOOM);
+      });
+    });
     panelRef.current?.focus({ preventScroll: true });
     lenisRef.current?.stop();
     const root = document.documentElement;
@@ -141,7 +148,8 @@ export function QuickLook({
     root.style.overflow = "hidden";
     blip("open");
     return () => {
-      anim.stop();
+      cancelAnimationFrame(raf);
+      anim?.stop();
       lenisRef.current?.start();
       root.style.overflow = prevOverflow;
       if (dialog.open) dialog.close();
@@ -259,8 +267,10 @@ export function QuickLook({
         close();
       }}
       onClose={() => {
-        // the browser may force-close a modal (e.g. a repeated Esc): stay in sync
-        if (closing.current) return;
+        // the browser may force-close a modal (e.g. a repeated Esc): stay in
+        // sync. The event is async, so a close() followed by a re-open
+        // (StrictMode's effect replay) lands here while open again: ignore.
+        if (closing.current || dialogRef.current?.open) return;
         closing.current = true;
         onClosed();
       }}

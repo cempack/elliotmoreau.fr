@@ -93,12 +93,12 @@ const fr: typeof en = {
   more: "À lire aussi",
   back: "Retour à {folder}",
   memberKicker: "Abonnement",
-  memberTitle: "Recevez le prochain par e-mail",
-  memberBody: "L'inscription est gratuite. Les nouveaux articles arrivent par e-mail quelques fois par an : pas de spam, et un clic suffit pour partir.",
+  memberTitle: "Recevez le prochain par e‑mail",
+  memberBody: "L'inscription est gratuite. Les nouveaux articles arrivent par e‑mail quelques fois par an : pas de spam, et un clic suffit pour partir.",
   memberCta: "Devenir membre",
   newsTitle: "Newsletter",
-  newsBody: "Les nouveaux articles par e-mail, quelques fois par an.",
-  newsLabel: "Adresse e-mail",
+  newsBody: "Les nouveaux articles par e‑mail, quelques fois par an.",
+  newsLabel: "Adresse e‑mail",
   newsPlaceholder: "vous@exemple.fr",
   newsSubscribe: "S'abonner",
   newsSending: "Inscription…",
@@ -124,4 +124,5 @@ const fr: typeof en = {
   dateLong: "{d} {m} {y}",
 };
 
-export default { en, fr };
+const writing = { en, fr };
+export default writing;

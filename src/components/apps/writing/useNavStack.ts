@@ -13,6 +13,8 @@ const EDGE = 28;
 const PUSH: Transition = { type: "spring", visualDuration: 0.42, bounce: 0 };
 /** how far the list sits to the left while the reader covers it */
 const PARALLAX = 0.3;
+/** "off to the right" before the stack has been measured */
+const OFF = 100_000;
 
 function scrollToY(y: number) {
   const l = lenisRef.current;
@@ -52,14 +54,14 @@ export function useNavStack({
   enabled,
   reduced,
   stackRef,
-  navRef,
+  probeRef,
   onSettle,
 }: {
   enabled: boolean;
   reduced: boolean;
   stackRef: React.RefObject<HTMLDivElement | null>;
-  /** the reader's sticky nav bar: its computed `top` is the sticky offset */
-  navRef: React.RefObject<HTMLElement | null>;
+  /** a sticky probe: its computed `top` is the line under the title bar */
+  probeRef: React.RefObject<HTMLElement | null>;
   /** a push or pop finished; `fromHistory` when the browser asked for it */
   onSettle: (view: View, fromHistory: boolean) => void;
 }) {
@@ -67,8 +69,9 @@ export function useNavStack({
   const [moving, setMoving] = useState(false);
   const [run, setRun] = useState<Run | null>(null);
 
-  // reader offset in px: 0 = covering the list, w = off to the right
-  const x = useMotionValue(0);
+  // reader offset in px: 0 = covering the list, ≥ w = off to the right
+  // (starts far off so the list rests untransformed before any measure)
+  const x = useMotionValue(OFF);
   const width = useMotionValue(390);
   const listX = useTransform(() => -PARALLAX * Math.max(0, width.get() - x.get()));
   // the list only paints where the reader isn't (both are see-through glass)
@@ -160,8 +163,8 @@ export function useNavStack({
     const my = ++token.current;
     if (run.kind === "push") {
       // the reader opens at the top: scroll up to it if the list was scrolled
-      const nav = navRef.current;
-      const stick = nav ? parseFloat(getComputedStyle(nav).top) || 0 : 0;
+      const probe = probeRef.current;
+      const stick = probe ? parseFloat(getComputedStyle(probe).top) || 0 : 0;
       const top = stack.getBoundingClientRect().top + window.scrollY;
       const target = Math.min(savedY.current, Math.max(0, Math.round(top - stick)));
       if (Math.abs(window.scrollY - target) > 1) scrollToY(target);
@@ -187,7 +190,7 @@ export function useNavStack({
         finishPop();
       });
     }
-  }, [run, stackRef, navRef, width, x, reduced, pinList, finishPop]);
+  }, [run, stackRef, probeRef, width, x, reduced, pinList, finishPop]);
 
   // reduced motion: a push settles on the next frame (the CSS cross-fade runs)
   useEffect(() => {
@@ -221,13 +224,15 @@ export function useNavStack({
 
   /* ── the swipe back ── */
 
-  const begin = (e: React.PointerEvent<HTMLElement>, d: Drag) => {
+  /** take the reader: from the press point (it lands under the finger), or
+      from right here when catching it mid-flight */
+  const begin = (e: React.PointerEvent<HTMLElement>, d: Drag, fromPress: boolean) => {
     token.current++; // a settling transition is now the finger's
     animating.current = false;
     x.stop();
     d.active = true;
     d.base = x.get();
-    d.grabX = e.clientX;
+    d.grabX = fromPress ? d.x0 : e.clientX;
     width.set(d.w);
     if (!moving) {
       pinList(window.scrollY);
@@ -268,7 +273,7 @@ export function useNavStack({
     drag.current = d;
     d.samples.push({ t: e.timeStamp, x: e.clientX });
     // catching a reader that is still sliding: it stops under the finger
-    if (animating.current && moving) begin(e, d);
+    if (animating.current && moving) begin(e, d, false);
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLElement>) => {
@@ -278,7 +283,7 @@ export function useNavStack({
     const dy = e.clientY - d.y0;
     if (!d.active) {
       const horizontal = d.edge ? dx > 4 && dx > Math.abs(dy) : dx > 10 && dx > Math.abs(dy) * 1.5;
-      if (horizontal) begin(e, d);
+      if (horizontal) begin(e, d, true);
       else {
         if (Math.abs(dy) > 10 || dx < -10) drag.current = null;
         return;
@@ -288,7 +293,7 @@ export function useNavStack({
     if (nx < 0) nx = -rubberband(-nx, d.w);
     x.set(nx);
     d.samples.push({ t: e.timeStamp, x: e.clientX });
-    if (d.samples.length > 6) d.samples.shift();
+    if (d.samples.length > 8) d.samples.shift();
   };
 
   const release = (e: React.PointerEvent<HTMLElement>, cancelled: boolean) => {
@@ -304,15 +309,18 @@ export function useNavStack({
     window.addEventListener("click", swallow, { capture: true, once: true });
     window.setTimeout(() => window.removeEventListener("click", swallow, { capture: true }), 80);
 
-    // release velocity from the last ~80ms of samples
-    const now = e.timeStamp;
-    const recent = d.samples.filter((s) => now - s.t < 90);
+    // release velocity over the last ~100ms of movement (at least the last
+    // two samples, unless the finger had stopped before letting go)
     let v = 0;
-    if (!cancelled && recent.length >= 2) {
-      const a = recent[0];
-      const b = recent[recent.length - 1];
-      const dt = (b.t - a.t) / 1000;
-      if (dt > 0) v = (b.x - a.x) / dt;
+    if (!cancelled) {
+      d.samples.push({ t: e.timeStamp, x: e.clientX });
+      const last = d.samples[d.samples.length - 1];
+      let first = d.samples.length - 2;
+      while (first > 0 && last.t - d.samples[first - 1].t <= 100) first--;
+      const a = d.samples[Math.max(0, first)];
+      const dt = (last.t - a.t) / 1000;
+      const idle = last.t - d.samples[Math.max(0, d.samples.length - 2)].t;
+      if (dt > 0 && idle < 120) v = (last.x - a.x) / dt;
     }
     const cur = x.get();
     const complete = cur + project(v) > d.w * 0.5 && v > -120;

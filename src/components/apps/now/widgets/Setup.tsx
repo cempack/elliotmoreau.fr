@@ -49,6 +49,9 @@ export function Setup({ repos }: { repos: RepoInfo[] }) {
         <PixelLabel text="DOS MOOS" cell={2} className="app-now-fetch-mark" />
       </div>
       <div className="app-now-fetch-info">
+        <p className="app-now-fetch-prompt" aria-hidden>
+          <span>~</span> ❯ fastfetch
+        </p>
         <p className="app-now-fetch-user">
           <span>elliot</span>@<span>emos</span>
         </p>

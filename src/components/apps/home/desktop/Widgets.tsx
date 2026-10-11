@@ -20,20 +20,21 @@ const fill = (s: string, v: Record<string, string | number>) => s.replace(/\{(\w
 /* ───────────────────────────── the sky clock ─────────────────────────────
    A 24-hour dial drawn in pixels: the ring is the day in Paris, coloured by
    the four sky phases the whole OS follows (dithered where one hands over
-   to the next), noon at the top, midnight at the bottom. A pixel sun or
-   moon rides the ring at the current Paris time; an ion tick marks the
-   visitor's own hour when it differs. */
+   to the next), noon at the top, midnight at the bottom. A paper-white
+   playhead cuts the ring at the current Paris time, the sun (or the moon
+   at night) sits in the middle above the clock, and an ion tick marks the
+   visitor's own hour when it differs. One cell is 4 CSS px. */
 
 const N = 25; // cells across
 const MID = N / 2;
-const R_OUT = 12.4;
-const R_IN = 9.9;
+const R_OUT = 12.2;
+const R_IN = 9.6;
 
 const PHASE_INK: Record<SkyPhase, string> = {
-  night: "#7d72f0",
-  dawn: "#f4a27c",
-  day: "#8be9ff",
-  dusk: "#ff7f6e",
+  night: "#7b6ff2",
+  dawn: "#f6a07a",
+  day: "#7fdcf7",
+  dusk: "#ff7a6a",
 };
 /** phase starts, Paris hours (mirrors phaseForHour) */
 const STARTS: [SkyPhase, number][] = [
@@ -54,6 +55,8 @@ const bayer = (x: number, y: number) => (BAYER[((y & 3) << 2) | (x & 3)] + 0.5) 
 
 /** hour on the dial for a point relative to the centre (noon up, clockwise) */
 const hourAt = (dx: number, dy: number) => (((12 + (Math.atan2(dx, -dy) / (2 * Math.PI)) * 24) % 24) + 24) % 24;
+/** shortest signed distance between two dial hours */
+const hourGap = (a: number, b: number) => ((a - b + 36) % 24) - 12;
 
 /** the dial point for an hour at radius r */
 function pointAt(h: number, r: number) {
@@ -61,7 +64,7 @@ function pointAt(h: number, r: number) {
   return { x: MID + Math.sin(a) * r, y: MID - Math.cos(a) * r };
 }
 
-type Cell = { x: number; y: number; phase: SkyPhase };
+type Cell = { x: number; y: number; h: number; r: number; phase: SkyPhase };
 
 /** ring cells, computed once: phase per cell with a Bayer-dithered handover */
 const RING: Cell[] = (() => {
@@ -76,63 +79,61 @@ const RING: Cell[] = (() => {
       let phase = phaseForHour(h);
       // within 0.45h of a handover, dither between the two phases
       for (const [p, start] of STARTS) {
-        const d = ((h - start + 36) % 24) - 12; // signed hours from the start
+        const d = hourGap(h, start);
         if (Math.abs(d) < 0.45) {
           const prev = STARTS[(STARTS.findIndex(([q]) => q === p) + 3) % 4][0];
           phase = (d + 0.45) / 0.9 > bayer(x, y) ? p : prev;
         }
       }
-      out.push({ x, y, phase });
+      out.push({ x, y, h, r, phase });
     }
   }
   return out;
 })();
 
-const TICKS = [0, 6, 12, 18].map((h) => {
-  const p = pointAt(h, R_IN - 1.6);
-  return { h, x: Math.floor(p.x), y: Math.floor(p.y) };
-});
+/** the playhead's cells for an hour: a short spoke across the ring */
+function playhead(hour: number) {
+  const out: { x: number; y: number }[] = [];
+  for (let y = 0; y < N; y++) {
+    for (let x = 0; x < N; x++) {
+      const dx = x + 0.5 - MID;
+      const dy = y + 0.5 - MID;
+      const r = Math.hypot(dx, dy);
+      if (r < R_IN - 0.5 || r > R_OUT + 0.6) continue;
+      // ~one cell wide at the ring's middle radius
+      if (Math.abs(hourGap(hourAt(dx, dy), hour)) * ((2 * Math.PI * r) / 24) < 0.62) out.push({ x, y });
+    }
+  }
+  return out;
+}
 
-/* 3×3 sprites (cell offsets from the centre cell) */
-const SUN = [
-  [0, -1],
-  [-1, 0],
-  [0, 0],
-  [1, 0],
-  [0, 1],
+/* 5×5 sun (a disc with rays) and moon (a disc with its shadow side) */
+const SUN: [number, number, string][] = [
+  [0, 0, "#e8893d"], [2, 0, "#ffb86b"], [4, 0, "#e8893d"],
+  [1, 1, "#ffb86b"], [2, 1, "#ffb86b"], [3, 1, "#ffb86b"],
+  [0, 2, "#ffb86b"], [1, 2, "#ffb86b"], [2, 2, "#ffe2b8"], [3, 2, "#ffb86b"], [4, 2, "#ffb86b"],
+  [1, 3, "#ffb86b"], [2, 3, "#ffb86b"], [3, 3, "#ffb86b"],
+  [0, 4, "#e8893d"], [2, 4, "#ffb86b"], [4, 4, "#e8893d"],
 ];
-const SUN_CORE: [number, number][] = [[0, 0]];
-const MOON = [
-  [-1, -1],
-  [0, -1],
-  [-1, 0],
-  [-1, 1],
-  [0, 1],
+const MOON: [number, number, string][] = [
+  [1, 0, "#9196a6"], [2, 0, "#f5f2ec"], [3, 0, "#f5f2ec"],
+  [0, 1, "#9196a6"], [1, 1, "#9196a6"], [2, 1, "#f5f2ec"], [3, 1, "#c3c5cf"], [4, 1, "#f5f2ec"],
+  [0, 2, "#9196a6"], [1, 2, "#9196a6"], [2, 2, "#f5f2ec"], [3, 2, "#f5f2ec"], [4, 2, "#f5f2ec"],
+  [0, 3, "#9196a6"], [1, 3, "#9196a6"], [2, 3, "#c3c5cf"], [3, 3, "#f5f2ec"], [4, 3, "#f5f2ec"],
+  [1, 4, "#9196a6"], [2, 4, "#f5f2ec"], [3, 4, "#f5f2ec"],
 ];
 
 function SkyDial({ hour, phase, visitorHour }: { hour: number | null; phase: SkyPhase | null; visitorHour: number | null }) {
-  const sprite = useMemo(() => {
-    if (hour == null || !phase) return null;
-    const p = pointAt(hour, (R_IN + R_OUT) / 2);
-    const cx = Math.floor(p.x);
-    const cy = Math.floor(p.y);
-    const isSun = phase === "day" || phase === "dawn";
-    return { cx, cy, isSun };
-  }, [hour, phase]);
+  const head = useMemo(() => (hour == null ? [] : playhead(hour)), [hour]);
   const you = useMemo(() => {
     if (visitorHour == null) return null;
-    const p = pointAt(visitorHour, R_IN - 1.4);
+    const p = pointAt(visitorHour, R_IN - 1.5);
     return { x: Math.floor(p.x), y: Math.floor(p.y) };
   }, [visitorHour]);
+  const glyph = phase === "night" ? MOON : SUN;
 
   return (
-    <svg
-      viewBox={`0 0 ${N} ${N}`}
-      className="app-home-dial"
-      shapeRendering="crispEdges"
-      aria-hidden
-      focusable="false"
-    >
+    <svg viewBox={`0 0 ${N} ${N}`} className="app-home-dial" shapeRendering="crispEdges" aria-hidden focusable="false">
       {RING.map((c) => (
         <rect
           key={`${c.x}-${c.y}`}
@@ -141,24 +142,18 @@ function SkyDial({ hour, phase, visitorHour }: { hour: number | null; phase: Sky
           width={1}
           height={1}
           fill={PHASE_INK[c.phase]}
-          opacity={phase == null || c.phase === phase ? 1 : 0.34}
+          opacity={phase == null || c.phase === phase ? 1 : 0.5}
         />
       ))}
-      {TICKS.map((t) => (
-        <rect key={t.h} x={t.x} y={t.y} width={1} height={1} fill="#9196a6" />
-      ))}
       {you && <rect x={you.x} y={you.y} width={1} height={1} fill="#8be9ff" className="app-home-dial-you" />}
-      {sprite && (
-        <g transform={`translate(${sprite.cx} ${sprite.cy})`}>
-          {/* a one-cell ink halo keeps the sprite legible on any arc */}
-          {(sprite.isSun ? SUN : MOON).map(([dx, dy]) => (
-            <rect key={`h${dx}${dy}`} x={dx - 0.5} y={dy - 0.5} width={2} height={2} fill="#05060a" opacity={0.85} />
+      {head.map((c) => (
+        <rect key={`h${c.x}-${c.y}`} x={c.x} y={c.y} width={1} height={1} fill="#f5f2ec" />
+      ))}
+      {phase && (
+        <g transform="translate(10 5)">
+          {glyph.map(([x, y, c]) => (
+            <rect key={`g${x}-${y}`} x={x} y={y} width={1} height={1} fill={c} />
           ))}
-          {(sprite.isSun ? SUN : MOON).map(([dx, dy]) => (
-            <rect key={`s${dx}${dy}`} x={dx} y={dy} width={1} height={1} fill={sprite.isSun ? "#ffb86b" : "#f5f2ec"} />
-          ))}
-          {sprite.isSun &&
-            SUN_CORE.map(([dx, dy]) => <rect key="core" x={dx} y={dy} width={1} height={1} fill="#ffe2b8" />)}
         </g>
       )}
     </svg>
@@ -235,12 +230,14 @@ export function ClockWidget() {
           <span className="app-home-clock-time tabular" suppressHydrationWarning>
             {time}
           </span>
-          <span className="app-home-clock-city">{w.title}</span>
         </span>
       </div>
       <p className="app-home-clock-phase" aria-hidden>
-        <span className="app-home-clock-phase-name" data-phase={phase ?? undefined}>
-          {phase ? w.phase[phase] : " "}
+        <span className="app-home-clock-phase-line">
+          <span className="app-home-clock-phase-name" data-phase={phase ?? undefined}>
+            {phase ? w.phase[phase] : " "}
+          </span>
+          <span className="app-home-clock-city">{w.title}</span>
         </span>
         <span className="app-home-clock-next">{phase ? next : " "}</span>
       </p>
@@ -272,7 +269,7 @@ export function PushWidget() {
             {repo?.language ? (
               <span className="app-home-push-lang">
                 <i style={{ background: LANG_COLORS[repo.language] ?? LANG_FALLBACK }} />
-                {repo.language}
+                <span>{repo.language}</span>
               </span>
             ) : (
               <span />

@@ -13,9 +13,10 @@
   --app-home-grid-r: 18px;
   --app-home-grid-l: 18px;
   --app-home-grid-b: 96px; /* dock + 20 */
-  --app-home-grid-reserve: 128px; /* a mini player parked in the corner */
+  --app-home-grid-reserve: 108px; /* a mini player parked in the corner */
   --app-home-widget: 168px;
   --app-home-k: 0.92;
+  --app-home-hero-x: 0px;
   position: relative;
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
@@ -44,7 +45,7 @@
   top: 50%;
   width: 1040px;
   height: 448px;
-  translate: -50% -50%;
+  translate: calc(-50% + var(--app-home-hero-x)) -50%;
   scale: var(--app-home-k);
 }
 
@@ -153,19 +154,25 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  padding-top: 22px;
 }
 .app-home-clock-time {
   font-family: var(--font-mono);
-  font-size: 1.1875rem;
+  font-size: 1.125rem;
   font-weight: 600;
   line-height: 1;
   letter-spacing: -0.03em;
 }
+.app-home-clock-phase-line {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
 .app-home-clock-city {
   color: var(--color-label-3);
   font-size: 0.75rem;
-  line-height: 1;
+  font-weight: 500;
+  line-height: 1.1;
 }
 .app-home-clock-phase {
   display: flex;
@@ -269,7 +276,12 @@
   align-items: center;
   gap: 6px;
   min-width: 0;
+  overflow: hidden;
   white-space: nowrap;
+}
+.app-home-push-lang > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .app-home-push-lang i {
   width: 7px;
@@ -277,8 +289,10 @@
   flex: none;
 }
 .app-home-push-ago {
+  flex: none;
   color: var(--color-ion);
-  font-family: var(--font-mono);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 .app-home-push--empty .app-home-push-msg {
@@ -827,18 +841,64 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   }
 }
 
+/* shorter screens (laptops): a tighter hello.txt gives the name more room */
+@media (min-width: 768px) and (max-height: 860px) {
+  .app-home-hello-body {
+    padding: 16px 20px 16px;
+  }
+  .app-home-hello-greeting {
+    font-size: 1.25rem;
+  }
+  .app-home-hello-lead {
+    margin-top: 6px;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+  .app-home-hello-ctas {
+    margin-top: 14px;
+  }
+  .app-home-btn {
+    height: 38px;
+    padding: 0 16px;
+  }
+  .app-home-chips {
+    margin-top: 14px;
+    padding-top: 12px;
+  }
+  .app-home-chip-k--state {
+    display: none;
+  }
+}
+
 /* narrower desks: one widget beside hello.txt */
 @media (min-width: 768px) and (max-width: 1199px) {
   .app-home-widget--push {
     display: none;
   }
 }
-@media (min-width: 768px) and (max-width: 979px) {
+@media (min-width: 768px) and (max-width: 1199px) {
+  /* hello.txt sits beside the clock, leaving the corner to a mini player */
   .app-home-desk {
-    grid-template-columns: auto 1fr;
+    grid-template-columns: auto auto 1fr;
+  }
+}
+/* tablets upright: hello.txt in the middle, the widgets on a shelf below
+   it on the left (a mini player parks bottom right) */
+@media (min-width: 768px) and (max-width: 1099px) and (orientation: portrait) {
+  .app-home-desk {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
   }
   .app-home-hello-slot {
-    justify-self: start;
+    margin-right: calc(var(--app-home-cell-w) * 0.5);
+  }
+  .app-home-widgets {
+    align-self: flex-start;
+  }
+  .app-home-widget--push {
+    display: flex;
   }
 }
 

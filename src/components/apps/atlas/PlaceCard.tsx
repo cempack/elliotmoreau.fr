@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { AnimatePresence, animate, m, useMotionValue, useTransform } from "motion/react";
 import { useI18n } from "@/i18n/client";
 import { useSound } from "@/lib/sound";
@@ -118,10 +118,6 @@ export function PlaceCard({
   const i = ORDERED.findIndex((p) => p.id === place.id);
   const prev = ORDERED[(i - 1 + ORDERED.length) % ORDERED.length];
   const next = ORDERED[(i + 1) % ORDERED.length];
-  const copyTimer = useRef(0);
-
-  useEffect(() => () => window.clearTimeout(copyTimer.current), []);
-
   const copy = async () => {
     const text = `${place.lat.toFixed(4)}, ${place.lon.toFixed(4)}`;
     try {
@@ -144,8 +140,7 @@ export function PlaceCard({
 
   return (
     <article className="app-atlas-card" data-compact={compact || undefined} aria-labelledby={titleId}>
-      <div className="app-atlas-card-top">
-        <div className="app-atlas-card-meta">
+      <div className="app-atlas-card-meta">
           <StatusChip place={place} />
           <p className="app-atlas-card-region">{capitalize(place.region[lang])}</p>
           <button type="button" className="app-atlas-coords" onClick={copy} aria-label={`${a.card.copy}: ${fmtCoords(place.lat, place.lon)}`}>
@@ -154,8 +149,8 @@ export function PlaceCard({
               <path d="M4 1.5h5.5a1 1 0 0 1 1 1V8M2.5 4h5a1 1 0 0 1 1 1v5.5a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" fill="none" stroke="currentColor" strokeWidth="1.2" />
             </svg>
           </button>
-        </div>
-        <div className="app-atlas-card-stamp">
+      </div>
+      <div className="app-atlas-card-stamp">
           <AnimatePresence mode="popLayout" initial={false}>
             <m.div
               key={place.id}
@@ -173,7 +168,6 @@ export function PlaceCard({
               />
             </m.div>
           </AnimatePresence>
-        </div>
       </div>
 
       <h2 id={titleId} className="app-atlas-name">

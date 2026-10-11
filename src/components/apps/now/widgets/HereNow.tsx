@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/i18n/client";
 import { useSky, type SkyPhase } from "@/components/os/sky";
 import { RollText } from "../bits";
@@ -10,9 +10,8 @@ const PARIS = "Europe/Paris";
 
 /* ───────────────────────── the pixel sky ───────────────────────── */
 
+/** the scene is 64 pixels wide; its height follows the box it sits in */
 const W = 64;
-const H = 34;
-const HORIZON = 25;
 
 const SKIES: Record<SkyPhase, string[]> = {
   night: ["#04050c", "#0b0f2a", "#1d1a45"],
@@ -39,7 +38,8 @@ export function arcFor(phase: SkyPhase, hour: number | null, live: boolean) {
   return { dawn: 0.1, day: 0.5, dusk: 0.9, night: 0.5 }[phase];
 }
 
-function paintSky(ctx: CanvasRenderingContext2D, phase: SkyPhase, arc: number) {
+function paintSky(ctx: CanvasRenderingContext2D, phase: SkyPhase, arc: number, H: number) {
+  const HORIZON = H - 9;
   const img = ctx.createImageData(W, H);
   const d = img.data;
   const set = (x: number, y: number, c: readonly number[]) => {
@@ -69,7 +69,7 @@ function paintSky(ctx: CanvasRenderingContext2D, phase: SkyPhase, arc: number) {
     const n = phase === "night" ? 26 : 9;
     for (let i = 0; i < n; i++) {
       const x = Math.floor(rnd() * W);
-      const y = Math.floor(rnd() * (HORIZON - 9));
+      const y = Math.floor(rnd() * (HORIZON - 8));
       const bright = rnd() > 0.7;
       set(x, y, bright ? hex("#f5f2ec") : hex("#9196a6"));
       if (bright && phase === "night" && rnd() > 0.5) {
@@ -80,7 +80,7 @@ function paintSky(ctx: CanvasRenderingContext2D, phase: SkyPhase, arc: number) {
   }
   // the sun or the moon on its arc
   const cx = Math.round(7 + arc * (W - 14));
-  const cy = Math.round(HORIZON - 2 - Math.sin(arc * Math.PI) * (HORIZON - 9));
+  const cy = Math.round(HORIZON - 2 - Math.sin(arc * Math.PI) * Math.max(6, HORIZON - 10));
   if (phase === "night") {
     const r = 3.6;
     for (let y = -5; y <= 5; y++)
@@ -148,12 +148,24 @@ function paintSky(ctx: CanvasRenderingContext2D, phase: SkyPhase, arc: number) {
 
 function SkyCanvas({ phase, arc }: { phase: SkyPhase; arc: number }) {
   const ref = useRef<HTMLCanvasElement>(null);
+  const [h, setH] = useState(34);
   const step = Math.round(arc * 40); // repaint when the body moves a pixel or so
+  // square pixels at any box size: the scene's height follows its aspect
+  useEffect(() => {
+    const el = ref.current?.parentElement;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => {
+      const { width, height } = e.contentRect;
+      if (width > 0 && height > 0) setH(Math.max(24, Math.min(96, Math.round((W * height) / width))));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   useEffect(() => {
     const ctx = ref.current?.getContext("2d");
-    if (ctx) paintSky(ctx, phase, step / 40);
-  }, [phase, step]);
-  return <canvas ref={ref} width={W} height={H} className="app-now-sky-canvas" aria-hidden />;
+    if (ctx) paintSky(ctx, phase, step / 40, h);
+  }, [phase, step, h]);
+  return <canvas ref={ref} width={W} height={h} className="app-now-sky-canvas" aria-hidden />;
 }
 
 /* ───────────────────────── widget ───────────────────────── */

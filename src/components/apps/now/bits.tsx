@@ -98,13 +98,14 @@ export function PixelCava({ playing, cols = 24, className = "" }: { playing: boo
   const ref = useRef<HTMLSpanElement>(null);
   const on = useOnScreen(ref, "80px");
   const hidden = useTabHidden();
+  const reduced = useReduced();
   return (
     <span
       ref={ref}
       aria-hidden
       className={`app-now-cava ${className}`}
       data-playing={playing || undefined}
-      data-paused={!playing || !on || hidden || undefined}
+      data-paused={!playing || !on || hidden || reduced || undefined}
     >
       {Array.from({ length: cols }, (_, i) => {
         // a deterministic spread of resting heights, durations and phases

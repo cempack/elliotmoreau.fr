@@ -30,6 +30,8 @@ export type BoardWidget = {
 export type BoardStrings = {
   label: string;
   move: string;
+  /** short cursor label on the grips */
+  grab: string;
   instructions: string;
   picked: string;
   moved: string;
@@ -369,7 +371,63 @@ export function Board({
       items.current.get(focusAfter.current)?.grip?.focus({ preventScroll: true });
       focusAfter.current = null;
     }
+
+    // keyboard: keep the carried widget's new slot on screen
+    if (carry?.mode === "keyboard" && c && p && boardRef.current) {
+      const top = boardRef.current.getBoundingClientRect().top + p.y;
+      const bar = document.querySelector(".os-win-bar")?.getBoundingClientRect().bottom ?? 100;
+      const room = window.innerHeight - (window.innerWidth < 768 ? 90 : 110);
+      const h = c.el.offsetHeight;
+      let dy = 0;
+      if (top < bar + 16) dy = top - bar - 16;
+      else if (top + Math.min(h, room - bar - 32) > room) dy = top + Math.min(h, room - bar - 32) - room;
+      if (dy) {
+        const y = window.scrollY + dy;
+        const lenis = lenisRef.current;
+        if (lenis) lenis.scrollTo(y, { immediate: reducedRef.current, duration: 0.5 });
+        else window.scrollTo({ top: y, behavior: reducedRef.current ? "auto" : "smooth" });
+      }
+    }
   }, [liveOrder, carry, board, applyDrag, runSettle, gx, gy, gw, gh]);
+
+  // first visit: the first widget lifts a hair and settles, once per
+  // device, the moment the board comes into view: it can be picked up
+  useEffect(() => {
+    const el = boardRef.current;
+    if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    try {
+      if (localStorage.getItem("em-now-taught")) return;
+    } catch {
+      return;
+    }
+    let timer = 0;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (!e.isIntersecting) return;
+        io.disconnect();
+        timer = window.setTimeout(() => {
+          const id = liveRef.current[0];
+          const it = id && items.current.get(id);
+          if (!it || drag.current || reducedRef.current) return;
+          try {
+            localStorage.setItem("em-now-taught", "1");
+          } catch {}
+          it.el.dataset.lifted = "";
+          animate(it.scale, [1, 1.022, 1], { duration: 1.1, times: [0, 0.35, 1], ease: [0.22, 1, 0.36, 1] });
+          animate(it.y, [0, -7, 0], { duration: 1.1, times: [0, 0.35, 1], ease: [0.22, 1, 0.36, 1] });
+          window.setTimeout(() => {
+            if (!drag.current) delete it.el.dataset.lifted;
+          }, 520);
+        }, 700);
+      },
+      { threshold: 0.35 }
+    );
+    io.observe(el);
+    return () => {
+      io.disconnect();
+      window.clearTimeout(timer);
+    };
+  }, []);
 
   // responsive reflow (window resize, zoom): re-learn positions, no animation
   useEffect(() => {
@@ -718,6 +776,7 @@ export function Board({
               onGripBlur={onGripBlur}
               carried={carry?.id === id}
               moveLabel={fill(strings.move, { name: w.label })}
+              cursorLabel={strings.grab}
               instrId={instrId}
             />
           );
@@ -738,6 +797,7 @@ function BoardItem({
   onGripBlur,
   carried,
   moveLabel,
+  cursorLabel,
   instrId,
 }: {
   w: BoardWidget;
@@ -748,6 +808,7 @@ function BoardItem({
   onGripBlur: (id: string) => void;
   carried: boolean;
   moveLabel: string;
+  cursorLabel: string;
   instrId: string;
 }) {
   const ref = useRef<HTMLElement>(null);
@@ -805,6 +866,7 @@ function BoardItem({
             aria-label={moveLabel}
             aria-describedby={instrId}
             aria-pressed={carried}
+            data-cursor={cursorLabel}
             onPointerDown={(e) => {
               e.stopPropagation();
               onPointerDown(w.id, e, true);

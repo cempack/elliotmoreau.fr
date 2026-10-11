@@ -362,7 +362,7 @@ function StatusChips({ label, lang }: { label: string; lang: "en" | "fr" }) {
               aria-label={fill(h.openSpotify, { title: track.title, artist: track.artist })}
             >
               <PixelEq playing={playing} className="app-home-chip-eq" />
-              <span className="app-home-chip-k">{playing ? h.nowPlaying : h.lastPlayed}</span>
+              <span className="app-home-chip-k app-home-chip-k--state">{playing ? h.nowPlaying : h.lastPlayed}</span>
               <span className="app-home-chip-v">
                 {track.title} · {track.artist}
               </span>
@@ -370,7 +370,7 @@ function StatusChips({ label, lang }: { label: string; lang: "en" | "fr" }) {
           ) : (
             <span className="app-home-chip">
               <PixelEq playing={playing} className="app-home-chip-eq" />
-              <span className="app-home-chip-k">{playing ? h.nowPlaying : h.lastPlayed}</span>
+              <span className="app-home-chip-k app-home-chip-k--state">{playing ? h.nowPlaying : h.lastPlayed}</span>
               <span className="app-home-chip-v">
                 {track.title} · {track.artist}
               </span>

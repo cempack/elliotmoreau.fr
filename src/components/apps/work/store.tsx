@@ -186,8 +186,8 @@ export function WorkProvider({ data, children }: { data: SiteData; children: Rea
     if (!next || next.name === ql.name) return;
     setSelected(next.name);
     setQl({ ...ql, name: next.name, from: "item" });
-    // keep the item it will fold back into on screen behind the panel
-    const el = document.getElementById(itemId(next.name));
+    // keep the icon it will fold back into on screen behind the panel
+    const el = document.getElementById(itemId(next.name))?.querySelector("[data-ql-origin]");
     if (!el) return;
     const r = el.getBoundingClientRect();
     if (r.top >= 120 && r.bottom <= window.innerHeight - 130) return;

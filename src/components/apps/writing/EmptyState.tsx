@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { PixelPlanet } from "@/components/PixelPlanet";
 import { PressAnchor, PressButton } from "@/components/ui/Pressable";
 
@@ -10,19 +11,22 @@ export function EmptyState({
   body,
   action,
   tone = "calm",
+  children,
 }: {
   seed: string;
   title: string;
   body: string;
   action: { label: string; href?: string; onClick?: () => void };
   tone?: "calm" | "offline";
+  children?: React.ReactNode;
 }) {
+  const id = useId();
   return (
-    <div className="app-writing-empty" data-tone={tone} role="status">
+    <section className="app-writing-empty" data-tone={tone} aria-labelledby={id}>
       <span className="app-writing-empty-art" aria-hidden>
         <PixelPlanet seed={seed} className="app-writing-empty-planet" />
       </span>
-      <h2 className="app-writing-empty-title">{title}</h2>
+      <h2 id={id} className="app-writing-empty-title">{title}</h2>
       <p className="app-writing-empty-body">{body}</p>
       {action.href ? (
         <PressAnchor href={action.href} target="_blank" rel="noopener" className="app-writing-empty-cta">
@@ -34,6 +38,7 @@ export function EmptyState({
           {action.label}
         </PressButton>
       )}
-    </div>
+      {children}
+    </section>
   );
 }

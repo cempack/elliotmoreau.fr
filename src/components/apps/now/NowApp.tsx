@@ -191,6 +191,7 @@ export function NowApp({ data }: { data: SiteData }) {
           strings={{
             label: n.board.label,
             move: n.board.move,
+            grab: n.board.grab,
             instructions: n.board.instructions,
             picked: n.board.picked,
             moved: n.board.moved,

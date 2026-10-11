@@ -2,9 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { GhostPost } from "@/lib/ghost";
-import { PixelLabel } from "@/components/PixelLabel";
 import { bayer, paintPlate } from "./plate";
-import { primaryTag, realImage } from "./util";
+import { realImage } from "./util";
 
 /** how long the dithered dissolve between two posts' worlds takes */
 const DISSOLVE_MS = 340;
@@ -36,7 +35,7 @@ class PlateRenderer {
     const w = this.frame.clientWidth;
     const h = this.frame.clientHeight;
     if (w < 8 || h < 8) return false;
-    const cell = w >= 760 ? 4 : w >= 420 ? 3 : 2;
+    const cell = w >= 760 ? 4 : w >= 520 ? 3 : 2;
     const W = Math.ceil(w / cell);
     const H = Math.ceil(h / cell);
     if (W === this.W && H === this.H && cell === this.cell) return false;
@@ -98,6 +97,14 @@ class PlateRenderer {
     this.raf = requestAnimationFrame(step);
   }
 
+  /** bring the canvas up to date with the frame and a seed: a resize (or a
+      first sight after being hidden) repaints, a new seed may dissolve */
+  sync(seed: string, animate: boolean) {
+    const resized = this.measure();
+    if (seed !== this.seed) this.setSeed(seed, animate && !resized);
+    else if (resized || !this.img) this.paintNow();
+  }
+
   destroy() {
     cancelAnimationFrame(this.raf);
   }
@@ -110,7 +117,6 @@ export function Plate({ post, animate }: { post: GhostPost; animate: boolean }) 
   const src = realImage(post);
   const [loaded, setLoaded] = useState<string | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
-  const tag = primaryTag(post);
 
   // one renderer per mount; repaint (no dissolve) whenever the grid changes
   useEffect(() => {
@@ -125,9 +131,11 @@ export function Plate({ post, animate }: { post: GhostPost; animate: boolean }) 
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
         window.clearTimeout(settle);
-        // first paint right away, later ones once the size settles
+        // first paint right away (also when a hidden screen is shown),
+        // later ones once the size settles
         if (!r.img) {
-          if (r.measure()) r.paintNow();
+          r.measure();
+          r.paintNow();
           return;
         }
         settle = window.setTimeout(() => {
@@ -147,10 +155,7 @@ export function Plate({ post, animate }: { post: GhostPost; animate: boolean }) 
   }, []);
 
   useEffect(() => {
-    const r = rendererRef.current;
-    if (!r) return;
-    if (!r.W) r.measure();
-    r.setSeed(post.slug, animate);
+    rendererRef.current?.sync(post.slug, animate);
   }, [post.slug, animate]);
 
   const showImg = src && failed !== src;
@@ -173,7 +178,6 @@ export function Plate({ post, animate }: { post: GhostPost; animate: boolean }) 
           onError={() => setFailed(src)}
         />
       )}
-      {tag && !showImg && <PixelLabel text={tag.name} cell={2} className="app-writing-plate-tag" />}
     </div>
   );
 }

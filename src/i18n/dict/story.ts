@@ -23,8 +23,8 @@ const en = {
       empty: "No posts yet. The next one is brewing.",
     },
     atlas: {
-      been: "{n} visited",
-      next: "{n} next",
+      visited: "visited",
+      next: "on the list",
       home: "Home",
     },
     now: {
@@ -124,8 +124,8 @@ const fr: typeof en = {
       empty: "Pas encore d'article. Le prochain mijote.",
     },
     atlas: {
-      been: "{n} visités",
-      next: "{n} à venir",
+      visited: "visités",
+      next: "sur la liste",
       home: "Chez moi",
     },
     now: {
@@ -204,4 +204,5 @@ const fr: typeof en = {
   },
 };
 
-export default { en, fr };
+const story = { en, fr };
+export default story;

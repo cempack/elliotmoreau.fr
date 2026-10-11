@@ -49,6 +49,7 @@ export function Writing({ posts }: { posts: GhostPost[] }) {
             aria-label={fill(w.read, { title: latest.title })}
           >
             <span className="app-now-post-title">{latest.title}</span>
+            {latest.excerpt && <span className="app-now-post-excerpt">{latest.excerpt}</span>}
             <span className="app-now-post-meta tabular">
               {mounted ? timeAgo(latest.published_at, lang) : " "}
               {latest.reading_time ? ` · ${fill(w.minutes, { n: latest.reading_time })}` : ""}

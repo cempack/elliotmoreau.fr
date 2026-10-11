@@ -3,34 +3,36 @@
 import { useEffect, useRef } from "react";
 import type { Place } from "@/lib/places";
 import { HOME } from "@/lib/places";
-import { angleBetween, focusFor, isLand, slerp, toVec, type Vec3 } from "./geo";
+import { angleBetween, focusFor, slerp, toVec, worldGrid, type Vec3 } from "./geo";
 
 /**
  * The Atlas globe: a dithered pixel planet you can throw.
  *
- * Adapted from components/PixelGlobe (same land dots and inks), rebuilt for
- * the Atlas window:
+ * Grown out of components/PixelGlobe, rebuilt for the Atlas window:
+ * - the planet is a true pixel raster: every 3px cell is inverse-projected
+ *   to a latitude/longitude, looked up in a ½° land grid, and shaded with a
+ *   Bayer dither, so coastlines crawl across a fixed pixel grid as it turns;
+ * - day and night are live: the sun's real position lights it, the
+ *   terminator is dithered, and city lights flicker on the night side;
  * - drag spins it 1:1 from the grab point on both axes (latitude rubber-
  *   bands past its limits); a throw carries on with momentum and decays
  *   like a scroll view; grabbing mid-flight catches it;
  * - choosing a place flies the camera on a critically damped spring to
  *   the middle of the route from home, so the whole great-circle arc is on
- *   the near side, and the arc draws itself out of France;
- * - home shows every route at once, a small flight network;
+ *   the near side, and the arc draws itself out of France; home shows every
+ *   route at once, a small flight network;
  * - sized by a ResizeObserver, DPR capped at 2, painted on demand: the loop
- *   only runs while something moves, or while `ambient` (twinkle, flights,
+ *   runs only while something moves, or while `ambient` (lights, flights,
  *   idle drift) and on screen and the tab is visible;
  * - reduced motion: no ambient motion, no momentum, the camera cuts.
  */
 
-const INKS = ["#33376A", "#4A5096", "#8BE9FF", "#B3A4FF"];
 const LIME: RGB = [198, 255, 94];
 const EMBER: RGB = [255, 184, 107];
 const ION: RGB = [139, 233, 255];
 const PAPER = "#F5F2EC";
 
 type RGB = [number, number, number];
-type Dot = { v: Vec3; ink: number; big: boolean; seed: number };
 type Arc = { to: Place; pts: Vec3[]; lift: number[]; cols: string[]; want: boolean; delay: number };
 
 const RAD = Math.PI / 180;
@@ -42,6 +44,8 @@ const OMEGA = 5.6;
 const TAU = 0.42;
 const ARC_DRAW = 1.05;
 const PULSE_PERIOD = 3.4;
+/** CSS px per planet pixel */
+const CELL = 3;
 
 function hash(n: number) {
   let h = (n * 1664525 + 1013904223) >>> 0;
@@ -51,75 +55,45 @@ function hash(n: number) {
   return (h >>> 0) / 4294967296;
 }
 
-let dotCache: Dot[] | null = null;
-function landDots(): Dot[] {
-  if (dotCache) return dotCache;
-  const N = 5200;
-  const out: Dot[] = [];
-  const golden = Math.PI * (3 - Math.sqrt(5));
-  for (let i = 0; i < N; i++) {
-    const z = 1 - (i / (N - 1)) * 2;
-    const r = Math.sqrt(Math.max(0, 1 - z * z));
-    const th = golden * i;
-    const lat = Math.asin(z) / RAD;
-    const lon = Math.atan2(Math.sin(th) * r, Math.cos(th) * r) / RAD;
-    if (!isLand(lat, lon)) continue;
-    const h = hash(i);
-    out.push({
-      v: toVec(lat, lon),
-      ink: Math.min(INKS.length - 1, Math.floor(h * h * INKS.length + 0.6)),
-      big: h > 0.9,
-      seed: i % 37,
-    });
-  }
-  // grouped by ink: one fillStyle change per group
-  out.sort((a, b) => a.ink - b.ink);
-  dotCache = out;
-  return out;
-}
-
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 
-/** The ocean: a Bayer-dithered, top-left-lit sphere in 2px cells, drawn
-    once per size (lighting is view-locked, so it never needs redrawing). */
-function oceanSprite(R: number) {
-  const cell = 2;
-  const n = Math.ceil((R * 2) / cell);
-  const c = document.createElement("canvas");
-  c.width = n;
-  c.height = n;
-  const g = c.getContext("2d");
-  if (!g) return c;
-  const img = g.createImageData(n, n);
-  const d = img.data;
-  const deep: RGB = [9, 11, 30];
-  const mid: RGB = [17, 21, 54];
-  const lit: RGB = [30, 34, 82];
-  const lx = -0.45;
-  const ly = -0.55;
-  const lz = 0.7;
-  for (let y = 0; y < n; y++) {
-    for (let x = 0; x < n; x++) {
-      const nx = ((x + 0.5) / n) * 2 - 1;
-      const ny = ((y + 0.5) / n) * 2 - 1;
-      const rr = nx * nx + ny * ny;
-      if (rr > 1) continue;
-      const nz = Math.sqrt(1 - rr);
-      const lam = Math.max(0, nx * lx + ny * ly + nz * lz);
-      const th = (BAYER[((y & 3) << 2) | (x & 3)] + 0.5) / 16;
-      const level = lam * 2.1;
-      const base = level > 1 ? (level - 1 > th ? lit : mid) : level > th ? mid : deep;
-      const i = (y * n + x) * 4;
-      // the limb darkens into the night
-      const rim = rr > 0.93 ? 0.72 : 1;
-      d[i] = base[0] * rim;
-      d[i + 1] = base[1] * rim;
-      d[i + 2] = base[2] * rim;
-      d[i + 3] = 255;
-    }
-  }
-  g.putImageData(img, 0, 0);
-  return c;
+/** RGBA packed for a little-endian Uint32 view of ImageData */
+const pack = ([r, g, b]: RGB, k = 1) =>
+  ((255 << 24) | (Math.round(b * k) << 16) | (Math.round(g * k) << 8) | Math.round(r * k)) >>> 0;
+
+/* the palette, in [lit, rim-darkened] pairs */
+const INK = {
+  oceanDeep: [10, 13, 38],
+  ocean: [15, 20, 55],
+  oceanLit: [25, 33, 84],
+  oceanNight: [5, 6, 17],
+  oceanNight2: [8, 9, 24],
+  grid: [24, 31, 78],
+  gridNight: [11, 13, 33],
+  landLo: [58, 63, 140],
+  land: [86, 93, 192],
+  landHi: [136, 129, 234],
+  ice: [178, 172, 234],
+  iceHi: [216, 212, 247],
+  landNight: [27, 29, 68],
+  landNight2: [34, 37, 84],
+  light: [255, 184, 107],
+  lightHot: [245, 242, 236],
+} satisfies Record<string, RGB>;
+type InkName = keyof typeof INK;
+const PAL = Object.fromEntries(
+  Object.entries(INK).map(([k, v]) => [k, [pack(v as RGB), pack(v as RGB, 0.6)]])
+) as Record<InkName, [number, number]>;
+
+/** The sun's subsolar point right now (declination from the day of the
+    year, longitude from UTC time; the equation of time is ignored). */
+function sunVector(now = new Date()): Vec3 {
+  const start = Date.UTC(now.getUTCFullYear(), 0, 0);
+  const day = (now.getTime() - start) / 86_400_000;
+  const decl = -23.44 * Math.cos(((2 * Math.PI) / 365) * (day + 10));
+  const hours = now.getUTCHours() + now.getUTCMinutes() / 60 + now.getUTCSeconds() / 3600;
+  const lon = (12 - hours) * 15;
+  return toVec(decl, ((lon + 540) % 360) - 180);
 }
 
 const mix = (a: RGB, b: RGB, t: number) =>
@@ -187,7 +161,7 @@ export function AtlasGlobe({
     const ctx: CanvasRenderingContext2D = ctx0;
     const mqReduced = window.matchMedia("(prefers-reduced-motion: reduce)");
     let reduced = mqReduced.matches;
-    const dots = landDots();
+    const grid = worldGrid();
     const homeV = toVec(HOME.lat, HOME.lon);
 
     // ── camera: centre latitude/longitude (radians), springs + momentum ──
@@ -210,7 +184,126 @@ export function AtlasGlobe({
     let cx = 0;
     let cy = 0;
     let dpr = 1;
-    let ocean: HTMLCanvasElement | null = null;
+
+    // ── the planet raster: one entry per cell inside the disc ──
+    let buf: HTMLCanvasElement | null = null;
+    let bctx: CanvasRenderingContext2D | null = null;
+    let img: ImageData | null = null;
+    let px: Uint32Array = new Uint32Array(0);
+    let bn = 0; // cells across the buffer
+    let cIdx = new Int32Array(0);
+    let cE = new Float32Array(0);
+    let cY = new Float32Array(0);
+    let cZ = new Float32Array(0);
+    let cTh = new Float32Array(0);
+    let cRim = new Uint8Array(0);
+    let sun = sunVector();
+    let sunAt = performance.now();
+
+    const buildRaster = () => {
+      bn = Math.ceil((2 * R) / CELL) + 2;
+      buf = document.createElement("canvas");
+      buf.width = bn;
+      buf.height = bn;
+      bctx = buf.getContext("2d");
+      if (!bctx) return;
+      img = bctx.createImageData(bn, bn);
+      px = new Uint32Array(img.data.buffer);
+      const half = (bn * CELL) / 2;
+      const idx: number[] = [];
+      const es: number[] = [];
+      const ys: number[] = [];
+      for (let j = 0; j < bn; j++) {
+        for (let i = 0; i < bn; i++) {
+          const e = ((i + 0.5) * CELL - half) / R;
+          const y = (half - (j + 0.5) * CELL) / R;
+          if (e * e + y * y > 1) continue;
+          idx.push(j * bn + i);
+          es.push(e);
+          ys.push(y);
+        }
+      }
+      const n = idx.length;
+      cIdx = Int32Array.from(idx);
+      cE = Float32Array.from(es);
+      cY = Float32Array.from(ys);
+      cZ = new Float32Array(n);
+      cTh = new Float32Array(n);
+      cRim = new Uint8Array(n);
+      for (let k = 0; k < n; k++) {
+        const z = Math.sqrt(Math.max(0, 1 - cE[k] * cE[k] - cY[k] * cY[k]));
+        cZ[k] = z;
+        const i = cIdx[k] % bn;
+        const j = (cIdx[k] / bn) | 0;
+        cTh[k] = (BAYER[((j & 3) << 2) | (i & 3)] + 0.5) / 16;
+        // the limb darkens: solid at the very edge, dithered just inside
+        cRim[k] = z < 0.16 || (z < 0.3 && cTh[k] > (z - 0.16) / 0.14) ? 1 : 0;
+      }
+    };
+
+    /** Paint the planet into its buffer: inverse-project every cell, look
+        the land up, light it by the real sun, dither. */
+    const paintPlanet = (amb: boolean) => {
+      if (!bctx || !img || !buf) return;
+      const now = performance.now();
+      if (now - sunAt > 10_000) {
+        sun = sunVector();
+        sunAt = now;
+      }
+      const cl = Math.cos(-cam.lon);
+      const sl = Math.sin(-cam.lon);
+      const ct = Math.cos(cam.lat);
+      const st = Math.sin(cam.lat);
+      const [s0, s1, s2] = sun;
+      const flick = Math.floor(t * 1.6);
+      for (let k = 0; k < cIdx.length; k++) {
+        const e = cE[k];
+        const y2 = cY[k];
+        const z2 = cZ[k];
+        const n = y2 * ct + z2 * st;
+        const x = -y2 * st + z2 * ct;
+        const v0 = x * cl + e * sl;
+        const v1 = -x * sl + e * cl;
+        const lat = Math.asin(n > 1 ? 1 : n < -1 ? -1 : n) / RAD;
+        const lon = Math.atan2(v1, v0) / RAD;
+        let row = ((90 - lat) * 2) | 0;
+        let col = ((lon + 180) * 2) | 0;
+        if (row > 359) row = 359;
+        if (col > 719) col = 719;
+        const cell = row * 720 + col;
+        const land = grid[cell] === 1;
+        const th = cTh[k];
+        const light = v0 * s0 + v1 * s1 + n * s2;
+        const day = (light + 0.07) / 0.14 > th;
+        let ink: InkName;
+        if (land) {
+          if (day) {
+            const level = Math.max(0, light) * 2.2;
+            if (lat > 63 || lat < -60) ink = level > th ? "iceHi" : "ice";
+            else ink = level > 1 ? (level - 1 > th ? "landHi" : "land") : level > th ? "land" : "landLo";
+          } else {
+            const h = hash(cell);
+            if (h < 0.04 && lat < 70 && lat > -50) {
+              const on = !amb || hash(cell + flick * 7919) > 0.18;
+              ink = on ? (h < 0.008 ? "lightHot" : "light") : "landNight2";
+            } else ink = th < 0.5 ? "landNight2" : "landNight";
+          }
+        } else {
+          const onGrid = Math.abs(lat) < 0.42 || Math.abs(lon - Math.round(lon / 30) * 30) < 0.42;
+          if (day) {
+            if (onGrid) ink = "grid";
+            else {
+              const level = Math.max(0, light) * 1.7;
+              ink = level > 1 ? (level - 1 > th ? "oceanLit" : "ocean") : level > th ? "ocean" : "oceanDeep";
+            }
+          } else ink = onGrid ? "gridNight" : th < 0.25 ? "oceanNight2" : "oceanNight";
+        }
+        px[cIdx[k]] = PAL[ink][cRim[k]];
+      }
+      bctx.putImageData(img, 0, 0);
+      const size = bn * CELL;
+      ctx.drawImage(buf, Math.round(cx - size / 2), Math.round(cy - size / 2), size, size);
+    };
 
     // ── arcs: one per route out of home, rebuilt on selection ──
     let arcs: Arc[] = [];
@@ -276,7 +369,7 @@ export function AtlasGlobe({
       R = Math.max(40, Math.floor(Math.min(w, h) / 2 - live.current.margin));
       cx = Math.round(w / 2);
       cy = Math.round(h / 2);
-      ocean = oceanSprite(R);
+      buildRaster();
       wake();
     };
 
@@ -397,8 +490,8 @@ export function AtlasGlobe({
       ctx.fillStyle = halo;
       ctx.fillRect(cx - R * 1.3, cy - R * 1.3, R * 2.6, R * 2.6);
 
-      // ocean
-      if (ocean) ctx.drawImage(ocean, cx - R, cy - R, R * 2, R * 2);
+      // the planet
+      paintPlanet(amb);
 
       // dotted orbit ring
       ctx.strokeStyle = "rgba(179,164,255,0.3)";
@@ -408,41 +501,6 @@ export function AtlasGlobe({
       ctx.arc(cx, cy, R + 14, 0, Math.PI * 2);
       ctx.stroke();
       ctx.setLineDash([]);
-
-      // graticule: equator and every 30° of longitude, sparse pixels
-      ctx.fillStyle = "#3a3f75";
-      for (let lon = -180; lon < 180; lon += 3) {
-        const p = project(toVecCached(0, lon));
-        if (p.z > 0.05) {
-          ctx.globalAlpha = 0.25 + p.z * 0.45;
-          ctx.fillRect(Math.round(p.x / 2) * 2, Math.round(p.y / 2) * 2, 2, 2);
-        }
-      }
-      for (let m = -150; m <= 180; m += 30) {
-        for (let lat = -80; lat <= 80; lat += 4) {
-          const p = project(toVecCached(lat, m));
-          if (p.z > 0.05) {
-            ctx.globalAlpha = 0.18 + p.z * 0.3;
-            ctx.fillRect(Math.round(p.x / 2) * 2, Math.round(p.y / 2) * 2, 2, 2);
-          }
-        }
-      }
-
-      // land
-      let ink = -1;
-      for (let i = 0; i < dots.length; i++) {
-        const d = dots[i];
-        const p = project(d.v);
-        if (p.z <= 0.02) continue;
-        if (d.ink !== ink) {
-          ink = d.ink;
-          ctx.fillStyle = INKS[ink];
-        }
-        const tw = amb ? 0.62 + 0.38 * Math.sin(t * 1.4 + d.seed) : 0.86;
-        ctx.globalAlpha = Math.min(1, (0.22 + p.z * 0.78) * tw + 0.14);
-        const s = d.big ? 4 : 3;
-        ctx.fillRect(Math.round(p.x / 2) * 2, Math.round(p.y / 2) * 2, s, s);
-      }
 
       // routes out of home
       const homeSel = sel === HOME.id;
@@ -456,10 +514,18 @@ export function AtlasGlobe({
         const n = a.pts.length - 1;
         const upto = focused ? Math.floor(eased * n) : n;
         const stride = a.want ? 2 : 1;
+        // an ink casing first, so the route reads over land, sea and lights
+        ctx.fillStyle = "#05060a";
         for (let k = 0; k <= upto; k += stride) {
           const p = project(a.pts[k], a.lift[k]);
           if (!p.vis) continue;
-          ctx.globalAlpha = strength * (0.55 + 0.45 * Math.max(0, p.z));
+          ctx.globalAlpha = strength * 0.55;
+          ctx.fillRect(Math.round(p.x / 2) * 2 - 2, Math.round(p.y / 2) * 2 - 2, 4, 4);
+        }
+        for (let k = 0; k <= upto; k += stride) {
+          const p = project(a.pts[k], a.lift[k]);
+          if (!p.vis) continue;
+          ctx.globalAlpha = strength * (0.6 + 0.4 * Math.max(0, p.z));
           ctx.fillStyle = a.cols[k];
           ctx.fillRect(Math.round(p.x / 2) * 2 - 1, Math.round(p.y / 2) * 2 - 1, 2, 2);
         }

@@ -145,6 +145,11 @@
 .app-work-search .app-work-kbd {
   flex: none;
 }
+@media (hover: none) {
+  .app-work-search .app-work-kbd {
+    display: none;
+  }
+}
 
 /* segmented view switch: a thumb springs between the two (layoutId) */
 .app-work-seg {
@@ -764,11 +769,13 @@ button.app-work-col:hover,
     }
     & .app-work-item {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      /* the meta row hugs its content in the middle: auto tracks between
+         two flexible gutters (the plate and name span all four) */
+      grid-template-columns: minmax(0, 1fr) auto auto minmax(0, 1fr);
       grid-template-areas:
-        "plate plate"
-        "name name"
-        "lang stars";
+        "plate plate plate plate"
+        "name name name name"
+        ". lang stars .";
       align-content: start;
       justify-items: center;
       gap: 0.5rem 0.625rem;
@@ -800,14 +807,14 @@ button.app-work-col:hover,
     }
     & .app-work-lang {
       grid-area: lang;
-      justify-self: end;
-      max-width: 100%;
       color: var(--color-label-3);
       font-size: 0.75rem;
     }
+    & .app-work-lang-name {
+      max-width: 6.5rem;
+    }
     & .app-work-stars {
       grid-area: stars;
-      justify-self: start;
       font-size: 0.75rem;
     }
     & .app-work-desc,
@@ -994,6 +1001,10 @@ button.app-work-col:hover,
       grid-area: date;
       justify-self: end;
       align-self: end;
+      /* sans here: a mono space makes "il y a 3 j" read like a spelling bee */
+      font-family: var(--font-sans);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0;
     }
   }
 }

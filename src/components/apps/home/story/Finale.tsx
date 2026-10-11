@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, m, useInView, useScroll, useTransform } from "motion/react";
+import { AnimatePresence, m, useInView } from "motion/react";
 import { useI18n } from "@/i18n/client";
 import { Glass } from "@/components/os/Glass";
 import { scrollToTop } from "@/components/os/dock/launch";
 import { restartOS } from "@/components/os/menubar/util";
+import { EmosMark } from "@/components/os/menubar/glyphs";
 import { GLYPH_CHAT, GLYPH_CODE, GLYPH_PLAY, GLYPH_X, PixelGlyph, type Cells } from "@/components/glyphs";
 import { PixelLabel } from "@/components/PixelLabel";
 import { useToast } from "@/components/Toasts";
@@ -14,7 +15,6 @@ import { useFinePointer, useReduced } from "@/hooks/env";
 import { SOCIALS } from "@/lib/places";
 import { spring } from "@/lib/motion";
 import { useSound } from "@/lib/sound";
-import { DitherSun } from "./Dither";
 import { fill } from "./util";
 
 const LINKS: { label: string; href: string; glyph: Cells; handle: string; me?: boolean }[] = [
@@ -29,20 +29,16 @@ const LINKS: { label: string; href: string; glyph: Cells; handle: string; me?: b
  * letter by letter, then on a mouse each letter's weight leans toward the
  * pointer), the address on glass with a copy that confirms, the socials,
  * and the system footer: Restart replays the boot, the arrow goes home.
- * Behind it all the dithered sun of the manifesto sets below the horizon
- * as the page ends.
+ * The veil lifts a little here, so the story ends on the pixel landscape
+ * it started from.
  */
 export function Finale() {
   const { t } = useI18n();
   const s = t.story.finale;
   const { notify } = useToast();
   const { blip } = useSound();
-  const reduced = useReduced();
   const [copied, setCopied] = useState(false);
   const timer = useRef(0);
-  const ref = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end end"] });
-  const sunY = useTransform(scrollYProgress, [0, 1], ["-18%", "46%"]);
 
   useEffect(() => () => window.clearTimeout(timer.current), []);
 
@@ -61,13 +57,7 @@ export function Finale() {
   };
 
   return (
-    <section ref={ref} className="app-story-fin" data-veil="0.9" aria-labelledby="story-fin-title">
-      <div className="app-story-fin-horizon" aria-hidden>
-        <m.div className="app-story-fin-sun" style={reduced ? undefined : { y: sunY }}>
-          <DitherSun size={72} cell={5} />
-        </m.div>
-      </div>
-
+    <section className="app-story-fin" data-veil="0.7" aria-labelledby="story-fin-title">
       <div className="app-story-fin-inner">
         <p className="app-story-kicker">
           <span aria-hidden className="app-story-kicker-n">
@@ -116,7 +106,10 @@ export function Finale() {
       </div>
 
       <footer className="app-story-foot">
-        <span className="app-story-foot-made">{s.made}</span>
+        <span className="app-story-foot-made">
+          <EmosMark size={14} />
+          {s.made}
+        </span>
         <span className="app-story-foot-actions">
           <button type="button" className="app-story-foot-btn" onClick={restartOS} aria-label={s.restartLabel}>
             <svg width="12" height="12" viewBox="0 0 7 7" shapeRendering="crispEdges" fill="currentColor" aria-hidden>
@@ -147,7 +140,7 @@ export function Finale() {
   );
 }
 
-const REST = 620;
+const REST = 600;
 
 /**
  * The closing line. Letters rise out of their word masks once in view;
@@ -233,12 +226,14 @@ function WeightLine({ text }: { text: string }) {
             <span className="app-story-wl-word">
               <span className="app-story-wl-ghost">{word}</span>
               <span className="app-story-wl-live">
-                {Array.from(word).map((ch) => {
+                {Array.from(word).map((ch, ci, all) => {
                   const i = index++;
+                  const end = wi === list.length - 1 && ci === all.length - 1 && /[.!?]/.test(ch);
                   return (
                     <m.span
                       key={i}
                       data-ch=""
+                      data-end={end || undefined}
                       className="app-story-wl-ch"
                       initial={{ y: "110%" }}
                       animate={inView ? { y: "0%" } : { y: "110%" }}

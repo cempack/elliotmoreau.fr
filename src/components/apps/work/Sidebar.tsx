@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { RepoInfo } from "@/lib/github";
 import type { Source } from "@/lib/data";
 import { useI18n } from "@/i18n/client";
@@ -51,8 +51,24 @@ export function Sidebar({
 
   const is = (f: Filter) => sameFilter(filter, f);
 
+  // a folder chosen from elsewhere (a Quick Look topic) may sit past the
+  // fold of the source list: bring it into view there, without touching
+  // the page scroll (the compact strip scrolls itself, see WinNavItem)
+  const rootRef = useRef<HTMLDivElement>(null);
+  const key = `${filter.kind}:${"value" in filter ? filter.value : ""}`;
+  useEffect(() => {
+    const box = rootRef.current?.closest<HTMLElement>(".os-win-side");
+    const item = rootRef.current?.querySelector<HTMLElement>(".os-win-nav-item[data-active]");
+    if (!box || !item || getComputedStyle(box).overflowY !== "auto") return;
+    const b = box.getBoundingClientRect();
+    const r = item.getBoundingClientRect();
+    if (r.top >= b.top + 8 && r.bottom <= b.bottom - 8) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    box.scrollBy({ top: r.top - b.top - (b.height - r.height) / 2, behavior: reduced ? "auto" : "smooth" });
+  }, [key]);
+
   return (
-    <div className="app-work-side">
+    <div ref={rootRef} className="app-work-side">
       <p className="app-work-side-h" data-win-hide-compact aria-hidden>
         {s.favorites}
       </p>

@@ -27,6 +27,7 @@ const en = {
     hintArrange: "Drag the handles, or use the keyboard.",
     saved: "Layout saved on this device.",
     move: "Move {name}",
+    grab: "Move",
     instructions: "Press Space to pick it up. Arrow keys move it, Space drops it, Escape cancels.",
     picked: "Picked up {name}. Position {pos} of {total}.",
     moved: "{name}, position {pos} of {total}.",
@@ -149,6 +150,7 @@ const fr: typeof en = {
     hintArrange: "Utilisez les poignées, ou le clavier.",
     saved: "Disposition enregistrée sur cet appareil.",
     move: "Déplacer {name}",
+    grab: "Déplacer",
     instructions: "Espace pour le saisir. Les flèches le déplacent, Espace le pose, Échap annule.",
     picked: "{name} saisi. Position {pos} sur {total}.",
     moved: "{name}, position {pos} sur {total}.",
@@ -246,4 +248,5 @@ const fr: typeof en = {
   },
 };
 
-export default { en, fr };
+const now = { en, fr };
+export default now;

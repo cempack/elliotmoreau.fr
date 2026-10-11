@@ -31,6 +31,7 @@ export function Story() {
   const rootRef = useRef<HTMLDivElement>(null);
   const veilRef = useRef<HTMLDivElement>(null);
   useVeil(rootRef, veilRef);
+  useIdleOffscreen(rootRef);
 
   return (
     <div ref={rootRef} className="app-story">
@@ -43,6 +44,26 @@ export function Story() {
       <Finale />
     </div>
   );
+}
+
+/** CSS loops (eq bars, the map ping, carets) rest while their chapter is off-screen. */
+function useIdleOffscreen(rootRef: React.RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const en of entries) {
+          const el = en.target as HTMLElement;
+          if (en.isIntersecting) delete el.dataset.idle;
+          else el.dataset.idle = "";
+        }
+      },
+      { rootMargin: "100px 0px" }
+    );
+    root.querySelectorAll(":scope > section").forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [rootRef]);
 }
 
 /**
@@ -82,9 +103,14 @@ function useVeil(rootRef: React.RefObject<HTMLDivElement | null>, veilRef: React
       const sy = window.scrollY;
       const top = root.getBoundingClientRect().top + sy;
       const next: [number, number][] = [[top - vh, 0]];
+      // each chapter's depth is reached as its top passes a third of the
+      // way down and held until its end comes into view (pins hold it)
+      const push = (y: number, v: number) => next.push([Math.max(next[next.length - 1][0] + 1, y), v]);
       root.querySelectorAll<HTMLElement>("[data-veil]").forEach((el) => {
-        const y = el.getBoundingClientRect().top + sy - vh / 3;
-        next.push([Math.max(next[next.length - 1][0] + 1, y), Number(el.dataset.veil) || 0]);
+        const r = el.getBoundingClientRect();
+        const v = Number(el.dataset.veil) || 0;
+        push(r.top + sy - vh / 3, v);
+        push(r.bottom + sy - vh * 1.15, v);
       });
       stops = next;
       update();

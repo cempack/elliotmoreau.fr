@@ -18,18 +18,19 @@ import { SIGNUP_URL, dateLong, fmt, primaryTag } from "./util";
 
 /* the outgoing copy steps aside fast; the incoming title rises word by
    word out of its own line box, the rest settles in after it */
+const RISE = { type: "spring", visualDuration: 0.42, bounce: 0 } as const;
 const copyV: Variants = {
   hidden: {},
-  shown: { transition: { staggerChildren: 0.026, delayChildren: 0.01 } },
-  exit: { opacity: 0, transition: { duration: 0.09, ease: [0.4, 0, 1, 1] } },
+  shown: { transition: { staggerChildren: 0.018 } },
+  exit: { opacity: 0, transition: { duration: 0.08, ease: [0.4, 0, 1, 1] } },
 };
 const wordV: Variants = {
-  hidden: { y: "112%" },
-  shown: { y: "0%", transition: spring.gentle },
+  hidden: { y: "115%" },
+  shown: { y: "0%", transition: RISE },
 };
 const fadeV: Variants = {
-  hidden: { opacity: 0, y: 10 },
-  shown: { opacity: 1, y: 0, transition: { ...spring.gentle, delay: 0.1 } },
+  hidden: { opacity: 0, y: 8 },
+  shown: { opacity: 1, y: 0, transition: { ...spring.default, delay: 0.08 } },
 };
 const calmCopyV: Variants = {
   hidden: { opacity: 0 },
@@ -52,10 +53,9 @@ type Props = {
   onFilter: (tag: string) => void;
   onBack: () => void;
   titleRef: React.Ref<HTMLHeadingElement>;
-  navRef: React.Ref<HTMLDivElement>;
 };
 
-export function Reader({ post, posts, epoch, animatePlate, reduced, folderName, onPick, onFilter, onBack, titleRef, navRef }: Props) {
+export function Reader({ post, posts, epoch, animatePlate, reduced, folderName, onPick, onFilter, onBack, titleRef }: Props) {
   const { t, lang } = useI18n();
   const w = t.writing;
   const hydrated = useHydrated();
@@ -83,7 +83,7 @@ export function Reader({ post, posts, epoch, animatePlate, reduced, folderName, 
 
   return (
     <article className="app-writing-reader" aria-labelledby={`${id}-title`}>
-      <div ref={navRef} className="app-writing-navbar">
+      <div className="app-writing-navbar">
         <button type="button" className="app-writing-back" onClick={onBack} aria-label={fmt(w.back, { folder: folderName })}>
           <PixelGlyph cells={G_BACK} size={14} />
           <span className="app-writing-back-label">{folderName}</span>
@@ -190,9 +190,7 @@ export function Reader({ post, posts, epoch, animatePlate, reduced, folderName, 
               </span>
               <span className="app-writing-page-t">{newer.title}</span>
             </button>
-          ) : (
-            <span className="app-writing-page-gap" />
-          )}
+          ) : null}
           {older ? (
             <button type="button" className="app-writing-page app-writing-page--older" onClick={() => onPick(older.slug)}>
               <span className="app-writing-page-k">
@@ -200,9 +198,7 @@ export function Reader({ post, posts, epoch, animatePlate, reduced, folderName, 
               </span>
               <span className="app-writing-page-t">{older.title}</span>
             </button>
-          ) : (
-            <span className="app-writing-page-gap" />
-          )}
+          ) : null}
         </nav>
       )}
     </article>

@@ -68,10 +68,15 @@ export function WritingApp({ data }: { data: SiteData }) {
 
   const stackRef = useRef<HTMLDivElement>(null);
   const readerRef = useRef<HTMLDivElement>(null);
-  const navRef = useRef<HTMLDivElement>(null);
+  const probeRef = useRef<HTMLSpanElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const options = useRef(new Map<string, HTMLDivElement>());
   const openedFrom = useRef<string | null>(null);
+
+  // the URL follows the selection once it settles: every replaceState
+  // re-renders the router tree, so a run of ↓ presses writes it once
+  const urlTimer = useRef(0);
+  useEffect(() => () => window.clearTimeout(urlTimer.current), []);
 
   const optionRef = useCallback((slug: string, el: HTMLDivElement | null) => {
     if (el) options.current.set(slug, el);
@@ -83,8 +88,10 @@ export function WritingApp({ data }: { data: SiteData }) {
       titleRef.current?.focus({ preventScroll: true });
       return;
     }
+    blip("close");
     // popped by the button or a swipe: rewind our own history entry, or
     // drop ?p= when the reader was opened from a link
+    window.clearTimeout(urlTimer.current);
     if (!fromHistory) {
       if (histSlug()) window.history.back();
       else window.history.replaceState(null, "", urlWith(null));
@@ -94,9 +101,9 @@ export function WritingApp({ data }: { data: SiteData }) {
     if (back && (!active || active === document.body || readerRef.current?.contains(active))) {
       back.focus({ preventScroll: true });
     }
-  }, []);
+  }, [blip]);
 
-  const stack = useNavStack({ enabled: compact, reduced, stackRef, navRef, onSettle });
+  const stack = useNavStack({ enabled: compact, reduced, stackRef, probeRef, onSettle });
 
   // keep the window's scroll position honest across our own history entries
   useEffect(() => {
@@ -113,9 +120,9 @@ export function WritingApp({ data }: { data: SiteData }) {
   const revealReader = useCallback(
     (instant = false) => {
       const el = readerRef.current;
-      const nav = navRef.current;
+      const probe = probeRef.current;
       if (!el) return;
-      const stick = nav ? parseFloat(getComputedStyle(nav).top) || 0 : 0;
+      const stick = probe ? parseFloat(getComputedStyle(probe).top) || 0 : 0;
       const top = el.getBoundingClientRect().top;
       if (top >= stick - 1) return;
       const y = Math.max(0, window.scrollY + top - stick);
@@ -132,9 +139,12 @@ export function WritingApp({ data }: { data: SiteData }) {
       const animate = opts.animate ?? true;
       setSelected(slug);
       setSwap((s) => (animate ? (s.animate ? s : { ...s, animate: true }) : { epoch: s.epoch + 1, animate: false }));
+      window.clearTimeout(urlTimer.current);
       if (opts.url !== false) {
-        const own = histSlug();
-        window.history.replaceState(own ? { emWriting: slug } : null, "", urlWith(slug));
+        urlTimer.current = window.setTimeout(() => {
+          const own = histSlug();
+          window.history.replaceState(own ? { emWriting: slug } : null, "", urlWith(slug));
+        }, 450);
       }
     },
     []
@@ -162,12 +172,10 @@ export function WritingApp({ data }: { data: SiteData }) {
   };
 
   const open = (slug: string) => {
+    if (stack.view !== "list" || stack.moving) return;
     openedFrom.current = slug;
-    const same = slug === post?.slug;
     select(slug, { animate: false, url: false });
-    if (!same || stack.view === "list") {
-      window.history.pushState({ emWriting: slug }, "", urlWith(slug));
-    }
+    window.history.pushState({ emWriting: slug }, "", urlWith(slug));
     stack.push();
     blip("open");
   };
@@ -214,7 +222,8 @@ export function WritingApp({ data }: { data: SiteData }) {
     keyRef.current = (e: KeyboardEvent) => {
       if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
       if (compact) {
-        if (e.key === "Escape" && stack.view === "reader") {
+        const inDialog = (e.target as Element | null)?.closest?.("dialog,[role='dialog']");
+        if (e.key === "Escape" && stack.view === "reader" && !inDialog) {
           e.preventDefault();
           stack.pop();
         }
@@ -311,7 +320,9 @@ export function WritingApp({ data }: { data: SiteData }) {
             title={offline ? w.offlineTitle : w.noneTitle}
             body={offline ? w.offlineBody : w.noneBody}
             action={{ label: w.visitBlog, href: BLOG_URL }}
-          />
+          >
+            {!offline && <Newsletter className="app-writing-news--empty" />}
+          </EmptyState>
         </div>
       </AppWindow>
     );
@@ -325,10 +336,13 @@ export function WritingApp({ data }: { data: SiteData }) {
     <AppWindow app="writing" toolbar={toolbar} sidebar={sidebar}>
       <div className="app-writing">
         <div ref={stackRef} className="app-writing-stack" data-view={stack.view} data-moving={stack.moving || undefined}>
+          {/* its computed `top` is the sticky line under the title bar, in px */}
+          <span ref={probeRef} className="app-writing-probe" aria-hidden />
           <m.div
+            layoutScroll
             className="app-writing-pane app-writing-pane--list"
-            style={compact ? { x: stack.listX, clipPath: live ? stack.listClip : undefined } : undefined}
-            data-lenis-prevent
+            style={compact ? { x: stack.listX, clipPath: stack.listClip } : undefined}
+            data-lenis-prevent={compact ? undefined : ""}
           >
             <FolderChips {...folderProps} />
             {posts.length ? (
@@ -376,7 +390,6 @@ export function WritingApp({ data }: { data: SiteData }) {
                 onFilter={filterByTag}
                 onBack={() => stack.pop()}
                 titleRef={titleRef}
-                navRef={navRef}
               />
             )}
           </m.div>

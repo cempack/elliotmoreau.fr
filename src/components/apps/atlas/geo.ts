@@ -87,11 +87,29 @@ export function angleBetween(a: Vec3, b: Vec3) {
   return Math.acos(Math.min(1, Math.max(-1, a[0] * b[0] + a[1] * b[1] + a[2] * b[2])));
 }
 
-/** Where the camera looks for a place: home itself, or the midpoint of
-    the route from home so the whole flight path is on the near side. */
+/** Where the camera looks for a place: the middle of the route from home,
+    nudged off the great circle toward the equator so the whole flight path
+    is on the near side and bows across the disc like an airline map (a
+    route through the centre of an orthographic view is a straight line).
+    Home looks a little south-west of itself, so the routes out bow too. */
 export function focusFor(p: Place) {
-  if (p.home || p.id === HOME.id) return { lat: p.lat, lon: p.lon };
-  return toLatLon(slerp(toVec(HOME.lat, HOME.lon), toVec(p.lat, p.lon), 0.5));
+  if (p.home || p.id === HOME.id) return { lat: p.lat - 4, lon: p.lon - 9 };
+  const a = toVec(HOME.lat, HOME.lon);
+  const b = toVec(p.lat, p.lon);
+  const m = slerp(a, b, 0.5);
+  const c: Vec3 = [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  const len = Math.hypot(c[0], c[1], c[2]);
+  if (len < 1e-6) return toLatLon(m);
+  const n: Vec3 = [c[0] / len, c[1] / len, c[2] / len];
+  const δ = Math.min(16 * RAD, angleBetween(a, b) * 0.35);
+  const toward = (s: number): Vec3 => [
+    m[0] * Math.cos(δ) + s * n[0] * Math.sin(δ),
+    m[1] * Math.cos(δ) + s * n[1] * Math.sin(δ),
+    m[2] * Math.cos(δ) + s * n[2] * Math.sin(δ),
+  ];
+  const f1 = toward(1);
+  const f2 = toward(-1);
+  return toLatLon(f1[2] < f2[2] ? f1 : f2);
 }
 
 /* ───────────────────────────── trip stats ───────────────────────────── */

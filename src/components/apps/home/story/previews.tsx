@@ -6,9 +6,7 @@ import { useSky } from "@/components/os/sky";
 import { PixelPlanet } from "@/components/PixelPlanet";
 import { PixelEq } from "@/components/os/window/PixelEq";
 import { Pixels, SKY_GLYPH } from "@/components/os/menubar/glyphs";
-import { useHydrated } from "@/hooks/env";
 import { useParisTime } from "@/hooks/useParisTime";
-import { timeAgo } from "@/lib/format";
 import { LANG_COLORS, LANG_FALLBACK } from "@/lib/langColors";
 import { PLACES, fmtCoords, HOME, SOCIALS } from "@/lib/places";
 import type { useSpotifyStatus } from "@/hooks/useSpotifyStatus";
@@ -94,6 +92,29 @@ export function AtlasPreview() {
   const home = mapCell(HOME.lat, HOME.lon);
   return (
     <div className="app-story-pv-atlas">
+      <div className="app-story-pv-stats">
+        <p className="app-story-pv-stat">
+          <span className="app-story-pv-num tabular">{been.length}</span>
+          <span className="app-story-pv-lbl">
+            <i className="app-story-pv-key app-story-pv-key--been" aria-hidden />
+            {s.visited}
+          </span>
+        </p>
+        <p className="app-story-pv-stat">
+          <span className="app-story-pv-num tabular">{next.length}</span>
+          <span className="app-story-pv-lbl">
+            <i className="app-story-pv-key app-story-pv-key--want" aria-hidden />
+            {s.next}
+          </span>
+        </p>
+        <p className="app-story-pv-lbl app-story-pv-homeline">
+          <i className="app-story-pv-key app-story-pv-key--home" aria-hidden />
+          <span>
+            {s.home} · {HOME.name[lang]}
+            <span className="app-story-pv-coord">{fmtCoords(HOME.lat, HOME.lon)}</span>
+          </span>
+        </p>
+      </div>
       <svg
         className="app-story-pv-map"
         viewBox={`0 0 ${MAP_W} ${MAP_H}`}
@@ -121,20 +142,6 @@ export function AtlasPreview() {
         <rect x={home.x - 1} y={home.y - 1} width={3} height={3} className="app-story-pv-ping" />
         <rect x={home.x} y={home.y} width={1} height={1} className="app-story-pv-home" />
       </svg>
-      <div className="app-story-pv-legend">
-        <span>
-          <i className="app-story-pv-key app-story-pv-key--home" aria-hidden />
-          {s.home} · {HOME.name[lang]} <span className="app-story-pv-coord">{fmtCoords(HOME.lat, HOME.lon)}</span>
-        </span>
-        <span>
-          <i className="app-story-pv-key app-story-pv-key--been" aria-hidden />
-          {fill(s.been, { n: been.length })}
-        </span>
-        <span>
-          <i className="app-story-pv-key app-story-pv-key--want" aria-hidden />
-          {fill(s.next, { n: next.length })}
-        </span>
-      </div>
     </div>
   );
 }
@@ -149,11 +156,9 @@ export function Cover({ music, className = "" }: { music: Music; className?: str
 }
 
 export function NowPreview({ music }: { music: Music }) {
-  const { t, lang } = useI18n();
-  const { activity } = useSiteData();
+  const { t } = useI18n();
   const { phase } = useSky();
   const { time } = useParisTime();
-  const hydrated = useHydrated();
   const s = t.story.mc.now;
   const { track, playing } = music;
   return (
@@ -178,16 +183,6 @@ export function NowPreview({ music }: { music: Music }) {
         </span>
         <PixelEq playing={playing} className="app-story-pv-eq" />
       </div>
-      {activity && (
-        <p className="app-story-pv-push">
-          <span className="app-story-pv-k">{s.push}</span>
-          <span className="app-story-pv-msg">{activity.message}</span>
-          <span className="app-story-pv-ago">
-            {activity.repo}
-            {hydrated && ` · ${timeAgo(activity.createdAt, lang)}`}
-          </span>
-        </p>
-      )}
     </div>
   );
 }

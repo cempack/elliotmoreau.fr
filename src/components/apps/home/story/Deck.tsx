@@ -5,7 +5,6 @@ import Link from "next/link";
 import { m, useTransform, type MotionValue } from "motion/react";
 import { useI18n } from "@/i18n/client";
 import { useSiteData } from "@/components/os/SiteData";
-import { Glass } from "@/components/os/Glass";
 import { bounce, isPlainClick, visibleIcon } from "@/components/os/dock/launch";
 import { PixelPlanet } from "@/components/PixelPlanet";
 import { PressButton } from "@/components/ui/Pressable";
@@ -35,25 +34,29 @@ export function WorkDeck() {
   const list = selectRepos(repos);
   const reduced = useReduced();
   const { blip } = useSound();
-  const deck = useDeck({ count: list.length, reduced, onSnap: () => blip("tick") });
+  const { q, index, geo, go, viewportRef, rulerRef, handlers } = useDeck({
+    count: list.length,
+    reduced,
+    onSnap: () => blip("tick"),
+  });
   const { path } = useI18n();
   const cardRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const n = list.length;
 
   const step = (dir: 1 | -1) => {
-    const next = Math.min(n - 1, Math.max(0, deck.index + dir));
-    if (next === deck.index) return;
-    deck.go(next);
+    const next = Math.min(n - 1, Math.max(0, index + dir));
+    if (next === index) return;
+    go(next);
     blip("tick");
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
-    const map: Record<string, number> = { ArrowLeft: deck.index + 1, ArrowRight: deck.index - 1, Home: 0, End: n - 1 };
+    const map: Record<string, number> = { ArrowLeft: index + 1, ArrowRight: index - 1, Home: 0, End: n - 1 };
     if (!(e.key in map)) return;
     e.preventDefault();
     const next = Math.min(n - 1, Math.max(0, map[e.key]));
-    if (next === deck.index) return;
-    deck.go(next);
+    if (next === index) return;
+    go(next);
     blip("tick");
     // keep focus on the card that came forward (roving tabindex)
     if ((e.target as Element).closest("[data-deck-card]")) cardRefs.current[next]?.focus({ preventScroll: true });
@@ -61,7 +64,7 @@ export function WorkDeck() {
 
   const counter = (
     <span className="app-story-deck-count tabular" aria-hidden>
-      <span>{String(deck.index + 1).padStart(2, "0")}</span>
+      <span>{String(index + 1).padStart(2, "0")}</span>
       <span className="app-story-deck-count-of">/ {String(Math.max(1, n)).padStart(2, "0")}</span>
     </span>
   );
@@ -73,7 +76,6 @@ export function WorkDeck() {
         kicker={s.kicker}
         titleId="story-deck-title"
         title={s.title}
-        lede={n > 1 ? s.lede : undefined}
         aside={
           <div className="app-story-deck-tools">
             {n > 1 && (
@@ -85,7 +87,7 @@ export function WorkDeck() {
                     className="app-story-round"
                     aria-label={s.next}
                     aria-controls="story-deck-cards"
-                    disabled={deck.index >= n - 1}
+                    disabled={index >= n - 1}
                     onClick={() => step(1)}
                   >
                     <Chevron dir="left" />
@@ -94,7 +96,7 @@ export function WorkDeck() {
                     className="app-story-round"
                     aria-label={s.prev}
                     aria-controls="story-deck-cards"
-                    disabled={deck.index <= 0}
+                    disabled={index <= 0}
                     onClick={() => step(-1)}
                   >
                     <Chevron dir="right" />
@@ -119,7 +121,7 @@ export function WorkDeck() {
         }
       />
 
-      <div ref={deck.rulerRef} className="app-story-ruler" aria-hidden />
+      <div ref={rulerRef} className="app-story-ruler" aria-hidden />
 
       {n === 0 ? (
         <div className="app-story-deck-empty">
@@ -132,16 +134,16 @@ export function WorkDeck() {
       ) : (
         <>
           <div
-            ref={deck.viewportRef}
+            ref={viewportRef}
             id="story-deck-cards"
             className="app-story-deck-vp"
             role="group"
             aria-roledescription="carousel"
             aria-label={s.deck}
-            data-ready={deck.geo ? "" : undefined}
+            data-ready={geo ? "" : undefined}
             data-single={n < 2 || undefined}
             onKeyDown={onKeyDown}
-            {...deck.handlers}
+            {...handlers}
           >
             {list.map((repo, r) => (
               <DeckCard
@@ -149,11 +151,11 @@ export function WorkDeck() {
                 repo={repo}
                 r={r}
                 n={n}
-                q={deck.q}
-                geo={deck.geo}
-                focused={r === deck.index}
+                q={q}
+                geo={geo}
+                focused={r === index}
                 onBringForward={() => {
-                  deck.go(r);
+                  go(r);
                   blip("tick");
                 }}
                 refCb={(el) => {
@@ -165,17 +167,18 @@ export function WorkDeck() {
 
           {n > 1 && (
             <div className="app-story-deck-pager">
+              <p className="app-story-deck-hint">{s.lede}</p>
               {list.map((repo, r) => (
                 <button
                   key={repo.name}
                   type="button"
                   className="app-story-deck-dot"
-                  data-on={r === deck.index || undefined}
+                  data-on={r === index || undefined}
                   aria-label={fill(s.position, { i: r + 1, n, name: repo.name })}
-                  aria-current={r === deck.index ? "true" : undefined}
+                  aria-current={r === index ? "true" : undefined}
                   onClick={() => {
-                    if (r === deck.index) return;
-                    deck.go(r);
+                    if (r === index) return;
+                    go(r);
                     blip("tick");
                   }}
                 >
@@ -185,7 +188,7 @@ export function WorkDeck() {
             </div>
           )}
           <p className="sr-only" aria-live="polite">
-            {list[deck.index] ? fill(s.position, { i: deck.index + 1, n, name: list[deck.index].name }) : ""}
+            {list[index] ? fill(s.position, { i: index + 1, n, name: list[index].name }) : ""}
           </p>
         </>
       )}
@@ -222,9 +225,10 @@ function DeckCard({
     const d = v - r;
     return geo && d < 0 ? 1 - geo.shrink * Math.min(-d, 4) : 1;
   });
+  // the first card back recedes most; deeper ones keep darkening a little
   const dim = useTransform(q, (v) => {
     const d = v - r;
-    return d < 0 ? Math.min(-d, 3) * 0.19 : 0;
+    return d < 0 ? Math.min(-d, 1) * 0.4 + Math.max(0, Math.min(-d - 1, 2)) * 0.14 : 0;
   });
   const name = useTransform(q, (v) => {
     const d = v - r;
@@ -265,7 +269,9 @@ function DeckCard({
           blip("open");
         }}
       >
-        <Glass thickness="regular" refract={false} aria-hidden className="app-story-deck-glass" />
+        {/* an app snapshot, like the switcher's: opaque, so a stack of
+            moving cards never re-blurs what's under it every frame */}
+        <span aria-hidden className="app-story-deck-surface" />
         <span className="app-story-deck-bar" aria-hidden>
           <span className="app-story-mc-lights">
             <i />

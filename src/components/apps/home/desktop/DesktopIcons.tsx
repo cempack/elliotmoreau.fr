@@ -156,19 +156,24 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
     desktopMemory.arrange(cells);
   };
 
-  /** cells taken by others or covered by a widget / hello.txt */
-  const occupancy = (m: Metrics, except: Set<DesktopIconId>) => {
-    const taken = new Set<string>();
-    for (const id of DESKTOP_ICONS) if (!except.has(id)) taken.add(key(L(id).cell));
+  /** cells a widget or hello.txt covers (by the icon's footprint: tile + label) */
+  const blockedCells = (m: Metrics) => {
+    const out = new Set<string>();
     const rects = blockers();
     for (let c = 0; c < m.cols; c++) {
       for (let r = 0; r < m.rows; r++) {
         const p = cellPos(m, { c, r });
-        // the icon's footprint inside its cell (tile + label), not the whole cell
         const box = { left: p.x + 10, top: p.y + 4, right: p.x + m.cw - 10, bottom: p.y + m.ch - 8 };
-        if (rects.some((b) => intersects(box, b))) taken.add(key({ c, r }));
+        if (rects.some((b) => intersects(box, b))) out.add(key({ c, r }));
       }
     }
+    return out;
+  };
+
+  /** cells taken by the other icons or blocked */
+  const occupancy = (m: Metrics, except: Set<DesktopIconId>) => {
+    const taken = blockedCells(m);
+    for (const id of DESKTOP_ICONS) if (!except.has(id)) taken.add(key(L(id).cell));
     return taken;
   };
 
@@ -235,13 +240,8 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
     if (!scene || scene.clientWidth === 0) return;
     const m = readMetrics(scene);
     const untouched = !desktopMemory.arranged();
+    const blocked = blockedCells(m);
     const placed = new Set<string>();
-    const rects = blockers();
-    const blocked = (c: Cell) => {
-      const p = cellPos(m, c);
-      const box = { left: p.x + 10, top: p.y + 4, right: p.x + m.cw - 10, bottom: p.y + m.ch - 8 };
-      return rects.some((b) => intersects(box, b));
-    };
     DESKTOP_ICONS.forEach((id, i) => {
       const v = L(id);
       if (drag.current?.ids.includes(id)) {
@@ -249,9 +249,8 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
         return;
       }
       let want = untouched ? flowCell(i, m.flowRows) : v.cell;
-      if (want.c >= m.cols || want.r >= m.rows || placed.has(key(want)) || blocked(want)) {
-        const taken = new Set(placed);
-        for (let c = 0; c < m.cols; c++) for (let r = 0; r < m.rows; r++) if (blocked({ c, r })) taken.add(key({ c, r }));
+      if (want.c >= m.cols || want.r >= m.rows || placed.has(key(want)) || blocked.has(key(want))) {
+        const taken = new Set([...placed, ...blocked]);
         const p = cellPos(m, { c: Math.min(want.c, m.cols - 1), r: Math.min(want.r, m.rows - 1) });
         want = nearestFree(m, p.x, p.y, taken);
       }
