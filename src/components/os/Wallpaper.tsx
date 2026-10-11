@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { atLocalHour, crossLocal, sunAt, sunDay } from "@/lib/sun";
+import { sunAt } from "@/lib/sun";
 import { SKY_PHASES, useSky, type SkyMode, type SkyPhase } from "./sky";
 import { buildCity, type City } from "./wallpaper/city";
 import { lampsAt, relight } from "./wallpaper/light";
-import { project, sunScrub, sunSpot } from "./wallpaper/sunClock";
+import { pinnedMs, project, sunScrub, sunSpot } from "./wallpaper/sunClock";
 import "./wallpaper.css";
 
 /**
@@ -39,22 +39,6 @@ function gridFor(w: number, h: number): Grid {
   return { W: Math.ceil(w / cell), H: Math.ceil(h / cell), cell };
 }
 const sameGrid = (a: Grid | null, b: Grid | null) => !!a && !!b && a.W === b.W && a.H === b.H && a.cell === b.cell;
-
-/** The instant a pinned phase shows today: the middle of its band. */
-function pinnedMs(phase: SkyPhase, now: Date) {
-  const d = sunDay(now);
-  const up = crossLocal(6, -1, now) ?? d.noon - 4;
-  const down = crossLocal(6, 1, now) ?? d.noon + 4;
-  const h =
-    phase === "dawn"
-      ? ((d.dawn ?? up - 0.7) + up) / 2
-      : phase === "day"
-        ? (d.noon + down) / 2
-        : phase === "dusk"
-          ? (down + (d.dusk ?? down + 1.2)) / 2
-          : Math.min(23.75, (d.dusk ?? 21) + 2.5);
-  return atLocalHour(h, now).getTime();
-}
 
 const baseMs = (mode: SkyMode) => {
   const now = new Date();

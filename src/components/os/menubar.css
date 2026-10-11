@@ -857,29 +857,85 @@ html:active-view-transition .os-menubar {
 }
 .os-menubar-skyart {
   position: relative;
-  height: 84px;
+  height: 108px;
   overflow: hidden;
   border-radius: var(--radius-card) var(--radius-card) 0 0;
+  background: var(--color-ink-950);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 .os-menubar-skyart-canvas,
 .os-menubar-skyart-svg {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  left: 0;
+  top: 0;
+  pointer-events: none;
 }
 .os-menubar-skyart-canvas {
-  object-fit: cover;
   image-rendering: pixelated;
-  opacity: 0;
-  transition: opacity 0.6s ease;
 }
-.os-menubar-skyart-canvas[data-active] {
+.os-menubar-skyart-curve {
+  fill: var(--color-label);
+  opacity: 0.75;
+  transition: opacity 0.2s var(--ease-out-quint);
+}
+@media (hover: hover) and (pointer: fine) {
+  .os-menubar-skyart:hover .os-menubar-skyart-curve {
+    opacity: 1;
+  }
+}
+.os-menubar-skyart[data-held] .os-menubar-skyart-curve {
   opacity: 1;
 }
-.os-menubar-skyart-far,
-.os-menubar-skyart-near {
-  transition: fill 0.6s ease;
+.os-menubar-skyart-notch,
+.os-menubar-skyart-press {
+  fill: var(--color-label);
+}
+.os-menubar-skyart-ghost {
+  fill: var(--color-label);
+  opacity: 0.7;
+}
+.os-menubar-skyart-sun {
+  fill: #ffd27a;
+}
+.os-menubar-skyart-sun:is([data-phase="dawn"], [data-phase="dusk"]) {
+  fill: var(--color-ember);
+}
+/* today's sunrise and sunset, printed where the path meets the skyline */
+.os-menubar-skyart-time {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  color: var(--color-label);
+  font: 500 12px/1 var(--font-mono);
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.85),
+    0 0 6px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+/* while held: "19:42 Dusk" */
+.os-menubar-skyart-readout {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  padding: 4px 7px;
+  border-radius: 6px;
+  background: rgba(10, 12, 11, 0.78);
+  color: var(--color-label);
+  font: 600 12px/1 var(--font-mono);
+  pointer-events: none;
+}
+.os-menubar-skyart-hit {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: grab;
+  touch-action: none;
+}
+.os-menubar-skyart[data-held] .os-menubar-skyart-hit {
+  cursor: grabbing;
 }
 .os-menubar-sky-head {
   display: flex;

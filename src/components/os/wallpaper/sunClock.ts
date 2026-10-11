@@ -9,6 +9,8 @@
  *   that maps any sun position to the screen
  */
 
+import { atLocalHour, crossLocal, sunDay, type SkyPhase } from "@/lib/sun";
+
 type Listener = () => void;
 
 function store<T>(initial: T) {
@@ -61,4 +63,22 @@ export function project(view: Pick<SunView, "W" | "hz" | "top" | "fov">, elevati
     x: view.W * (0.5 + (azimuth - 180) / view.fov),
     y: view.hz - k * (view.hz - view.top),
   };
+}
+
+/** The instant a pinned phase shows today: the middle of its band (night:
+    two and a half hours after nightfall). The wallpaper lights it and
+    Control Center marks it on the sun's curve. */
+export function pinnedMs(phase: SkyPhase, now: Date) {
+  const d = sunDay(now);
+  const up = crossLocal(6, -1, now) ?? d.noon - 4;
+  const down = crossLocal(6, 1, now) ?? d.noon + 4;
+  const h =
+    phase === "dawn"
+      ? ((d.dawn ?? up - 0.7) + up) / 2
+      : phase === "day"
+        ? (d.noon + down) / 2
+        : phase === "dusk"
+          ? (down + (d.dusk ?? down + 1.2)) / 2
+          : Math.min(23.75, (d.dusk ?? 21) + 2.5);
+  return atLocalHour(h, now).getTime();
 }

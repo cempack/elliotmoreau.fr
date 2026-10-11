@@ -358,6 +358,8 @@ export type Sky = {
   ms: number;
   /** how many of the Pont Neuf's lamps are lit, from the Daurade side */
   lamps: number;
+  /** draw the sun, moon and glitter (off where a sprite is the sun instead) */
+  bodies?: boolean;
 };
 
 const pal = new Uint32Array(8192);
@@ -468,12 +470,14 @@ export function relight(city: City, sky: Sky, out: Uint32Array) {
 
   // the moon, then the sun, behind the city (only sky pixels take them);
   // a moon too close to new is lost in the glare
-  const mb = bodyXY(city, moon.elevation, moon.azimuth);
-  if (moon.elevation > -2 && moon.lit > 0.08) drawMoon(city, out, mb.x, mb.y, moon.phase, 1 - smoothstep(-2, 10, e) * 0.62);
-  if (e > -2.5) drawSun(city, out, body.x, body.y, e, i);
-  // the glitter path on the river under whichever is up
-  if (e > -1.5) glitter(city, out, body.x, e > 12 ? hex("#f6f4e6") : mix(i.glow, [255, 240, 210], 0.4), e > 12 ? 0.6 : 0.85, 1.4);
-  else if (moon.elevation > 0 && e < -6) glitter(city, out, mb.x, hex("#eae6d4"), 0.25 + 0.55 * moon.lit, 1);
+  if (sky.bodies !== false) {
+    const mb = bodyXY(city, moon.elevation, moon.azimuth);
+    if (moon.elevation > -2 && moon.lit > 0.08) drawMoon(city, out, mb.x, mb.y, moon.phase, 1 - smoothstep(-2, 10, e) * 0.62);
+    if (e > -2.5) drawSun(city, out, body.x, body.y, e, i);
+    // the glitter path on the river under whichever is up
+    if (e > -1.5) glitter(city, out, body.x, e > 12 ? hex("#f6f4e6") : mix(i.glow, [255, 240, 210], 0.4), e > 12 ? 0.6 : 0.85, 1.4);
+    else if (moon.elevation > 0 && e < -6) glitter(city, out, mb.x, hex("#eae6d4"), 0.25 + 0.55 * moon.lit, 1);
+  }
 
   // the Pont Neuf's lamps, and their streaks on the water
   const n = Math.min(sky.lamps, city.lamps.length);

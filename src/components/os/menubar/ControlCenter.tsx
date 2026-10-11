@@ -9,7 +9,7 @@ import { LOCALES } from "@/i18n/config";
 import { useSound } from "@/lib/sound";
 import { spring } from "@/lib/motion";
 import { useSky, type SkyMode } from "../sky";
-import { SkyArt } from "./SkyArt";
+import { SkyView } from "./SkyArt";
 import { ChevronRight, GLYPH_MOON, GLYPH_MUTE, GLYPH_SPEAKER, Pixels, SKY_GLYPH } from "./glyphs";
 import { useMenu } from "./Panel";
 import { fill } from "./util";
@@ -18,11 +18,11 @@ const MODES: SkyMode[] = ["auto", "dawn", "day", "dusk", "night"];
 /** endonyms: each language named in itself, whatever the UI language */
 const ENDONYM = { en: "English", fr: "Français" } as const;
 
-/** Sky: a pixel postcard of Toulouse and a five-way segmented control. */
+/** Sky: Toulouse in miniature with a sun you can hold, and a five-way segmented control. */
 function SkyTile() {
   const { t } = useI18n();
   const c = t.shell.control;
-  const { mode, setMode, phase, hour } = useSky();
+  const { mode, setMode, phase } = useSky();
   const { blip } = useSound();
   const group = useRef<HTMLDivElement>(null);
 
@@ -50,7 +50,7 @@ function SkyTile() {
 
   return (
     <section className="os-menubar-tile os-menubar-sky" aria-labelledby="os-mb-sky-title">
-      <SkyArt mode={mode} hour={hour} />
+      <SkyView mode={mode} onPick={(m) => pick(m)} labels={{ dawn: c.dawn, day: c.day, dusk: c.dusk, night: c.night }} />
       <div className="os-menubar-sky-head">
         <h3 id="os-mb-sky-title" className="os-menubar-tile-title">
           {c.appearance}
