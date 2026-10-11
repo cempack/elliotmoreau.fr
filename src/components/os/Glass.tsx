@@ -26,7 +26,7 @@ import "./glass.css";
  *   1. As a container:  <Glass className="rounded-[var(--radius-card)] p-4">…</Glass>
  *      Children paint above the material; no extra wrapper is needed.
  *   2. As a material layer under your own content (what windows, the dock
- *      and the mini player do): <Glass aria-hidden className="absolute inset-0
+ *      and the menu bar do): <Glass aria-hidden className="absolute inset-0
  *      rounded-[inherit]" /> as the first child of your surface, with the
  *      drop shadow on the surface itself.
  *

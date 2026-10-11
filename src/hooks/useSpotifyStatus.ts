@@ -5,8 +5,8 @@ import type { SpotifyStatus } from "@/lib/spotify";
 
 /**
  * One live now-playing feed for the whole OS. Every consumer (menu bar,
- * mini player, Now, Mail, Terminal, the Desktop story) reads the same
- * module-level store, so they can never disagree.
+ * Now, Mail, Terminal) reads the same module-level store, so they can
+ * never disagree.
  *
  * - Until the first poll answers, everyone shows the server's seed.
  * - The first subscriber starts ONE poller: it fetches right away, then

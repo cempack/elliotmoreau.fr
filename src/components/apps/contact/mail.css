@@ -160,15 +160,9 @@
 
 /* ── views ── */
 .app-contact-views {
-  /* contract B: how much further up than the window's own Dock clearance
-     the page must end to clear a mini player resting in a bottom corner */
-  --app-contact-pip-pad: max(
-    0px,
-    calc(var(--os-pip-room-bottom, 0px) - max(var(--os-win-dock-room, 0px), var(--dock-h) + 1rem))
-  );
   position: relative;
   container: app-contact / inline-size;
-  padding: 2.5rem clamp(1.25rem, 3.6vw, 3.25rem) max(3.5rem, calc(var(--app-contact-pip-pad) + 1rem));
+  padding: 2.5rem clamp(1.25rem, 3.6vw, 3.25rem) 3.5rem;
 }
 /* the #elsewhere / #pgp targets: at the very top, and a fragment load never scrolls to them */
 .app-contact-anchor {
@@ -238,7 +232,7 @@
 }
 @media (max-width: 767px) {
   .app-contact-views {
-    padding: 1.375rem 1rem max(2rem, calc(var(--app-contact-pip-pad) + 1rem));
+    padding: 1.375rem 1rem 2rem;
   }
 }
 
@@ -509,7 +503,7 @@
 /* keyboard focus and scrollIntoView keep fields clear of the title bar and the Dock */
 .app-contact-card :is(input, textarea, button, a) {
   scroll-margin-top: calc(var(--menubar-h) + 5rem);
-  scroll-margin-bottom: max(calc(var(--dock-h) + 1.5rem), calc(var(--os-pip-room-bottom, 0px) + 0.5rem));
+  scroll-margin-bottom: calc(var(--dock-h) + 1.5rem);
 }
 .app-contact-row {
   display: flex;
@@ -746,7 +740,7 @@
     opacity: 1;
   }
 }
-/* mid widths: the mini player rests in the bottom-right corner, so Send leads the footer */
+/* mid widths: Send leads the footer */
 @container app-contact (max-width: 759px) {
   .app-contact-foot {
     flex-direction: row-reverse;
@@ -1133,7 +1127,7 @@
 }
 
 /* in the air (portaled to <body>, above the Dock) */
-/* above the Dock and the mini player (60), below the Terminal (70) */
+/* above the Dock, below the Terminal (70) */
 .app-contact-air {
   position: fixed;
   inset: 0;
@@ -1669,7 +1663,7 @@
     scrollbar-color: rgba(245, 242, 236, 0.22) transparent;
   }
 }
-/* phones: the sheet grows with the message; the end stays clear of the mini player */
+/* phones: the sheet grows with the message */
 @media (max-width: 767px) {
   .app-contact-textarea {
     min-height: 12rem;

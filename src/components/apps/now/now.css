@@ -7,13 +7,7 @@
 
 .app-now {
   container: app-now / inline-size;
-  /* contract B: how much further up than the window's own Dock clearance
-     the page must end to clear a mini player resting in a bottom corner */
-  --app-now-pip-pad: max(
-    0px,
-    calc(var(--os-pip-room-bottom, 0px) - max(var(--os-win-dock-room, 0px), var(--dock-h) + 1rem))
-  );
-  padding: 2.25rem clamp(1.25rem, 3vw, 2.5rem) max(2rem, calc(var(--app-now-pip-pad) + 1rem));
+  padding: 2.25rem clamp(1.25rem, 3vw, 2.5rem) 2rem;
 }
 
 /* ───────────────────────── shared bits ───────────────────────── */
@@ -757,21 +751,6 @@ a.app-now-tok:hover {
   font-family: var(--font-mono);
   font-size: 0.75rem;
 }
-/* where the widget runs to the window's edge (phones, tablets), the mini
-   player resting on that side would hide the end time: both times move
-   to the other end, "1:37 / 4:03" (contract B: data-os-pip) */
-@container app-now (max-width: 959px) {
-  :root[data-os-pip$="r"] .app-now-progress-times {
-    justify-content: flex-start;
-  }
-  :root[data-os-pip$="l"] .app-now-progress-times {
-    justify-content: flex-end;
-  }
-  :root:is([data-os-pip$="r"], [data-os-pip$="l"]) .app-now-progress-times > :first-child::after {
-    content: " /";
-  }
-}
-
 .app-now-artists {
   margin-top: auto;
   padding-top: 1rem;
@@ -1748,7 +1727,7 @@ a.app-now-book:hover .app-now-spine {
 
 /* ───────────────────────── footer ───────────────────────── */
 
-/* both lines on the left: the mini player's home corner is bottom-right */
+/* both lines on the left */
 .app-now-foot {
   display: flex;
   flex-direction: column;
@@ -1832,7 +1811,6 @@ a.app-now-book:hover .app-now-spine {
 
 @media (max-width: 767px) {
   .app-now {
-    /* the bottom clears the floating mini player over the tab bar */
     padding: 1.5rem 1rem 4.5rem;
   }
   .app-now-intro {

@@ -677,8 +677,8 @@
   animation: 260ms cubic-bezier(0.33, 0, 0.67, 1) both os-vt-in;
 }
 
-/* the menu bar, dock and mini player hold still above the windows while
-   pages transition: see menubar.css, dock.css and miniplayer.css */
+/* the menu bar and dock hold still above the windows while pages
+   transition: see menubar.css and dock.css */
 
 /* scale s about the icon; translate (1 − s) × the group's own offset undoes
    what the scale does to its positioning transform */

@@ -10,15 +10,7 @@
 
 .app-work {
   --app-work-pad: clamp(1rem, 2.4vw, 2rem);
-  /* contract B: how much further up than the window's own Dock clearance
-     the content must end to clear a mini player resting in a bottom corner */
-  --app-work-pip-pad: max(
-    0px,
-    calc(var(--os-pip-room-bottom, 0px) - max(var(--os-win-dock-room, 0px), var(--dock-h) + 1rem))
-  );
   /* the window's edges in the viewport (it is centred, at most --os-win-max) */
-  --app-work-win-edge: max(var(--os-win-gutter, 0px), (100vw - var(--os-win-max, 100vw)) / 2);
-  --app-work-side: 0px;
   --app-work-status-h: 2.625rem;
   position: relative;
   container: app-work / inline-size;
@@ -704,10 +696,7 @@
   /* the band revealItem keeps the selection in: below the sticky title bar,
      above the floating status bar and the Dock */
   scroll-margin-top: calc(var(--os-win-sticky-top, 6rem) + 1rem);
-  scroll-margin-bottom: max(
-    calc(var(--os-win-dock-room, var(--dock-h)) + var(--app-work-status-h) + 0.75rem),
-    var(--os-pip-room-bottom, 0px)
-  );
+  scroll-margin-bottom: calc(var(--os-win-dock-room, var(--dock-h)) + var(--app-work-status-h) + 0.75rem);
 }
 @media (min-width: 768px) {
   .app-work-coll[data-view="list"] .app-work-item {
@@ -717,7 +706,7 @@
 @media (max-width: 767px) {
   .app-work-item {
     scroll-margin-top: calc(var(--os-win-sticky-top, 6rem) + 4.75rem);
-    scroll-margin-bottom: max(calc(var(--dock-h) + 1rem), var(--os-pip-room-bottom, 0px));
+    scroll-margin-bottom: calc(var(--dock-h) + 1rem);
   }
 }
 .app-work-item > * {
@@ -1194,7 +1183,7 @@ button.app-work-col:hover,
 /* the window's foot, like Finder's: it sticks above the Dock while the
    window runs on below it (the title bar's mirror), and rests at the
    window's bottom edge at the end. The facts sit on the right; keyboard
-   hints take the left. A mini player resting over it pushes them in. */
+   hints take the left. */
 .app-work-status {
   display: flex;
   flex-direction: row-reverse;
@@ -1207,12 +1196,6 @@ button.app-work-col:hover,
   background: rgba(5, 6, 10, 0.2);
   color: var(--color-label-3);
   font: 0.75rem/1.3 var(--font-mono);
-}
-/* the end of the content clears a mini player resting low (contract B);
-   the sticky status bar already covers part of that band */
-.app-work-pip-room {
-  flex: none;
-  height: max(0px, calc(var(--app-work-pip-pad) - var(--app-work-status-h)));
 }
 @media (min-width: 768px) {
   .app-work-status {
@@ -1232,21 +1215,6 @@ button.app-work-col:hover,
     height: var(--os-win-dock-room, 0px);
     background: rgba(13, 15, 24, 0.9);
     pointer-events: none;
-  }
-  html[data-os-pip="br"] .app-work-status {
-    padding-right: max(var(--app-work-pad), calc(var(--os-pip-room-right, 0px) - var(--app-work-win-edge)));
-  }
-  html[data-os-pip="bl"] .app-work-status {
-    padding-left: max(
-      var(--app-work-pad),
-      calc(var(--os-pip-x, 0px) + var(--os-pip-w, 0px) + 12px - var(--app-work-win-edge) - var(--app-work-side))
-    );
-  }
-}
-@media (min-width: 1024px) {
-  .app-work {
-    /* the window's sidebar sits between its left edge and this column */
-    --app-work-side: var(--os-win-side-w, 0px);
   }
 }
 .app-work-status-main {
@@ -1277,17 +1245,12 @@ button.app-work-col:hover,
     display: none;
   }
 }
-/* phones: a quiet centred caption at the end of the list, with room left
-   for the mini player that parks above the tab bar */
+/* phones: a quiet centred caption at the end of the list */
 @media (max-width: 767px) {
-  .app-work-pip-room {
-    display: none;
-  }
   .app-work-status {
     justify-content: center;
     margin-top: auto;
-    /* clear of a mini player parked above the tab bar (contract B) */
-    padding-bottom: max(1rem, calc(var(--app-work-pip-pad) + 0.5rem));
+    padding-bottom: 1rem;
     border-top: 0;
     background: none;
     text-align: center;

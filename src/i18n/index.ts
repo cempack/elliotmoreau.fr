@@ -11,7 +11,6 @@ import notfound from "./dict/notfound";
 import dock from "./dict/dock";
 import windowing from "./dict/windowing";
 import system from "./dict/system";
-import story from "./dict/story";
 import type { Locale } from "./config";
 
 const pick = (l: Locale) => ({
@@ -27,7 +26,6 @@ const pick = (l: Locale) => ({
   dock: dock[l],
   windowing: windowing[l],
   system: system[l],
-  story: story[l],
 });
 
 export type Dict = ReturnType<typeof pick>;

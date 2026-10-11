@@ -9,12 +9,6 @@
   --app-writing-side-w: 15rem;
   --app-writing-list-w: 20rem;
   --app-writing-pad: clamp(1.25rem, 5cqi, 3.5rem);
-  /* contract B: how much further up than the window's own Dock clearance
-     a column must end to clear a mini player resting in a bottom corner */
-  --app-writing-pip-pad: max(
-    0px,
-    calc(var(--os-pip-room-bottom, 0px) - max(var(--os-win-dock-room, 0px), var(--dock-h) + 1rem))
-  );
   position: relative;
   display: flex;
   flex-direction: column;
@@ -290,7 +284,7 @@
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
-  scroll-margin: calc(var(--os-win-sticky-top) + 0.5rem) 0 max(calc(var(--dock-h) + 1.5rem), var(--os-pip-room-bottom, 0px));
+  scroll-margin: calc(var(--os-win-sticky-top) + 0.5rem) 0 calc(var(--dock-h) + 1.5rem);
 }
 .app-writing-row::before {
   /* hairline between rows, gone around the selection */
@@ -1157,18 +1151,6 @@
   }
 }
 
-/* room for the mini player when it rests in a bottom corner, over the
-   column on its side (contract B: it publishes how much it takes) */
-@media (min-width: 768px) {
-  :root[data-os-pip="br"] .app-writing-reader {
-    padding-bottom: max(3.5rem, calc(var(--app-writing-pip-pad) + 1rem));
-  }
-  :root[data-os-pip="bl"] .app-writing-listpane,
-  :root[data-os-pip="bl"] .app-writing-side {
-    padding-bottom: max(1.25rem, calc(var(--app-writing-pip-pad) + 1rem));
-  }
-}
-
 /* ── phones: a navigation stack ── */
 @media (max-width: 767px) {
   .app-writing-stack {
@@ -1497,14 +1479,6 @@
     overflow: hidden;
     clip-path: inset(50%);
     white-space: nowrap;
-  }
-
-  /* room for the mini player pill over the foot of either screen */
-  :root[data-os-pip^="b"] .app-writing-reader {
-    padding-bottom: max(2.5rem, calc(var(--app-writing-pip-pad) + 1rem));
-  }
-  :root[data-os-pip^="b"] .app-writing-listpane {
-    padding-bottom: max(1rem, calc(var(--app-writing-pip-pad) + 1rem));
   }
 }
 

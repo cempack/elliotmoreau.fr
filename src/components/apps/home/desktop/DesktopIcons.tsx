@@ -15,7 +15,7 @@ import { usePalette } from "@/components/ui/CommandPalette";
 import { DESKTOP_ICONS, DesktopGlyph, type DesktopIconId } from "./icons";
 import { desktopMemory, type Cell } from "./store";
 import { FLING, band, intersects, pushSample, releaseVelocity, type Rect, type Sample } from "./physics";
-import { PHONE, isPhone, pipRect, watchPip } from "./layout";
+import { PHONE, isPhone } from "./layout";
 
 const ICON = 60;
 /** touch: how long a finger rests on an icon before it lifts to move */
@@ -27,12 +27,11 @@ const clock = () => performance.now();
 
 /* Phones get an iOS home screen: the tab bar already holds Projects,
    Writing, Atlas and Mail, so the grid keeps only what it doesn't: Now,
-   and Terminal and Search, which otherwise hide behind More. (The README
-   would only scroll back up to hello.txt, the first thing on the screen.)
+   and Terminal and Search, which otherwise hide behind More. (No README:
+   hello.txt is already on the screen.)
    Desk-only icons are hidden on phones in CSS and the phone-only ones on
    desks, so the server render is the same for both. */
 type PhoneOnly = "terminal" | "search";
-const PHONE_ORDER: (DesktopIconId | PhoneOnly)[] = ["now", "terminal", "search"];
 const DESK_ONLY = new Set<DesktopIconId>(["work", "writing", "atlas", "contact", "readme"]);
 
 /* ───────────────────────────── grid geometry ─────────────────────────────
@@ -53,8 +52,6 @@ type Metrics = {
   cols: number;
   /** rows that fit above the dock */
   rows: number;
-  /** rows for the default column while no mini player has said where it is */
-  flowRows: number;
 };
 
 function readMetrics(scene: HTMLElement): Metrics {
@@ -71,11 +68,9 @@ function readMetrics(scene: HTMLElement): Metrics {
   const top = px("--app-home-grid-t", 60);
   const left = px("--app-home-grid-l", 16);
   const bottom = px("--app-home-grid-b", 96);
-  const reserve = px("--app-home-grid-reserve", 132);
   const cols = Math.max(1, Math.floor((W - right - left) / cw));
   const rows = Math.max(1, Math.floor((H - top - bottom) / ch));
-  const flowRows = Math.max(1, Math.min(rows, Math.floor((H - top - bottom - reserve) / ch)));
-  return { W, H, cw, ch, right, top, left, cols, rows, flowRows };
+  return { W, H, cw, ch, right, top, left, cols, rows };
 }
 
 const cellPos = (m: Metrics, c: Cell) => ({ x: m.W - m.right - (c.c + 1) * m.cw, y: m.top + c.r * m.ch });
@@ -120,7 +115,7 @@ export type IconsProps = {
   sceneRef: React.RefObject<HTMLElement | null>;
   selected: ReadonlySet<DesktopIconId>;
   setSelected: (s: Set<DesktopIconId>) => void;
-  /** rects (scene coordinates) icons may not land on: widgets, hello.txt, the mini player */
+  /** rects (scene coordinates) icons may not land on: the name, the widgets, hello.txt */
   blockers: () => Rect[];
   onReadme: () => void;
   reduced: boolean;
@@ -137,8 +132,7 @@ export type IconsProps = {
  *   and the icons spring into the nearest free grid cells with the release
  *   velocity, a selection keeping its formation. Touch: hold to lift, then
  *   drag. Reduced motion: no projection, instant snap.
- * - Nothing lands under hello.txt, the widgets or the mini player; when the
- *   mini player is flung onto icons, they step aside.
+ * - Nothing lands on the name, hello.txt or the widgets.
  */
 export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onReadme, reduced, fine }: IconsProps) {
   const { t, path } = useI18n();
@@ -162,10 +156,6 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
   const quietUntil = useRef(0);
   const touchTap = useRef(false);
   const [focusId, setFocusId] = useState<DesktopIconId | null>(null);
-  /** phones: the grid slot left empty because the mini player rests on it */
-  const [gap, setGap] = useState<number | null>(null);
-  /** phones: how far the row was pushed below the fold (px) */
-  const below = useRef(0);
 
   const L = (id: DesktopIconId): Live => {
     let v = live.current[id];
@@ -243,11 +233,10 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
 
   /**
    * The default arrangement, Finder's: down the right edge, then the next
-   * column, stepping around whatever is in the way. Until the mini player
-   * has said where it rests, the column stops short of its usual corner.
+   * column, stepping around whatever is in the way.
    */
   const defaultCells = (m: Metrics, blocked: Set<string>) => {
-    const rows = pipRect() ? m.rows : m.flowRows;
+    const rows = m.rows;
     const out: Cell[] = [];
     for (let c = 0; c < m.cols && out.length < DESKTOP_ICONS.length; c++) {
       for (let r = 0; r < rows && out.length < DESKTOP_ICONS.length; r++) {
@@ -297,7 +286,7 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
     ];
   };
 
-  /** keep every icon on a valid, free cell (mount, resize, the mini player moving) */
+  /** keep every icon on a valid, free cell (mount, resize) */
   const reflow = (animateMoves: boolean) => {
     const scene = sceneRef.current;
     if (!scene || scene.clientWidth === 0 || isPhone()) return;
@@ -345,96 +334,12 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
       raf = requestAnimationFrame(() => reflow(true));
     });
     ro.observe(scene);
-    // the mini player arrives, leaves, is flung to a corner or resized:
-    // whatever it now covers steps aside
-    const unwatch = watchPip(() => reflow(true));
     return () => {
       ro.disconnect();
-      unwatch();
       cancelAnimationFrame(raf);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reduced]);
-
-  /* phones: a row the tab bar would cut in half on the first screen goes
-     below the fold instead (it reads as "scroll for more", not broken);
-     and the grid slot under the mini player stays empty, so it never sits
-     on an icon on the first screen (the rest scrolls under it). Measured
-     on mount and when the grid or the player changes, never on a bare
-     viewport resize (a mobile URL bar collapsing must not move it). */
-  useEffect(() => {
-    const fold = (grid: HTMLElement) => {
-      let shift = 0;
-      if (isPhone() && window.innerHeight > window.innerWidth) {
-        const bar = document.querySelector<HTMLElement>(".os-tabbar")?.getBoundingClientRect();
-        const line = bar && bar.height ? bar.top : window.innerHeight;
-        const g = grid.getBoundingClientRect();
-        const top0 = g.top + window.scrollY - below.current;
-        if (top0 < line && top0 + g.height > line - 6) shift = Math.ceil(window.innerHeight + 16 - top0);
-      }
-      if (shift === below.current) return;
-      below.current = shift;
-      grid.style.setProperty("--app-home-below", `${shift}px`);
-      if (shift) grid.dataset.below = "";
-      else delete grid.dataset.below;
-    };
-    const measure = () => {
-      const grid = gridRef.current;
-      if (grid) fold(grid);
-      const pip = isPhone() ? pipRect() : null;
-      if (!grid || !pip) {
-        setGap(null);
-        return;
-      }
-      const g = grid.getBoundingClientRect();
-      if (!g.width) return;
-      const cs = getComputedStyle(grid);
-      const colGap = parseFloat(cs.columnGap) || 0;
-      const rowGap = parseFloat(cs.rowGap) || 0;
-      const sample = grid.querySelector<HTMLElement>('[data-desktop-icon="now"]');
-      const rh = sample?.offsetHeight ?? 96;
-      const cw = (g.width - colGap * 3) / 4;
-      // the grid where it rests at the top of the page, against the
-      // player's resting place (fixed, so viewport = page at scroll 0)
-      const top0 = g.top + window.scrollY;
-      let hit: number | null = null;
-      for (let i = 0; i < PHONE_ORDER.length; i++) {
-        const col = i % 4;
-        const row = Math.floor(i / 4);
-        const tile = {
-          left: g.left + col * (cw + colGap) + 6,
-          top: top0 + row * (rh + rowGap),
-          right: g.left + col * (cw + colGap) + cw - 6,
-          bottom: top0 + row * (rh + rowGap) + rh,
-        };
-        if (intersects(tile, pip)) {
-          hit = i;
-          break;
-        }
-      }
-      setGap(hit);
-    };
-    let raf = requestAnimationFrame(measure);
-    const again = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(measure);
-    };
-    // the grid's own size, and everything above it (the scene grows when
-    // the web fonts land and hello.txt rewraps)
-    const ro = new ResizeObserver(again);
-    if (gridRef.current) ro.observe(gridRef.current);
-    if (sceneRef.current) ro.observe(sceneRef.current);
-    let alive = true;
-    document.fonts?.ready.then(() => alive && again());
-    const unwatch = watchPip(measure);
-    return () => {
-      alive = false;
-      cancelAnimationFrame(raf);
-      ro.disconnect();
-      unwatch();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   useEffect(() => {
     const all = live.current;
@@ -498,7 +403,7 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
 
   const onPointerDown = (id: DesktopIconId) => (e: React.PointerEvent<HTMLElement>) => {
     touchTap.current = e.pointerType !== "mouse";
-    if (isPhone()) return; // phones: a tap opens, the page keeps scrolling
+    if (isPhone()) return; // phones: a tap opens
     if (e.pointerType === "touch") {
       // rest a finger on an icon and it lifts, ready to move (iPad); a tap
       // still opens and a swipe still scrolls
@@ -747,7 +652,6 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
   // else the first); phones: every icon on the home screen is a stop
   const firstSelected = DESKTOP_ICONS.find((i) => selected.has(i));
   const tabStop = focusId ?? firstSelected ?? DESKTOP_ICONS[0];
-  const gapBefore = gap == null ? null : PHONE_ORDER[gap];
   const hint = fine ? t.home.icons.hint : phone ? t.home.icons.hintPhone : t.home.icons.hintTouch;
 
   const phoneIcon = (id: PhoneOnly) => (
@@ -766,9 +670,6 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
       <span className="app-home-icon-label">{id === "search" ? t.home.icons.search : t.shell.apps.terminal}</span>
     </button>
   );
-
-  const spacer = (id: string) =>
-    gapBefore === id ? <span key="gap" className="app-home-icon-gap" aria-hidden /> : null;
 
   return (
     <div ref={gridRef} className="app-home-icons" role="group" aria-label={t.home.icons.label}>
@@ -828,11 +729,7 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
             </a>
           );
         // phones: Terminal and Search follow Now
-        const run =
-          id === "now"
-            ? [spacer("now"), node, spacer("terminal"), phoneIcon("terminal"), spacer("search"), phoneIcon("search")]
-            : [spacer(id), node];
-        return run.filter((n) => n !== null);
+        return id === "now" ? [node, phoneIcon("terminal"), phoneIcon("search")] : [node];
       })}
     </div>
   );

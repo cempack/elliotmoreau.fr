@@ -1,6 +1,6 @@
 import type { Cells } from "@/components/glyphs";
 
-/** 7×7 pixel glyphs for the window chrome and the mini player. */
+/** 7×7 pixel glyphs for the window chrome. */
 export const G_CLOSE: Cells = [
   [1, 1], [2, 2], [3, 3], [4, 4], [5, 5],
   [5, 1], [4, 2], [2, 4], [1, 5],

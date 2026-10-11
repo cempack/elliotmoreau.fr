@@ -4,17 +4,14 @@ import Link from "next/link";
 import { useEffect, useImperativeHandle, useRef, useState } from "react";
 import { animate, m, useMotionValue, useMotionValueEvent, type MotionStyle } from "motion/react";
 import { useI18n } from "@/i18n/client";
-import { useHydrated } from "@/hooks/env";
-import { timeAgo } from "@/lib/format";
 import { PLACES } from "@/lib/places";
 import { spring, springFrom } from "@/lib/motion";
 import { useSound } from "@/lib/sound";
 import { PixelGlyph, type Cells } from "@/components/glyphs";
-import { useSiteData } from "@/components/os/SiteData";
-import { G_CLOSE, G_EXTERNAL, G_MIN } from "@/components/os/window/glyphs";
+import { G_CLOSE, G_MIN } from "@/components/os/window/glyphs";
 import { Glass } from "@/components/os/Glass";
 import { FLING, INTERACTIVE, band, intersects, pushSample, releaseVelocity, type Rect, type Sample } from "./physics";
-import { G_COMMIT, G_PEN, G_PLANE } from "./icons";
+import { G_PLANE } from "./icons";
 import { isPhone, menubarPx } from "./layout";
 
 const fill = (s: string, v: Record<string, string | number>) => s.replace(/\{(\w+)\}/g, (_, k: string) => String(v[k] ?? ""));
@@ -259,13 +256,9 @@ export function HelloWindow({
     const dock = dockRaw.endsWith("rem") ? parseFloat(dockRaw) * rem : parseFloat(dockRaw) || 76;
     const homeL = r.left - x.get();
     const homeT = r.top - y.get();
-    // the live name's field: the part of its box inside its band
-    const hero = document.querySelector(".app-home-hero")?.getBoundingClientRect();
-    const wrap = document.querySelector(".app-home-hero-wrap")?.getBoundingClientRect();
-    const field =
-      hero && wrap && hero.width && wrap.height
-        ? { left: Math.max(hero.left, wrap.left), top: Math.max(hero.top, wrap.top) + 8, right: Math.min(hero.right, wrap.right), bottom: Math.min(hero.bottom, wrap.bottom) - 8 }
-        : null;
+    // the live name's box
+    const mark = document.querySelector(".app-home-mark")?.getBoundingClientRect();
+    const field = mark && mark.width ? { left: mark.left, top: mark.top + 8, right: mark.right, bottom: mark.bottom - 8 } : null;
     lift.current = { token: lift.current.token + 1, home: { left: homeL, top: homeT, right: homeL + r.width, bottom: homeT + r.height }, field };
     el.dataset.lifted = "";
     const m8 = 8;
@@ -390,72 +383,30 @@ export function HelloWindow({
 function StatusChips({ label, lang }: { label: string; lang: "en" | "fr" }) {
   const { t, path } = useI18n();
   const h = t.home.hello;
-  const { activity, posts } = useSiteData();
-  const hydrated = useHydrated();
-  const post = posts[0];
-
-  // the menu bar already carries the clock and the song, and the mini
-  // player the song again: hello.txt keeps only what is nowhere else on
-  // this screen (the last push, the travels). The latest post rides along
-  // on desks too narrow for its widget, the places on desks wide enough.
-  // A row left with nothing to show hides itself (CSS).
+  if (BEEN === 0) return null;
+  // the clock, the last push and the latest post are widgets beside it;
+  // the travels are nowhere else on this screen
   return (
     <ul className="app-home-chips" aria-label={label}>
-      {activity && (
-        <li>
-          <a
-            href={activity.repoUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="app-home-chip app-home-chip--link"
-            aria-label={`${fill(h.openRepo, { repo: activity.repo })}, ${fill(h.pushed, {
-              ago: hydrated ? timeAgo(activity.createdAt, lang) : "",
-            })}`}
-          >
-            <PixelGlyph cells={G_COMMIT} size={11} className="app-home-chip-commit" />
-            <span className="app-home-chip-v">{activity.repo}</span>
-            <span className="app-home-chip-k" suppressHydrationWarning>
-              {hydrated ? fill(h.pushed, { ago: timeAgo(activity.createdAt, lang) }) : " "}
+      <li>
+        <Link
+          href={path("/atlas")}
+          transitionTypes={["app-open"]}
+          className="app-home-chip app-home-chip--link"
+          aria-label={fill(NEXT ? h.openAtlasNext : h.openAtlas, { n: BEEN, next: NEXT?.name[lang] ?? "" })}
+        >
+          <PixelGlyph cells={G_PLANE} size={11} className="app-home-chip-plane" />
+          <span className="app-home-chip-v">{fill(h.places, { n: BEEN })}</span>
+          {NEXT && (
+            <span className="app-home-chip-k">
+              <span className="app-home-chip-arrow" aria-hidden>
+                →
+              </span>{" "}
+              {NEXT.name[lang]}
             </span>
-            <PixelGlyph cells={G_EXTERNAL} size={8} className="app-home-chip-ext" />
-          </a>
-        </li>
-      )}
-      {post && (
-        <li className="app-home-chip-slot--post">
-          <Link
-            href={`${path("/writing")}?p=${encodeURIComponent(post.slug)}`}
-            transitionTypes={["app-open"]}
-            className="app-home-chip app-home-chip--link"
-            aria-label={fill(h.openPost, { title: post.title, ago: hydrated ? timeAgo(post.published_at, lang) : "" })}
-          >
-            <PixelGlyph cells={G_PEN} size={11} className="app-home-chip-note" />
-            <span className="app-home-chip-k">{h.post}</span>
-            <span className="app-home-chip-v">{post.title}</span>
-          </Link>
-        </li>
-      )}
-      {BEEN > 0 && (
-        <li className="app-home-chip-slot--places">
-          <Link
-            href={path("/atlas")}
-            transitionTypes={["app-open"]}
-            className="app-home-chip app-home-chip--link"
-            aria-label={fill(NEXT ? h.openAtlasNext : h.openAtlas, { n: BEEN, next: NEXT?.name[lang] ?? "" })}
-          >
-            <PixelGlyph cells={G_PLANE} size={11} className="app-home-chip-plane" />
-            <span className="app-home-chip-v">{fill(h.places, { n: BEEN })}</span>
-            {NEXT && (
-              <span className="app-home-chip-k">
-                <span className="app-home-chip-arrow" aria-hidden>
-                  →
-                </span>{" "}
-                {NEXT.name[lang]}
-              </span>
-            )}
-          </Link>
-        </li>
-      )}
+          )}
+        </Link>
+      </li>
     </ul>
   );
 }

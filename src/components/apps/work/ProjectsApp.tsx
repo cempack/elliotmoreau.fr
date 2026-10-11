@@ -176,7 +176,6 @@ function WorkContent() {
         </LayoutGroup>
       )}
 
-      <div className="app-work-pip-room" aria-hidden />
       <StatusBar shown={visible.length} total={w.repos.length} stars={w.stars} source={w.source} />
 
       {w.ql?.mode === "panel" && w.qlRepo && (

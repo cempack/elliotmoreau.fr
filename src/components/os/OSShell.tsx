@@ -12,7 +12,6 @@ import { useSpotlightCommands } from "./commands";
 import { Wallpaper } from "./Wallpaper";
 import { MenuBar } from "./MenuBar";
 import { Dock } from "./Dock";
-import { MiniPlayer } from "./MiniPlayer";
 import { Intro } from "./Intro";
 
 function Spotlight({ children }: { children: React.ReactNode }) {
@@ -28,7 +27,7 @@ function Spotlight({ children }: { children: React.ReactNode }) {
 /**
  * emOS: the persistent chrome around every app. Order matters for
  * stacking: wallpaper (z0) → app content → dock/menu bar (z50) →
- * mini player → terminal → intro (z100) → cursor.
+ * terminal → intro (z100) → cursor.
  */
 export function OSShell({ data, children }: { data: SiteData; children: React.ReactNode }) {
   return (
@@ -41,7 +40,6 @@ export function OSShell({ data, children }: { data: SiteData; children: React.Re
             <MenuBar />
             <div className="relative z-10 flex min-h-svh flex-col overflow-x-clip">{children}</div>
             <Dock />
-            <MiniPlayer />
             <Terminal />
             <Intro />
             <Cursor variant="glass" />

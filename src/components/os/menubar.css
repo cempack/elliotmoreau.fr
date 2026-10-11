@@ -34,7 +34,7 @@
   user-select: none;
   -webkit-user-select: none;
 }
-/* an open panel lifts the bar over the mini player and terminal */
+/* an open panel lifts the bar over the terminal */
 .os-menubar[data-open] {
   z-index: 75;
 }
@@ -1271,7 +1271,6 @@ html:active-view-transition .os-menubar {
 .os-toast-stack {
   position: fixed;
   top: calc(var(--menubar-h) + env(safe-area-inset-top) + 10px);
-  /* the same right edge as the mini player's corner */
   right: calc(1rem + env(safe-area-inset-right));
   z-index: 80;
   display: flex;
@@ -1385,19 +1384,6 @@ html:active-view-transition .os-menubar {
     width: calc(100vw - 16px);
   }
 }
-/* the mini player owns its top corner: banners stack just below it (the
-   player publishes its corner and resting bottom edge on <html>) */
-@media (min-width: 768px) {
-  html[data-pip-corner="tr"] .os-toast-stack {
-    top: calc(var(--os-pip-bottom, 0px) + 10px);
-  }
-}
-@media (max-width: 767px) {
-  html:is([data-pip-corner="tr"], [data-pip-corner="tl"]) .os-toast-stack {
-    top: calc(var(--os-pip-bottom, 0px) + 8px);
-  }
-}
-
 /* reduced transparency / more contrast: solid surfaces, visible edges */
 @media (prefers-reduced-transparency: reduce) {
   .os-menubar-bg {

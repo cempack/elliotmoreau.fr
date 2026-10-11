@@ -8,7 +8,6 @@ import { nearest, project, rubberband, spring } from "@/lib/motion";
 import { useReduced } from "@/hooks/env";
 import { Glass } from "@/components/os/Glass";
 import type { Place } from "@/lib/places";
-import { PIP_ATTRS, readPip } from "../pip";
 
 export type Detent = "peek" | "half" | "full";
 
@@ -37,20 +36,6 @@ function offsetIn(el: HTMLElement, root: HTMLElement) {
   return n === root ? y : NaN;
 }
 
-/** How high above the stage's bottom edge the sheet must rest to stay
-    clear of a mini player in a bottom corner it would otherwise sit under
-    (0: none, it is up top, or it is beside the sheet). Glass never stacks
-    on glass: the sheet rests above the pill, as a sheet rests above the
-    mini player in Music. Reads the resting rect the shell publishes on
-    <html> (contract B: data-os-pip, --os-pip-x/y/w/h). */
-function pipClearance(stage: HTMLElement, clip: HTMLElement) {
-  const pip = readPip();
-  if (!pip || pip.corner[0] !== "b") return 0;
-  const c = clip.getBoundingClientRect();
-  if (pip.left >= c.right - 1 || pip.right <= c.left + 1) return 0;
-  return Math.max(0, Math.round(stage.getBoundingClientRect().bottom - pip.top + 10));
-}
-
 /** the half detent ends this far under its anchor (the fade takes most) */
 const HALF_PAD = 22;
 
@@ -74,8 +59,7 @@ export type SheetMetrics = {
  * Only once it has settled at full does the content scroll natively;
  * pulling down from its top then hands the gesture back to the sheet.
  * Tap or arrow keys on the grabber step through detents; Esc collapses
- * from full while focus is inside it. A mini player resting in a bottom
- * corner under it lifts its resting edge above the pill. Pulled past full
+ * from full while focus is inside it. Pulled past full
  * it stretches (the glass reaches down behind it, so no gap opens).
  * `beside` (landscape tablets): it floats next to the globe, covers
  * nothing, and so rests fully open like an iPad sidebar.
@@ -219,16 +203,7 @@ export function MapSheet({
     const cardEl = cardRef.current;
     if (!sheet || !cardEl) return;
     const clip = sheet.parentElement as HTMLElement;
-    const stage = clip.parentElement as HTMLElement;
-    let clear = -1;
     const measure = () => {
-      // first where it rests: above a mini player in a bottom corner
-      const c = pipClearance(stage, clip);
-      if (c !== clear) {
-        clear = c;
-        if (c) stage.style.setProperty("--app-atlas-pip-clear", `${c}px`);
-        else stage.style.removeProperty("--app-atlas-pip-clear");
-      }
       const H = sheet.offsetHeight;
       const css = getComputedStyle(sheet);
       const peek = parseFloat(css.getPropertyValue("--app-atlas-peek")) || 136;
@@ -288,14 +263,7 @@ export function MapSheet({
     measure();
     ro.observe(sheet);
     ro.observe(cardEl);
-    // the mini player moved corners, mounted, hid or changed size (it
-    // republishes its vars on <html> each time)
-    const mo = new MutationObserver(measure);
-    mo.observe(document.documentElement, { attributes: true, attributeFilter: PIP_ATTRS });
-    return () => {
-      ro.disconnect();
-      mo.disconnect();
-    };
+    return () => ro.disconnect();
   }, [beside, metrics, reduced, setRest, y, yFor]);
 
   // a new place: show its card

@@ -14,9 +14,8 @@
   display: grid;
   flex: 1;
   min-height: 100svh;
-  /* the end clears the Dock, and a mini player resting in a bottom
-     corner (contract B: the room it takes, Dock included) */
-  --nf-foot: max(calc(var(--dock-h) + 1.5rem), calc(var(--os-pip-room-bottom, 0px) + 0.75rem));
+  /* the end clears the Dock */
+  --nf-foot: calc(var(--dock-h) + 1.5rem);
   padding: calc(var(--menubar-h) + 1.5rem) 1rem var(--nf-foot);
   overflow: clip;
 }
@@ -579,13 +578,12 @@ html[data-sky="day"] .app-nf-alert .os-glass {
   }
 }
 /* short phones (Safari with its toolbars): everything tightens so the
-   alert, buttons included, clears both the tab bar and the mini player's
-   pill parked over it (≈3rem tall, 0.75rem above the bar) */
+   alert, buttons included, clears the tab bar */
 @media (max-width: 767px) and (max-height: 760px) {
   .app-nf {
     --nf-cell: calc((100vw - 1.5rem) / 40);
     padding-top: calc(var(--menubar-h) + 0.25rem);
-    --nf-foot: max(calc(var(--dock-h) + 1rem), calc(var(--os-pip-room-bottom, 0px) + 0.5rem));
+    --nf-foot: calc(var(--dock-h) + 1rem);
     row-gap: 0;
   }
   /* the panel's unlit border rows go under the menu bar and the alert */

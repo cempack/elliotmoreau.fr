@@ -44,8 +44,7 @@ function dockPoint() {
 
 /**
  * First placement: centred over the dock's Terminal icon, resting in the
- * free band between menu bar and dock (a touch low, nearer its icon), so
- * it clears the mini player in the corner.
+ * free band between menu bar and dock, a touch low, nearer its icon.
  */
 function defaultRect(): WinRect {
   const w = Math.min(720, vw() - 48);
