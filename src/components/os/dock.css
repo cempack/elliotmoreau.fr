@@ -49,8 +49,8 @@
   --os-glass-tint: rgb(13 16 14 / 0.84);
   --os-glass-border: rgb(196 206 194 / 0.3);
 }
-.os-dock-glass::after {
-  box-shadow: inset 0 0 0 2px var(--os-glass-border);
+.os-dock-glass {
+  --os-glass-rim: 2px;
 }
 /* during a view transition the dock is captured on its own and its
    backdrop goes blank: swap in a solid twin of the glass for those
@@ -204,36 +204,30 @@ html:active-view-transition .os-dock-solid {
 
 /* ── phone tab bar ────────────────────────────────────────────────── */
 
-/* a floating Liquid Glass capsule, like the desktop shelf (and iOS 26):
-   content scrolls under and around it. --dock-h (globals.css) is its
-   height plus the gap under it. */
+/* a solid panel along the bottom edge, like a bar in Hyprland: icons
+   only (each link keeps its name for assistive tech), the current app
+   marked by a moss bar that slides between them. Nothing scrolls under
+   it: windows end where it begins. --dock-h (globals.css) is its height. */
 .os-tabbar {
   display: none;
   position: fixed;
   z-index: 50;
-  left: max(10px, env(safe-area-inset-left));
-  right: max(10px, env(safe-area-inset-right));
-  bottom: var(--os-tabbar-gap);
-  border-radius: 30px;
-  box-shadow:
-    0 18px 40px -16px rgb(0 0 0 / 0.7),
-    0 2px 8px -3px rgb(0 0 0 / 0.45);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0 max(4px, env(safe-area-inset-right)) env(safe-area-inset-bottom, 0px) max(4px, env(safe-area-inset-left));
+  background: var(--color-ink-950);
+  box-shadow: inset 0 2px 0 rgba(196, 206, 194, 0.18);
   transition: transform 0.3s var(--ease-out-quint);
-}
-/* content scrolls right under the bar: a denser material than the shelf */
-.os-tabbar-glass {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  --os-glass-tint: rgb(14 17 15 / 0.62);
-  --os-glass-frost: blur(12px) blur(12px);
 }
 .os-tabbar-list {
   position: relative;
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  height: 60px;
-  padding: 5px;
+  height: 52px;
+  margin: 0;
+  padding: 2px 0 0;
+  list-style: none;
 }
 .os-tabbar-item {
   display: flex;
@@ -244,117 +238,46 @@ html:active-view-transition .os-dock-solid {
   flex: 1;
   min-width: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1px;
-  border-radius: 999px;
-  outline-offset: -2px;
+  border-radius: var(--radius-control);
+  outline-offset: -4px;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
   user-select: none;
 }
-/* the current tab sits under a soft glass lens that slides between tabs,
-   concentric with the capsule */
+/* the current app: a short moss bar under its icon */
 .os-tabbar-lens {
   position: absolute;
-  inset: 0;
-  border-radius: 999px;
-  background: rgb(255 255 255 / 0.1);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.16),
-    inset 0 0 0 1px rgb(255 255 255 / 0.06);
+  bottom: 5px;
+  left: 50%;
+  width: 18px;
+  height: 2px;
+  margin-left: -9px;
+  background: var(--color-signal);
 }
-.os-tabbar-icon,
-.os-tabbar-label {
+.os-tabbar-icon {
   position: relative;
 }
 .os-tabbar-icon,
 .os-tabbar-press {
   display: block;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
 }
 .os-tabbar-press {
-  transition: transform 0.32s var(--ease-spring);
+  opacity: 0.72;
+  transition:
+    transform 0.32s var(--ease-spring),
+    opacity 0.2s ease-out;
+}
+.os-tabbar-link[aria-current="page"] .os-tabbar-press {
+  opacity: 1;
 }
 .os-tabbar-link[data-pressed] .os-tabbar-press {
   transform: scale(0.86);
   transition-duration: 0.06s;
-}
-.os-tabbar-label {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font: 500 12px/14px var(--font-sans);
-  letter-spacing: 0.004em;
-  color: var(--color-label-2);
-  transition: color 0.2s ease-out;
-}
-.os-tabbar-link[aria-current="page"] .os-tabbar-label {
-  color: var(--color-label);
-  font-weight: 600;
-}
-
-/* More sheet */
-.os-more {
-  --sheet-bg: var(--glass-tint-thick);
-}
-.os-more-title {
-  margin: 4px 0 14px;
-  font: 600 1.25rem/1.2 var(--font-display);
-  letter-spacing: -0.018em;
-  color: var(--color-label);
-}
-.os-more-list {
-  display: grid;
-  gap: 8px;
-}
-.os-more-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  width: 100%;
-  min-height: 68px;
-  padding: 11px 16px 11px 12px;
-  border-radius: 20px;
-  text-align: left;
-  color: var(--color-label);
-  background: rgb(255 255 255 / 0.04);
-  box-shadow: inset 0 0 0 1px var(--hairline);
-  transition:
-    transform 0.32s var(--ease-spring),
-    background-color 0.2s ease-out;
-  -webkit-tap-highlight-color: transparent;
-}
-.os-more-row:active {
-  transform: scale(0.98);
-  background: rgb(255 255 255 / 0.08);
-  transition-duration: 0.06s;
-}
-.os-more-row[aria-current="page"],
-.os-more-row[aria-pressed="true"] {
-  box-shadow: inset 0 0 0 1px rgb(176 204 134 / 0.4);
-}
-.os-more-text {
-  flex: 1;
-  min-width: 0;
-  display: grid;
-  gap: 3px;
-}
-.os-more-name {
-  font: 600 17px/1.25 var(--font-sans);
-  letter-spacing: -0.012em;
-}
-.os-more-hint {
-  font: 400 13px/1.35 var(--font-sans);
-  color: var(--color-label-3);
-}
-.os-more-chev {
-  flex: none;
-  color: var(--color-label-3);
 }
 
 /* ── breakpoint: the dock becomes the tab bar ─────────────────────── */
@@ -407,30 +330,15 @@ html:active-view-transition .os-dock-solid {
   }
 }
 @media (max-width: 767px) and (max-height: 500px) {
-  .os-tabbar {
-    left: 0;
-    right: 0;
-    width: min(calc(100% - 20px - env(safe-area-inset-left) - env(safe-area-inset-right)), 37.5rem);
-    margin-inline: auto;
-    border-radius: 25px;
-  }
   .os-tabbar-list {
-    height: 50px;
-    padding: 4px;
+    height: 44px;
+    max-width: 37.5rem;
+    margin-inline: auto;
   }
-  .os-tabbar-link {
-    flex-direction: row;
-    gap: 6px;
-    padding-inline: 6px;
-  }
-  .os-tabbar-icon {
-    flex: none;
-  }
-  .os-tabbar-label {
-    min-width: 0;
-  }
-  ::view-transition-group(os-tabbar) {
-    border-radius: 25px;
+  .os-tabbar-icon,
+  .os-tabbar-press {
+    width: 26px;
+    height: 26px;
   }
 }
 
@@ -460,10 +368,6 @@ html:active-view-transition .os-tabbar {
   z-index: 50;
   animation: none;
 }
-::view-transition-group(os-tabbar) {
-  border-radius: 30px;
-  backdrop-filter: blur(12px) blur(12px) saturate(1.8);
-}
 ::view-transition-new(os-dock),
 ::view-transition-new(os-tabbar) {
   animation: none;
@@ -471,6 +375,74 @@ html:active-view-transition .os-tabbar {
 ::view-transition-old(os-dock),
 ::view-transition-old(os-tabbar) {
   display: none;
+}
+
+/* ── More (phones): a solid sheet, readable over anything ──────────── */
+
+.em-sheet.os-more {
+  --sheet-radius: var(--radius-window);
+  background: var(--color-ink-900);
+  border: 2px solid rgba(196, 206, 194, 0.3);
+  border-bottom: 0;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.os-more .em-sheet-content {
+  padding: 4px 12px calc(16px + env(safe-area-inset-bottom));
+}
+.os-more-title {
+  margin: 0 8px 8px;
+  color: var(--color-label-3);
+  font: 500 12px/1 var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.os-more-list {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.os-more-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 64px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--radius-card);
+  background: transparent;
+  color: var(--color-label);
+  font: inherit;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.15s;
+}
+.os-more-row:active,
+.os-more-row[aria-current="page"] {
+  background: rgba(196, 206, 194, 0.08);
+}
+.os-more-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.os-more-name {
+  font-size: 1rem;
+  font-weight: 600;
+}
+.os-more-hint {
+  overflow: hidden;
+  color: var(--color-label-3);
+  font-size: 0.8125rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.os-more-chev {
+  color: var(--color-label-3);
 }
 
 /* ── preferences ──────────────────────────────────────────────────── */
@@ -496,14 +468,10 @@ html:active-view-transition .os-tabbar {
     background: rgb(21 25 22 / 0.97);
     backdrop-filter: none;
   }
-  ::view-transition-group(os-tabbar) {
-    backdrop-filter: none;
-  }
 }
 
 @media (prefers-contrast: more) {
   .os-dock-tip,
-  .os-tabbar-lens,
   .os-more-row {
     box-shadow: inset 0 0 0 1px var(--hairline);
   }

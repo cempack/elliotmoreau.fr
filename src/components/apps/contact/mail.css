@@ -460,7 +460,7 @@
 /* keyboard focus and scrollIntoView keep fields clear of the title bar and the Dock */
 .app-contact-card :is(input, textarea, button, a) {
   scroll-margin-top: calc(var(--menubar-h) + 5rem);
-  scroll-margin-bottom: calc(var(--dock-h) + 1.5rem);
+  scroll-margin-bottom: 1.5rem;
 }
 .app-contact-row {
   display: flex;
@@ -658,7 +658,7 @@
   .app-contact-foot {
     --app-contact-bar: rgb(14, 17, 15);
     position: sticky;
-    bottom: calc(var(--dock-h) + 0.75rem + env(safe-area-inset-bottom));
+    bottom: 0.75rem;
     z-index: 2;
     transition: background-color 0.25s var(--ease-out-quint);
   }
@@ -679,7 +679,7 @@
   }
   .app-contact-foot::after {
     top: 100%;
-    height: calc(var(--dock-h) + 0.75rem + env(safe-area-inset-bottom) + 2px);
+    height: calc(0.75rem + 2px);
     background: var(--app-contact-bar);
     box-shadow:
       inset 1px 0 0 var(--hairline),

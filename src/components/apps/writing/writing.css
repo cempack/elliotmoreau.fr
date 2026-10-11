@@ -350,7 +350,7 @@
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
-  scroll-margin: calc(var(--os-win-sticky-top) + 0.5rem) 0 calc(var(--dock-h) + 1.5rem);
+  scroll-margin: calc(var(--os-win-sticky-top) + 0.5rem) 0 1.5rem;
 }
 .app-writing-row::before {
   /* hairline between rows, gone around the selection */

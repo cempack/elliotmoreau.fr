@@ -35,6 +35,10 @@
   background: #050706;
   animation: os-boot-out 340ms var(--ease-in-quint) 3460ms both;
 }
+/* once the lock has taken over, the faded boot screen never takes a tap */
+.os-intro:is([data-phase="lock"], [data-phase="out"]) .os-intro-boot {
+  pointer-events: none;
+}
 .os-intro[data-skip] .os-intro-boot {
   animation: os-boot-out 240ms var(--ease-out-quint) both;
 }
@@ -211,10 +215,13 @@
 .os-lock-veil {
   position: absolute;
   inset: 0;
+  /* dark enough on its own that nothing behind reads through, even where
+     the blur is weak; one blur radius, which every engine renders */
   background:
-    radial-gradient(120% 70% at 50% 30%, rgba(6, 9, 8, 0.35), rgba(6, 9, 8, 0.7)),
-    rgba(8, 11, 10, 0.35);
-  backdrop-filter: blur(14px) blur(10px) saturate(1.1);
+    radial-gradient(120% 70% at 50% 30%, rgba(6, 9, 8, 0.5), rgba(6, 9, 8, 0.82)),
+    rgba(8, 11, 10, 0.5);
+  backdrop-filter: blur(22px) saturate(1.1);
+  -webkit-backdrop-filter: blur(22px) saturate(1.1);
   animation: os-lock-in 620ms var(--ease-out-quint) 3700ms both;
 }
 .os-intro[data-skip] .os-lock-veil,
@@ -523,4 +530,9 @@
   }
 }
 
-
+/* while locked, the top bar and the tab bar step away: the lock is the
+   whole screen (they stay inert underneath anyway) */
+html:not([data-intro="done"]):has(.os-intro:not([data-phase="out"])) :is(.os-menubar, .os-tabbar, .os-dock),
+html:has(.os-intro[data-mode="relock"]:not([data-phase="out"])) :is(.os-menubar, .os-tabbar, .os-dock) {
+  visibility: hidden;
+}

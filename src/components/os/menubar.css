@@ -472,9 +472,8 @@ html:active-view-transition .os-menubar {
    text keeps its contrast even over the bright day horizon */
 .os-menubar-panel.glass-thick {
   background: rgba(12, 15, 13, 0.94);
-  box-shadow:
-    inset 0 0 0 2px rgba(196, 206, 194, 0.3),
-    0 30px 70px -30px rgba(0, 0, 0, 0.8);
+  border: 2px solid rgba(196, 206, 194, 0.3);
+  box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.8);
 }
 .os-menubar-panel:focus-visible,
 .os-toast:focus-visible {

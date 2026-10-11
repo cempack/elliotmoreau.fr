@@ -11,7 +11,6 @@ import { usePalette } from "@/components/ui/CommandPalette";
 import { Sheet, useSheetDismiss } from "@/components/ui/Sheet";
 import { APPS, appForPath, type AppId } from "../apps";
 import { AppIcon, type IconId } from "../icons";
-import { Glass } from "../Glass";
 import { useTerminal } from "../Terminal";
 import { bounce, isPlainClick, markLaunch, pressHandlers, scrollToTop } from "./launch";
 
@@ -38,7 +37,8 @@ function TabFace({ app, label }: { app: IconId; label: string }) {
           <AppIcon app={app} size={TAB_ICON} />
         </span>
       </span>
-      <span className="os-tabbar-label">{label}</span>
+      {/* icons only on the bar; the name stays for assistive tech */}
+      <span className="sr-only">{label}</span>
     </>
   );
 }
@@ -52,9 +52,9 @@ function Chevron() {
 }
 
 /**
- * The phone dock (<768px): a floating Liquid Glass tab bar capsule over
- * the home indicator. Five apps get a tab, with labels and a lens that
- * slides to the current one; More opens a flingable sheet with Now,
+ * The phone dock (<768px): a solid bar along the bottom edge. Five apps
+ * get a tab (icons only, each with its name for assistive tech) and a moss
+ * bar slides to the current one; More opens a flingable sheet with Now,
  * Terminal and Search.
  */
 export function MobileTabBar() {
@@ -81,7 +81,6 @@ export function MobileTabBar() {
   return (
     <>
       <nav aria-label={t.dock.label} className="os-tabbar" data-os-dock="">
-        <Glass thickness="regular" className="os-tabbar-glass" aria-hidden />
         <ul className="os-tabbar-list">
           {PRIMARY.map((id) => {
             const app = APPS.find((a) => a.id === id)!;

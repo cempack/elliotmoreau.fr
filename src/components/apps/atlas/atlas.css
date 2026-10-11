@@ -1146,10 +1146,8 @@
 }
 @media (max-width: 767px) {
   .app-atlas {
-    --app-atlas-sheet-base: calc(var(--dock-h) + 8px);
-    /* the window pads its content for the tab bar; the stage already
-       stops at the screen's bottom edge, so take that room back */
-    margin-bottom: calc(-1 * (var(--dock-h) + env(safe-area-inset-bottom) + 1rem));
+    /* the window already ends above the tab bar */
+    --app-atlas-sheet-base: 8px;
   }
 }
 @media (min-width: 768px) and (max-width: 1199px) and (min-aspect-ratio: 5/4) {

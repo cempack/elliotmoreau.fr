@@ -697,7 +697,7 @@
   /* the band revealItem keeps the selection in: below the sticky title bar,
      above the floating status bar and the Dock */
   scroll-margin-top: calc(var(--os-win-sticky-top, 6rem) + 1rem);
-  scroll-margin-bottom: calc(var(--os-win-dock-room, var(--dock-h)) + var(--app-work-status-h) + 0.75rem);
+  scroll-margin-bottom: calc(var(--app-work-status-h) + 0.75rem);
 }
 @media (min-width: 768px) {
   .app-work-coll[data-view="list"] .app-work-item {
@@ -707,7 +707,7 @@
 @media (max-width: 767px) {
   .app-work-item {
     scroll-margin-top: calc(var(--os-win-sticky-top, 6rem) + 4.75rem);
-    scroll-margin-bottom: calc(var(--dock-h) + 1rem);
+    scroll-margin-bottom: 1rem;
   }
 }
 .app-work-item > * {

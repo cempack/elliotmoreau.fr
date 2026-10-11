@@ -106,11 +106,18 @@ function Gate({ mode, onDone }: { mode: Mode; onDone: () => void }) {
   const [skipped, setSkipped] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
-  // the boot runs on the clock of its own keyframes; any input skips it
+  // the boot runs on the clock of its own keyframes: the lock takes over
+  // when the boot screen's fade-out actually ends (what the visitor sees,
+  // in every engine), with a timer only as a fallback; any input skips it
   useEffect(() => {
     if (phase !== "boot") return;
     const elapsed = performance.now() - sequenceStart();
-    const id = window.setTimeout(() => setPhase("lock"), Math.max(0, BOOT_MS - elapsed));
+    const id = window.setTimeout(() => setPhase("lock"), Math.max(0, BOOT_MS - elapsed) + 1200);
+    const boot = rootRef.current?.querySelector(".os-intro-boot");
+    const ended = (e: Event) => {
+      if ((e as AnimationEvent).animationName === "os-boot-out") setPhase("lock");
+    };
+    boot?.addEventListener("animationend", ended);
     const skip = (e: Event) => {
       if (e instanceof KeyboardEvent && (e.repeat || e.metaKey || e.ctrlKey || e.altKey)) return;
       setSkipped(true);
@@ -120,6 +127,7 @@ function Gate({ mode, onDone }: { mode: Mode; onDone: () => void }) {
     window.addEventListener("pointerdown", skip, true);
     return () => {
       window.clearTimeout(id);
+      boot?.removeEventListener("animationend", ended);
       window.removeEventListener("keydown", skip, true);
       window.removeEventListener("pointerdown", skip, true);
     };
@@ -137,7 +145,8 @@ function Gate({ mode, onDone }: { mode: Mode; onDone: () => void }) {
   }, [hydrated, phase]);
 
   const unlock = (gesture: boolean) => {
-    if (phase !== "lock") return;
+    // a tap on the lock counts even if the boot clock is a beat behind
+    if (phase === "out") return;
     setPhase("out");
     let off = muted;
     try {
@@ -267,7 +276,7 @@ function LockScreen({ phase, onUnlock }: { phase: Phase; onUnlock: (gesture: boo
   }, [phase, hydrated]);
 
   const submit = () => {
-    if (checking || phase !== "lock") return;
+    if (checking || phase === "out") return;
     setChecking(true);
     // a beat for "checking", then in
     window.setTimeout(() => onUnlock(true), 380);
