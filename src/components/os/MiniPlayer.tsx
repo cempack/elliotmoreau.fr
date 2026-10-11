@@ -146,10 +146,12 @@ function Pip({ track, playing, live }: { track: TrackInfo; playing: boolean; liv
   const { blip } = useSound();
   const reduced = useReduced();
   const phone = useMedia("(max-width: 767px)");
+  const short = useMedia("(max-height: 500px)");
   const atDesktop = stripLocale(usePathname()) === "/";
   const [chosen, setChosen] = useState(readCollapsed);
-  // the content is the point on a phone and inside an app window: the pill
-  const collapsed = chosen ?? (phone || !atDesktop);
+  // the content is the point on a phone, on a short (landscape) screen and
+  // inside an app window: the pill
+  const collapsed = chosen ?? (phone || short || !atDesktop);
   const [placed, setPlaced] = useState(false);
   const [announce, setAnnounce] = useState("");
   const hintId = useId();

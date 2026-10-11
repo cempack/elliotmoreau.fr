@@ -7,7 +7,8 @@
 .os-win {
   --os-win-bar-h: 3.25rem;
   --os-win-gap: 1.25rem;
-  --os-win-gutter: clamp(1rem, 5.5vw, 5rem);
+  /* clear of a landscape phone's notch (viewport-fit: cover) */
+  --os-win-gutter: max(clamp(1rem, 5.5vw, 5rem), env(safe-area-inset-left), env(safe-area-inset-right));
   --os-win-max: 80rem;
   --os-win-side-w: 15rem;
   --os-win-sticky-top: calc(var(--menubar-h) + var(--os-win-bar-h));
@@ -31,7 +32,7 @@
     0 28px 56px -30px rgba(0, 0, 0, 0.65);
 }
 .os-win[data-zoomed] {
-  --os-win-gutter: 0.625rem;
+  --os-win-gutter: max(0.625rem, env(safe-area-inset-left), env(safe-area-inset-right));
   --os-win-gap: 0.625rem;
   --os-win-max: 200rem;
 }

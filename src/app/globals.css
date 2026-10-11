@@ -101,6 +101,19 @@
     --dock-h: calc(60px + var(--os-tabbar-gap));
   }
 }
+/* short landscape screens (phones on their side): every pixel of height
+   counts, so the dock compacts (dock.css) and says so here */
+@media (min-width: 768px) and (max-height: 500px) {
+  :root {
+    --dock-h: 3.875rem; /* the 76px dock at 0.8 */
+  }
+}
+@media (max-width: 767px) and (max-height: 500px) {
+  :root {
+    --os-tabbar-gap: max(8px, calc(env(safe-area-inset-bottom, 0px) - 10px));
+    --dock-h: calc(50px + var(--os-tabbar-gap));
+  }
+}
 
 @utility glass-thin {
   background: var(--glass-tint);

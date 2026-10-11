@@ -87,6 +87,8 @@ export function useMagnification(
     let centers: number[] = [];
     let plateW = 1;
     let left = 0;
+    /** viewport px per layout px (the dock compacts with `scale` on short screens) */
+    let ratio = 1;
     let raf = 0;
     let last = 0;
     const gain = DOCK_MAX / DOCK_ICON - 1;
@@ -95,7 +97,9 @@ export function useMagnification(
       // offsetLeft ignores transforms: these are the resting positions
       centers = items.map((el) => el.offsetLeft + el.offsetWidth / 2);
       plateW = Math.max(1, plate.offsetWidth);
-      left = list.getBoundingClientRect().left;
+      const box = list.getBoundingClientRect();
+      left = box.left;
+      ratio = list.offsetWidth > 0 ? box.width / list.offsetWidth || 1 : 1;
     };
 
     const render = () => {
@@ -154,7 +158,7 @@ export function useMagnification(
     const onEnter = (e: PointerEvent) => {
       if (!isFine(e)) return;
       measure();
-      const x = e.clientX - left;
+      const x = (e.clientX - left) / ratio;
       // arriving from rest: start under the pointer instead of sweeping in
       if (k.x < 0.02) {
         px.x = x;
@@ -167,7 +171,7 @@ export function useMagnification(
     const onMove = (e: PointerEvent) => {
       if (!isFine(e)) return;
       if (k.to === 0) return onEnter(e);
-      px.to = e.clientX - left;
+      px.to = (e.clientX - left) / ratio;
       kick();
     };
     const onLeave = () => {
