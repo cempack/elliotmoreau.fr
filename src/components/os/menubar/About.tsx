@@ -1,10 +1,11 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/i18n/client";
-import { useHydrated, useReduced } from "@/hooks/env";
-import { Wordmark } from "../intro/Wordmark";
+import { useSound } from "@/lib/sound";
 import { ArrowUpRight, GithubIcon, RestartIcon, RssIcon } from "./glyphs";
-import { BLOG_RSS, FIRST_COMMIT, SITE_REPO, restartOS, useNow } from "./util";
+import { DataPlate } from "./DataPlate";
+import { BLOG_RSS, SITE_REPO, restartOS } from "./util";
 import { lockOS } from "../Intro";
 
 /** fastfetch's colour blocks, in Moss. */
@@ -20,57 +21,78 @@ const SWATCHES = [
   "var(--color-flare)",
 ];
 
-const FIRST = new Date(FIRST_COMMIT).getTime();
-
-function Uptime() {
+/**
+ * Restart under a hinged red guard, the way a cockpit covers the switches
+ * that matter: the first press lifts the guard, the second flips the
+ * switch. The guard drops back after four idle seconds or on Esc. Two
+ * buttons in order for keys and screen readers: lift, then restart.
+ */
+function GuardedRestart() {
   const { t } = useI18n();
-  const a = t.shell.about;
-  const now = useNow("minute");
-  if (!now) return <span className="os-menubar-about-dim">…</span>;
-  const ms = Math.max(0, now.getTime() - FIRST);
-  const d = Math.floor(ms / 86_400_000);
-  const h = Math.floor((ms % 86_400_000) / 3_600_000);
+  const g = t.shell.about.guard;
+  const { blip } = useSound();
+  const [open, setOpen] = useState(false);
+  const timer = useRef(0);
+  const arm = (v: boolean) => {
+    window.clearTimeout(timer.current);
+    setOpen(v);
+    if (v) timer.current = window.setTimeout(() => setOpen(false), 4000);
+  };
+  useEffect(() => () => window.clearTimeout(timer.current), []);
   return (
-    <>
-      {d} {d === 1 ? a.day : a.days}, {h} {h === 1 ? a.hour : a.hours}
-      <span className="os-menubar-about-dim"> · {a.sinceFirst}</span>
-    </>
+    <div
+      className="os-guard"
+      data-open={open || undefined}
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && open) {
+          e.stopPropagation();
+          arm(false);
+        }
+      }}
+    >
+      <button
+        type="button"
+        className="os-guard-cover"
+        aria-expanded={open}
+        aria-label={g.lift}
+        onClick={() => {
+          arm(!open);
+          blip("toggle");
+        }}
+      >
+        <span aria-hidden className="os-guard-stripes" />
+      </button>
+      <button
+        type="button"
+        className="os-menubar-action os-menubar-action--ghost os-guard-switch"
+        aria-disabled={!open}
+        tabIndex={open ? 0 : -1}
+        onClick={() => {
+          if (!open) return;
+          blip("click");
+          restartOS();
+        }}
+      >
+        <RestartIcon />
+        <span>{g.restart}</span>
+      </button>
+    </div>
   );
 }
 
-/** The name's box for the menu: the boot's field, a quarter the size. */
-const MARK = { w: 480, h: 128 };
-
-/**
- * "About this site", as fastfetch would print it: the boot's living "emos"
- * on top, then user@host, the specs with coloured keys and the palette
- * blocks, then the actions.
- */
 export function AboutPanel() {
   const { t } = useI18n();
   const a = t.shell.about;
-  const hydrated = useHydrated();
-  const reduced = useReduced();
   const rows: [string, React.ReactNode][] = [
     [a.keys.os, a.values.os],
     [a.keys.built, a.values.built],
     [a.keys.host, a.values.host],
     [a.keys.theme, a.values.theme],
     [a.keys.fonts, a.values.fonts],
-    [a.keys.location, a.values.location],
-    [a.keys.uptime, <Uptime key="up" />],
   ];
   return (
     <div className="os-menubar-about">
-      <div className="os-menubar-about-head">
-        <div className="os-menubar-about-mark" aria-hidden>
-          <div className="os-menubar-about-mark-box">
-            <Wordmark desk={MARK} phone={MARK} live={hydrated && !reduced} />
-          </div>
-        </div>
-        <p className="os-menubar-about-version">{a.version}</p>
-        <p className="os-menubar-about-tagline">{a.tagline}</p>
-      </div>
+      <DataPlate />
 
       <div className="os-menubar-about-ff">
         <p className="os-menubar-about-prompt" aria-hidden>
@@ -110,10 +132,7 @@ export function AboutPanel() {
         <button type="button" className="os-menubar-action os-menubar-action--ghost" onClick={lockOS}>
           <span>{t.shell.menu.lock}</span>
         </button>
-        <button type="button" className="os-menubar-action os-menubar-action--ghost os-menubar-action--tail" onClick={restartOS}>
-          <RestartIcon />
-          <span>{t.shell.menu.restart}</span>
-        </button>
+        <GuardedRestart />
       </div>
     </div>
   );

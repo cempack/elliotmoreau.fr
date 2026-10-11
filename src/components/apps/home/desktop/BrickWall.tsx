@@ -27,6 +27,8 @@ const BH = 2;
 const CW = 1 + WEEKS * (BW + 1) + 4;
 const CH = 1 + 7 * (BH + 1);
 const SEEN_KEY = "em-wall-seen";
+/** the visitor's last look, read once per page load */
+let lastLook: string | null | undefined;
 
 /** kiln ramp: [body, top highlight] */
 const KILN: [string, string][] = [
@@ -88,13 +90,15 @@ export function PushWidget() {
 
   // bricks pushed since this visitor last looked are laid in once
   useEffect(() => {
-    let seen: string | null = null;
-    try {
-      seen = localStorage.getItem(SEEN_KEY);
-      localStorage.setItem(SEEN_KEY, dayFmt.format(new Date()));
-    } catch {}
-    if (!seen) return;
-    const s = seen;
+    if (lastLook === undefined) {
+      lastLook = null;
+      try {
+        lastLook = localStorage.getItem(SEEN_KEY);
+        localStorage.setItem(SEEN_KEY, dayFmt.format(new Date()));
+      } catch {}
+    }
+    if (!lastLook) return;
+    const s = lastLook;
     const id = window.setTimeout(() => setFresh(new Set(bricks.filter((b) => b.n > 0 && b.d > s).map((b) => b.d))), 0);
     return () => window.clearTimeout(id);
     // once per mount: the wall as it stood when the desk was revealed

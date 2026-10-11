@@ -6,7 +6,7 @@ import { memo } from "react";
  * Tiny 3x5 pixel micro-label rendered as crisp SVG rects.
  * Original glyph set for this site; used for kickers and eyebrows.
  */
-const GLYPHS: Record<string, string[]> = {
+export const PIXEL_GLYPHS: Record<string, string[]> = {
   A: ["010", "101", "111", "101", "101"],
   B: ["110", "101", "110", "101", "110"],
   C: ["011", "100", "100", "100", "011"],
@@ -64,7 +64,7 @@ type Props = {
 };
 
 /** Fold accents onto their base letter — pixel caps never had diacritics. */
-const FOLD: Record<string, string> = {
+export const PIXEL_FOLD: Record<string, string> = {
   À: "A",
   Á: "A",
   Â: "A",
@@ -89,12 +89,12 @@ export const PixelLabel = memo(function PixelLabel({ text, cell = 3, className }
   const rects: { x: number; y: number }[] = [];
   let x = 0;
   for (const raw of text.toUpperCase()) {
-    const ch = FOLD[raw] ?? raw;
+    const ch = PIXEL_FOLD[raw] ?? raw;
     if (ch === " ") {
       x += SPACE_W + TRACKING;
       continue;
     }
-    const glyph = GLYPHS[ch];
+    const glyph = PIXEL_GLYPHS[ch];
     if (!glyph) {
       x += W + TRACKING;
       continue;

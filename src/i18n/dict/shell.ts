@@ -61,6 +61,20 @@ const en = {
     sourceLabel: "Source code on GitHub",
     rss: "RSS",
     rssLabel: "Blog RSS feed",
+    /** the airframe data plate: stamped capitals, unaccented */
+    plate: {
+      built: "BUILT IN TOULOUSE FRANCE",
+      model: "MODEL EMOS 26",
+      mfg: "DATE OF MFG {date}",
+      service: "LAST SERVICE {date}",
+      hours: "HOURS",
+      since: "+{h} h since your last visit",
+      aria: "Built in Toulouse, France. Model emOS 26, manufactured {mfg}, last service {service}. 43.60° N, 1.44° E. {hours} hours since the first commit.",
+    },
+    guard: {
+      lift: "Lift guard",
+      restart: "Restart emOS",
+    },
   },
   control: {
     appearance: "Sky",
@@ -228,6 +242,19 @@ const fr: typeof en = {
     sourceLabel: "Code source sur GitHub",
     rss: "RSS",
     rssLabel: "Flux RSS du blog",
+    plate: {
+      built: "CONSTRUIT A TOULOUSE FRANCE",
+      model: "MODELE EMOS 26",
+      mfg: "DATE DE FABR {date}",
+      service: "DERNIERE REVISION {date}",
+      hours: "HEURES",
+      since: "+{h} h depuis votre dernière visite",
+      aria: "Construit à Toulouse, France. Modèle emOS 26, fabriqué le {mfg}, dernière révision le {service}. 43,60° N, 1,44° E. {hours} heures depuis le premier commit.",
+    },
+    guard: {
+      lift: "Lever le cache",
+      restart: "Redémarrer emOS",
+    },
   },
   control: {
     appearance: "Ciel",
