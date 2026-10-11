@@ -3,7 +3,7 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { m } from "motion/react";
 import { useI18n } from "@/i18n/client";
-import { useIsMac, useMedia, useReduced } from "@/hooks/env";
+import { useIsMac, useReduced } from "@/hooks/env";
 import { useSound } from "@/lib/sound";
 import { spring } from "@/lib/motion";
 import { contentTop, scrollToY, scrollTop, scrollerBottom, scrollerTop } from "@/lib/scroller";
@@ -30,10 +30,12 @@ const CHIPS = [
 
 /**
  * New message: a Mail compose sheet (To, Subject with quick ideas, the
- * message) beside the envelope it will travel in. The envelope is a live
- * miniature of the draft. Send (or ⌘↵) folds it and flies it into the
- * Dock, then hands the message to the viewer's own mail app through a
- * mailto: link. Nothing is sent from the page, and the UI says so.
+ * message) beside the envelope it will travel in. One action, Send (or
+ * ⌘↵), and everything around it shows what it does: the envelope is a
+ * live miniature of the draft, the franking meter under it strikes a
+ * Toulouse postmark on it, it folds and flies into the Dock, and the
+ * message is handed to the viewer's own mail app through a mailto: link.
+ * Nothing is sent from the page, and the UI says so.
  *
  * The draft lives here, not in MailApp, so typing re-renders this sheet
  * only. `formId` lets a Send button outside the form (the window's
@@ -68,8 +70,6 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
   const state = useDraft();
   const { draft, saved, update } = state;
   const reduced = useReduced();
-  // phones aim for the tab bar below: "hold, then flick down"; elsewhere, "throw it into the Dock"
-  const coarse = useMedia("(pointer: coarse), (max-width: 767px)");
   const isMac = useIsMac();
   const { blip } = useSound();
   const email = SOCIALS.email;
@@ -331,6 +331,12 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
           <h2 className="app-contact-title">{c.composeTitle}</h2>
         </header>
         <p className="app-contact-lead">{c.composeLead}</p>
+        <p className="app-contact-habits">
+          {c.habits}{" "}
+          <a href="#pgp" className="app-contact-habits-key">
+            {c.keyLink}
+          </a>
+        </p>
       </div>
 
       <div className="app-contact-stagecol">
@@ -342,23 +348,11 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
           subject={subjectCells}
           lines={lines}
           lifted={lifted}
-          interactive={phase === "compose" && !reduced}
           reduced={reduced}
-          coarse={coarse}
-          empty={empty}
           origin={() => {
             const own = sendRef.current?.getBoundingClientRect();
             if (own?.width) return own;
             return document.querySelector(`[form="${formId}"]`)?.getBoundingClientRect() ?? null;
-          }}
-          onThrow={() => {
-            window.clearTimeout(liftTimer.current);
-            setLifted(false);
-            // thrown by hand, franked all the same: the lever pulls itself
-            setMark(markAt(new Date()));
-            setInk(1);
-            meterRef.current?.pull(false);
-            go("sending");
           }}
           onLand={land}
         />
@@ -367,7 +361,6 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
           empty={empty}
           load={href.length / MAILTO_SAFE}
           tooLong={tooLong}
-          disabled={phase !== "compose"}
           reduced={reduced}
           onStrike={onStrike}
           onRefuse={onRefuse}

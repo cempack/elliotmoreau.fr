@@ -93,14 +93,12 @@ export function MailApp() {
       }
       toolbar={
         <>
-          <CopyButton
-            text={email}
-            ok={c.copied}
-            fail={fill(c.copyFailed, { email })}
-            className={`app-contact-tool${headerSend ? " app-contact-tool--desk" : ""}`}
-          >
-            <span className="app-contact-tool-text">{c.copyAddress}</span>
-          </CopyButton>
+          {/* a new message has the address (and its copy button) in its To row */}
+          {box !== "compose" && (
+            <CopyButton text={email} ok={c.copied} fail={fill(c.copyFailed, { email })} className="app-contact-tool">
+              <span className="app-contact-tool-text">{c.copyAddress}</span>
+            </CopyButton>
+          )}
           {headerSend && (
             <button
               type="submit"

@@ -4,33 +4,28 @@ import { AnimatePresence, animate, m, useMotionValue, type AnimationPlaybackCont
 import { forwardRef, memo, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { PixelLabel } from "@/components/PixelLabel";
 import { useI18n } from "@/i18n/client";
-import { project, rubberband, spring, springFrom } from "@/lib/motion";
+import { spring, springFrom } from "@/lib/motion";
 import { tzOffset } from "@/lib/sun";
 import { fill as fillIn } from "./mail";
 import { dieCells, diePath, markAt, type Mark } from "./postmark";
 
 /**
- * Under the envelope, a small franking machine. Its readings are all real:
- * the date and time wheels show the Toulouse time it will print, the
- * notched scale shows how full the mail link is against what mail apps
- * reliably accept (the last notch turns red when it would be cut), and
- * the die window previews the postmark itself. A plate under it repeats
- * Elliot's reply habits and keeps the way to his key; one line gives the
- * visitor's own time against Toulouse's, from their time zone.
+ * Under the envelope, a small franking machine: what Send does, shown.
+ * It isn't a second control. Its readings are all real: the date and time
+ * wheels show the Toulouse time it will print, the notched scale fills as
+ * the letter does (the last notch turns red when a mail app would cut
+ * it), and the die window previews the postmark itself. One caption says
+ * what it is for, with the visitor's own time against Toulouse's.
  *
- * The lever franks and sends. Grab it and it tracks 1:1 down its slot,
- * resisting past the end; let go past 60% of its travel (projected) or
- * with a downward flick and it bottoms out: the machine jolts, the die
- * strikes the envelope, and the lever springs back up with a small
- * bounce, since it was thrown. Anything less and it springs back. With
- * nothing written it only goes half way, and the machine shakes its head.
- * Send and ⌘↵ pull it too; on a keyboard it is the "Frank and send"
- * button. Reduced motion: no travel, it commits like a button.
+ * Send (or ⌘↵) pulls its lever: it bottoms out, the machine jolts, the
+ * die strikes the envelope, and the lever springs back. With nothing
+ * written it only goes half way and the machine shakes its head, as the
+ * status line says why. Reduced motion: no travel, it just strikes.
  */
 
 export type MeterHandle = {
-  /** pull the lever from rest; `commit` false only plays it (the letter already left by hand) */
-  pull: (commit?: boolean) => void;
+  /** pull the lever from rest: it strikes (or, with nothing written, refuses) */
+  pull: () => void;
 };
 
 /** 5 × 7 digits for the wheels */
@@ -101,13 +96,11 @@ export const Meter = forwardRef<
     /** mailto length over the safe limit */
     load: number;
     tooLong: boolean;
-    /** the letter is out: the lever rests */
-    disabled: boolean;
     reduced: boolean;
     onStrike: (ink: number) => void;
     onRefuse: () => void;
   }
->(function Meter({ empty, load, tooLong, disabled, reduced, onStrike, onRefuse }, ref) {
+>(function Meter({ empty, load, tooLong, reduced, onStrike, onRefuse }, ref) {
   const { t, lang } = useI18n();
   const c = t.contact;
   const k = c.meter;
@@ -143,12 +136,9 @@ export const Meter = forwardRef<
   const jolt = useMotionValue(0);
   const shake = useMotionValue(0);
   const anims = useRef<AnimationPlaybackControls[]>([]);
-  const g = useRef<{ pid: number; y0: number; start: number; s: { t: number; y: number }[]; moved: boolean } | null>(null);
-  /** the press was handled as a pointer; the click that follows isn't a second pull */
-  const handled = useRef(false);
-  const cbs = useRef({ onStrike, onRefuse, empty, disabled, reduced });
+  const cbs = useRef({ onStrike, onRefuse, empty, reduced });
   useEffect(() => {
-    cbs.current = { onStrike, onRefuse, empty, disabled, reduced };
+    cbs.current = { onStrike, onRefuse, empty, reduced };
   });
   const stop = () => {
     anims.current.forEach((a) => a.stop());
@@ -157,34 +147,24 @@ export const Meter = forwardRef<
   useEffect(() => () => stop(), []);
 
   /** bottomed out: jolt, strike, and back up with a little bounce */
-  const strike = (v: number, commit: boolean) => {
-    const ink = Math.max(0.75, Math.min(1, 0.75 + v / 4000));
-    if (commit) cbs.current.onStrike(ink);
+  const strike = () => {
+    cbs.current.onStrike(1);
     if (cbs.current.reduced) {
       ly.set(0);
       return;
     }
     anims.current.push(
       animate(jolt, [0, 2, 0], { duration: 0.16, times: [0, 0.3, 1], ease: "easeOut" }),
-      animate(ly, 0, { ...spring.flick, velocity: -Math.min(600, v * 0.3), delay: 0.06 })
-    );
-  };
-  /** nothing to send: the lever stops half way and the machine shakes its head */
-  const refuse = (v = 0) => {
-    cbs.current.onRefuse();
-    if (cbs.current.reduced) return;
-    anims.current.push(
-      animate(ly, 0, { ...spring.default, velocity: -v }),
-      animate(shake, [0, -3, 3, -2, 2, 0], { duration: 0.32, ease: "easeInOut" })
+      animate(ly, 0, { ...spring.flick, velocity: -270, delay: 0.06 })
     );
   };
 
-  const pull = (commit = true) => {
+  const pull = () => {
     stop();
-    if (commit && cbs.current.empty) {
-      // say why at once; the lever only gets half way
-      if (cbs.current.reduced) return refuse();
+    if (cbs.current.empty) {
+      // nothing to send: say why at once; the lever only gets half way and the machine shakes its head
       cbs.current.onRefuse();
+      if (cbs.current.reduced) return;
       anims.current.push(
         animate(ly, TRAVEL / 2, {
           ...spring.snappy,
@@ -198,54 +178,10 @@ export const Meter = forwardRef<
       );
       return;
     }
-    if (cbs.current.reduced) return strike(0, commit);
-    anims.current.push(animate(ly, TRAVEL, { ...spring.snappy, onComplete: () => strike(900, commit) }));
+    if (cbs.current.reduced) return strike();
+    anims.current.push(animate(ly, TRAVEL, { ...spring.snappy, onComplete: strike }));
   };
   useImperativeHandle(ref, () => ({ pull }));
-
-  const onPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
-    if (e.button !== 0 || disabled || reduced) return;
-    e.preventDefault();
-    stop();
-    handled.current = true;
-    e.currentTarget.setPointerCapture(e.pointerId);
-    g.current = { pid: e.pointerId, y0: e.clientY - ly.get(), start: e.clientY, s: [{ t: e.timeStamp, y: e.clientY }], moved: false };
-  };
-  const onPointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
-    const d = g.current;
-    if (!d || d.pid !== e.pointerId) return;
-    const raw = e.clientY - d.y0;
-    if (Math.abs(e.clientY - d.start) > 4) d.moved = true;
-    d.s.push({ t: e.timeStamp, y: e.clientY });
-    while (d.s.length > 2 && e.timeStamp - d.s[0].t > 80) d.s.shift();
-    // 1:1 down the slot; past the end (half way, with nothing written) it resists
-    const end = empty ? TRAVEL / 2 : TRAVEL;
-    ly.set(raw < 0 ? -rubberband(-raw, 40) : raw > end ? end + rubberband(raw - end, 40) : raw);
-  };
-  const onPointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
-    const d = g.current;
-    if (!d || d.pid !== e.pointerId) return;
-    g.current = null;
-    // a press without travel is a button press
-    if (!d.moved) {
-      pull();
-      return;
-    }
-    let v = 0;
-    const a = d.s[0];
-    const b = d.s[d.s.length - 1];
-    if (d.s.length > 1 && e.timeStamp - b.t < 60) v = ((b.y - a.y) / Math.max(8, b.t - a.t)) * 1000;
-    const y = ly.get();
-    if (empty) {
-      refuse(v);
-      return;
-    }
-    if (y + project(v, 0.998) > TRAVEL * 0.6 || v > 600) {
-      anims.current.push(animate(ly, TRAVEL, { ...spring.snappy, velocity: Math.max(v, 300), onComplete: () => strike(Math.max(v, 300), true) }));
-      return;
-    }
-    anims.current.push(animate(ly, 0, { ...spring.default, velocity: v }));
-  };
 
   // any letter lights the first notch; the last one is kept for "too long"
   const lit = tooLong ? NOTCHES : empty ? 0 : Math.min(NOTCHES - 1, Math.max(1, Math.ceil(load * (NOTCHES - 1))));
@@ -284,48 +220,25 @@ export const Meter = forwardRef<
         <div className="app-contact-meter-die" role="img" aria-label={fillIn(k.prints, { date: `${shown.dd}/${shown.mo}`, time: `${shown.hh}:${shown.mi}` })}>
           <DieMark mark={shown} className="app-contact-meter-mark" />
         </div>
-        <div className="app-contact-meter-lever">
-          <span className="app-contact-meter-slot" aria-hidden />
-          <m.button
-            type="button"
-            className="app-contact-meter-handle"
-            style={{ y: ly }}
-            aria-label={k.frank}
-            aria-disabled={disabled || undefined}
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerCancel={onPointerUp}
-            onClick={() => {
-              // pointers are handled above (under reduced motion it is just a button); this is the keyboard's press
-              if (handled.current) {
-                handled.current = false;
-                return;
-              }
-              if (!disabled) pull();
-            }}
-          >
-            <span className="app-contact-meter-knob" aria-hidden />
-          </m.button>
+        {/* the lever moves when Send is pressed; it isn't a control of its own */}
+        <div className="app-contact-meter-lever" aria-hidden>
+          <span className="app-contact-meter-slot" />
+          <m.span className="app-contact-meter-handle" style={{ y: ly }}>
+            <span className="app-contact-meter-knob" />
+          </m.span>
         </div>
       </m.div>
-      <div className="app-contact-meter-plate">
-        <p>{c.replyNote}</p>
-        <p>{c.langNote}</p>
-        <p>
-          <a href="#pgp" className="app-contact-delivery-link">
-            {k.key}
-          </a>
-          {you && (
-            <>
-              <span aria-hidden> · </span>
-              <span className="tabular" title={k.zoneNote}>
-                {you}
-              </span>
-            </>
-          )}
-        </p>
-      </div>
+      <p className="app-contact-meter-caption">
+        <span>{k.caption}</span>
+        {you && (
+          <>
+            {" "}
+            <span className="tabular" title={k.zoneNote}>
+              {you}
+            </span>
+          </>
+        )}
+      </p>
     </section>
   );
 });

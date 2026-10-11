@@ -7,16 +7,15 @@ const en = {
   boxComposeShort: "Write",
   boxElsewhere: "Elsewhere",
   boxKey: "PGP key",
-  replyNote: "I usually reply within a few days.",
-  langNote: "English or French, whichever you prefer.",
+  habits: "I reply within a few days, in English or French.",
+  keyLink: "Private? Use my key",
   /* the franking meter under the envelope */
   meter: {
     label: "Franking machine",
-    frank: "Frank and send",
+    caption: "Send stamps it with a Toulouse postmark.",
     load: "How full the mail link is",
     full: "Too long: some mail apps would cut it",
     prints: "Prints a Toulouse postmark, {date} at {time}",
-    key: "Private? Use my key",
     ahead: "{place} {time}, {n} ahead",
     behind: "{place} {time}, {n} behind",
     yourTime: "Your time",
@@ -69,9 +68,6 @@ const en = {
 
   /* the envelope (signature) */
   envelopeLabel: "Your letter, in miniature",
-  throwHint: "Or drop the envelope on the Dock",
-  holdHint: "Hold, then flick down",
-  dropHint: "Let go to send",
   writeFirst: "Write something first",
   flying: "On its way to your mail app…",
 
@@ -154,15 +150,14 @@ const fr: typeof en = {
   boxComposeShort: "Écrire",
   boxElsewhere: "Ailleurs",
   boxKey: "Clé PGP",
-  replyNote: "Je réponds en général sous quelques jours.",
-  langNote: "En français ou en anglais, comme vous préférez.",
+  habits: "Je réponds sous quelques jours, en français ou en anglais.",
+  keyLink: "Message privé ? Ma clé",
   meter: {
     label: "Machine à affranchir",
-    frank: "Affranchir et envoyer",
+    caption: "Envoyer y appose un cachet de Toulouse.",
     load: "Remplissage du lien mail",
     full: "Trop long : certaines messageries le couperaient",
     prints: "Imprime un cachet de Toulouse, le {date} à {time}",
-    key: "Message privé ? Ma clé",
     ahead: "{place} {time}, {n} d’avance",
     behind: "{place} {time}, {n} de retard",
     yourTime: "Chez vous",
@@ -213,9 +208,6 @@ const fr: typeof en = {
   toastTitle: "Mail",
 
   envelopeLabel: "Votre lettre, en miniature",
-  throwHint: "Ou déposez l’enveloppe sur le Dock",
-  holdHint: "Maintenez, puis lancez",
-  dropHint: "Lâchez pour envoyer",
   writeFirst: "Écrivez d’abord un mot",
   flying: "En route vers votre messagerie…",
 
