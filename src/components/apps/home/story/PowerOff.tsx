@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { m, type Transition, type Variants } from "motion/react";
+import {
+  animate,
+  m,
+  useMotionValue,
+  useTransform,
+  type AnimationPlaybackControlsWithThen,
+  type MotionValue,
+  type Transition,
+} from "motion/react";
 import { useI18n } from "@/i18n/client";
 import { restartOS } from "@/components/os/menubar/util";
 import { EmosMark } from "@/components/os/menubar/glyphs";
@@ -9,7 +17,7 @@ import { useFinePointer, useReduced } from "@/hooks/env";
 import { lenisRef } from "@/lib/lenisRef";
 import { useSound } from "@/lib/sound";
 
-type Phase = "idle" | "off" | "wake" | "boot";
+type Phase = "off" | "wake" | "boot";
 
 /**
  * Restart emOS into its boot, landing on the Desktop like a real reboot:
@@ -25,80 +33,46 @@ export function reboot() {
 }
 
 /** ease-in for the collapse (a tube losing its deflection), quint out for the return */
-const IN: Transition["ease"] = [0.7, 0, 0.84, 0];
+const IN: Transition["ease"] = [0.62, 0, 0.88, 0.3];
 const OUT: Transition["ease"] = [0.22, 1, 0.36, 1];
 
-const shutter: Variants = {
-  idle: { scaleY: 0 },
-  off: { scaleY: 1, transition: { duration: 0.36, ease: IN } },
-  wake: { scaleY: 0, transition: { duration: 0.42, ease: OUT, delay: 0.5 } },
-  boot: { scaleY: 1 },
-};
+/** wait for animations running side by side (their controls are thenable) */
+const settle = (...anims: AnimationPlaybackControlsWithThen[]) => Promise.all(anims.map((a) => a.finished));
 
-/**
- * The beam: the picture folds into a bright line, the line into a dot,
- * the dot fades like phosphor. Waking plays the same path backwards.
- */
-const beam: Variants = {
-  idle: { opacity: 0, scaleX: 1, scaleY: 1 },
-  off: {
-    opacity: [0, 1, 1, 1, 0],
-    scaleX: [1, 1, 1, 0.004, 0.004],
-    scaleY: [1, 1, 1, 2.5, 0],
-    transition: { duration: 1, times: [0, 0.3, 0.4, 0.72, 1], ease: "easeIn" },
-  },
-  wake: {
-    opacity: [0, 1, 1, 1, 0],
-    scaleX: [0.004, 0.004, 1, 1, 1],
-    scaleY: [0, 2.5, 1, 1, 1],
-    transition: { duration: 0.8, times: [0, 0.2, 0.56, 0.7, 1], ease: "easeOut", delay: 0.12 },
-  },
-  boot: {
-    opacity: [0, 1, 1],
-    scaleX: [0.004, 0.004, 1],
-    scaleY: [0, 2.5, 1],
-    transition: { duration: 0.45, times: [0, 0.3, 1], ease: "easeOut" },
-  },
-};
-
-const flash: Variants = {
-  idle: { opacity: 0 },
-  off: { opacity: [0, 0.16, 0], transition: { duration: 0.42, times: [0, 0.7, 1] } },
-  wake: { opacity: 0 },
-  boot: { opacity: 0 },
-};
-
-const screen: Variants = {
-  idle: { opacity: 0 },
-  off: { opacity: 1, transition: { duration: 0.7, delay: 1.25 } },
-  wake: { opacity: 0, transition: { duration: 0.15 } },
-  boot: { opacity: 0, transition: { duration: 0.15 } },
-};
-
-/* reduced motion: a plain cross-fade to the dark screen and back */
-const fade: Variants = {
-  idle: { opacity: 0 },
-  off: { opacity: 1, transition: { duration: 0.2 } },
-  wake: { opacity: 0, transition: { duration: 0.2, delay: 0.1 } },
-  boot: { opacity: 1 },
-};
-const fadeScreen: Variants = {
-  idle: { opacity: 0 },
-  off: { opacity: 1, transition: { duration: 0.2, delay: 0.2 } },
-  wake: { opacity: 0, transition: { duration: 0.1 } },
-  boot: { opacity: 0, transition: { duration: 0.1 } },
-};
+/** Power glyph, 7×7 pixels. */
+export function PowerGlyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 7 7" shapeRendering="crispEdges" fill="currentColor" aria-hidden>
+      <rect x="3" y="0" width="1" height="3" />
+      <rect x="1" y="1" width="1" height="1" />
+      <rect x="5" y="1" width="1" height="1" />
+      <rect x="0" y="2" width="1" height="3" />
+      <rect x="6" y="2" width="1" height="3" />
+      <rect x="1" y="5" width="1" height="1" />
+      <rect x="5" y="5" width="1" height="1" />
+      <rect x="2" y="6" width="3" height="1" />
+    </svg>
+  );
+}
 
 /**
  * "Shut down": emOS powers off like a CRT. Two shutters fold the picture
- * into a glowing line, the line into a dot, and the dot fades. What's left
- * is a dark screen that says it's safe to close the tab, with a power
- * button that boots emOS again (the real boot sequence). Esc wakes the
- * screen instead, back where you were, along the same path reversed.
+ * into a glowing line (the strip left brightens as it thins), the line
+ * shrinks to the centre, hands over to a round dot of phosphor, and the
+ * dot decays. What's left is a dark screen that says it's safe to close
+ * the tab, with a power button that boots emOS again (the dot opens into
+ * a line, then the real boot). Esc, or a tap anywhere else, wakes the
+ * screen where you were, along the same path reversed.
+ *
+ * Every stage is a motion value animated from wherever it is, so waking
+ * is interruptible at any instant: mid-fold the shutters simply open
+ * again, mid-collapse the line grows back, and only a screen that went
+ * all the way to the dot replays dot → line → picture.
  *
  * A modal <dialog> in the top layer: above the menu bar, the Dock and the
  * mini player, page inert, focus on the power button, native cursor
  * (globals hand it back while a dialog is open). Lenis rests meanwhile.
+ * Reduced motion: a plain cross-fade to the dark screen and back.
  * Mount it to shut down; it calls `onDone` once the screen is awake.
  */
 export function PowerOff({ onDone }: { onDone: () => void }) {
@@ -109,15 +83,133 @@ export function PowerOff({ onDone }: { onDone: () => void }) {
   const { blip } = useSound();
   const ref = useRef<HTMLDialogElement>(null);
   const powerRef = useRef<HTMLButtonElement>(null);
-  const [phase, setPhase] = useState<Phase>("idle");
+  const [phase, setPhase] = useState<Phase>("off");
   // the power button only answers once the dark screen has appeared
   const [ready, setReady] = useState(false);
+  const run = useRef(0);
+  const phaseRef = useRef<Phase>("off");
+  const doneRef = useRef(onDone);
+  useEffect(() => {
+    doneRef.current = onDone;
+  });
+
+  // the picture's two halves (0 open → 1 closed)
+  const shut = useMotionValue(0);
+  // the line's width, and its own fade (it hands over to the dot)
+  const lineX = useMotionValue(1);
+  const lineFade = useMotionValue(1);
+  const dotO = useMotionValue(0);
+  const dotS = useMotionValue(1);
+  const screenO = useMotionValue(0);
+  // reduced motion: one black layer
+  const blackO = useMotionValue(0);
+  // the strip still showing brightens as it thins, like a real tube
+  const flash = useTransform(shut, (v) => 0.3 * v * v);
+  // the line exists only once the halves have nearly met
+  const lineO = useTransform(() => Math.min(1, Math.max(0, (shut.get() - 0.82) / 0.16)) * lineFade.get());
+
+  const all: MotionValue<number>[] = [shut, lineX, lineFade, dotO, dotS, screenO, blackO];
+
+  const enter = (p: Phase) => {
+    phaseRef.current = p;
+    setPhase(p);
+  };
+
+  /** the sequence that owns the values; a newer one makes it bail */
+  const begin = () => {
+    const id = ++run.current;
+    all.forEach((v) => v.stop());
+    return () => id === run.current;
+  };
+
+  const powerDown = async () => {
+    const live = begin();
+    if (reduced) {
+      await settle(animate(blackO, 1, { duration: 0.2 }), animate(screenO, 1, { duration: 0.2, delay: 0.15 }));
+      if (live()) setReady(true);
+      return;
+    }
+    await animate(shut, 1, { duration: 0.34, ease: IN });
+    if (!live()) return;
+    await animate(lineX, 0.03, { duration: 0.3, ease: IN, delay: 0.06 });
+    if (!live()) return;
+    // the line becomes a dot of phosphor, which decays
+    dotS.jump(1);
+    animate(lineFade, 0, { duration: 0.08 });
+    await animate(dotO, 1, { duration: 0.05 });
+    if (!live()) return;
+    animate(screenO, 1, { duration: 0.7, delay: 0.32 });
+    await settle(animate(dotS, 0.18, { duration: 0.7, ease: OUT }), animate(dotO, 0, { duration: 0.7, ease: OUT }));
+    if (!live()) return;
+    await animate(screenO, 1, { duration: Math.max(0.05, 0.7 * (1 - screenO.get())) });
+    if (live()) setReady(true);
+  };
+
+  const wake = async () => {
+    if (phaseRef.current !== "off") return;
+    const live = begin();
+    enter("wake");
+    setReady(false);
+    blip("open");
+    const lit = screenO.get() > 0.02;
+    animate(screenO, 0, { duration: 0.15 });
+    if (reduced) {
+      await animate(blackO, 0, { duration: 0.2, delay: lit ? 0.08 : 0 });
+      if (live()) doneRef.current();
+      return;
+    }
+    // gone to the dot (or past it): the dot lights again and opens into the line
+    if (dotO.get() > 0.01 || lineFade.get() < 0.5) {
+      if (dotO.get() < 0.01) dotS.jump(0.18);
+      const d = lit ? 0.12 : 0;
+      await settle(animate(dotO, 1, { duration: 0.16, ease: OUT, delay: d }), animate(dotS, 1, { duration: 0.16, ease: OUT, delay: d }));
+      if (!live()) return;
+      lineX.jump(Math.min(lineX.get(), 0.03));
+      animate(dotO, 0, { duration: 0.1 });
+      animate(lineFade, 1, { duration: 0.06 });
+    }
+    // a line caught mid-collapse simply grows back from where it is
+    if (lineX.get() < 0.999) {
+      await animate(lineX, 1, { duration: 0.08 + 0.3 * (1 - lineX.get()), ease: OUT });
+      if (!live()) return;
+    }
+    lineFade.set(1);
+    // the halves open from wherever they were; the line fades as they part
+    await animate(shut, 0, { duration: 0.06 + 0.38 * shut.get(), ease: OUT });
+    if (live()) doneRef.current();
+  };
+
+  const boot = async () => {
+    if (!ready || phaseRef.current !== "off") return;
+    const live = begin();
+    enter("boot");
+    setReady(false);
+    animate(screenO, 0, { duration: 0.15 });
+    if (!reduced) {
+      // the tube warms up: a dot, then a line, then the real boot sequence
+      dotS.jump(0.18);
+      lineX.jump(0.03);
+      await settle(animate(dotO, 1, { duration: 0.14, ease: OUT, delay: 0.12 }), animate(dotS, 1, { duration: 0.14, ease: OUT, delay: 0.12 }));
+      if (!live()) return;
+      animate(dotO, 0, { duration: 0.1 });
+      animate(lineFade, 1, { duration: 0.06 });
+      animate(lineX, 1, { duration: 0.3, ease: OUT });
+    }
+    reboot();
+  };
+
+  // the mount effect starts the latest power-down (it lives outside render)
+  const powerDownRef = useRef(powerDown);
+  useEffect(() => {
+    powerDownRef.current = powerDown;
+  });
 
   useEffect(() => {
     const d = ref.current;
     if (!d) return;
     const back = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     if (!d.open) d.showModal();
+    void powerDownRef.current();
     // the dialog focuses its first control: the power button, still dark
     powerRef.current?.focus({ preventScroll: true });
     // the page underneath holds still: Lenis rests, and native wheel or
@@ -126,8 +218,9 @@ export function PowerOff({ onDone }: { onDone: () => void }) {
     const hold = (e: Event) => e.preventDefault();
     d.addEventListener("wheel", hold, { passive: false });
     d.addEventListener("touchmove", hold, { passive: false });
-    queueMicrotask(() => setPhase("off"));
+    const runs = run;
     return () => {
+      runs.current++;
       d.removeEventListener("wheel", hold);
       d.removeEventListener("touchmove", hold);
       lenisRef.current?.start();
@@ -135,23 +228,6 @@ export function PowerOff({ onDone }: { onDone: () => void }) {
       back?.focus({ preventScroll: true });
     };
   }, []);
-
-  const wake = () => {
-    if (phase !== "off") return;
-    blip("open");
-    setPhase("wake");
-  };
-
-  const boot = () => {
-    if (!ready || phase !== "off") return;
-    setPhase("boot");
-    reboot();
-  };
-
-  const settled = (def: unknown) => {
-    if (def === "wake") onDone();
-  };
-  const shown = (def: unknown) => setReady(def === "off");
 
   return (
     <dialog
@@ -161,37 +237,31 @@ export function PowerOff({ onDone }: { onDone: () => void }) {
       data-phase={phase}
       onCancel={(e) => {
         e.preventDefault();
-        wake();
+        void wake();
+      }}
+      onClose={() => {
+        // the browser may close it on a repeated Esc: wake for real
+        if (phaseRef.current === "off") doneRef.current();
       }}
     >
       {reduced ? (
-        <m.div className="app-story-off-black" variants={fade} initial="idle" animate={phase} onAnimationComplete={settled} />
+        <m.div className="app-story-off-black" style={{ opacity: blackO }} aria-hidden />
       ) : (
         <>
-          <m.div className="app-story-off-flash" variants={flash} initial="idle" animate={phase} aria-hidden />
-          <m.div className="app-story-off-shutter app-story-off-shutter--top" variants={shutter} initial="idle" animate={phase} aria-hidden />
-          <m.div
-            className="app-story-off-shutter app-story-off-shutter--bottom"
-            variants={shutter}
-            initial="idle"
-            animate={phase}
-            onAnimationComplete={settled}
-            aria-hidden
-          />
-          <m.div className="app-story-off-beam" variants={beam} initial="idle" animate={phase} aria-hidden />
+          <m.div className="app-story-off-flash" style={{ opacity: flash }} aria-hidden />
+          <m.div className="app-story-off-shutter app-story-off-shutter--top" style={{ scaleY: shut }} aria-hidden />
+          <m.div className="app-story-off-shutter app-story-off-shutter--bottom" style={{ scaleY: shut }} aria-hidden />
+          <m.div className="app-story-off-line" style={{ scaleX: lineX, opacity: lineO }} aria-hidden />
+          <m.div className="app-story-off-dot" style={{ scale: dotS, opacity: dotO }} aria-hidden />
         </>
       )}
 
       <m.div
         className="app-story-off-screen"
-        variants={reduced ? fadeScreen : screen}
-        initial="idle"
-        animate={phase}
-        onAnimationStart={() => setReady(false)}
-        onAnimationComplete={shown}
+        style={{ opacity: screenO }}
         onClick={(e) => {
           // a touch (or click) anywhere but the power button wakes the screen
-          if (!(e.target as Element).closest(".app-story-off-power")) wake();
+          if (!(e.target as Element).closest(".app-story-off-power")) void wake();
         }}
       >
         <EmosMark size={27} className="app-story-off-mark" />
@@ -202,18 +272,10 @@ export function PowerOff({ onDone }: { onDone: () => void }) {
           type="button"
           className="app-story-off-power"
           aria-label={s.power}
-          onClick={boot}
+          data-ready={ready || undefined}
+          onClick={() => void boot()}
         >
-          <svg width="22" height="22" viewBox="0 0 7 7" shapeRendering="crispEdges" fill="currentColor" aria-hidden>
-            <rect x="3" y="0" width="1" height="3" />
-            <rect x="1" y="1" width="1" height="1" />
-            <rect x="5" y="1" width="1" height="1" />
-            <rect x="0" y="2" width="1" height="3" />
-            <rect x="6" y="2" width="1" height="3" />
-            <rect x="1" y="5" width="1" height="1" />
-            <rect x="5" y="5" width="1" height="1" />
-            <rect x="2" y="6" width="3" height="1" />
-          </svg>
+          <PowerGlyph size={22} />
         </button>
         <p className="app-story-off-wake">{fine ? s.wake : s.wakeTouch}</p>
       </m.div>

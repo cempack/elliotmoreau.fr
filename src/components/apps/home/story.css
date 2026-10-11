@@ -153,7 +153,8 @@
   align-items: flex-end;
 }
 .app-story-mc[data-mode="pin"] .app-story-lede {
-  margin-top: 0.75rem;
+  /* clears the title masks' bottom padding (0.24em) */
+  margin-top: max(1rem, 0.26em);
 }
 @media (max-height: 880px) {
   .app-story-mc[data-mode="pin"] .app-story-title {
@@ -199,11 +200,11 @@
 .app-story-mc-cell[data-app="now"] {
   grid-column: 10 / span 3;
 }
-.app-story-mc-cell[data-app="contact"] {
-  grid-column: 1 / span 5;
-}
 .app-story-mc-cell[data-app="atlas"] {
-  grid-column: 6 / span 7;
+  grid-column: 1 / span 7;
+}
+.app-story-mc-cell[data-app="contact"] {
+  grid-column: 8 / span 5;
 }
 
 .app-story-mc-win {
@@ -803,10 +804,11 @@
     opacity: 0;
   }
 }
+/* bottom left, like a webmail's: the corner the mini player rests on stays empty */
 .app-story-pv-send {
   display: inline-flex;
   align-items: center;
-  align-self: flex-end;
+  align-self: flex-start;
   gap: 0.5rem;
   margin-top: auto;
   padding: 0.5rem 0.875rem;
@@ -870,8 +872,15 @@
 .app-story-mf-word[data-accent] .app-story-mf-ghost {
   font-variation-settings: "wght" 760;
 }
+/* the live word is narrower than its reserved (boldest) cell until it is
+   read: centred, the slack splits on both sides instead of opening a
+   river after every word; a line's first word keeps the left edge */
 .app-story-mf-live {
+  justify-self: center;
   font-variation-settings: "wght" var(--app-story-w, 620);
+}
+.app-story-mf-word[data-first] .app-story-mf-live {
+  justify-self: start;
 }
 .app-story-mf-word[data-accent] .app-story-mf-live {
   color: var(--color-signal);
@@ -959,6 +968,39 @@
   margin-inline: clamp(1.25rem, 3vw, 2.75rem);
   color: var(--color-signal);
 }
+/* reduced motion: no ticker, so the signals sit still as a readout, every
+   one of them in view (the band's second copy is hidden globally) */
+@media (prefers-reduced-motion: reduce) {
+  .app-story-band-marquee {
+    padding-block: clamp(1.5rem, 4vh, 2.25rem);
+  }
+  .app-story-band-list {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+    align-items: start;
+    gap: 1.75rem clamp(1.5rem, 3vw, 2.5rem);
+    padding-inline: var(--app-story-pad);
+  }
+  .app-story-band-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    min-width: 0;
+    white-space: normal;
+  }
+  .app-story-band-v {
+    max-width: 100%;
+    font-size: clamp(1.25rem, 1.8vw, 1.625rem);
+    line-height: 1.2;
+    letter-spacing: -0.025em;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+  }
+  .app-story-band-spark {
+    display: none;
+  }
+}
 
 /* ───────────── 4 · Selected work, the app switcher ───────────── */
 
@@ -1016,24 +1058,28 @@
   top: 0;
   left: 0;
   width: var(--app-story-card-w);
-  transform-origin: 0% 62%;
+  /* piled cards shrink toward their visible right edge */
+  transform-origin: 100% 62%;
   will-change: transform;
 }
 /* before the geometry lands (and without JS): the first card in place */
 .app-story-deck-vp:not([data-ready]) .app-story-deck-card {
-  left: auto;
-  right: var(--app-story-pad);
+  left: var(--app-story-pad);
 }
 .app-story-deck-vp:not([data-ready]) .app-story-deck-card:not([data-deck-card="0"]) {
   visibility: hidden;
 }
 
 .app-story-deck-label {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
+  display: block;
   height: 2rem;
   margin-bottom: 1.25rem;
+}
+.app-story-deck-label-in {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  height: 100%;
   font: 600 0.9375rem/1 var(--font-sans);
   letter-spacing: -0.01em;
   white-space: nowrap;
@@ -1056,7 +1102,7 @@
   text-decoration: none;
   container-type: inline-size;
   box-shadow:
-    -34px 0 60px -30px rgba(0, 0, 0, 0.75),
+    34px 0 60px -30px rgba(0, 0, 0, 0.75),
     0 50px 90px -40px rgba(0, 0, 0, 0.85),
     0 0 0 0.5px rgba(255, 255, 255, 0.06);
   transition: transform 0.3s var(--ease-spring);
@@ -1348,6 +1394,7 @@
   line-height: 1.04;
   letter-spacing: -0.038em;
   font-weight: 600;
+  text-wrap: balance;
   transition:
     transform 0.55s var(--ease-spring),
     color 0.25s;
@@ -1396,7 +1443,6 @@
   top: 0;
   z-index: 30;
   width: 20rem;
-  margin-top: -8.5rem;
   padding: 0.5rem 0.5rem 0.75rem;
   border-radius: var(--radius-card);
   background: var(--color-ink-800);
@@ -1405,7 +1451,11 @@
     0 0 0 1px var(--hairline),
     0 40px 80px -30px rgba(0, 0, 0, 0.85);
   pointer-events: none;
-  transform-origin: 0 50%;
+  /* it grows from the edge nearest the row it belongs to */
+  transform-origin: 56px 0;
+}
+.app-story-wr-plate[data-above] {
+  transform-origin: 56px 100%;
 }
 .app-story-wr-plate-win {
   aspect-ratio: 16 / 10;
@@ -1696,16 +1746,47 @@
   bottom: 0;
   transform-origin: 50% 100%;
 }
-.app-story-off-beam {
+/* the line: a 2px core in a soft vertical glow, all painted in the
+   gradient, so scaling it on X alone never distorts the glow; the ends
+   taper like a real beam */
+.app-story-off-line {
   position: absolute;
-  top: calc(50% - 1px);
+  top: calc(50% - 22px);
   left: 0;
   right: 0;
-  height: 2px;
-  background: #fbfaf6;
-  box-shadow:
-    0 0 6px 1px rgba(245, 242, 236, 0.9),
-    0 0 26px 4px rgba(139, 233, 255, 0.45);
+  height: 44px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(139, 233, 255, 0.08) 28%,
+    rgba(200, 244, 255, 0.32) 42%,
+    rgba(245, 242, 236, 0.85) 47%,
+    #fff 47.8%,
+    #fff 52.2%,
+    rgba(245, 242, 236, 0.85) 53%,
+    rgba(200, 244, 255, 0.32) 58%,
+    rgba(139, 233, 255, 0.08) 72%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+  pointer-events: none;
+}
+/* the dot the line collapses into: round, with a hot white core */
+.app-story-off-dot {
+  position: absolute;
+  top: calc(50% - 30px);
+  left: calc(50% - 30px);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle closest-side,
+    #fff 0 8%,
+    rgba(250, 248, 242, 0.92) 13%,
+    rgba(200, 244, 255, 0.5) 26%,
+    rgba(139, 233, 255, 0.18) 50%,
+    transparent 100%
+  );
   pointer-events: none;
 }
 .app-story-off-screen {
@@ -1753,7 +1834,10 @@
     background-color 0.2s,
     color 0.2s;
 }
-.app-story-off-power:hover {
+.app-story-off-power:not([data-ready]) {
+  cursor: default;
+}
+.app-story-off-power[data-ready]:hover {
   color: var(--color-ink-950);
   background: var(--color-signal);
 }
@@ -1780,6 +1864,7 @@
   }
 }
 
+/* tablets: three full rows in reading order, Mail across the bottom */
 @media (max-width: 1023px) {
   .app-story-mc-cell[data-app="work"] {
     grid-column: 1 / span 7;
@@ -1935,11 +2020,33 @@
   .app-story-pill {
     height: 2.75rem;
   }
+  .app-story-fin-addr {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+  }
+}
+
+/* whatever focus or a scroll-into-view brings in lands clear of the menu
+   bar above and of the Dock and the mini player below */
+.app-story-mc-win,
+.app-story-deck-win,
+.app-story-deck-dot,
+.app-story-round,
+.app-story-pill,
+.app-story-wr-row,
+.app-story-fin-addr,
+.app-story-fin-copy,
+.app-story-fin-link,
+.app-story-foot-btn {
+  scroll-margin-top: calc(var(--menubar-h) + 1rem);
+  scroll-margin-bottom: calc(var(--dock-h) + 7rem);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .app-story-pv-ping,
-  .app-story-pv-caret {
+  .app-story-pv-caret,
+  .app-story-mf-caret[data-last] {
     animation: none;
   }
   .app-story-mc-win,

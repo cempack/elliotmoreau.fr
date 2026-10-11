@@ -119,9 +119,9 @@ function squircle(size: number, inset = 0) {
 /** Each fragment: where it rests (in cells, relative to the glyph box), its
     size in cells, colour, and how loosely it hangs (spring). */
 const FRAGMENTS = [
-  { x: 9.5, y: 18.6, s: 2, fill: C.paper, k: { stiffness: 210, damping: 9, mass: 0.7 }, r: -12 },
-  { x: 5.4, y: 19.4, s: 1, fill: C.signal, k: { stiffness: 150, damping: 7, mass: 0.6 }, r: 0 },
-  { x: 12.6, y: 19.6, s: 1, fill: C.paper, k: { stiffness: 260, damping: 11, mass: 0.5 }, r: 0 },
+  { x: 8.4, y: 17.2, w: 2, h: 2, fill: C.paper, k: { stiffness: 210, damping: 9, mass: 0.7 }, r: -14 },
+  { x: 4.6, y: 18.5, w: 2, h: 1, fill: C.signal, k: { stiffness: 150, damping: 7, mass: 0.6 }, r: 9 },
+  { x: 12, y: 18.8, w: 1, h: 1, fill: C.paper, k: { stiffness: 260, damping: 11, mass: 0.5 }, r: 0 },
 ] as const;
 
 const LAG = 18; // px: the furthest a fragment trails
@@ -150,8 +150,8 @@ function Fragment({
       style={{
         left: off + frag.x * cell,
         top: off + frag.y * cell,
-        width: frag.s * cell,
-        height: frag.s * cell,
+        width: frag.w * cell,
+        height: frag.h * cell,
         background: frag.fill,
         rotate: frag.r,
         x,
@@ -236,8 +236,8 @@ export function BrokenIcon({
             style={{
               left: off + f.x * cell,
               top: off + f.y * cell,
-              width: f.s * cell,
-              height: f.s * cell,
+              width: f.w * cell,
+              height: f.h * cell,
               background: f.fill,
               transform: `rotate(${f.r}deg)`,
             }}

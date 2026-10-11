@@ -210,7 +210,8 @@ export function Pulse({ repos, posts, activity }: { repos: RepoInfo[]; posts: Gh
     <div className="app-now-pulse">
       <div className="app-now-pulse-top">
         <p className="app-now-pulse-caption">{p.caption}</p>
-        <p className="app-now-pulse-readout" aria-live="polite">
+        {/* not live: hovering would re-announce what each blip's link already says */}
+        <p className="app-now-pulse-readout">
           {shown && now ? (
             <>
               <i style={{ background: COLOR[shown.kind] }} aria-hidden />

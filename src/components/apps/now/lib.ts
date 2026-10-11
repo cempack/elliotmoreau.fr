@@ -52,6 +52,33 @@ export function useNow(ms = 1000) {
   return now;
 }
 
+/**
+ * A formatted clock string, checked every `ms` but re-rendering only when
+ * the string changes (a minute clock polled each second renders once a
+ * minute). `format` must be stable (module scope). Null until mounted.
+ */
+export function useClock(format: (d: Date) => string, ms = 1000) {
+  const [value, setValue] = useState<string | null>(null);
+  useEffect(() => {
+    const tick = () => {
+      if (!document.hidden) setValue(format(new Date()));
+    };
+    const first = window.setTimeout(tick, 0);
+    const id = window.setInterval(tick, ms);
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      window.clearTimeout(first);
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", tick);
+    };
+  }, [format, ms]);
+  return value;
+}
+
+const PARIS_HM = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+/** "14:22" in Paris */
+export const parisHM = (d: Date) => PARIS_HM.format(d);
+
 /** Whether an element is on screen (for pausing loops). */
 export function useOnScreen(ref: React.RefObject<Element | null>, margin = "0px") {
   const [on, setOn] = useState(false);

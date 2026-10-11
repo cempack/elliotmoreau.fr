@@ -97,6 +97,19 @@ function headedForDock(ptr: Pt, c: Pt, half: Pt, v: Pt, t: Target) {
   return false;
 }
 
+/**
+ * The contextual cursor reads `data-cursor` / `data-cursor-hide` on
+ * pointerover: while the envelope is carried it shows the plain dot, not
+ * a label sitting on top of the letter.
+ */
+function quietCursor(el: HTMLElement, quiet: boolean) {
+  if (quiet) {
+    el.setAttribute("data-cursor-hide", "");
+    el.removeAttribute("data-cursor");
+  } else el.removeAttribute("data-cursor-hide");
+  el.dispatchEvent(new PointerEvent("pointerover", { bubbles: true, pointerType: "mouse" }));
+}
+
 export function Stage({
   ref,
   subject,
@@ -152,6 +165,9 @@ export function Stage({
   // scale about the grab point while carried, about the center in flight
   const fox = useMotionValue(0.5);
   const foy = useMotionValue(0.5);
+  // the "let go to send" pill rides above the carried envelope
+  const px = useMotionValue(0);
+  const py = useMotionValue(0);
 
   const gesture = useRef<{
     id: number;
@@ -164,6 +180,7 @@ export function Stage({
     moved: boolean;
     samples: Sample[];
     target: Target;
+    armed: boolean;
   } | null>(null);
   const anims = useRef<AnimationPlaybackControls[]>([]);
   const stopAll = () => {
@@ -309,6 +326,31 @@ export function Stage({
     },
   }));
 
+  // once per visit, a small hop says the envelope can be picked up
+  useEffect(() => {
+    if (!interactive || reduced) return;
+    try {
+      if (sessionStorage.getItem("em-mail-hop")) return;
+    } catch {
+      return;
+    }
+    const id = window.setTimeout(() => {
+      const r = slotRef.current?.getBoundingClientRect();
+      if (!r || r.bottom < 0 || r.top > window.innerHeight || document.hidden) return;
+      try {
+        sessionStorage.setItem("em-mail-hop", "1");
+      } catch {}
+      anims.current.push(
+        animate(slotY, [0, -12, 0, -4, 0], {
+          duration: 0.9,
+          times: [0, 0.28, 0.6, 0.78, 1],
+          ease: ["easeOut", [0.6, 0, 0.85, 0.5], "easeOut", [0.6, 0, 0.85, 0.5]],
+        })
+      );
+    }, 1600);
+    return () => window.clearTimeout(id);
+  }, [interactive, reduced, slotY]);
+
   const onSealed = () => {
     if (!pendingFlight.current) return;
     pendingFlight.current = false;
@@ -341,6 +383,7 @@ export function Stage({
       moved: false,
       samples: [{ x: e.clientX, y: e.clientY, t: now }],
       target: dockTarget(),
+      armed: false,
     };
     e.currentTarget.setPointerCapture(e.pointerId);
     setHeld(true); // respond on pointer-down
@@ -362,6 +405,7 @@ export function Stage({
       foy.set(g.oy / g.h);
       setCarry({ w: g.w, sealed: false });
       setTarget(g.target);
+      quietCursor(e.currentTarget, true);
     }
     fx.set(e.clientX - g.ox);
     fy.set(e.clientY - g.oy);
@@ -371,11 +415,18 @@ export function Stage({
     // it shrinks as it nears the Dock, so the Dock stays in sight
     const ptr = { x: e.clientX, y: e.clientY };
     const near = clamp(1 - (Math.hypot(ptr.x - g.target.x, ptr.y - g.target.y) - 80) / 460, 0, 1);
-    const sc = 1.04 - 0.5 * near * near * (3 - 2 * near);
+    const sc = 1.04 - 0.6 * near * near * (3 - 2 * near);
     fs.set(sc);
     const vis = visual(g, sc);
+    px.set(vis.c.x);
+    py.set(vis.c.y - vis.half.y - 12);
     const a = headedForDock(ptr, vis.c, vis.half, v, g.target);
-    setArmed((was) => (was === a ? was : a));
+    if (a !== g.armed) {
+      // over the Dock it folds shut in your hand; away again, it opens
+      g.armed = a;
+      setArmed(a);
+      setCarry({ w: g.w, sealed: a });
+    }
   };
 
   const release = (e: React.PointerEvent<HTMLDivElement>, cancelled: boolean) => {
@@ -385,6 +436,7 @@ export function Stage({
     setHeld(false);
     setArmed(false);
     if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+    if (g.moved) quietCursor(e.currentTarget, false);
 
     if (!g.moved) {
       if (cancelled) return;
@@ -422,6 +474,7 @@ export function Stage({
     const sp = thrown ? spring.flick : spring.default;
     stopAll();
     let done = 0;
+    setCarry({ w: g.w, sealed: false });
     const finish = () => {
       if (++done < 2) return;
       setCarry(null);
@@ -475,15 +528,15 @@ export function Stage({
         </m.div>
       </div>
 
-      <p className="app-contact-stage-hint" aria-hidden={!canThrow || undefined}>
-        {gone ? (
+      <p className="app-contact-stage-hint">
+        {gone || sealed ? (
           <span className="app-contact-stage-out">{c.outbox}</span>
-        ) : (
+        ) : canThrow ? (
           <>
             <PixelGlyph cells={G_DOWN} size={10} />
             <span>{coarse ? c.flickHint : c.throwHint}</span>
           </>
-        )}
+        ) : null}
       </p>
 
       {(carry || burst) &&
@@ -516,8 +569,12 @@ export function Stage({
                   height: target.h,
                 }}
               >
-                {!target.tab && <span className="app-contact-target-pill">{c.dropHint}</span>}
               </span>
+            )}
+            {carry && (
+              <m.span className="app-contact-pill" data-armed={armed || undefined} style={{ x: px, y: py }}>
+                <span>{c.dropHint}</span>
+              </m.span>
             )}
           </div>,
           document.body

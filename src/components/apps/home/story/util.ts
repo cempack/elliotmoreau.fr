@@ -5,6 +5,11 @@ export function fill(template: string, vars: Record<string, string | number>) {
   return template.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k]) : m));
 }
 
+/** Whole days since an ISO date (client only: it reads the clock). */
+export function ageDays(iso: string) {
+  return (Date.now() - Date.parse(iso)) / 864e5;
+}
+
 /** The deck's projects: most starred first, the freshest push breaking ties. */
 export function selectRepos(repos: RepoInfo[], max = 5) {
   return [...repos]

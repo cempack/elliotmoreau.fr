@@ -41,7 +41,7 @@ const INTERACTIVE = 'a,button,input,select,textarea,label,summary,[role="button"
 /** px/s from the last ~80ms of pointer history; 0 once the hand stopped. */
 function releaseVelocity(samples: Sample[], now: number) {
   const last = samples[samples.length - 1];
-  if (!last || now - last.t > 60) return { vx: 0, vy: 0 };
+  if (!last || now - last.t > 80) return { vx: 0, vy: 0 };
   let first = last;
   for (let i = samples.length - 1; i >= 0; i--) {
     if (last.t - samples[i].t > 80) break;
@@ -50,6 +50,9 @@ function releaseVelocity(samples: Sample[], now: number) {
   const dt = Math.max(8, last.t - first.t);
   return { vx: ((last.x - first.x) / dt) * 1000, vy: ((last.y - first.y) / dt) * 1000 };
 }
+
+/** how far past the desktop's edges the tether lets the alert stretch (px, asymptotic) */
+const STRETCH = 180;
 
 function band(v: number, min: number, max: number, dim: number) {
   if (v < min) return min - rubberband(min - v, dim);
@@ -150,7 +153,9 @@ export function useTether({
     if ((e.target as Element).closest(INTERACTIVE)) return;
     const el = surfaceRef.current;
     if (!el) return;
-    e.currentTarget.setPointerCapture(e.pointerId);
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
     if (e.pointerType === "mouse") e.preventDefault(); // no text selection
     x.stop();
     y.stop();
@@ -203,8 +208,8 @@ export function useTether({
     const prev = g.samples[g.samples.length - 1];
     g.samples.push({ t: e.timeStamp, x: e.clientX, y: e.clientY });
     while (g.samples.length > 2 && e.timeStamp - g.samples[0].t > 120) g.samples.shift();
-    x.set(band(g.x0 + dx, g.minX, g.maxX, window.innerWidth));
-    y.set(band(g.y0 + dy, g.minY, g.maxY, window.innerHeight));
+    x.set(band(g.x0 + dx, g.minX, g.maxX, STRETCH));
+    y.set(band(g.y0 + dy, g.minY, g.maxY, STRETCH));
     if (!reduced && prev) {
       // lean into the drag, like a card held at its edge
       const vx = ((e.clientX - prev.x) / Math.max(8, e.timeStamp - prev.t)) * 1000;

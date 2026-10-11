@@ -15,17 +15,19 @@ import { SOCIALS } from "@/lib/places";
 import { useSound } from "@/lib/sound";
 import type { RepoInfo } from "@/lib/github";
 import { ChapterHead } from "./ChapterHead";
-import { offsetAt, useDeck, type DeckGeo } from "./useDeck";
-import { fill, selectRepos } from "./util";
+import { useDeck, xAt, type DeckGeo } from "./useDeck";
+import { ageDays, fill, selectRepos } from "./util";
 
 /**
  * Chapter 4, selected work as an app switcher. The top projects are cards
- * in an iOS-style switcher: the focused one right-aligned, the next ones
- * piled beneath it to the left. Drag or swipe with 1:1 tracking (the card
- * under the hand stays under it), fling with momentum, settle on a card
- * with a spring, rubber-band at both ends. Arrow keys, the buttons and
- * the pixel pager drive it too. A tap on a piled card brings it forward;
- * a tap on the focused card opens the repo.
+ * in a switcher that reads left to right: the focused one on the content
+ * column's left edge, the next ones piled beneath it to the right. Drag
+ * or swipe with 1:1 tracking (the card under the hand stays under it),
+ * fling with momentum, settle on a card with a spring, rubber-band at
+ * both ends; a press mid-flight catches the deck and settles it on the
+ * nearest card. Arrow keys, the buttons and the pixel pager drive it too.
+ * A tap on a piled card brings it forward; a tap on the focused card
+ * opens the repo.
  */
 export function WorkDeck() {
   const { t } = useI18n();
@@ -51,7 +53,7 @@ export function WorkDeck() {
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
-    const map: Record<string, number> = { ArrowLeft: index + 1, ArrowRight: index - 1, Home: 0, End: n - 1 };
+    const map: Record<string, number> = { ArrowRight: index + 1, ArrowLeft: index - 1, Home: 0, End: n - 1 };
     if (!(e.key in map)) return;
     e.preventDefault();
     const next = Math.min(n - 1, Math.max(0, map[e.key]));
@@ -82,22 +84,22 @@ export function WorkDeck() {
               <>
                 {counter}
                 <div className="app-story-deck-arrows">
-                  {/* the next project waits in the pile on the left */}
-                  <PressButton
-                    className="app-story-round"
-                    aria-label={s.next}
-                    aria-controls="story-deck-cards"
-                    disabled={index >= n - 1}
-                    onClick={() => step(1)}
-                  >
-                    <Chevron dir="left" />
-                  </PressButton>
                   <PressButton
                     className="app-story-round"
                     aria-label={s.prev}
                     aria-controls="story-deck-cards"
                     disabled={index <= 0}
                     onClick={() => step(-1)}
+                  >
+                    <Chevron dir="left" />
+                  </PressButton>
+                  {/* the next project waits in the pile on the right */}
+                  <PressButton
+                    className="app-story-round"
+                    aria-label={s.next}
+                    aria-controls="story-deck-cards"
+                    disabled={index >= n - 1}
+                    onClick={() => step(1)}
                   >
                     <Chevron dir="right" />
                   </PressButton>
@@ -138,7 +140,7 @@ export function WorkDeck() {
             id="story-deck-cards"
             className="app-story-deck-vp"
             role="group"
-            aria-roledescription="carousel"
+            aria-roledescription={s.carousel}
             aria-label={s.deck}
             data-ready={geo ? "" : undefined}
             data-single={n < 2 || undefined}
@@ -220,7 +222,7 @@ function DeckCard({
   const hydrated = useHydrated();
   const { blip } = useSound();
 
-  const x = useTransform(q, (v) => (geo ? geo.A + offsetAt(v - r, geo) : 0));
+  const x = useTransform(q, (v) => (geo ? xAt(v - r, geo) : 0));
   const scale = useTransform(q, (v) => {
     const d = v - r;
     return geo && d < 0 ? 1 - geo.shrink * Math.min(-d, 4) : 1;
@@ -237,6 +239,18 @@ function DeckCard({
     return Math.max(0, Math.min(1, (keep + d) * 3));
   });
   const visibility = useTransform(q, (v) => (v - r < -4.6 ? "hidden" : "visible"));
+  // a piled card's name sits over its visible right end, and glides to the
+  // left as the card comes forward: the row slides by t·W, the name back
+  // by t·(its own width)
+  const tuck = useTransform(q, (v) => Math.min(1, Math.max(0, r - v)));
+  const rowX = useTransform(tuck, (t) => `${t * 100}%`);
+  const nameX = useTransform(tuck, (t) => `${-t * 100}%`);
+  // narrow screens: a piled card is a sliver, so its words would only show
+  // as clipped fragments; they fade in as it comes forward
+  const words = useTransform(q, (v) => {
+    const d = v - r;
+    return geo && !geo.roomy && d < 0 ? Math.max(0, 1 + d * 2) : 1;
+  });
   const descId = `story-deck-desc-${r}`;
 
   return (
@@ -245,9 +259,11 @@ function DeckCard({
       data-deck-card={r}
       style={geo ? { x, scale, zIndex: n - r, visibility } : { zIndex: n - r }}
     >
-      <m.span className="app-story-deck-label" aria-hidden style={{ opacity: name }}>
-        <PixelPlanet seed={repo.name} className="app-story-deck-icon" />
-        <span className="app-story-deck-label-name">{repo.name}</span>
+      <m.span className="app-story-deck-label" aria-hidden style={geo ? { opacity: name, x: rowX } : undefined}>
+        <m.span className="app-story-deck-label-in" style={geo ? { x: nameX } : undefined}>
+          <PixelPlanet seed={repo.name} className="app-story-deck-icon" />
+          <span className="app-story-deck-label-name">{repo.name}</span>
+        </m.span>
       </m.span>
       <a
         ref={refCb}
@@ -272,7 +288,7 @@ function DeckCard({
         {/* an app snapshot, like the switcher's: opaque, so a stack of
             moving cards never re-blurs what's under it every frame */}
         <span aria-hidden className="app-story-deck-surface" />
-        <span className="app-story-deck-bar" aria-hidden>
+        <m.span className="app-story-deck-bar" aria-hidden style={{ opacity: words }}>
           <span className="app-story-mc-lights">
             <i />
             <i />
@@ -280,7 +296,7 @@ function DeckCard({
           </span>
           <span className="app-story-deck-path">~/cempack/{repo.name}</span>
           <span className="app-story-deck-stars tabular">★ {repo.stars}</span>
-        </span>
+        </m.span>
         <span className="app-story-deck-body">
           <span className="app-story-deck-plate" aria-hidden>
             <PixelPlanet seed={repo.name} className="app-story-deck-planet" />
@@ -299,7 +315,7 @@ function DeckCard({
               />
             )}
           </span>
-          <span className="app-story-deck-text">
+          <m.span className="app-story-deck-text" style={{ opacity: words }}>
             <span className="app-story-deck-name">{repo.name}</span>
             <span id={descId} className="app-story-deck-desc">
               {repo.description || s.noDesc}
@@ -311,20 +327,20 @@ function DeckCard({
                 ))}
               </span>
             )}
-          </span>
+          </m.span>
         </span>
-        <span className="app-story-deck-status" aria-hidden>
+        <m.span className="app-story-deck-status" aria-hidden style={{ opacity: words }}>
           <span className="app-story-deck-lang">
             <i style={{ background: LANG_COLORS[repo.language] ?? LANG_FALLBACK }} />
             {repo.language || "—"}
           </span>
           {repo.forks > 0 && <span className="tabular">⑂ {repo.forks}</span>}
-          {hydrated && <span>{fill(s.updated, { ago: timeAgo(repo.pushedAt, lang) })}</span>}
+          {hydrated && <span>{fill(ageDays(repo.pushedAt) >= 30 ? s.updatedOn : s.updated, { ago: timeAgo(repo.pushedAt, lang) })}</span>}
           <span className="app-story-deck-cta">
             {s.github}
             <Arrow external />
           </span>
-        </span>
+        </m.span>
         <m.span className="app-story-deck-dim" aria-hidden style={{ opacity: dim }} />
       </a>
     </m.div>

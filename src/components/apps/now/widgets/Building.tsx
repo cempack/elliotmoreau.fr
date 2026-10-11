@@ -38,7 +38,21 @@ export function Building({ activity, repos }: { activity: ActivityInfo | null; r
   return (
     <div className="app-now-build">
       <div className="app-now-build-focus">
-        <p className="app-now-label">{b.focus}</p>
+        <p className="app-now-label">
+          {b.focus}
+          {f.url && (
+            <a
+              href={f.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="app-now-label-aside app-now-label-link"
+              aria-label={fill(b.sourceOf, { name: f.name })}
+            >
+              {b.source}
+              <PixelGlyph cells={G_ARROW} size={7} />
+            </a>
+          )}
+        </p>
         <p className="app-now-build-name">{f.name}</p>
         <p className="app-now-build-title">{loc(f.title, lang)}</p>
         <p className="app-now-build-body">{loc(f.body, lang)}</p>
@@ -59,7 +73,11 @@ export function Building({ activity, repos }: { activity: ActivityInfo | null; r
             target="_blank"
             rel="noopener noreferrer"
             className="app-now-push"
-            aria-label={[fill(b.pushedTo, { repo: activity.repo }), activity.message].filter(Boolean).join(": ")}
+            aria-label={
+              activity.message
+                ? fill(b.pushLabel, { repo: activity.repo, message: activity.message })
+                : fill(b.pushedTo, { repo: activity.repo })
+            }
           >
             <span className="app-now-push-repo">
               <LiveDot live={fresh} />

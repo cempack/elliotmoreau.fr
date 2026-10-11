@@ -4,8 +4,11 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { animate, useMotionValue, useTransform, type Transition } from "motion/react";
 import { project, rubberband, spring } from "@/lib/motion";
 import { lenisRef } from "@/lib/lenisRef";
+import { pushSample, releaseVelocity, swallowNextClick, type Sample } from "./gesture";
 
 export type View = "list" | "reader";
+/** how a screen came to rest: a push, a pop, or a grab let go back onto the reader */
+export type Settle = "push" | "pop" | "stay";
 
 /** a press this close to the left edge always means "back" */
 const EDGE = 28;
@@ -15,6 +18,14 @@ const PUSH: Transition = { type: "spring", visualDuration: 0.42, bounce: 0 };
 const PARALLAX = 0.3;
 /** "off to the right" before the stack has been measured */
 const OFF = 100_000;
+/** a grab that travels less than this is a tap */
+const SLOP = 8;
+
+/** run after the next frame has been drawn: a transition's clock starts
+    once the commit (layout, the newly shown screen's paint) is paid for */
+function afterPaint(fn: () => void) {
+  requestAnimationFrame(() => requestAnimationFrame(fn));
+}
 
 function scrollToY(y: number) {
   const l = lenisRef.current;
@@ -31,7 +42,11 @@ type Drag = {
   base: number;
   grabX: number;
   w: number;
-  samples: { t: number; x: number }[];
+  /** caught a push or pop in flight: where it was headed */
+  caught: View | null;
+  /** travelled at least SLOP sideways since the grab */
+  dragged: boolean;
+  samples: Sample[];
 };
 
 type Run = { kind: "push" | "pop"; n: number; v: number };
@@ -41,47 +56,59 @@ type Run = { kind: "push" | "pop"; n: number; v: number };
  * the page's own scroll. The list stays in flow until a post is pushed;
  * then the reader takes the flow and the list is pinned (absolute, at its
  * old scroll offset) underneath for the length of the transition, so
- * both screens keep their own scroll position.
+ * both screens keep their own scroll position. While the list shows, the
+ * reader stays laid out (hidden, off to the right), so a push only moves
+ * a transform.
  *
  * Back: the button, Esc, the browser, or a swipe right from the left edge
  * (or anywhere, once the move is clearly horizontal). The reader tracks
  * the finger 1:1 from where it was grabbed, rubber-bands past its rest,
  * and on release the projected endpoint (velocity × deceleration) picks
  * pop or stay; the spring then carries the release velocity. A settling
- * transition can be grabbed again mid-flight.
+ * transition can be grabbed mid-flight; a grab that never moves (a tap,
+ * or a vertical scroll) lets it carry on where it was going.
  */
 export function useNavStack({
   enabled,
   reduced,
+  initialView = "list",
   stackRef,
   probeRef,
   onSettle,
 }: {
   enabled: boolean;
   reduced: boolean;
+  /** the screen the server rendered (a deep link opens on the reader) */
+  initialView?: View;
   stackRef: React.RefObject<HTMLDivElement | null>;
   /** a sticky probe: its computed `top` is the line under the title bar */
   probeRef: React.RefObject<HTMLElement | null>;
-  /** a push or pop finished; `fromHistory` when the browser asked for it */
-  onSettle: (view: View, fromHistory: boolean) => void;
+  /** a screen came to rest; `fromHistory` when the browser asked for it */
+  onSettle: (view: View, fromHistory: boolean, how: Settle) => void;
 }) {
-  const [view, setView] = useState<View>("list");
+  const [view, setView] = useState<View>(initialView);
   const [moving, setMoving] = useState(false);
   const [run, setRun] = useState<Run | null>(null);
 
   // reader offset in px: 0 = covering the list, ≥ w = off to the right
   // (starts far off so the list rests untransformed before any measure)
-  const x = useMotionValue(OFF);
+  const x = useMotionValue(initialView === "reader" ? 0 : OFF);
   const width = useMotionValue(390);
   const listX = useTransform(() => -PARALLAX * Math.max(0, width.get() - x.get()));
   // the list only paints where the reader isn't (both are see-through glass)
   const listClip = useTransform(() => `inset(0 ${Math.max(0, (1 - PARALLAX) * (width.get() - x.get())).toFixed(1)}px 0 0)`);
   const shade = useTransform(() => 1 - Math.min(1, Math.max(0, x.get() / Math.max(1, width.get()))));
+  /** how far the reader is off its rest, 0..1 (its plate's world lags by it) */
+  const travel = useTransform(() => Math.min(1, Math.max(0, x.get() / Math.max(1, width.get()))));
 
   const savedY = useRef(0);
   const restoreY = useRef<number | null>(null);
+  /** a pop has finished; tell the owner once the list is on the page */
+  const poppedFrom = useRef<boolean | null>(null);
   const token = useRef(0);
   const animating = useRef(false);
+  /** where the running transition is headed */
+  const flight = useRef<View | null>(null);
   const fromHistory = useRef(false);
   const drag = useRef<Drag | null>(null);
   const handled = useRef<Run | null>(null);
@@ -97,14 +124,23 @@ export function useNavStack({
     [stackRef]
   );
 
+  const land = () => {
+    animating.current = false;
+    flight.current = null;
+  };
+
   /** the reader is gone: list back in flow, scroll restored before paint */
   const finishPop = useCallback(() => {
+    animating.current = false;
+    flight.current = null;
+    // (a reduced-motion pop never slid it: park the reader off to the right)
+    if (x.get() < width.get()) x.jump(width.get());
     restoreY.current = savedY.current;
+    poppedFrom.current = fromHistory.current;
+    fromHistory.current = false;
     setView("list");
     setMoving(false);
-    onSettleRef.current("list", fromHistory.current);
-    fromHistory.current = false;
-  }, []);
+  }, [x, width]);
 
   const push = useCallback(() => {
     if (!enabled) {
@@ -143,6 +179,7 @@ export function useNavStack({
     (next: View) => {
       token.current++;
       animating.current = false;
+      flight.current = null;
       drag.current = null;
       x.jump(next === "reader" ? 0 : width.get());
       savedY.current = 0;
@@ -158,6 +195,8 @@ export function useNavStack({
     handled.current = run;
     const stack = stackRef.current;
     if (!stack) return;
+    // (reading the size also lays the new screen out, here, before the
+    // spring's clock starts)
     const w = stack.clientWidth || window.innerWidth;
     width.set(w);
     const my = ++token.current;
@@ -175,19 +214,28 @@ export function useNavStack({
       }
       x.jump(w);
       animating.current = true;
-      animate(x, 0, PUSH).then(() => {
+      flight.current = "reader";
+      // the first frame of the slide is drawn at its start, not wherever
+      // the commit's cost would have carried it
+      afterPaint(() => {
         if (my !== token.current) return;
-        animating.current = false;
-        setMoving(false);
-        onSettleRef.current("reader", false);
+        animate(x, 0, PUSH).then(() => {
+          if (my !== token.current) return;
+          land();
+          setMoving(false);
+          onSettleRef.current("reader", false, "push");
+        });
       });
     } else {
       pinList(window.scrollY);
       animating.current = true;
-      animate(x, w, { ...PUSH, velocity: run.v }).then(() => {
+      flight.current = "list";
+      afterPaint(() => {
         if (my !== token.current) return;
-        animating.current = false;
-        finishPop();
+        animate(x, w, { ...PUSH, velocity: run.v }).then(() => {
+          if (my !== token.current) return;
+          finishPop();
+        });
       });
     }
   }, [run, stackRef, probeRef, width, x, reduced, pinList, finishPop]);
@@ -195,15 +243,22 @@ export function useNavStack({
   // reduced motion: a push settles on the next frame (the CSS cross-fade runs)
   useEffect(() => {
     if (!run || run.kind !== "push" || !reduced) return;
-    const id = requestAnimationFrame(() => onSettleRef.current("reader", false));
+    const id = requestAnimationFrame(() => onSettleRef.current("reader", false, "push"));
     return () => cancelAnimationFrame(id);
   }, [run, reduced]);
 
-  // list back in flow: put it back exactly where it was
+  // list back in flow: put it back exactly where it was, then hand over
+  // (focus can only land on the list once it is visible again)
   useLayoutEffect(() => {
-    if (view !== "list" || moving || restoreY.current == null) return;
-    scrollToY(restoreY.current);
-    restoreY.current = null;
+    if (view !== "list" || moving) return;
+    if (restoreY.current != null) {
+      scrollToY(restoreY.current);
+      restoreY.current = null;
+    }
+    const fromHistory = poppedFrom.current;
+    if (fromHistory == null) return;
+    poppedFrom.current = null;
+    onSettleRef.current("list", fromHistory, "pop");
   }, [view, moving]);
 
   // if the user scrolls while a transition settles, keep the list pinned
@@ -220,6 +275,7 @@ export function useNavStack({
     token.current++;
     drag.current = null;
     animating.current = false;
+    flight.current = null;
   }, [enabled]);
 
   /* ── the swipe back ── */
@@ -229,6 +285,7 @@ export function useNavStack({
   const begin = (e: React.PointerEvent<HTMLElement>, d: Drag, fromPress: boolean) => {
     token.current++; // a settling transition is now the finger's
     animating.current = false;
+    flight.current = null;
     x.stop();
     d.active = true;
     d.base = x.get();
@@ -243,22 +300,31 @@ export function useNavStack({
     } catch {}
   };
 
+  /** let go: off to the list (`complete`) or back onto the reader */
   const settle = (complete: boolean, v: number, w: number) => {
     if (complete) fromHistory.current = false;
     const target = complete ? w : 0;
     const my = ++token.current;
+    const done = () => {
+      land();
+      if (complete) finishPop();
+      else {
+        setMoving(false);
+        // the reader is the screen again (it may have been mid-push, with
+        // focus on a list row that is now hidden)
+        onSettleRef.current("reader", false, "stay");
+      }
+    };
     if (reduced) {
       x.jump(target);
-      if (complete) finishPop();
-      else setMoving(false);
+      done();
       return;
     }
     animating.current = true;
+    flight.current = complete ? "list" : "reader";
     animate(x, target, { ...spring.default, velocity: v }).then(() => {
       if (my !== token.current) return;
-      animating.current = false;
-      if (complete) finishPop();
-      else setMoving(false);
+      done();
     });
   };
 
@@ -268,12 +334,28 @@ export function useNavStack({
     if (!stack) return;
     const r = stack.getBoundingClientRect();
     const edge = e.clientX - r.left <= EDGE;
-    if (e.pointerType === "mouse" && !edge) return;
-    const d: Drag = { id: e.pointerId, x0: e.clientX, y0: e.clientY, edge, active: false, base: 0, grabX: 0, w: r.width, samples: [] };
+    const inFlight = animating.current && moving;
+    if (e.pointerType === "mouse" && !edge && !inFlight) return;
+    const d: Drag = {
+      id: e.pointerId,
+      x0: e.clientX,
+      y0: e.clientY,
+      edge,
+      active: false,
+      base: 0,
+      grabX: 0,
+      w: r.width,
+      caught: null,
+      dragged: false,
+      samples: [],
+    };
     drag.current = d;
-    d.samples.push({ t: e.timeStamp, x: e.clientX });
+    pushSample(d.samples, e.timeStamp, e.clientX);
     // catching a reader that is still sliding: it stops under the finger
-    if (animating.current && moving) begin(e, d, false);
+    if (inFlight) {
+      d.caught = flight.current;
+      begin(e, d, false);
+    }
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLElement>) => {
@@ -289,11 +371,11 @@ export function useNavStack({
         return;
       }
     }
+    if (Math.abs(dx) >= SLOP) d.dragged = true;
     let nx = d.base + (e.clientX - d.grabX);
     if (nx < 0) nx = -rubberband(-nx, d.w);
     x.set(nx);
-    d.samples.push({ t: e.timeStamp, x: e.clientX });
-    if (d.samples.length > 8) d.samples.shift();
+    pushSample(d.samples, e.timeStamp, e.clientX);
   };
 
   const release = (e: React.PointerEvent<HTMLElement>, cancelled: boolean) => {
@@ -301,26 +383,20 @@ export function useNavStack({
     if (!d || e.pointerId !== d.id) return;
     drag.current = null;
     if (!d.active) return;
-    // a drag is not a tap: swallow the click it would end in
-    const swallow = (ev: Event) => {
-      ev.stopPropagation();
-      ev.preventDefault();
-    };
-    window.addEventListener("click", swallow, { capture: true, once: true });
-    window.setTimeout(() => window.removeEventListener("click", swallow, { capture: true }), 80);
+    // a drag is not a tap, and a tap on a sliding screen isn't one either
+    swallowNextClick();
 
-    // release velocity over the last ~100ms of movement (at least the last
-    // two samples, unless the finger had stopped before letting go)
+    // caught mid-flight but never really moved (a tap, or the browser took
+    // the touch for a vertical scroll): carry on where it was headed
+    if (d.caught && (cancelled || !d.dragged)) {
+      settle(d.caught === "list", 0, d.w);
+      return;
+    }
+
     let v = 0;
     if (!cancelled) {
-      d.samples.push({ t: e.timeStamp, x: e.clientX });
-      const last = d.samples[d.samples.length - 1];
-      let first = d.samples.length - 2;
-      while (first > 0 && last.t - d.samples[first - 1].t <= 100) first--;
-      const a = d.samples[Math.max(0, first)];
-      const dt = (last.t - a.t) / 1000;
-      const idle = last.t - d.samples[Math.max(0, d.samples.length - 2)].t;
-      if (dt > 0 && idle < 120) v = (last.x - a.x) / dt;
+      pushSample(d.samples, e.timeStamp, e.clientX);
+      v = releaseVelocity(d.samples);
     }
     const cur = x.get();
     const complete = cur + project(v) > d.w * 0.5 && v > -120;
@@ -334,5 +410,5 @@ export function useNavStack({
     onPointerCancel: (e: React.PointerEvent<HTMLElement>) => release(e, true),
   };
 
-  return { view, moving, push, pop, jump, bind, x, listX, listClip, shade };
+  return { view, moving, push, pop, jump, bind, x, listX, listClip, shade, travel };
 }

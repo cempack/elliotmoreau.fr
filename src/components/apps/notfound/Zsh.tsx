@@ -60,23 +60,26 @@ export function Zsh({
         <>
           <p className="app-nf-zsh-line">
             zsh: correct &apos;<span className="app-nf-zsh-cmd">{command}</span>&apos; to &apos;
-            <span className="app-nf-zsh-fix">{suggestion.to}</span>&apos; [
-            {KEYS.map((k) => (
-              <button
-                key={k}
-                type="button"
-                className="app-nf-zsh-key"
-                data-cursor=""
-                data-picked={answer === k || undefined}
-                disabled={answer != null}
-                aria-label={s.answers[k].replace("{app}", appName)}
-                aria-keyshortcuts={k}
-                onClick={() => onAnswer(k)}
-              >
-                {k}
-              </button>
-            ))}
-            ]? {answer ? <span className="app-nf-zsh-answer">{answer}</span> : <Caret />}
+            <span className="app-nf-zsh-fix">{suggestion.to}</span>&apos;{" "}
+            <span className="app-nf-zsh-ask">
+              [
+              {KEYS.map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  className="app-nf-zsh-key"
+                  data-cursor=""
+                  data-picked={answer === k || undefined}
+                  disabled={answer != null}
+                  aria-label={s.answers[k].replace("{app}", appName)}
+                  aria-keyshortcuts={k}
+                  onClick={() => onAnswer(k)}
+                >
+                  {k}
+                </button>
+              ))}
+              ]? {answer ? <span className="app-nf-zsh-answer">{answer}</span> : <Caret />}
+            </span>
           </p>
           {answer === "n" && notFound}
           {(answer === "n" || answer === "a") && (

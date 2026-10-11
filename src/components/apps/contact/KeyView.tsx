@@ -85,7 +85,7 @@ export function KeyView({ active }: { active: boolean }) {
       <header className="app-contact-head">
         <p className="app-contact-eyebrow">
           {c.keyEyebrow}
-          {info && <span className="app-contact-eyebrow-dim"> · {info.algorithm}</span>}
+          {info && <span className="app-contact-eyebrow-dim">· {info.algorithm}</span>}
         </p>
         <h2 className="app-contact-title">{c.keyTitle}</h2>
         <p className="app-contact-lead">{c.keyLead}</p>
@@ -137,11 +137,11 @@ export function KeyView({ active }: { active: boolean }) {
                   {c.fingerprint}
                 </h3>
                 {info ? (
-                  <p className="app-contact-fp" aria-label={`${c.fingerprint}: ${fp.join(" ")}`}>
+                  <p className="app-contact-fp">
                     <span>{fp.slice(0, half).join(" ")}</span>
                     <span>
                       {fp.slice(half).map((g, i) => (
-                        <span key={i} data-id={i >= fp.length - half - 4 || undefined}>
+                        <span key={i} data-id={(info.version !== 6 && i >= fp.length - half - 4) || undefined}>
                           {i ? " " : ""}
                           {g}
                         </span>
@@ -217,7 +217,7 @@ export function KeyView({ active }: { active: boolean }) {
                   <span>{KEY_FILE}</span>
                   <span className="tabular">{fill(c.keyLines, { n: lines.length })}</span>
                 </div>
-                <pre className="app-contact-armor-pre" data-lenis-prevent tabIndex={0} aria-label={c.keyBlock}>
+                <pre className="app-contact-armor-pre" data-lenis-prevent tabIndex={0} role="region" aria-label={c.keyBlock}>
                   <code>
                     {lines.map((l, i) => (
                       <span key={i} className="app-contact-armor-line">

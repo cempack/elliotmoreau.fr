@@ -181,7 +181,7 @@ const fr: typeof en = {
     copyFailed: "Copie impossible",
     hintClose: "fermer",
     hintBrowse: "parcourir",
-    drag: "glisser vers le bas pour fermer",
+    drag: "glisser vers le bas pour ranger",
     preview: "Capture d'écran de {name}",
   },
   status: {

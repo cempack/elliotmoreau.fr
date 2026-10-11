@@ -47,13 +47,13 @@ export const NOW = {
   /** One or two sentences under the headline. */
   intro: {
     en: "A snapshot of what has my attention at this point in my life. The live bits update themselves; the rest I write by hand, now and then.",
-    fr: "Un instantané de ce qui occupe mon attention ces temps-ci. Les éléments en direct se mettent à jour tout seuls ; le reste, je l’écris à la main, de temps en temps.",
+    fr: "Un instantané de ce qui occupe mon attention ces temps-ci. Les éléments en direct se mettent à jour tout seuls ; le reste, je l’écris à la main, de temps en temps.",
   } satisfies L10n,
 
   /** The current focus: the one thing most of my time goes into. */
   focus: {
     name: "emOS",
-    /** Completes the headline. EN: "Right now I'm {doing}, …"; FR: "En ce moment, {doing}, …". Keep {name}. */
+    /** Completes the headline. EN: "Right now I'm {doing}, …"; FR: "Ces jours-ci, {doing}, …". Keep {name}. */
     doing: { en: "building {name}", fr: "je construis {name}" } satisfies L10n,
     title: {
       en: "Rebuilding this site as a tiny operating system",
@@ -79,7 +79,7 @@ export const NOW = {
       title: "The Design of Everyday Things",
       author: "Don Norman",
       status: "reading",
-      note: { en: "Affordances, before another gesture.", fr: "Les affordances, avant un geste de plus." },
+      note: { en: "Affordances, before another gesture.", fr: "Les affordances, avant tout geste." },
     },
     {
       title: "Crafting Interpreters",
@@ -94,7 +94,7 @@ export const NOW = {
   learning: [
     {
       label: { en: "Spring physics for interfaces", fr: "La physique des ressorts dans les interfaces" },
-      note: { en: "Damping, response, earned bounces.", fr: "Amortissement, réponse, rebonds mérités." },
+      note: { en: "Damping, response, earned bounces.", fr: "Amortir, répondre, rebondir juste." },
     },
     {
       label: { en: "SVG filters and refraction", fr: "Filtres SVG et réfraction" },
@@ -110,11 +110,11 @@ export const NOW = {
   drafting: [
     {
       title: { en: "How emOS is built", fr: "Comment emOS est construit" },
-      note: { en: "Glass, pixels and a lot of springs.", fr: "Du verre, des pixels et beaucoup de ressorts." },
+      note: { en: "Glass, pixels and a lot of springs.", fr: "Verre, pixels et ressorts." },
     },
     {
       title: { en: "Liquid Glass in the browser", fr: "Le Liquid Glass dans le navigateur" },
-      note: { en: "What refracts, what fakes it, and why.", fr: "Ce qui réfracte, ce qui triche, et pourquoi." },
+      note: { en: "What refracts, what fakes it, and why.", fr: "Ce qui réfracte, ce qui triche." },
     },
   ] satisfies Draft[],
 

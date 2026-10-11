@@ -12,7 +12,7 @@ import { useSpotifyStatus } from "@/hooks/useSpotifyStatus";
 import { NOW } from "@/content/now";
 import { Board, useBoard, type BoardWidget } from "./board/Board";
 import { NowHero } from "./Hero";
-import { G_BOOK, G_BUILD, G_CLOCK, G_FETCH, G_NOTE, G_PEN, G_PULSE, G_RESET } from "./bits";
+import { G_BOOK, G_BUILD, G_CHECK, G_CLOCK, G_FETCH, G_NOTE, G_PEN, G_PULSE, G_RESET } from "./bits";
 import { fill, useNow } from "./lib";
 import { Listening, ListeningMeta } from "./widgets/Listening";
 import { HereMeta, HereNow } from "./widgets/HereNow";
@@ -182,7 +182,12 @@ export function NowApp({ data }: { data: SiteData }) {
           <p className="app-now-hint" aria-hidden>
             {arrange ? n.board.hintArrange : mounted && !fine ? n.board.hintTouch : n.board.hintFine}
           </p>
-          {!board.isDefault && <p className="app-now-hint app-now-hint--saved">{n.board.saved}</p>}
+          {!board.isDefault && (
+            <p className="app-now-hint app-now-hint--saved">
+              <PixelGlyph cells={G_CHECK} size={8} />
+              {n.board.saved}
+            </p>
+          )}
         </div>
 
         <Board
@@ -204,12 +209,7 @@ export function NowApp({ data }: { data: SiteData }) {
         </p>
 
         <footer className="app-now-foot">
-          <p>
-            <a href="https://nownownow.com/about" target="_blank" rel="noopener noreferrer" className="app-now-link">
-              {n.footer.about}
-            </a>
-          </p>
-          <p className="app-now-foot-src">{n.footer.sources}</p>
+          <p>{n.footer.sources}</p>
         </footer>
       </div>
     </AppWindow>

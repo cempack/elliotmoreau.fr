@@ -1,0 +1,49 @@
+import { getDict, type Locale } from "@/i18n";
+import { SITE_URL, localePath } from "@/i18n/config";
+import { SOCIALS } from "@/lib/places";
+
+const BLOG_URL = process.env.NEXT_PUBLIC_BLOG_URL || "https://blog.elliotmoreau.fr";
+
+/**
+ * Structured data for the home page (server component: render it from a
+ * page or layout, never from a client component). One graph: Elliot as a
+ * Person, with his profiles as sameAs, and the site as a WebSite he
+ * publishes, in the page's language. Sanitized per Next's JSON-LD guide
+ * (`<` escaped so no string can close the script).
+ */
+export function PersonJsonLd({ lang }: { lang: Locale }) {
+  const t = getDict(lang);
+  const person = `${SITE_URL}/#person`;
+  const data = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Person",
+        "@id": person,
+        name: "Elliot Moreau",
+        url: SITE_URL,
+        jobTitle: t.notfound.seo.jobTitle,
+        description: t.meta.description,
+        address: { "@type": "PostalAddress", addressCountry: "FR" },
+        knowsLanguage: ["fr", "en"],
+        sameAs: [SOCIALS.github, SOCIALS.mastodon, SOCIALS.youtube, SOCIALS.x, SOCIALS.spotifyUser, BLOG_URL],
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${SITE_URL}/#website`,
+        url: new URL(localePath(lang, "/"), SITE_URL).toString(),
+        name: t.meta.siteName,
+        description: t.meta.description,
+        inLanguage: lang === "fr" ? "fr-FR" : "en-US",
+        author: { "@id": person },
+        publisher: { "@id": person },
+      },
+    ],
+  };
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }}
+    />
+  );
+}

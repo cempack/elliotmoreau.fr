@@ -2,7 +2,9 @@
 
 import { PixelPlanet } from "@/components/PixelPlanet";
 import { PixelGlyph } from "@/components/glyphs";
+import { useHydrated } from "@/hooks/env";
 import { useI18n } from "@/i18n/client";
+import { timeAgo } from "@/lib/format";
 import { SOCIALS } from "@/lib/places";
 import type { SpotifyStatus, TrackInfo } from "@/lib/spotify";
 import { Art, G_ARROW, LiveDot, PixelCava } from "../bits";
@@ -10,16 +12,19 @@ import { fill, fmtMs, useTrackProgress } from "../lib";
 
 export type Listen = { status: SpotifyStatus | null; track: TrackInfo | null; playing: boolean };
 
-/** Header status: playing / paused / last played. */
+/** Header status: playing / paused / last played, with how long ago. */
 export function ListeningMeta({ status, track, playing }: Listen) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const l = t.now.listening;
+  const mounted = useHydrated();
   if (!track) return null;
-  const label = playing ? l.playing : status?.now ? l.paused : l.last;
+  const last = !status?.now;
+  const ago = last && mounted && track.playedAt ? timeAgo(track.playedAt, lang) : "";
   return (
     <span className="app-now-status" data-live={playing || undefined}>
       <LiveDot live={playing} />
-      {label}
+      {playing ? l.playing : last ? l.last : l.paused}
+      {ago && <span className="app-now-status-ago tabular">{ago}</span>}
     </span>
   );
 }
@@ -51,11 +56,14 @@ export function Listening({ status, track, playing }: Listen) {
             <Art image={track.image} seed={`${track.title} · ${track.artist}`} />
           </a>
           <div className="app-now-listen-info">
-            <p className="app-now-listen-title">{track.title}</p>
+            <p className="app-now-listen-title" title={track.title}>
+              {track.title}
+            </p>
             <p className="app-now-listen-artist">{track.artist}</p>
             {track.album && <p className="app-now-listen-album">{track.album}</p>}
             <PixelCava playing={playing} className="app-now-listen-cava" />
-            {track.durationMs > 0 && (
+            {/* a position only means something for the track Spotify holds now */}
+            {status?.now && track.durationMs > 0 && (
               <div className="app-now-progress">
                 <span
                   className="app-now-progress-bar"
@@ -100,7 +108,8 @@ export function Listening({ status, track, playing }: Listen) {
                 <>
                   <span className="app-now-artist-face">
                     <Art image={a.image} seed={`artist · ${a.name}`} className="app-now-art--round" />
-                    <span className="app-now-artist-rank tabular" aria-label={fill(l.rank, { n: i + 1 })}>
+                    {/* the <ol> carries the rank for assistive tech */}
+                    <span className="app-now-artist-rank tabular" aria-hidden>
                       {i + 1}
                     </span>
                   </span>

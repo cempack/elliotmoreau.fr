@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { m, useSpring, useTransform, useVelocity } from "motion/react";
 import { useI18n } from "@/i18n/client";
@@ -24,9 +24,11 @@ const realImage = (p: GhostPost) => (p.feature_image && !/static\.ghost\.org/.te
 /**
  * Chapter 5, writing: the three latest posts as large typographic rows
  * (date, title, tag and reading time), each a link to the blog. On a
- * mouse, a plate follows the pointer on a spring, swinging a little with
- * its speed, and slides like a film strip between the posts' covers (or
- * their pixel planets) with the excerpt beneath.
+ * mouse, a plate follows the pointer along the row on a spring, swinging
+ * a little with its speed, and docks just under the row being read (over
+ * it, near the bottom of the screen), so it never covers that title. It
+ * slides like a film strip between the posts' covers (or their pixel
+ * planets) with the excerpt beneath.
  */
 export function WritingChapter() {
   const { t, lang, path } = useI18n();
@@ -38,27 +40,58 @@ export function WritingChapter() {
   const reduced = useReduced();
   const [hover, setHover] = useState<number | null>(null);
   const [last, setLast] = useState(0);
+  const [above, setAbove] = useState(false);
+  const listRef = useRef<HTMLOListElement>(null);
+  const plateRef = useRef<HTMLDivElement>(null);
+  const lastX = useRef(0);
   const px = useSpring(0, FOLLOW);
   const py = useSpring(0, FOLLOW);
-  // the plate hangs right of the pointer and moves to its left near the edge
-  const side = useSpring(36, { stiffness: 300, damping: 34 });
-  const px2 = useTransform(() => px.get() + side.get());
   const swing = useSpring(useTransform(useVelocity(px), [-2400, 0, 2400], [-6, 0, 6], { clamp: true }), {
     stiffness: 200,
     damping: 26,
   });
 
-  const track = (e: React.PointerEvent) => {
-    if (e.pointerType !== "mouse") return;
-    side.set(e.clientX > window.innerWidth - 380 ? -356 : 36);
-    if (hover === null) {
-      px.jump(e.clientX);
-      py.jump(e.clientY);
+  /** where the plate goes for row i: under it, or over it if there's no room */
+  const place = (i: number, clientX: number, jump: boolean) => {
+    const row = listRef.current?.querySelectorAll<HTMLElement>("[data-wr-row]")[i];
+    const plate = plateRef.current;
+    if (!row || !plate) return;
+    const r = row.getBoundingClientRect();
+    const w = plate.offsetWidth;
+    const h = plate.offsetHeight;
+    const gap = 12;
+    const fitsBelow = r.bottom + gap + h <= window.innerHeight - 16;
+    const x = Math.min(Math.max(16, clientX - 56), window.innerWidth - w - 16);
+    const y = fitsBelow ? r.bottom + gap : r.top - gap - h;
+    setAbove(!fitsBelow);
+    if (jump) {
+      px.jump(x);
+      py.jump(y);
     } else {
-      px.set(e.clientX);
-      py.set(e.clientY);
+      px.set(x);
+      py.set(y);
     }
   };
+
+  const track = (e: React.PointerEvent) => {
+    if (e.pointerType !== "mouse") return;
+    const row = (e.target as Element).closest<HTMLElement>("[data-wr-row]");
+    if (!row) return;
+    lastX.current = e.clientX;
+    place(Number(row.dataset.wrRow), e.clientX, hover === null);
+  };
+
+  // the rows move under a still pointer when the page scrolls: follow them
+  const placeRef = useRef(place);
+  useEffect(() => {
+    placeRef.current = place;
+  });
+  useEffect(() => {
+    if (hover === null) return;
+    const onScroll = () => placeRef.current(hover, lastX.current, false);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [hover]);
 
   const shown = list[hover ?? last];
 
@@ -102,6 +135,7 @@ export function WritingChapter() {
         </div>
       ) : (
         <ol
+          ref={listRef}
           className="app-story-wr-list"
           onPointerMove={fine ? track : undefined}
           onPointerLeave={() => setHover(null)}
@@ -113,6 +147,7 @@ export function WritingChapter() {
                 target="_blank"
                 rel="noreferrer"
                 className="app-story-wr-row"
+                data-wr-row={i}
                 data-on={hover === i || undefined}
                 data-cursor={s.cursor}
                 onPointerEnter={(e) => {
@@ -140,9 +175,11 @@ export function WritingChapter() {
 
       {fine && list.length > 0 && (
         <m.div
+          ref={plateRef}
           className="app-story-wr-plate"
           aria-hidden
-          style={{ x: px2, y: py, rotate: reduced ? 0 : swing }}
+          data-above={above || undefined}
+          style={{ x: px, y: py, rotate: reduced ? 0 : swing }}
           initial={false}
           animate={hover !== null ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.86 }}
           transition={spring.default}

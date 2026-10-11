@@ -37,7 +37,8 @@ export function Compose({ state }: { state: ReturnType<typeof useDraft> }) {
   const c = t.contact;
   const { draft, saved, update } = state;
   const reduced = useReduced();
-  const coarse = useMedia("(pointer: coarse)");
+  // phones aim for the tab bar below: "flick it down"; elsewhere, "throw it into the Dock"
+  const coarse = useMedia("(pointer: coarse), (max-width: 767px)");
   const isMac = useIsMac();
   const { blip } = useSound();
   const email = SOCIALS.email;
@@ -260,7 +261,10 @@ export function Compose({ state }: { state: ReturnType<typeof useDraft> }) {
             )}
 
             <div className="app-contact-foot">
-              <p className="app-contact-status" aria-live="polite">
+              <span className="sr-only" aria-live="polite">
+                {busy ? c.flying : ""}
+              </span>
+              <p className="app-contact-status">
                 {busy ? (
                   <span className="app-contact-status-busy">{c.flying}</span>
                 ) : empty ? (

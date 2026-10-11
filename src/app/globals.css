@@ -199,22 +199,9 @@ p {
   transform: none;
 }
 
-/* ───────────────────────── foundation (lab + next site) ─────────────────────────
-   Component primitives themed through custom properties, so each direction
-   restyles them by setting variables on an ancestor ([data-dir]). */
-
-:root {
-  --ui-bg: #1e2326;
-  --ui-surface: rgba(45, 53, 59, 0.82);
-  --ui-border: rgba(245, 242, 236, 0.14);
-  --ui-text: #d3c6aa;
-  --ui-muted: #9da9a0;
-  --ui-accent: #a7c080;
-  --ui-accent-ink: #1e2326;
-  --ui-radius: 18px;
-  --ui-font: var(--font-inter), system-ui, sans-serif;
-  --ui-blur: 24px;
-}
+/* ───────────────────────── foundation primitives ─────────────────────────
+   Component primitives themed through the --ui-* / --pal-* / --cursor-*
+   custom properties defined above (Nocturne). */
 
 /* cursor */
 html.has-cursor,

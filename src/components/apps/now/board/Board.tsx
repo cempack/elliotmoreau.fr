@@ -324,6 +324,20 @@ export function Board({
     });
   }, []);
 
+  /** after a press that never lifted: home if it was caught off its slot */
+  const homeIfAdrift = useCallback(
+    (id: string, it: Item) => {
+      const adrift = Math.abs(it.x.get()) > 0.5 || Math.abs(it.y.get()) > 0.5 || Math.abs(it.rotate.get()) > 0.05;
+      if (adrift || it.el.dataset.settling !== undefined) {
+        settle.current = { id, vx: 0, vy: 0, thrown: false };
+        runSettle();
+      } else {
+        animate(it.scale, 1, spring.snappy);
+      }
+    },
+    [runSettle]
+  );
+
   /* ── FLIP: after every order change, everything glides to its new slot ── */
   useLayoutEffect(() => {
     liveRef.current = liveOrder;
@@ -542,7 +556,9 @@ export function Board({
       const it = items.current.get(d.id);
       if (!it) return;
       if (!d.lifted) {
-        animate(it.scale, 1, spring.snappy);
+        // a press that never became a drag. If it caught the widget in
+        // flight, the spring was stopped where the hand met it: send it home.
+        homeIfAdrift(d.id, it);
         return;
       }
       const cur = liveRef.current;
@@ -579,7 +595,7 @@ export function Board({
       window.addEventListener("click", swallow, { capture: true, once: true });
       window.setTimeout(() => window.removeEventListener("click", swallow, { capture: true }), 0);
     },
-    [blip, board]
+    [blip, board, homeIfAdrift]
   );
 
   const onPointerMove = (e: React.PointerEvent) => {
@@ -598,7 +614,7 @@ export function Board({
           window.clearTimeout(d.timer);
           drag.current = null;
           const it = items.current.get(d.id);
-          if (it) animate(it.scale, 1, spring.snappy);
+          if (it) homeIfAdrift(d.id, it);
         }
         return;
       }
@@ -813,6 +829,8 @@ function BoardItem({
 }) {
   const ref = useRef<HTMLElement>(null);
   const gripRef = useRef<HTMLButtonElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const [overflow, setOverflow] = useState(false);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const scale = useMotionValue(1);
@@ -826,6 +844,21 @@ function BoardItem({
     register(w.id, { el: ref.current, grip: gripRef.current, x, y, scale, rotate, ox, oy });
     return () => register(w.id, null);
   }, [register, w.id, x, y, scale, rotate, ox, oy]);
+
+  // grid tiles have fixed heights: if hand-written content ever outgrows
+  // one, it fades out at the bottom instead of being sliced at the edge
+  useEffect(() => {
+    const body = bodyRef.current;
+    if (!body) return;
+    const check = () => setOverflow(body.scrollHeight > body.clientHeight + 2);
+    const ro = new ResizeObserver(check);
+    ro.observe(body);
+    for (const c of body.children) {
+      ro.observe(c);
+      for (const g of c.children) ro.observe(g);
+    }
+    return () => ro.disconnect();
+  }, []);
 
   return (
     <m.article
@@ -877,7 +910,9 @@ function BoardItem({
             <PixelGlyph cells={G_GRIP} size={14} />
           </button>
         </header>
-        <div className="app-now-w-body">{w.children}</div>
+        <div ref={bodyRef} className="app-now-w-body" data-overflow={overflow || undefined}>
+          {w.children}
+        </div>
       </div>
     </m.article>
   );

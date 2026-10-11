@@ -7,6 +7,7 @@ import { useI18n } from "@/i18n/client";
 import { useSound } from "@/lib/sound";
 import { spring } from "@/lib/motion";
 import { clamp01, useMedia, useReduced } from "@/hooks/env";
+import { lenisRef } from "@/lib/lenisRef";
 import { Glass } from "@/components/os/Glass";
 import { AppIcon } from "@/components/os/icons";
 import { APPS, type AppId } from "@/components/os/apps";
@@ -19,13 +20,18 @@ import { fill } from "./util";
 type WinId = Exclude<AppId, "home">;
 type Offset = { x: number; y: number };
 
-/** Grid order (reading order) and the order they fly out of the pile. */
+/**
+ * Grid order (reading order, so focus follows what the eye sees at every
+ * breakpoint) and the order they fly out of the pile. Mail ends the grid
+ * at the bottom right, where the mini player rests: its body keeps that
+ * corner empty.
+ */
 const WINDOWS: { id: WinId; flight: number }[] = [
   { id: "work", flight: 0 },
   { id: "writing", flight: 1 },
   { id: "now", flight: 2 },
-  { id: "contact", flight: 3 },
-  { id: "atlas", flight: 4 },
+  { id: "atlas", flight: 3 },
+  { id: "contact", flight: 4 },
 ];
 
 /** Where the pile sits in depth, and when the flight runs (scroll progress). */
@@ -33,6 +39,10 @@ const PILE_SCALE = 0.3;
 const FLY_FROM = 0.33;
 const FLY_STAGGER = 0.05;
 const FLY_SPAN = 0.32;
+/** every window has landed */
+const LANDED = FLY_FROM + (WINDOWS.length - 1) * FLY_STAGGER + FLY_SPAN;
+/** where keyboard focus takes the scene: landed, with a little hold left */
+const FOCUS_AT = LANDED + (1 - LANDED) * 0.45;
 
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
@@ -43,8 +53,10 @@ const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t 
  * depth, then fly out one after another into a Mission Control grid while
  * the header assembles word by word. Hover lifts a window with an accent
  * ring; a click opens the app (app-open grows it from its Dock icon,
- * which nods). Phones, short screens and reduced motion get the grid in
- * normal flow, each window rising into place as it scrolls in.
+ * which nods). Tab into the scene before it has assembled and the scroll
+ * glides to the finished grid, so a focused window is never a thumbnail.
+ * Phones, short screens and reduced motion get the grid in normal flow,
+ * each window rising into place as it scrolls in.
  */
 export function MissionControl({ music }: { music: Music }) {
   const { t } = useI18n();
@@ -62,6 +74,18 @@ export function MissionControl({ music }: { music: Music }) {
   // get hardware-accelerated onto a native ScrollTimeline whose range
   // ignores these offsets
   const headOpacity = useTransform(p, (v) => clamp01((v - 0.08) / 0.2));
+  // the lede waits for the title to settle, then reads as its caption
+  const ledeOpacity = useTransform(p, (v) => clamp01((v - 0.38) / 0.08));
+
+  // keyboard focus landing in the pile: glide on to the assembled grid
+  const assemble = () => {
+    const wrap = wrapRef.current;
+    if (!wrap || p.get() >= LANDED) return;
+    const r = wrap.getBoundingClientRect();
+    const top = window.scrollY + r.top - window.innerHeight + FOCUS_AT * r.height;
+    if (lenisRef.current) lenisRef.current.scrollTo(top, { duration: 0.6, easing: (t) => 1 - Math.pow(1 - t, 4) });
+    else window.scrollTo({ top, behavior: "smooth" });
+  };
 
   // each window's way back to the pile: grid centre minus its own centre,
   // from offset* (layout boxes, untouched by the transforms they drive)
@@ -98,10 +122,10 @@ export function MissionControl({ music }: { music: Music }) {
             kicker={s.kicker}
             titleId="story-mc-title"
             title={pinned ? <KineticTitle text={s.title} p={p} from={0.1} to={0.4} /> : <SplitText text={s.title} by="word" stagger={0.05} />}
-            lede={s.lede}
+            lede={pinned ? <m.span style={{ opacity: ledeOpacity }}>{s.lede}</m.span> : s.lede}
           />
         </m.div>
-        <div ref={gridRef} className="app-story-mc-grid">
+        <div ref={gridRef} className="app-story-mc-grid" onFocusCapture={pinned ? assemble : undefined}>
           {WINDOWS.map((w) =>
             pinned ? (
               <FlyingWindow key={w.id} id={w.id} flight={w.flight} p={p} offset={offsets[WINDOWS.indexOf(w)]} music={music} />
@@ -249,7 +273,8 @@ function KineticWord({
   const a = from + (i / Math.max(1, n)) * span * 0.55;
   const b = a + span * 0.45;
   const k = useTransform(p, (v) => easeOut(clamp01((v - a) / (b - a))));
-  const y = useTransform(k, (v) => `${(1 - v) * 108}%`);
+  // from fully under the mask (its padding included), so nothing peeks
+  const y = useTransform(k, (v) => `${(1 - v) * 135}%`);
   const w = useTransform(k, (v) => Math.round(250 + 400 * v));
   return (
     <>

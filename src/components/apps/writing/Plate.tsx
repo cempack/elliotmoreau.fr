@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { MotionValue } from "motion/react";
 import type { GhostPost } from "@/lib/ghost";
-import { bayer, paintPlate } from "./plate";
+import { bayer, composite, layerOffsets, paintPlateLayers, type PlateLayers } from "./plate";
 import { realImage } from "./util";
 
 /** how long the dithered dissolve between two posts' worlds takes */
@@ -12,14 +13,26 @@ const DISSOLVE_MS = 340;
  * Keeps one canvas sized to its frame (whole cells, 2–4 CSS px each) and
  * paints plates into it. Switching seeds while visible dissolves the old
  * world into the new one in Bayer order: the pixel grid itself is the
- * transition.
+ * transition. A shift (parallax) restacks the depth layers in whole-cell
+ * steps; it only repaints when a layer actually moves a cell.
+ *
+ * What is on screen always lives in `img` (JS memory), so a dissolve that
+ * interrupts another starts from it without reading the canvas back.
  */
 class PlateRenderer {
   W = 0;
   H = 0;
   cell = 0;
   seed = "";
+  layers: PlateLayers | null = null;
+  /** the frame on screen */
   img: ImageData | null = null;
+  /** the current seed at the current offsets */
+  target: Uint8ClampedArray | null = null;
+  offsets = [0, 0, 0, 0];
+  shift = 0;
+  from: Uint8ClampedArray | null = null;
+  t0 = 0;
   raf = 0;
   private ctx: CanvasRenderingContext2D | null;
 
@@ -46,14 +59,55 @@ class PlateRenderer {
     this.canvas.height = H;
     this.canvas.style.width = `${W * cell}px`;
     this.canvas.style.height = `${H * cell}px`;
+    this.img = null;
+    this.layers = null;
     return true;
   }
 
+  private build() {
+    if (!this.seed || !this.W) return false;
+    this.layers = paintPlateLayers(this.seed, this.W, this.H);
+    this.target = new Uint8ClampedArray(this.W * this.H * 4);
+    composite(this.layers, this.offsets, this.target);
+    return true;
+  }
+
+  /** put the target (or the dissolve towards it) on the canvas */
+  private draw = (now = performance.now()) => {
+    const { ctx, target } = this;
+    if (!ctx || !target) return;
+    if (!this.img || this.img.width !== this.W || this.img.height !== this.H) this.img = new ImageData(this.W, this.H);
+    const out = this.img.data;
+    const from = this.from;
+    if (!from || from.length !== out.length) {
+      this.from = null;
+      out.set(target);
+      ctx.putImageData(this.img, 0, 0);
+      return;
+    }
+    const k = Math.min(1, (now - this.t0) / DISSOLVE_MS);
+    // ease out: most pixels flip early, the last few linger
+    const e = 1 - (1 - k) * (1 - k);
+    const { W, H } = this;
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        const i = (y * W + x) * 4;
+        const src = bayer(x >> 1, y >> 1) < e ? target : from;
+        out[i] = src[i];
+        out[i + 1] = src[i + 1];
+        out[i + 2] = src[i + 2];
+        out[i + 3] = src[i + 3];
+      }
+    }
+    ctx.putImageData(this.img, 0, 0);
+    if (k < 1) this.raf = requestAnimationFrame(this.draw);
+    else this.from = null;
+  };
+
   paintNow() {
     cancelAnimationFrame(this.raf);
-    if (!this.seed || !this.W || !this.ctx) return;
-    this.img = paintPlate(this.seed, this.W, this.H);
-    this.ctx.putImageData(this.img, 0, 0);
+    this.from = null;
+    if (this.build()) this.draw();
   }
 
   setSeed(seed: string, animate: boolean) {
@@ -65,36 +119,22 @@ class PlateRenderer {
       return;
     }
     cancelAnimationFrame(this.raf);
-    const { W, H, ctx } = this;
     // start from whatever is on screen (maybe a dissolve in progress)
-    const from = ctx.getImageData(0, 0, W, H).data;
-    const next = paintPlate(seed, W, H);
-    const to = next.data;
-    const frame = new ImageData(W, H);
-    const out = frame.data;
-    const t0 = performance.now();
-    const step = (now: number) => {
-      const k = Math.min(1, (now - t0) / DISSOLVE_MS);
-      // ease out: most pixels flip early, the last few linger
-      const e = 1 - (1 - k) * (1 - k);
-      for (let y = 0; y < H; y++) {
-        for (let x = 0; x < W; x++) {
-          const i = (y * W + x) * 4;
-          const src = bayer(x >> 1, y >> 1) < e ? to : from;
-          out[i] = src[i];
-          out[i + 1] = src[i + 1];
-          out[i + 2] = src[i + 2];
-          out[i + 3] = src[i + 3];
-        }
-      }
-      ctx.putImageData(frame, 0, 0);
-      if (k < 1) this.raf = requestAnimationFrame(step);
-      else {
-        this.img = next;
-        ctx.putImageData(next, 0, 0);
-      }
-    };
-    this.raf = requestAnimationFrame(step);
+    this.from = this.img.data.slice();
+    this.t0 = performance.now();
+    this.build();
+    this.raf = requestAnimationFrame(this.draw);
+  }
+
+  setShift(shift: number) {
+    this.shift = shift;
+    const next = layerOffsets(shift);
+    if (next.every((v, i) => v === this.offsets[i])) return;
+    this.offsets = next;
+    if (!this.layers || !this.target) return;
+    composite(this.layers, next, this.target);
+    // a running dissolve picks the new target up on its next frame
+    if (!this.from) this.draw();
   }
 
   /** bring the canvas up to date with the frame and a seed: a resize (or a
@@ -110,7 +150,7 @@ class PlateRenderer {
   }
 }
 
-export function Plate({ post, animate }: { post: GhostPost; animate: boolean }) {
+export function Plate({ post, animate, shift }: { post: GhostPost; animate: boolean; shift?: MotionValue<number> }) {
   const frameRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<PlateRenderer | null>(null);
@@ -157,6 +197,12 @@ export function Plate({ post, animate }: { post: GhostPost; animate: boolean }) 
   useEffect(() => {
     rendererRef.current?.sync(post.slug, animate);
   }, [post.slug, animate]);
+
+  useEffect(() => {
+    if (!shift) return;
+    rendererRef.current?.setShift(shift.get());
+    return shift.on("change", (v) => rendererRef.current?.setShift(v));
+  }, [shift]);
 
   const showImg = src && failed !== src;
 

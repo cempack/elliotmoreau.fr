@@ -54,7 +54,7 @@ export function Alert({
   const ox = useTransform(() => tether.x.get() + shake.get());
 
   const desktop = (
-    <PressLink href={href("/")} className="app-nf-btn app-nf-btn--primary" data-cursor="" data-default={!offering || undefined}>
+    <PressLink href={href("/")} className="app-nf-btn app-nf-btn--primary" data-cursor="">
       {s.desktop}
     </PressLink>
   );
@@ -111,7 +111,6 @@ export function Alert({
                 transitionTypes={["app-open"]}
                 className="app-nf-btn app-nf-btn--primary"
                 data-cursor=""
-                data-default=""
               >
                 {s.open.replace("{app}", appName)}
               </PressLink>

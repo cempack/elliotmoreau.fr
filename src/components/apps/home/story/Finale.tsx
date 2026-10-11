@@ -14,7 +14,7 @@ import { useFinePointer, useReduced } from "@/hooks/env";
 import { SOCIALS } from "@/lib/places";
 import { spring } from "@/lib/motion";
 import { useSound } from "@/lib/sound";
-import { PowerOff, reboot } from "./PowerOff";
+import { PowerGlyph, PowerOff, reboot } from "./PowerOff";
 import { fill } from "./util";
 
 const LINKS: { label: string; href: string; glyph: Cells; handle: string; me?: boolean }[] = [
@@ -123,16 +123,7 @@ export function Finale() {
               setOff(true);
             }}
           >
-            <svg width="12" height="12" viewBox="0 0 7 7" shapeRendering="crispEdges" fill="currentColor" aria-hidden>
-              <rect x="3" y="0" width="1" height="3" />
-              <rect x="1" y="1" width="1" height="1" />
-              <rect x="5" y="1" width="1" height="1" />
-              <rect x="0" y="2" width="1" height="3" />
-              <rect x="6" y="2" width="1" height="3" />
-              <rect x="1" y="5" width="1" height="1" />
-              <rect x="5" y="5" width="1" height="1" />
-              <rect x="2" y="6" width="3" height="1" />
-            </svg>
+            <PowerGlyph size={12} />
             {s.shutDown}
           </button>
           <button type="button" className="app-story-foot-btn" onClick={reboot} aria-label={s.restartLabel}>

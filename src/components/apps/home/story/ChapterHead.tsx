@@ -21,7 +21,7 @@ export function ChapterHead({
   kicker: string;
   title: React.ReactNode;
   titleId: string;
-  lede?: string;
+  lede?: React.ReactNode;
   aside?: React.ReactNode;
   className?: string;
 }) {

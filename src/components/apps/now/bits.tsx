@@ -83,6 +83,14 @@ export const G_NEXT: Cells = [
   [0, 3], [1, 3], [2, 3], [3, 3], [4, 3],
 ];
 
+export const G_CHECK: Cells = [
+  [6, 1],
+  [5, 2],
+  [0, 3], [4, 3],
+  [1, 4], [3, 4],
+  [2, 5],
+];
+
 /** The flare live dot; pulses (once on, then calmly) only when `live`. */
 export function LiveDot({ live = true, className = "" }: { live?: boolean; className?: string }) {
   return <span aria-hidden className={`app-now-dot ${className}`} data-live={live || undefined} />;

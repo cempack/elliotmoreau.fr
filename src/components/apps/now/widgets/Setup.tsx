@@ -5,7 +5,6 @@ import { PixelLabel } from "@/components/PixelLabel";
 import { useI18n } from "@/i18n/client";
 import type { RepoInfo } from "@/lib/github";
 import { NOW, loc } from "@/content/now";
-import { useNow } from "../lib";
 
 const PALETTE = [
   ["ink", "#11131c"],
@@ -24,23 +23,18 @@ export function SetupMeta() {
 
 /**
  * The "uses" sheet as fastfetch would print it: a pixel logo, user@host,
- * the hand-written rows from content (unconfirmed ones stay hidden), two
- * live rows (languages from GitHub, local time) and the palette.
+ * the hand-written rows from content (unconfirmed ones stay hidden), one
+ * live row (languages, from GitHub) and the palette.
  */
 export function Setup({ repos }: { repos: RepoInfo[] }) {
   const { t, lang } = useI18n();
   const s = t.now.setup;
-  const now = useNow(15_000);
   const counts = new Map<string, number>();
   for (const r of repos) if (r.language) counts.set(r.language, (counts.get(r.language) ?? 0) + 1);
   const langs = [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([l]) => l).slice(0, 4);
-  const time = now
-    ? new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(now)
-    : "--:--";
 
-  const rows: [string, React.ReactNode][] = NOW.setup.filter((r) => !("todo" in r && r.todo)).map((r) => [loc(r.key, lang), loc(r.value, lang)]);
+  const rows: [string, string][] = NOW.setup.filter((r) => !("todo" in r && r.todo)).map((r) => [loc(r.key, lang), loc(r.value, lang)]);
   if (langs.length) rows.push([s.langs, langs.join(", ")]);
-  rows.push([s.time, <span key="t" className="tabular">{time} · Europe/Paris</span>]);
 
   return (
     <div className="app-now-fetch">

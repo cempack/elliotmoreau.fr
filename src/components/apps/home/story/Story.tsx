@@ -46,7 +46,12 @@ export function Story() {
   );
 }
 
-/** CSS loops (eq bars, the map ping, carets) rest while their chapter is off-screen. */
+/**
+ * CSS loops (eq bars, the map ping, carets) rest while their chapter is
+ * off-screen. A chapter that remounts its <section> after hydration (the
+ * manifesto picks its mode then) is picked up again by the mutation
+ * observer, so no loop ever escapes.
+ */
 function useIdleOffscreen(rootRef: React.RefObject<HTMLDivElement | null>) {
   useEffect(() => {
     const root = rootRef.current;
@@ -61,8 +66,17 @@ function useIdleOffscreen(rootRef: React.RefObject<HTMLDivElement | null>) {
       },
       { rootMargin: "100px 0px" }
     );
-    root.querySelectorAll(":scope > section").forEach((el) => io.observe(el));
-    return () => io.disconnect();
+    const watch = () => {
+      io.disconnect();
+      root.querySelectorAll(":scope > section").forEach((el) => io.observe(el));
+    };
+    watch();
+    const mo = new MutationObserver(watch);
+    mo.observe(root, { childList: true });
+    return () => {
+      mo.disconnect();
+      io.disconnect();
+    };
   }, [rootRef]);
 }
 

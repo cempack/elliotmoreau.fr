@@ -1,7 +1,7 @@
 "use client";
 
 import "./notfound.css";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { animate, useMotionValue } from "motion/react";
 import { useI18n } from "@/i18n/client";
@@ -61,15 +61,29 @@ export function NotFoundApp() {
     },
   });
 
-  // the tab says what happened; hand the title back on the way out (the
-  // next page may render the same metadata title, which React won't redo)
+  // a hard 404 can arrive client-rendered (Next's error shell), so the
+  // layout's pre-paint "returning visitor?" check never ran: repeat it
+  // before paint, or every 404 would replay the boot and lock screens
+  useLayoutEffect(() => {
+    try {
+      if (sessionStorage.getItem("em-intro")) document.documentElement.dataset.intro = "done";
+    } catch {}
+  }, []);
+
+  // the tab says what happened (not-found can't export metadata). Next may
+  // stream its own <title> in after hydration, so: retitle the one that's
+  // there, or add one; on the way out, restore it or take ours away
+  const docTitle = `${t.meta.pages.notFound} — ${t.meta.siteName}`;
   useEffect(() => {
-    const prev = document.title;
-    document.title = `${t.meta.pages.notFound} — ${t.meta.siteName}`;
+    const existing = document.head.querySelector("title");
+    const prev = existing?.textContent ?? "";
+    const el = existing ?? document.head.appendChild(document.createElement("title"));
+    el.textContent = docTitle;
     return () => {
-      document.title = prev;
+      if (existing) existing.textContent = prev;
+      else el.remove();
     };
-  }, [t.meta.pages.notFound, t.meta.siteName]);
+  }, [docTitle]);
 
   // macOS: clicking outside a modal alert gets a shake of the head
   const refuse = useCallback(() => {
@@ -100,6 +114,8 @@ export function NotFoundApp() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || e.isComposing) return;
+      // a key that unlocks the boot/lock screen is not meant for the alert
+      if (document.documentElement.dataset.intro !== "done") return;
       const el = e.target as HTMLElement | null;
       if (el?.closest?.("input,textarea,select,[contenteditable=true],dialog")) return;
       if (document.querySelector("dialog[open]")) return;
@@ -146,7 +162,7 @@ export function NotFoundApp() {
           shake={shake}
           surfaceRef={surfaceRef}
           reduced={reduced}
-          path={middleTruncate(fullPath, 34)}
+          path={middleTruncate(fullPath, 28)}
           fullPath={fullPath}
           command={middleTruncate(command, 40)}
           suggestion={suggestion}

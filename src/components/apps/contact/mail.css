@@ -164,7 +164,7 @@
   background: var(--color-signal);
 }
 .app-contact-eyebrow-dim {
-  margin-left: -0.375rem;
+  margin-left: -0.125rem;
   color: var(--color-label-3);
 }
 .app-contact-eyebrow--signal {
@@ -321,6 +321,7 @@
 /* ── compose ── */
 .app-contact-compose {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
 }
 @container app-contact (min-width: 760px) {
@@ -334,6 +335,11 @@
     top: calc(var(--os-win-sticky-top) + 1rem);
     padding-top: 0.5rem;
   }
+}
+/* keyboard focus and scrollIntoView keep fields clear of the title bar and the Dock */
+.app-contact-card :is(input, textarea, button, a) {
+  scroll-margin-top: calc(var(--menubar-h) + 5rem);
+  scroll-margin-bottom: calc(var(--dock-h) + 1.5rem);
 }
 .app-contact-row {
   display: flex;
@@ -576,7 +582,7 @@
     flex: none;
   }
   .app-contact-textarea {
-    min-height: 12rem;
+    min-height: 9.5rem;
     padding: 1rem;
   }
   .app-contact-foot {
@@ -796,10 +802,17 @@
     0 0 0 7px color-mix(in oklab, var(--color-signal) 16%, transparent),
     0 0 40px 6px color-mix(in oklab, var(--color-signal) 40%, transparent);
 }
-.app-contact-target-pill {
+.app-contact-pill {
   position: absolute;
-  bottom: calc(100% + 1.125rem);
-  left: 50%;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+}
+.app-contact-pill > span {
+  position: absolute;
+  bottom: 0;
+  left: 0;
   padding: 0.4375rem 0.8125rem;
   border-radius: 999px;
   background: var(--color-signal);
@@ -810,13 +823,13 @@
   white-space: nowrap;
   opacity: 0;
   translate: -50% 6px;
-  scale: 0.92;
+  scale: 0.9;
   transition:
-    opacity 0.18s,
+    opacity 0.16s,
     translate 0.3s var(--ease-spring),
     scale 0.3s var(--ease-spring);
 }
-.app-contact-target[data-armed] .app-contact-target-pill {
+.app-contact-pill[data-armed] > span {
   opacity: 1;
   translate: -50% 0;
   scale: 1;

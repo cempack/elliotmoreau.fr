@@ -4,11 +4,10 @@
 const en = {
   kicker: "What I’m up to",
   live: "Live",
-  where: "Paris, France",
   /** the headline; {doing} comes from content (e.g. "building emOS") */
   sentence: {
     playing: "Right now I’m {doing}, listening to {track}, and it’s {time} in Paris.",
-    paused: "Right now I’m {doing}, between two songs, and it’s {time} in Paris.",
+    paused: "Right now I’m {doing}, with {track} on pause, and it’s {time} in Paris.",
     quiet: "Right now I’m {doing}, and it’s {time} in Paris.",
   },
   whatIs: "What’s a now page?",
@@ -25,7 +24,7 @@ const en = {
     hintFine: "Drag any widget to rearrange.",
     hintTouch: "Touch and hold a widget to move it.",
     hintArrange: "Drag the handles, or use the keyboard.",
-    saved: "Layout saved on this device.",
+    saved: "Layout saved on this device",
     move: "Move {name}",
     grab: "Move",
     instructions: "Press Space to pick it up. Arrow keys move it, Space drops it, Escape cancels.",
@@ -53,7 +52,6 @@ const en = {
     progress: "{elapsed} of {total}",
     open: "Open “{title}” on Spotify",
     topArtists: "Top artists · last 6 months",
-    rank: "Number {n}",
     nothing: "Nothing playing right now.",
     nothingBody: "When something’s on, it shows up here as it plays.",
     profile: "Spotify profile",
@@ -73,11 +71,13 @@ const en = {
   building: {
     focus: "Focus",
     source: "Source",
+    sourceOf: "{name} source code on GitHub",
     lastPush: "Last push",
     recent: "Recent repos",
     pushedTo: "Pushed to {repo}",
+    /** the last push, read aloud */
+    pushLabel: "Pushed to {repo}: {message}",
     none: "No public pushes lately.",
-    profile: "GitHub profile",
     all: "All projects",
   },
 
@@ -94,10 +94,7 @@ const en = {
 
   setup: {
     caption: "Copied by hand from my machine.",
-    repos: "Repos",
     langs: "Languages",
-    time: "Local time",
-    reposValue: "{n} public",
     palette: "Nocturne palette",
   },
 
@@ -120,7 +117,6 @@ const en = {
   },
 
   footer: {
-    about: "This is a now page, in the spirit of nownownow.com.",
     sources: "Music from Spotify, pushes from GitHub, posts from the blog.",
   },
 };
@@ -128,13 +124,12 @@ const en = {
 const fr: typeof en = {
   kicker: "Ce qui m’occupe",
   live: "En direct",
-  where: "Paris, France",
   sentence: {
-    playing: "En ce moment, {doing}, j’écoute {track}, et il est {time} à Paris.",
-    paused: "En ce moment, {doing}, entre deux morceaux, et il est {time} à Paris.",
-    quiet: "En ce moment, {doing}, et il est {time} à Paris.",
+    playing: "Ces jours-ci, {doing}, j’écoute {track}, et il est {time} à Paris.",
+    paused: "Ces jours-ci, {doing}, j’ai mis {track} en pause, et il est {time} à Paris.",
+    quiet: "Ces jours-ci, {doing}, et il est {time} à Paris.",
   },
-  whatIs: "C’est quoi, une page /now ?",
+  whatIs: "C’est quoi, une page /now\u202f?",
   updated: "Mis à jour le {date}",
   today: "aujourd’hui",
   yesterday: "hier",
@@ -148,7 +143,7 @@ const fr: typeof en = {
     hintFine: "Faites glisser un widget pour le déplacer.",
     hintTouch: "Maintenez un widget appuyé pour le déplacer.",
     hintArrange: "Utilisez les poignées, ou le clavier.",
-    saved: "Disposition enregistrée sur cet appareil.",
+    saved: "Disposition enregistrée sur cet appareil",
     move: "Déplacer {name}",
     grab: "Déplacer",
     instructions: "Espace pour le saisir. Les flèches le déplacent, Espace le pose, Échap annule.",
@@ -174,9 +169,8 @@ const fr: typeof en = {
     paused: "En pause",
     last: "Dernière écoute",
     progress: "{elapsed} sur {total}",
-    open: "Ouvrir « {title} » sur Spotify",
+    open: "Ouvrir «\u00a0{title}\u00a0» sur Spotify",
     topArtists: "Artistes favoris · 6 derniers mois",
-    rank: "Numéro {n}",
     nothing: "Rien en lecture pour l’instant.",
     nothingBody: "Dès que la musique tourne, elle s’affiche ici en direct.",
     profile: "Profil Spotify",
@@ -196,31 +190,29 @@ const fr: typeof en = {
   building: {
     focus: "Priorité",
     source: "Code source",
+    sourceOf: "Code source de {name} sur GitHub",
     lastPush: "Dernier push",
     recent: "Dépôts récents",
     pushedTo: "Push sur {repo}",
+    pushLabel: "Push sur {repo}\u202f: {message}",
     none: "Aucun push public récemment.",
-    profile: "Profil GitHub",
     all: "Tous les projets",
   },
 
   pulse: {
-    caption: "Chaque pic est un vrai événement daté : le dernier push de chaque dépôt, et chaque article. Le plus récent à droite.",
+    caption: "Chaque pic est un vrai événement daté\u202f: le dernier push de chaque dépôt, et chaque article. Le plus récent à droite.",
     push: "Push",
     post: "Article",
     now: "Maintenant",
     pushTo: "Push sur {name}",
-    published: "Publié : « {name} »",
+    published: "Publié\u202f: «\u00a0{name}\u00a0»",
     ticks: { day: "1 jour", week: "1 sem.", month: "1 mois", quarter: "3 mois", half: "6 mois", year: "1 an" },
     empty: "Rien de public à montrer pour l’instant.",
   },
 
   setup: {
     caption: "Recopié à la main depuis ma machine.",
-    repos: "Dépôts",
     langs: "Langages",
-    time: "Heure locale",
-    reposValue: "{n} publics",
     palette: "Palette Nocturne",
   },
 
@@ -236,14 +228,13 @@ const fr: typeof en = {
     draft: "brouillon",
     latest: "Dernier article",
     minutes: "{n} min de lecture",
-    read: "Lire « {title} » sur le blog",
+    read: "Lire «\u00a0{title}\u00a0» sur le blog",
     all: "Tous les textes",
     none: "Rien de publié pour l’instant.",
     blog: "Voir le blog",
   },
 
   footer: {
-    about: "Ceci est une page /now, dans l’esprit de nownownow.com.",
     sources: "Musique via Spotify, pushs via GitHub, articles via le blog.",
   },
 };

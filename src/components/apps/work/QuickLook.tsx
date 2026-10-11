@@ -611,6 +611,7 @@ function QuickLookBody({
     edges();
     const ro = new ResizeObserver(edges);
     ro.observe(el);
+    for (const c of el.children) ro.observe(c);
     return () => ro.disconnect();
   }, [variant]);
 

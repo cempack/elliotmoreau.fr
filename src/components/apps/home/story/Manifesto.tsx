@@ -106,7 +106,7 @@ function ScrubWord({
   return (
     <>
       {!first && " "}
-      <span className="app-story-mf-word" data-accent={accent || undefined}>
+      <span className="app-story-mf-word" data-accent={accent || undefined} data-first={first || undefined}>
         <span className="app-story-mf-ghost" aria-hidden>
           {children}
         </span>

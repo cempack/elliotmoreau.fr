@@ -18,62 +18,78 @@ type Props = {
   onPick: (slug: string | null) => void;
 };
 
-/** The AppWindow sidebar: folders by tag, then the newsletter. */
-export function Folders({ folders, active, total, onPick }: Props) {
+/**
+ * Wide windows (≥1280): the folders as a source list, the first of three
+ * columns, with the feeds at its foot. Narrower, the reader needs that
+ * width more, so the folders become chips in the list column instead.
+ */
+export function FolderColumn({ folders, active, total, onPick }: Props) {
   const { t } = useI18n();
   const w = t.writing;
   return (
-    <div className="app-writing-side">
-      <p className="app-writing-side-k" data-win-hide-compact aria-hidden>
-        {w.folders}
-      </p>
-      <WinNav label={w.foldersLabel}>
-        <WinNavItem onClick={() => onPick(null)} active={active === null} icon={<PixelGlyph cells={G_ALL} size={14} />} count={total}>
-          {w.all}
-        </WinNavItem>
-        {folders.map((f) => (
-          <WinNavItem
-            key={f.slug}
-            onClick={() => onPick(f.slug)}
-            active={active === f.slug}
-            icon={<PixelGlyph cells={G_FOLDER} size={14} />}
-            count={f.count}
-          >
-            {f.name}
+    <aside className="app-writing-pane app-writing-pane--folders" aria-label={w.folders} data-lenis-prevent>
+      <div className="app-writing-side">
+        <p className="app-writing-side-k" aria-hidden>
+          {w.folders}
+        </p>
+        <WinNav label={w.foldersLabel}>
+          <WinNavItem onClick={() => onPick(null)} active={active === null} icon={<PixelGlyph cells={G_ALL} size={14} />} count={total}>
+            {w.all}
           </WinNavItem>
-        ))}
-      </WinNav>
-      <Newsletter className="app-writing-news--side" hideCompact />
-    </div>
+          {folders.map((f) => (
+            <WinNavItem
+              key={f.slug}
+              onClick={() => onPick(f.slug)}
+              active={active === f.slug}
+              icon={<PixelGlyph cells={G_FOLDER} size={14} />}
+              count={f.count}
+            >
+              {f.name}
+            </WinNavItem>
+          ))}
+        </WinNav>
+        <FeedLinks className="app-writing-feeds--side" />
+      </div>
+    </aside>
   );
 }
 
-export function Newsletter({ className = "", hideCompact = false }: { className?: string; hideCompact?: boolean }) {
+/** RSS and the blog itself: the quiet ways to follow along. */
+export function FeedLinks({ className = "" }: { className?: string }) {
   const { t } = useI18n();
   const w = t.writing;
   return (
-    <section className={`app-writing-news ${className}`} data-win-hide-compact={hideCompact || undefined}>
+    <p className={`app-writing-news-links ${className}`}>
+      <a href={RSS_URL} target="_blank" rel="noopener" className="app-writing-news-link">
+        <PixelGlyph cells={G_RSS} size={12} />
+        {w.rss}
+      </a>
+      <a href={BLOG_URL} target="_blank" rel="noopener" className="app-writing-news-link" aria-label={w.openBlog}>
+        {w.blog}
+        <span aria-hidden>↗</span>
+      </a>
+    </p>
+  );
+}
+
+/** Phones (the list screen) and the empty state: the newsletter card. */
+export function Newsletter({ className = "" }: { className?: string }) {
+  const { t } = useI18n();
+  const w = t.writing;
+  return (
+    <section className={`app-writing-news ${className}`}>
       <h2 className="app-writing-news-title">
         <PixelGlyph cells={G_MAIL} size={14} className="app-writing-news-glyph" />
         {w.newsTitle}
       </h2>
       <p className="app-writing-news-body">{w.newsBody}</p>
       <SubscribeForm />
-      <p className="app-writing-news-links">
-        <a href={RSS_URL} target="_blank" rel="noopener" className="app-writing-news-link">
-          <PixelGlyph cells={G_RSS} size={12} />
-          {w.rss}
-        </a>
-        <a href={BLOG_URL} target="_blank" rel="noopener" className="app-writing-news-link" aria-label={w.openBlog}>
-          {w.blog}
-          <span aria-hidden>↗</span>
-        </a>
-      </p>
+      <FeedLinks />
     </section>
   );
 }
 
-/** Phones: the folders as a scrollable chip row at the top of the list screen. */
+/** Below 1280: the folders as a scrollable chip row under the list's title. */
 export function FolderChips({ folders, active, total, onPick }: Props) {
   const { t } = useI18n();
   const w = t.writing;
@@ -87,7 +103,8 @@ export function FolderChips({ folders, active, total, onPick }: Props) {
     const a = chip.getBoundingClientRect();
     const b = row.getBoundingClientRect();
     if (a.left >= b.left + 12 && a.right <= b.right - 12) return;
-    row.scrollBy({ left: a.left - b.left - (b.width - a.width) / 2, behavior: "smooth" });
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    row.scrollBy({ left: a.left - b.left - (b.width - a.width) / 2, behavior: reduced ? "auto" : "smooth" });
   }, [active]);
 
   const items: { slug: string | null; name: string; count: number }[] = [{ slug: null, name: w.all, count: total }, ...folders];

@@ -235,7 +235,10 @@ export function HereNow() {
         <SkyCanvas phase={phase} arc={arc} />
         <span className="app-now-sky-label">{fill(mode === "auto" ? h.sky : h.pinned, { phase: phaseName })}</span>
       </div>
-      <p className="app-now-clock" aria-label={`${h.clockLabel} ${paris}`}>
+      <p className="app-now-clock">
+        <span className="sr-only">
+          {h.clockLabel} {paris}
+        </span>
         <RollText text={paris} className="app-now-clock-hm" />
         <span className="app-now-clock-s tabular" aria-hidden>
           {secs}
