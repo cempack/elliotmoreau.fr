@@ -2,7 +2,6 @@
 
 import { useId } from "react";
 import { GLYPH_H, WORDMARK_LINES, bandInk, rasterizePixelLine, WORDMARK_BAND_ROWS } from "@/lib/pixelword";
-import type { Rect } from "./physics";
 
 /* ───────────────────────────── the stamp ─────────────────────────────
    How the live field lays the name on its grid (8 px cells up to 150 × 80,
@@ -56,14 +55,6 @@ export function stampWordmark(w: number, h: number): Stamp {
   const out: Stamp = { cols, rows, lit, bands: lines.map((l) => ({ from: l.y0, to: l.y0 + l.rows - 1 })), lines };
   stamps.set(k, out);
   return out;
-}
-
-/** Where the letters sit inside a w × h box, in box px. */
-export function letterRects(w: number, h: number): Rect[] {
-  const st = stampWordmark(w, h);
-  const cx = w / st.cols;
-  const cy = h / st.rows;
-  return st.lines.map((l) => ({ left: l.x0 * cx, top: l.y0 * cy, right: (l.x0 + l.cols) * cx, bottom: (l.y0 + l.rows) * cy }));
 }
 
 /* ───────────────────────────── the still face ─────────────────────────────
@@ -189,19 +180,19 @@ export function StillFace({ w, h, className = "" }: { w: number; h: number; clas
       className={className}
     >
       <defs>
-        <radialGradient id={`app-home-sheen-${id}`}>
-          <stop offset="0" stopColor="#aab0ff" stopOpacity={0.15} />
-          <stop offset="0.6" stopColor="#aab0ff" stopOpacity={0.06} />
-          <stop offset="1" stopColor="#aab0ff" stopOpacity={0} />
+        <radialGradient id={`os-boot-sheen-${id}`}>
+          <stop offset="0" stopColor="#c9dcc0" stopOpacity={0.15} />
+          <stop offset="0.6" stopColor="#c9dcc0" stopOpacity={0.06} />
+          <stop offset="1" stopColor="#c9dcc0" stopOpacity={0} />
         </radialGradient>
       </defs>
-      <path d={f.far} fill="#0c0d22" fillOpacity={0.38} />
-      <path d={f.near} fill="#1f2050" fillOpacity={0.78} />
+      <path d={f.far} fill="#050807" fillOpacity={0.38} />
+      <path d={f.near} fill="#1b2a26" fillOpacity={0.78} />
       {f.inks.map(([ink, d]) => (
         <path key={ink} d={d} fill={ink} />
       ))}
       <path d={f.lips} fill="#fbf9f4" fillOpacity={0.66} />
-      <ellipse cx={f.sheen.cx} cy={f.sheen.cy} rx={f.sheen.rx} ry={f.sheen.ry} fill={`url(#app-home-sheen-${id})`} />
+      <ellipse cx={f.sheen.cx} cy={f.sheen.cy} rx={f.sheen.rx} ry={f.sheen.ry} fill={`url(#os-boot-sheen-${id})`} />
     </svg>
   );
 }

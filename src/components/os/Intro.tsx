@@ -2,85 +2,221 @@
 
 import "./intro.css";
 import { useEffect, useRef, useState } from "react";
-import { flushSync } from "react-dom";
-import { m } from "motion/react";
+import { usePathname } from "next/navigation";
 import { useI18n } from "@/i18n/client";
-import { IntroGate, useIntroFinish } from "@/components/ui/IntroGate";
-import { PixelLabel } from "@/components/PixelLabel";
-import { useParisTime } from "@/hooks/useParisTime";
+import { stripLocale } from "@/i18n/config";
 import { useHydrated } from "@/hooks/env";
+import { useParisTime } from "@/hooks/useParisTime";
+import { useSpotifyStatus } from "@/hooks/useSpotifyStatus";
+import { timeAgo } from "@/lib/format";
 import { useSound } from "@/lib/sound";
-import { fmtCoords } from "@/lib/places";
-import { EmMark } from "./intro/Mark";
-import { Padlock, SkyGlyph } from "./intro/pixels";
+import { GLYPH_NOTE, PixelGlyph } from "@/components/glyphs";
+import { PixelLabel } from "@/components/PixelLabel";
+import { G_COMMIT, G_PEN } from "@/components/apps/home/desktop/icons";
+import { useSiteData } from "./SiteData";
+import { Wordmark } from "./intro/Wordmark";
 import { playStartupChord } from "./intro/chime";
 import { restartOS } from "./menubar/util";
-import { springFrom } from "@/lib/motion";
 
 /**
- * CONTRACT (owner: boot/terminal agent)
- * Once-per-session boot → lock screen, built on IntroGate (SSR-visible,
- * skipped by any input, hidden pre-paint for returning visitors, never
- * under reduced motion, ≤ 2.4s total). Boot: pixel emOS mark + progress.
- * Lock screen: huge Paris clock + date over the wallpaper, "Elliot Moreau",
- * a hint to unlock; unlock = the glass lifts away (spring) revealing the
- * desktop; optional startup chime if sound is on and a gesture unlocked it.
+ * Boot → lock screen → desktop.
  *
- * How it plays: the whole boot → lock sequence is CSS keyframes, so it
- * runs from the first server-rendered paint, before hydration. JS only
- * ends it on the same clock (measured from first paint). When IntroGate
- * finishes, by timer or by any input, the page is interactive at once and
- * a pointer-transparent copy of the last frame takes over to perform the
- * exit: the lock screen's glass sheet lifts up and away on a spring while
- * the desktop settles in underneath (or the boot screen fades through, if
- * input came that early).
+ * Boot (the first visit of a session that lands on the Desktop): the pixel
+ * name decrypts over a black screen while a systemd-style log and a
+ * segmented bar run through the loading steps. It is CSS keyframes from
+ * the first server-rendered paint, so it plays before hydration, and it
+ * takes its time on purpose (BOOT_MS). Any key or click skips to the lock.
+ *
+ * Lock screen (hyprlock-ish): Paris time and date, a few notifications
+ * (now playing, the latest post, the last push) and a password field.
+ * Any password unlocks (on touch, a tap). The lock comes back on
+ * `em:lock` (Spotlight, the Terminal's `lock`, the emOS menu).
+ *
+ * A page that never hydrates is not left locked: a CSS failsafe hides
+ * the first-visit screen after a while unless JS has taken over.
  */
 
-/** Boot screen hands over to the lock screen here (ms from first paint). */
-const SPLIT_MS = 960;
-/** Auto unlock; the lift then runs ~0.45s, so ≤ 2.4s end to end. */
-const AUTO_MS = 1940;
-/** Mirrors the CSS failsafe that hides a never-hydrated intro. */
-const FAILSAFE_MS = 4500;
-
-const PARIS = fmtCoords(48.8566, 2.3522);
+/** The lock screen takes over from the boot here (ms from first paint). */
+const BOOT_MS = 3800;
+/** The unlock: the UI rises away and the veil clears. */
+const OUT_MS = 560;
+/** The wordmark's boxes (8 px cells; CSS scales them, see intro.css). */
+const BOX = { desk: { w: 1040, h: 448 }, phone: { w: 700, h: 296 } };
+/** Progress segments light at uneven times, the way real boots stall. */
+const SEGMENTS = [
+  160, 230, 300, 360, 520, 600, 640, 700, 980, 1040, 1100, 1260, 1300, 1340, 1700, 1760, 1820, 1880, 2160, 2240, 2500,
+  2560, 2620, 2900, 2960, 3020, 3180, 3240, 3300, 3380,
+];
 
 /**
  * Parsed (and run) as the gate's first child, before any of its pixels:
- * marks returning visitors so CSS hides the intro pre-paint. Mirrors the
- * layout's head script, as a belt-and-braces copy in case that one fails.
+ * marks returning visitors so CSS hides the boot pre-paint. Mirrors the
+ * layout's head script, in case that one fails.
  */
 const PREPAINT = `try{if(sessionStorage.getItem("em-intro"))document.documentElement.dataset.intro="done"}catch(e){}`;
 
-/**
- * When the CSS sequence started, on the performance.now() clock. Read off
- * the boot screen's own keyframes (the HTML can stream in after first
- * paint), falling back to first contentful paint. Cached: once the gate
- * hides, its animations are gone.
- */
+/** When the CSS sequence started (performance.now() clock), read off the
+    boot screen's own keyframes; cached once known. */
 let started: number | null = null;
 function sequenceStart() {
   if (started != null) return started;
-  const anim = document.querySelector(".os-intro-boot")?.getAnimations()[0];
-  const t = anim?.startTime;
+  const t = document.querySelector(".os-intro-boot")?.getAnimations()[0]?.startTime;
   if (typeof t === "number") return (started = t);
   const fcp = performance.getEntriesByName("first-contentful-paint")[0]?.startTime;
-  if (fcp != null) return (started = fcp);
-  const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
-  return (started = nav?.responseEnd ?? performance.now());
+  return (started = fcp ?? performance.now());
 }
 
-/**
- * Restart emOS: forget this session's intro, power the display down and
- * reload into the boot. One path for the About panel, Spotlight, the
- * Terminal's `reboot` and the Desktop (menubar/util).
- */
+/** Restart emOS: back to the Desktop, into the boot. */
 export const rebootOS = restartOS;
+/** Lock the screen (Spotlight, Terminal, the emOS menu). */
+export const lockOS = () => window.dispatchEvent(new CustomEvent("em:lock"));
 
-type ExitFrom = "boot" | "lock";
-/** The lock screen's clock and date, frozen at the moment of unlock. */
-type Snapshot = { time: string; date: string };
-type ExitState = { from: ExitFrom; snap: Snapshot };
+type Mode = "first" | "relock";
+type Phase = "boot" | "lock" | "out";
+
+export function Intro() {
+  const pathname = usePathname();
+  // the boot belongs to arriving on the Desktop, not to a deep link
+  const [mode, setMode] = useState<Mode | null>(() => (stripLocale(pathname) === "/" ? "first" : null));
+  const [n, setN] = useState(0);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (root.dataset.intro === "done" || reduced) {
+      root.dataset.intro = "done";
+      queueMicrotask(() => setMode((m) => (m === "first" ? null : m)));
+    }
+    const onLock = () => {
+      setMode("relock");
+      setN((v) => v + 1);
+    };
+    window.addEventListener("em:lock", onLock);
+    return () => window.removeEventListener("em:lock", onLock);
+  }, []);
+
+  if (!mode) return null;
+  return <Gate key={`${mode}-${n}`} mode={mode} onDone={() => setMode(null)} />;
+}
+
+function Gate({ mode, onDone }: { mode: Mode; onDone: () => void }) {
+  const hydrated = useHydrated();
+  const { muted } = useSound();
+  const [phase, setPhase] = useState<Phase>(mode === "first" ? "boot" : "lock");
+  const [skipped, setSkipped] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // the boot runs on the clock of its own keyframes; any input skips it
+  useEffect(() => {
+    if (phase !== "boot") return;
+    const elapsed = performance.now() - sequenceStart();
+    const id = window.setTimeout(() => setPhase("lock"), Math.max(0, BOOT_MS - elapsed));
+    const skip = (e: Event) => {
+      if (e instanceof KeyboardEvent && (e.repeat || e.metaKey || e.ctrlKey || e.altKey)) return;
+      setSkipped(true);
+      setPhase("lock");
+    };
+    window.addEventListener("keydown", skip, true);
+    window.addEventListener("pointerdown", skip, true);
+    return () => {
+      window.clearTimeout(id);
+      window.removeEventListener("keydown", skip, true);
+      window.removeEventListener("pointerdown", skip, true);
+    };
+  }, [phase]);
+
+  // while locked, the rest of the OS is inert (focus can't leave the lock)
+  useEffect(() => {
+    if (!hydrated || phase === "out") return;
+    const el = rootRef.current;
+    const parent = el?.parentElement;
+    if (!el || !parent) return;
+    const others = Array.from(parent.children).filter((n) => n !== el && !n.hasAttribute("inert"));
+    others.forEach((n) => n.setAttribute("inert", ""));
+    return () => others.forEach((n) => n.removeAttribute("inert"));
+  }, [hydrated, phase]);
+
+  const unlock = (gesture: boolean) => {
+    if (phase !== "lock") return;
+    setPhase("out");
+    let off = muted;
+    try {
+      off ||= localStorage.getItem("em-sound") === "off";
+    } catch {}
+    if (gesture && !off) playStartupChord();
+    // the desktop settles in while the veil clears
+    if (mode === "first") window.dispatchEvent(new CustomEvent("em:intro-done"));
+    window.setTimeout(() => {
+      if (mode === "first") {
+        try {
+          sessionStorage.setItem("em-intro", "1");
+        } catch {}
+        document.documentElement.dataset.intro = "done";
+      }
+      onDone();
+    }, OUT_MS);
+  };
+
+  return (
+    <div
+      ref={rootRef}
+      className={`os-intro ${mode === "first" ? "em-intro" : ""}`}
+      data-mode={mode}
+      data-phase={phase}
+      data-skip={skipped || undefined}
+      data-live={hydrated || undefined}
+    >
+      {!hydrated && mode === "first" && <script dangerouslySetInnerHTML={{ __html: PREPAINT }} />}
+      <LockScreen phase={phase} onUnlock={unlock} />
+      {mode === "first" && <BootScreen />}
+    </div>
+  );
+}
+
+/* ───────────────────────── boot ───────────────────────── */
+
+function BootScreen() {
+  const { t } = useI18n();
+  const s = t.system.intro;
+  const { repos, posts } = useSiteData();
+  const hydrated = useHydrated();
+  const lines = s.boot.map((l) =>
+    l
+      .replace("{repos}", repos.length ? String(repos.length) : "")
+      .replace("{posts}", posts.length ? String(posts.length) : "")
+      .replace(/\s{2,}/g, " ")
+  );
+  return (
+    <div className="os-intro-boot" aria-hidden>
+      <div className="os-boot-center">
+        <div className="os-boot-mark">
+          <div className="os-boot-hero">
+            <Wordmark desk={BOX.desk} phone={BOX.phone} live={hydrated} />
+          </div>
+        </div>
+        <span className="os-boot-bar">
+          {SEGMENTS.map((d, i) => (
+            <i key={i} style={{ "--d": `${d}ms` } as React.CSSProperties} />
+          ))}
+        </span>
+        <ol className="os-boot-log">
+          {lines.map((l, i) => (
+            <li key={i} style={{ "--i": i } as React.CSSProperties}>
+              <span className="os-boot-ok">[ OK ]</span> {l}
+            </li>
+          ))}
+        </ol>
+      </div>
+      <p className="os-boot-foot">
+        <span>{s.version}</span>
+        <span className="os-boot-skip">{s.skip}</span>
+        <span className="os-boot-skip os-boot-skip--touch">{s.skipTouch}</span>
+      </p>
+    </div>
+  );
+}
+
+/* ───────────────────────── lock screen ───────────────────────── */
 
 const dateFormat = (lang: string) =>
   new Intl.DateTimeFormat(lang === "fr" ? "fr-FR" : "en-GB", {
@@ -89,126 +225,6 @@ const dateFormat = (lang: string) =>
     day: "numeric",
     month: "long",
   });
-const timeFormat = new Intl.DateTimeFormat("en-GB", {
-  timeZone: "Europe/Paris",
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false,
-});
-
-export function Intro() {
-  const { lang } = useI18n();
-  const [exit, setExit] = useState<ExitState | null>(null);
-  const { muted } = useSound();
-  const mutedRef = useRef(muted);
-  useEffect(() => {
-    mutedRef.current = muted;
-  }, [muted]);
-
-  useEffect(() => {
-    if (document.documentElement.dataset.intro === "done") return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    sequenceStart();
-
-    // remember whether a real gesture (not the timer) ends the intro
-    let gesture = false;
-    const onInput = (e: Event) => {
-      if (e instanceof KeyboardEvent && (e.key === "Escape" || e.repeat)) return;
-      gesture = true;
-    };
-    const stopListening = () => {
-      window.removeEventListener("pointerdown", onInput, true);
-      window.removeEventListener("keydown", onInput, true);
-    };
-    window.addEventListener("pointerdown", onInput, true);
-    window.addEventListener("keydown", onInput, true);
-
-    const onDone = () => {
-      stopListening();
-      const elapsed = performance.now() - sequenceStart();
-      // the gate hides itself synchronously (html[data-intro=done]): mount
-      // the exit copy in the same frame so nothing flashes in between
-      if (elapsed < FAILSAFE_MS - 150) {
-        const now = new Date();
-        const snap = { time: timeFormat.format(now), date: dateFormat(lang).format(now) };
-        flushSync(() => setExit({ from: elapsed < SPLIT_MS ? "boot" : "lock", snap }));
-      }
-      let off = mutedRef.current;
-      try {
-        off ||= localStorage.getItem("em-sound") === "off";
-      } catch {}
-      if (gesture && !off) playStartupChord();
-    };
-    window.addEventListener("em:intro-done", onDone, { once: true });
-    return () => {
-      stopListening();
-      window.removeEventListener("em:intro-done", onDone);
-    };
-  }, [lang]);
-
-  return (
-    <>
-      <IntroGate className="os-intro" maxMs={2600}>
-        <Sequence />
-      </IntroGate>
-      {exit && <Exit from={exit.from} snap={exit.snap} onDone={() => setExit(null)} />}
-    </>
-  );
-}
-
-/** The gate's content: lock screen underneath, boot screen on top. */
-function Sequence() {
-  const finish = useIntroFinish();
-  // the script only belongs in server HTML (a client-made one never runs)
-  const hydrated = useHydrated();
-  useEffect(() => {
-    // the keyframes started at first paint, not at hydration: finish on
-    // their clock so a slow hydrate never stretches the intro
-    const elapsed = performance.now() - sequenceStart();
-    const id = window.setTimeout(finish, Math.max(60, AUTO_MS - elapsed));
-    return () => window.clearTimeout(id);
-  }, [finish]);
-
-  return (
-    <>
-      {!hydrated && <script dangerouslySetInnerHTML={{ __html: PREPAINT }} />}
-      <LockScreen />
-      <BootScreen />
-    </>
-  );
-}
-
-/* ───────────────────────── boot ───────────────────────── */
-
-/** Progress segments light at uneven times, the way real boots stall. */
-const SEGMENTS = [110, 150, 190, 230, 320, 350, 375, 470, 520, 555, 640, 700, 760];
-
-function BootScreen({ still = false }: { still?: boolean }) {
-  const { t } = useI18n();
-  const lines = t.system.intro.boot;
-  return (
-    <div className={`os-intro-boot ${still ? "is-still" : ""}`}>
-      <div className="os-intro-boot-center">
-        <EmMark animate={!still} />
-        <span className="os-intro-bar" aria-hidden>
-          {SEGMENTS.map((d, i) => (
-            <i key={i} style={{ "--d": `${d}ms` } as React.CSSProperties} />
-          ))}
-        </span>
-        <p className="os-intro-log">
-          {lines.map((l, i) => (
-            <span key={l} style={{ "--i": i } as React.CSSProperties}>
-              {l}…
-            </span>
-          ))}
-        </p>
-      </div>
-      <p className="os-intro-boot-foot">{t.system.intro.version}</p>
-    </div>
-  );
-}
-
-/* ───────────────────────── lock screen ───────────────────────── */
 
 /** Long localized date in Paris, after mount only (hydration-safe). */
 function useParisDate(lang: string) {
@@ -226,153 +242,123 @@ function useParisDate(lang: string) {
   return date;
 }
 
-function LockScreen({
-  still = false,
-  unlocking = false,
-  snap,
-}: {
-  still?: boolean;
-  unlocking?: boolean;
-  /** the exit copy must show the time from its very first frame */
-  snap?: Snapshot;
-}) {
-  const { lang, t } = useI18n();
+const fill = (s: string, v: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, k: string) => v[k] ?? "");
+
+function LockScreen({ phase, onUnlock }: { phase: Phase; onUnlock: (gesture: boolean) => void }) {
+  const { t, lang } = useI18n();
   const s = t.system.intro;
-  const sky = t.shell.control;
-  const live = useParisTime();
-  const liveDate = useParisDate(lang);
-  const time = snap?.time ?? live.time;
-  const date = snap?.date ?? liveDate;
-  const [hh, mm] = time ? time.split(":") : [null, null];
+  const hydrated = useHydrated();
+  const { time } = useParisTime();
+  const date = useParisDate(lang);
+  const data = useSiteData();
+  const music = useSpotifyStatus(data.spotify);
+  const post = data.posts[0];
+  const push = data.activity;
+  const [pw, setPw] = useState("");
+  const [checking, setChecking] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  return (
-    <div className={`os-intro-lock ${still ? "is-still" : ""}`}>
-      <div className="os-intro-veil" />
-      <m.div
-        className="os-intro-lock-ui"
-        initial={unlocking ? { opacity: 1, y: 0 } : false}
-        animate={unlocking ? { opacity: 0, y: -48 } : { opacity: 1, y: 0 }}
-        transition={{ ...springFrom(0.4), delay: unlocking ? 0.05 : 0 }}
-      >
-        <span className="os-intro-lockmark">
-          <Padlock open={unlocking} />
-        </span>
+  // the field takes the keyboard as soon as the lock is up (not on touch:
+  // that would throw a keyboard over the screen)
+  useEffect(() => {
+    if (phase !== "lock" || !hydrated) return;
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+    inputRef.current?.focus({ preventScroll: true });
+  }, [phase, hydrated]);
 
-        <div className="os-intro-when">
-          <p className="os-intro-date">
-            <SkyGlyph />
-            <span className="os-intro-date-text">{date ? <span className="os-intro-in">{date}</span> : " "}</span>
-          </p>
-          <p className="os-intro-clock tabular">
-            {hh ? (
-              <span className="os-intro-digits os-intro-in">
-                {hh}
-                <span className="os-intro-colon" aria-hidden>
-                  <i />
-                  <i />
-                </span>
-                {mm}
-              </span>
-            ) : (
-              <span className="os-intro-digits">{" "}</span>
-            )}
-          </p>
-          <p className="os-intro-meta">
-            <span>{t.shell.clock.paris}</span>
-            <span aria-hidden>·</span>
-            <span>{PARIS}</span>
-            <span aria-hidden>·</span>
-            <span className="os-intro-phase os-intro-phase--dawn">{sky.dawn}</span>
-            <span className="os-intro-phase os-intro-phase--day">{sky.day}</span>
-            <span className="os-intro-phase os-intro-phase--dusk">{sky.dusk}</span>
-            <span className="os-intro-phase os-intro-phase--night">{sky.night}</span>
-          </p>
-        </div>
+  const submit = () => {
+    if (checking || phase !== "lock") return;
+    setChecking(true);
+    // a beat for "checking", then in
+    window.setTimeout(() => onUnlock(true), 380);
+  };
 
-        <div className="os-intro-user">
-          <span className="os-intro-avatar">
-            <PixelLabel text="EM" cell={4} />
-          </span>
-          <p className="os-intro-name">{s.name}</p>
-          <p className="os-intro-hint">
-            <span className="os-intro-hint-fine">
-              <Shimmer text={s.unlock} />
-            </span>
-            <span className="os-intro-hint-touch">
-              <Shimmer text={s.unlockTouch} />
-            </span>
-          </p>
-        </div>
-      </m.div>
-    </div>
-  );
-}
-
-/**
- * "slide to unlock" light, transform-only: a soft window sweeps across
- * while the bright copy inside it counter-moves, so the copy stays glued
- * to the text underneath (both measured in the line's container units).
- */
-function Shimmer({ text }: { text: string }) {
-  return (
-    <span className="os-intro-shimmer">
-      <span className="os-intro-shimmer-base">{text}</span>
-      <span className="os-intro-shimmer-band" aria-hidden>
-        <span className="os-intro-shimmer-hi">{text}</span>
-      </span>
-    </span>
-  );
-}
-
-/* ───────────────────────── unlock ───────────────────────── */
-
-const LIFT = springFrom(0.5);
-
-/**
- * The exit: a pointer-transparent copy of the last intro frame. From the
- * lock screen, the shackle pops, then the whole glass sheet lifts up and
- * away (its lit bottom edge and cast shadow sliding up over the desktop)
- * while a dim layer underneath clears: the desktop settling in.
- */
-function Exit({ from, snap, onDone }: { from: ExitFrom; snap: Snapshot; onDone: () => void }) {
-  if (from === "boot") {
-    return (
-      <m.div
-        className="os-intro-exit"
-        initial={{ opacity: 1 }}
-        animate={{ opacity: 0 }}
-        transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
-        onAnimationComplete={onDone}
-      >
-        <m.div
-          className="os-intro-exit-fill"
-          initial={{ scale: 1 }}
-          animate={{ scale: 1.06 }}
-          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <BootScreen still />
-        </m.div>
-      </m.div>
-    );
+  const notes: { key: string; glyph: typeof GLYPH_NOTE; kicker: string; text: string; when?: string }[] = [];
+  if (music.track) {
+    notes.push({
+      key: "music",
+      glyph: GLYPH_NOTE,
+      kicker: music.playing ? s.notes.playing : s.notes.played,
+      text: `${music.track.title} · ${music.track.artist}`,
+    });
   }
+  if (post) {
+    notes.push({ key: "post", glyph: G_PEN, kicker: s.notes.post, text: post.title, when: hydrated ? timeAgo(post.published_at, lang) : "" });
+  }
+  if (push) {
+    notes.push({
+      key: "push",
+      glyph: G_COMMIT,
+      kicker: fill(s.notes.push, { repo: push.repo }),
+      text: push.message,
+      when: hydrated ? timeAgo(push.createdAt, lang) : "",
+    });
+  }
+
   return (
-    <div className="os-intro-exit">
-      <m.div
-        className="os-intro-settle"
-        initial={{ opacity: 1 }}
-        animate={{ opacity: 0 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.08 }}
-      />
-      <m.div
-        className="os-intro-sheet"
-        initial={{ y: "0%" }}
-        animate={{ y: "-108%" }}
-        transition={{ ...LIFT, delay: 0.07 }}
-        onAnimationComplete={onDone}
-      >
-        <LockScreen still unlocking snap={snap} />
-        <span className="os-intro-sheet-edge" aria-hidden />
-      </m.div>
+    <div className="os-intro-lock" role="dialog" aria-modal="true" aria-label={s.lock}>
+      <div className="os-lock-veil" />
+      <div className="os-lock-ui">
+        <div className="os-lock-when">
+          <p className="os-lock-date">{date ?? " "}</p>
+          <p className="os-lock-time tabular" suppressHydrationWarning>
+            {time ?? "--:--"}
+          </p>
+        </div>
+
+        {notes.length > 0 && (
+          <ul className="os-lock-notes" aria-label={s.notes.label}>
+            {notes.map((n) => (
+              <li key={n.key} className="os-lock-note">
+                <PixelGlyph cells={n.glyph} size={14} className="os-lock-note-glyph" />
+                <span className="os-lock-note-body">
+                  <span className="os-lock-note-kicker">
+                    {n.kicker}
+                    {n.when && (
+                      <span className="os-lock-note-when" suppressHydrationWarning>
+                        {n.when}
+                      </span>
+                    )}
+                  </span>
+                  <span className="os-lock-note-text">{n.text}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="os-lock-auth" data-checking={checking || undefined}>
+          <span className="os-lock-avatar" aria-hidden>
+            <PixelLabel text="EM" cell={3} />
+          </span>
+          <p className="os-lock-name">{s.name}</p>
+          <div className="os-lock-field">
+            <input
+              ref={inputRef}
+              type="password"
+              className="os-lock-input"
+              aria-label={s.password}
+              placeholder={s.placeholder}
+              autoComplete="off"
+              value={pw}
+              onChange={(e) => setPw(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") submit();
+              }}
+              disabled={!hydrated || checking}
+            />
+            <button type="button" className="os-lock-go" aria-label={s.unlock} onClick={submit} disabled={!hydrated}>
+              <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+                <path d="M3 8h9M8.5 4l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="square" />
+              </svg>
+            </button>
+          </div>
+          <button type="button" className="os-lock-tap" onClick={submit} disabled={!hydrated}>
+            {s.unlockTouch}
+          </button>
+          <p className="os-lock-hint">{s.hint}</p>
+        </div>
+      </div>
     </div>
   );
 }

@@ -14,6 +14,7 @@ import { useSky, type SkyMode } from "./sky";
 import { useTerminal } from "./Terminal";
 import type { PanelId } from "./menubar/Panel";
 import { BLOG_URL, fill, restartOS } from "./menubar/util";
+import { lockOS } from "./Intro";
 
 const SKY_MODES: SkyMode[] = ["auto", "dawn", "day", "dusk", "night"];
 
@@ -136,6 +137,7 @@ export function useSpotlightCommands(): Command[] {
         keywords: "notifications calendar calendrier clock horloge time heure",
         perform: openPanel("notifications"),
       },
+      { id: "lock", group: sp.actions, label: sp.lock, keywords: "lock screen verrouiller écran", perform: lockOS },
       { id: "restart", group: sp.actions, label: sp.restart, keywords: "restart reboot boot redémarrer", perform: restartOS },
     ];
 

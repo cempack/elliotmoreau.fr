@@ -1,17 +1,22 @@
-/* ─────────────────────── emOS intro: boot → lock → unlock ───────────────────────
-   Everything up to the unlock is CSS keyframes timed from first paint, so
-   the sequence plays before hydration. Timeline (ms):
-     0–820     boot: matrix ignites cell by cell, pixel bar, boot log
-     820–1060  boot fades through into the lock screen
-     860–1400  lock screen settles: clock exhales, date and user rise
-     1940      auto unlock (JS), or any input earlier: the glass lifts away
-   `.em-intro` (globals) already makes the gate fixed, inset 0, z 100, and
-   hides it pre-paint for returning visitors and under reduced motion. */
+/* ─────────────────────── emOS intro: boot → lock → desktop ───────────────────────
+   The first-visit boot is CSS keyframes timed from first paint, so it
+   plays before hydration. Timeline (ms):
+     0–3400     boot: the name decrypts, the log runs, the bar fills
+     3460–3800  boot fades out; the lock screen is underneath
+     3800       lock screen settles in (JS takes over from here)
+   Skipping (data-skip) or locking later (data-mode=relock) plays the lock's
+   entrance at once. Keep BOOT_MS in Intro.tsx in step with these delays. */
 
 .os-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
   overflow: hidden;
-  /* a never-hydrated page must not stay locked: get out of the way */
-  animation: os-intro-failsafe 1ms linear 4.5s forwards;
+  color: var(--color-label);
+}
+/* a never-hydrated page must not stay locked: get out of the way */
+.os-intro:not([data-live]) {
+  animation: os-intro-failsafe 1ms linear 14s forwards;
 }
 @keyframes os-intro-failsafe {
   to {
@@ -19,54 +24,496 @@
   }
 }
 
-/* frames rendered again by the exit copy: frozen, no entrance keyframes */
-.os-intro .is-still,
-.os-intro .is-still *,
-.os-intro-exit .is-still,
-.os-intro-exit .is-still * {
-  animation: none !important;
-}
-
 /* ───────── boot ───────── */
 
 .os-intro-boot {
   position: absolute;
   inset: 0;
+  z-index: 2;
   display: grid;
   place-items: center;
-  background: #000;
-  animation: os-intro-boot-out 240ms var(--ease-in-quint) 820ms both;
+  background: #050706;
+  animation: os-boot-out 340ms var(--ease-in-quint) 3460ms both;
 }
-@keyframes os-intro-boot-out {
+.os-intro[data-skip] .os-intro-boot {
+  animation: os-boot-out 240ms var(--ease-out-quint) both;
+}
+@keyframes os-boot-out {
   to {
     opacity: 0;
     visibility: hidden;
   }
 }
-.os-intro-boot-center {
-  --c: 15px;
-  --g: 3px;
+.os-boot-center {
+  --k: 0.625;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 30px;
-  animation: os-intro-boot-zoom 260ms var(--ease-in-quint) 820ms both;
+  gap: 28px;
+  width: min(calc(1040px * var(--k)), 88vw);
 }
-@keyframes os-intro-boot-zoom {
+
+/* the name: its box at its own size, scaled by --k (a whole number of px
+   per 8 px cell) */
+.os-boot-mark {
+  position: relative;
+  width: calc(1040px * var(--k));
+  height: calc(448px * var(--k));
+  margin: calc(-36px * var(--k)) 0 calc(-44px * var(--k));
+}
+.os-boot-hero {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1040px;
+  height: 448px;
+  transform-origin: 0 0;
+  scale: var(--k);
+}
+.os-boot-word {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  perspective: 900px;
+}
+.os-boot-word-stage {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+.os-boot-word-still,
+.os-boot-word-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+/* before the canvas: the still name scans in, row band by row band */
+.os-boot-word-still {
+  animation: os-boot-scan 900ms steps(9, end) 120ms both;
+}
+@keyframes os-boot-scan {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
   to {
-    transform: scale(1.08);
+    clip-path: inset(0 0 0 0);
   }
 }
-.os-intro-boot-foot {
+.os-boot-word-still--phone {
+  display: none;
+}
+.os-boot-word-canvas {
+  opacity: 0;
+  image-rendering: pixelated;
+}
+.os-boot-word-stage[data-on] .os-boot-word-canvas {
+  opacity: 1;
+}
+.os-boot-word-stage[data-on] .os-boot-word-still {
+  opacity: 0;
+  transition: opacity 0.32s var(--ease-out-quint);
+}
+.os-boot-word-stage[data-settled] .os-boot-word-still {
+  display: none;
+}
+
+/* progress: square segments lit at uneven times */
+.os-boot-bar {
+  display: flex;
+  gap: 3px;
+  width: 100%;
+  height: 6px;
+}
+.os-boot-bar i {
+  position: relative;
+  flex: 1;
+  background: #141a17;
+}
+.os-boot-bar i::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--color-signal);
+  opacity: 0;
+  animation: os-boot-on 1ms steps(1, end) var(--d) forwards;
+}
+@keyframes os-boot-on {
+  to {
+    opacity: 1;
+  }
+}
+
+/* the log: systemd lines arriving one by one */
+.os-boot-log {
+  width: 100%;
+  min-height: calc(8 * 18px);
+  font: 500 12px/18px var(--font-mono);
+  color: var(--color-label-3);
+  list-style: none;
+}
+.os-boot-log li {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  opacity: 0;
+  animation: os-boot-line 1ms steps(1, end) calc(260ms + var(--i) * 390ms) forwards;
+}
+.os-boot-log li:last-child {
+  color: var(--color-label);
+}
+@keyframes os-boot-line {
+  to {
+    opacity: 1;
+  }
+}
+.os-boot-ok {
+  color: var(--color-signal);
+  white-space: pre;
+}
+.os-boot-foot {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: max(28px, env(safe-area-inset-bottom));
-  text-align: center;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  display: flex;
+  justify-content: center;
+  gap: 2em;
   font: 500 12px/1 var(--font-mono);
-  letter-spacing: 0.08em;
   color: var(--color-label-3);
-  animation: os-intro-fade 400ms ease-out 120ms both;
+}
+.os-boot-skip--touch {
+  display: none;
+}
+@media (pointer: coarse) {
+  .os-boot-skip {
+    display: none;
+  }
+  .os-boot-skip--touch {
+    display: inline;
+  }
+}
+
+/* ───────── lock screen ───────── */
+
+/* No opacity on the lock itself or anything above the veil: an ancestor
+   with opacity (or an opacity animation) would stop the veil's blur. */
+.os-intro-lock {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+/* the desktop behind, blurred and dimmed (hyprlock's screenshot blur) */
+.os-lock-veil {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 70% at 50% 30%, rgba(6, 9, 8, 0.35), rgba(6, 9, 8, 0.7)),
+    rgba(8, 11, 10, 0.35);
+  backdrop-filter: blur(14px) blur(10px) saturate(1.1);
+  animation: os-lock-in 620ms var(--ease-out-quint) 3700ms both;
+}
+.os-intro[data-skip] .os-lock-veil,
+.os-intro[data-mode="relock"] .os-lock-veil {
+  animation: os-lock-in 420ms var(--ease-out-quint) both;
+}
+.os-intro[data-phase="out"] .os-lock-veil {
+  animation: os-lock-out 520ms var(--ease-out-quint) both;
+}
+@keyframes os-lock-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes os-lock-out {
+  to {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .os-lock-veil {
+    backdrop-filter: none;
+    background: var(--color-ink-950);
+  }
+}
+.os-lock-ui {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: max(env(safe-area-inset-top), 9vh) 24px max(env(safe-area-inset-bottom), 7vh);
+  text-align: center;
+  transition:
+    opacity 0.34s var(--ease-out-quint),
+    transform 0.4s var(--ease-out-quint);
+}
+.os-intro[data-phase="out"] {
+  pointer-events: none;
+}
+.os-intro[data-phase="out"] .os-lock-ui {
+  opacity: 0;
+  transform: translateY(-28px);
+}
+
+.os-lock-when {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.os-lock-date {
+  min-height: 1.3em;
+  color: var(--color-label-2);
+  font: 500 clamp(0.9375rem, 1.3vw, 1.125rem) / 1.3 var(--font-mono);
+}
+.os-lock-date::first-letter {
+  text-transform: uppercase;
+}
+.os-lock-time {
+  margin-top: 4px;
+  color: var(--color-label);
+  font: 300 clamp(5rem, 13vw, 10rem) / 1 var(--font-mono);
+  letter-spacing: -0.04em;
+}
+
+/* notifications: what changed while you were away */
+.os-lock-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(380px, 100%);
+  margin-top: clamp(24px, 5vh, 48px);
+  list-style: none;
+  text-align: left;
+}
+.os-lock-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  background: rgba(14, 18, 16, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(196, 206, 194, 0.14);
+}
+.os-lock-note-glyph {
+  flex: none;
+  margin-top: 2px;
+  color: var(--color-signal);
+}
+.os-lock-note-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.os-lock-note-kicker {
+  display: flex;
+  gap: 8px;
+  color: var(--color-label-3);
+  font: 500 11px/1.3 var(--font-mono);
+}
+.os-lock-note-when {
+  margin-left: auto;
+  white-space: nowrap;
+}
+.os-lock-note-text {
+  overflow: hidden;
+  color: var(--color-label);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.35;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* who's logging in, and the field */
+.os-lock-auth {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(320px, 100%);
+  margin-top: auto;
+}
+.os-lock-avatar {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  background: var(--color-ink-800);
+  box-shadow: inset 0 0 0 2px rgba(196, 206, 194, 0.3);
+  color: var(--color-signal);
+}
+.os-lock-name {
+  margin-top: 12px;
+  font: 600 1rem/1.25 var(--font-sans);
+}
+.os-lock-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 46px;
+  margin-top: 16px;
+  border-radius: 10px;
+  background: rgba(10, 13, 12, 0.78);
+  box-shadow: inset 0 0 0 2px rgba(196, 206, 194, 0.3);
+  transition: box-shadow 0.2s;
+}
+.os-lock-field:focus-within {
+  box-shadow: inset 0 0 0 2px var(--color-signal);
+}
+.os-lock-auth[data-checking] .os-lock-field {
+  box-shadow: inset 0 0 0 2px var(--color-signal);
+  animation: os-lock-check 0.38s ease-in-out;
+}
+@keyframes os-lock-check {
+  50% {
+    opacity: 0.6;
+  }
+}
+.os-lock-input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0 0 0 16px;
+  border: 0;
+  background: none;
+  color: var(--color-label);
+  font: 500 15px/1 var(--font-mono);
+  letter-spacing: 0.08em;
+  outline: none;
+}
+.os-lock-input::placeholder {
+  color: var(--color-label-3);
+  letter-spacing: 0;
+}
+.os-lock-go {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 46px;
+  height: 46px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--color-label-2);
+  cursor: pointer;
+}
+.os-lock-go:hover {
+  color: var(--color-signal);
+}
+.os-lock-go:focus-visible {
+  outline-offset: -6px;
+}
+.os-lock-tap {
+  display: none;
+  width: 100%;
+  height: 50px;
+  margin-top: 16px;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(10, 13, 12, 0.78);
+  box-shadow: inset 0 0 0 2px rgba(196, 206, 194, 0.3);
+  color: var(--color-label);
+  font: 500 15px/1 var(--font-mono);
+}
+.os-lock-tap:active {
+  box-shadow: inset 0 0 0 2px var(--color-signal);
+}
+.os-lock-hint {
+  margin-top: 10px;
+  color: var(--color-label-3);
+  font: 500 12px/1.4 var(--font-mono);
+}
+/* touch: a tap, not a keyboard */
+@media (pointer: coarse) {
+  .os-lock-field {
+    display: none;
+  }
+  .os-lock-tap {
+    display: block;
+  }
+  .os-lock-hint {
+    display: none;
+  }
+}
+
+/* entrance: the parts settle in after the boot */
+.os-intro-lock .os-lock-when,
+.os-intro-lock .os-lock-notes,
+.os-intro-lock .os-lock-auth {
+  animation: os-lock-rise 640ms var(--ease-out-quint) both;
+}
+.os-intro-lock .os-lock-when {
+  animation-delay: 3720ms;
+}
+.os-intro-lock .os-lock-notes {
+  animation-delay: 3820ms;
+}
+.os-intro-lock .os-lock-auth {
+  animation-delay: 3900ms;
+}
+.os-intro[data-skip] .os-lock-when,
+.os-intro[data-mode="relock"] .os-lock-when {
+  animation-delay: 40ms;
+}
+.os-intro[data-skip] .os-lock-notes,
+.os-intro[data-mode="relock"] .os-lock-notes {
+  animation-delay: 120ms;
+}
+.os-intro[data-skip] .os-lock-auth,
+.os-intro[data-mode="relock"] .os-lock-auth {
+  animation-delay: 180ms;
+}
+@keyframes os-lock-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+/* ───────── small screens ───────── */
+@media (max-width: 767px) {
+  .os-boot-center {
+    --k: 0.4375;
+    width: min(calc(700px * var(--k)), 88vw);
+    gap: 22px;
+  }
+  .os-boot-mark {
+    width: calc(700px * var(--k));
+    height: calc(296px * var(--k));
+    margin: calc(-20px * var(--k)) 0 calc(-28px * var(--k));
+  }
+  .os-boot-hero {
+    width: 700px;
+    height: 296px;
+  }
+  .os-boot-word-still--desk {
+    display: none;
+  }
+  .os-boot-word-still--phone {
+    display: block;
+  }
+  .os-boot-log {
+    font-size: 11px;
+    line-height: 17px;
+    min-height: calc(8 * 17px);
+  }
+  .os-lock-ui {
+    padding-top: max(env(safe-area-inset-top), 8vh);
+  }
+}
+@media (min-width: 1600px) and (min-height: 900px) {
+  .os-boot-center {
+    --k: 0.75;
+  }
+}
+@media (max-height: 640px) {
+  .os-lock-notes > :nth-child(n + 3) {
+    display: none;
+  }
 }
 
 /* the matrix: every cell is an unlit LED; glyph cells carry a lime light
@@ -137,441 +584,3 @@
   }
 }
 
-/* progress: one segment per matrix column, same pitch, lit unevenly */
-.os-intro-bar {
-  display: flex;
-  gap: var(--g);
-}
-.os-intro-bar i {
-  position: relative;
-  width: var(--c);
-  height: 4px;
-  background: #191d1a;
-}
-.os-intro-bar i::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: var(--color-signal);
-  opacity: 0;
-  animation: os-intro-on 1ms steps(1, end) var(--d) forwards;
-}
-.is-still .os-intro-bar i::before {
-  opacity: 1;
-}
-@keyframes os-intro-on {
-  to {
-    opacity: 1;
-  }
-}
-
-.os-intro-log {
-  position: relative;
-  width: min(360px, 86vw);
-  height: 16px;
-  font: 500 12px/16px var(--font-mono);
-  letter-spacing: 0.02em;
-  color: var(--color-label-3);
-}
-.os-intro-log span {
-  position: absolute;
-  inset: 0;
-  text-align: center;
-  white-space: nowrap;
-  opacity: 0;
-  animation: os-intro-line 280ms steps(1, end) calc(var(--i) * 280ms);
-}
-.os-intro-log span:last-child {
-  animation-fill-mode: forwards;
-}
-.is-still .os-intro-log span:last-child {
-  opacity: 1;
-}
-@keyframes os-intro-line {
-  from,
-  to {
-    opacity: 1;
-  }
-}
-
-/* ───────── lock screen ───────── */
-
-.os-intro-lock {
-  position: absolute;
-  inset: 0;
-  color: var(--color-label);
-}
-
-/* dark glass over the wallpaper, tinted by the live sky phase */
-.os-intro-veil {
-  --os-intro-sky: linear-gradient(180deg, rgba(4, 5, 12, 0.7), rgba(11, 15, 42, 0.6) 55%, rgba(29, 26, 69, 0.66));
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(120% 60% at 50% 34%, rgba(10, 12, 11, 0) 0%, rgba(10, 12, 11, 0.28) 100%),
-    linear-gradient(180deg, rgba(10, 12, 11, 0.5) 0%, rgba(10, 12, 11, 0.12) 46%, rgba(10, 12, 11, 0.62) 100%),
-    var(--os-intro-sky);
-  backdrop-filter: blur(12px) blur(12px) blur(10px) saturate(1.6);
-}
-html[data-sky="dawn"] .os-intro-veil {
-  --os-intro-sky: linear-gradient(
-    180deg,
-    rgba(10, 10, 34, 0.72),
-    rgba(44, 28, 78, 0.6) 45%,
-    rgba(138, 74, 107, 0.55) 78%,
-    rgba(242, 154, 107, 0.5)
-  );
-}
-html[data-sky="day"] .os-intro-veil {
-  --os-intro-sky: linear-gradient(
-    180deg,
-    rgba(7, 27, 54, 0.74),
-    rgba(15, 62, 107, 0.62) 45%,
-    rgba(47, 127, 168, 0.55) 78%,
-    rgba(158, 216, 230, 0.42)
-  );
-}
-html[data-sky="dusk"] .os-intro-veil {
-  --os-intro-sky: linear-gradient(
-    180deg,
-    rgba(8, 6, 26, 0.72),
-    rgba(42, 16, 72, 0.6) 45%,
-    rgba(122, 42, 94, 0.55) 78%,
-    rgba(255, 138, 91, 0.45)
-  );
-}
-@media (prefers-reduced-transparency: reduce) {
-  .os-intro-veil {
-    backdrop-filter: none;
-    background-color: var(--color-ink-950);
-  }
-}
-
-.os-intro-lock-ui {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: max(env(safe-area-inset-top), 7vh) 24px max(env(safe-area-inset-bottom), 6vh);
-  text-align: center;
-}
-
-.os-intro-lockmark {
-  color: var(--color-label);
-}
-.os-intro-padlock {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.os-intro-padlock svg {
-  display: block;
-}
-.os-intro-padlock-body {
-  color: var(--color-label);
-}
-
-.os-intro-when {
-  margin-top: clamp(20px, 5vh, 56px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.os-intro-date {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font: 600 clamp(1.0625rem, 1.55vw, 1.4rem) / 1.2 var(--font-sans);
-  letter-spacing: -0.012em;
-  color: var(--color-label-2);
-}
-.os-intro-date-text::first-letter {
-  text-transform: uppercase;
-}
-.os-intro-skyglyph {
-  display: inline-grid;
-  color: var(--color-ember);
-}
-.os-intro-skyglyph svg {
-  grid-area: 1 / 1;
-  display: none;
-}
-.os-intro-sky-night,
-html[data-sky="night"] .os-intro-sky-night,
-html[data-sky="day"] .os-intro-sky-day,
-html[data-sky="dawn"] .os-intro-sky-edge,
-html[data-sky="dusk"] .os-intro-sky-edge {
-  display: block;
-}
-html[data-sky]:not([data-sky="night"]) .os-intro-sky-night {
-  display: none;
-}
-
-.os-intro-clock {
-  margin-top: 0.04em;
-  font-family: var(--font-display);
-  font-weight: 200;
-  font-size: clamp(6.75rem, 17.5vw, 15.5rem);
-  line-height: 0.92;
-  letter-spacing: -0.035em;
-  font-variation-settings: "opsz" 32;
-  color: var(--color-label);
-  min-height: 0.92em;
-}
-.os-intro-digits {
-  display: inline-flex;
-  align-items: center;
-}
-/* the one pixel inside the type: a lime square colon */
-.os-intro-colon {
-  display: inline-flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.15em;
-  margin: 0 0.075em;
-  transform: translateY(0.015em);
-}
-.os-intro-colon i {
-  display: block;
-  width: 0.07em;
-  height: 0.07em;
-  background: var(--color-signal);
-  box-shadow: 0 0 0.12em rgba(176, 204, 134, 0.35);
-}
-
-.os-intro-meta {
-  margin-top: clamp(14px, 2.2vh, 22px);
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0 0.7em;
-  font: 500 12px/1.4 var(--font-mono);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--color-label-3);
-}
-.os-intro-phase {
-  display: none;
-}
-.os-intro-phase--night,
-html[data-sky="night"] .os-intro-phase--night,
-html[data-sky="dawn"] .os-intro-phase--dawn,
-html[data-sky="day"] .os-intro-phase--day,
-html[data-sky="dusk"] .os-intro-phase--dusk {
-  display: inline;
-}
-html[data-sky]:not([data-sky="night"]) .os-intro-phase--night {
-  display: none;
-}
-
-.os-intro-user {
-  margin-top: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-}
-.os-intro-avatar {
-  display: grid;
-  place-items: center;
-  width: 68px;
-  height: 68px;
-  border-radius: 999px;
-  color: var(--color-signal);
-  background:
-    radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.14), transparent 55%),
-    linear-gradient(160deg, #23273a, #0b0d15);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1),
-    0 14px 34px -12px rgba(0, 0, 0, 0.7);
-}
-.os-intro-avatar svg {
-  display: block;
-  filter: drop-shadow(0 0 6px rgba(176, 204, 134, 0.3));
-}
-.os-intro-name {
-  margin-top: 12px;
-  font: 600 1.0625rem/1.25 var(--font-sans);
-  letter-spacing: -0.012em;
-}
-.os-intro-hint {
-  margin-top: 6px;
-  width: 100%;
-  font: 500 0.8125rem/1.4 var(--font-sans);
-  color: var(--color-label-3);
-}
-.os-intro-hint-touch {
-  display: none;
-}
-@media (pointer: coarse) {
-  .os-intro-hint-fine {
-    display: none;
-  }
-  .os-intro-hint-touch {
-    display: block;
-  }
-}
-
-/* shimmer: the band and the bright copy move in opposite directions by
-   the same container-relative distance, so the copy stays put on screen */
-.os-intro-shimmer {
-  position: relative;
-  display: block;
-  container-type: inline-size;
-  overflow: hidden;
-}
-.os-intro-shimmer-base {
-  display: block;
-}
-.os-intro-shimmer-band {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 30cqw;
-  overflow: hidden;
-  transform: translateX(-30cqw);
-  mask-image: linear-gradient(90deg, transparent, #000 45%, #000 55%, transparent);
-  animation: os-intro-band 1500ms cubic-bezier(0.45, 0, 0.55, 1) 1060ms infinite;
-}
-.os-intro-shimmer-hi {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100cqw;
-  color: var(--color-label);
-  transform: translateX(30cqw);
-  animation: os-intro-band-inv 1500ms cubic-bezier(0.45, 0, 0.55, 1) 1060ms infinite;
-}
-@keyframes os-intro-band {
-  from {
-    transform: translateX(-30cqw);
-  }
-  to {
-    transform: translateX(100cqw);
-  }
-}
-@keyframes os-intro-band-inv {
-  from {
-    transform: translateX(30cqw);
-  }
-  to {
-    transform: translateX(-100cqw);
-  }
-}
-
-/* entrance: the boot fades through, then the lock screen settles. The
-   clock exhales (weight 560 → 200) as it comes to rest, a kinetic beat. */
-.os-intro-lock:not(.is-still) .os-intro-lockmark {
-  animation: os-intro-rise 520ms var(--ease-out-quint) 880ms both;
-}
-.os-intro-lock:not(.is-still) .os-intro-date {
-  animation: os-intro-rise 560ms var(--ease-out-quint) 900ms both;
-}
-.os-intro-lock:not(.is-still) .os-intro-clock {
-  animation: os-intro-exhale 760ms var(--ease-out-quint) 860ms both;
-}
-.os-intro-lock:not(.is-still) .os-intro-meta {
-  animation: os-intro-rise 560ms var(--ease-out-quint) 980ms both;
-}
-.os-intro-lock:not(.is-still) .os-intro-user {
-  animation: os-intro-rise 620ms var(--ease-out-quint) 1020ms both;
-}
-.os-intro-lock:not(.is-still) .os-intro-in {
-  animation: os-intro-fade 220ms ease-out both;
-}
-@keyframes os-intro-rise {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-}
-@keyframes os-intro-exhale {
-  from {
-    opacity: 0;
-    transform: scale(1.07);
-    font-weight: 560;
-  }
-}
-@keyframes os-intro-fade {
-  from {
-    opacity: 0;
-  }
-}
-
-/* ───────── unlock (exit copy, pointer-transparent) ───────── */
-
-.os-intro-exit {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  pointer-events: none;
-  overflow: hidden;
-}
-.os-intro-exit-fill {
-  position: absolute;
-  inset: 0;
-}
-.os-intro-settle {
-  position: absolute;
-  inset: 0;
-  background: rgba(10, 12, 11, 0.5);
-}
-.os-intro-sheet {
-  position: absolute;
-  inset: 0;
-  will-change: transform;
-}
-/* the glass sheet's lit bottom edge, and the shadow it casts as it lifts */
-.os-intro-sheet-edge {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 100%;
-  height: 120px;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.42), rgba(0, 0, 0, 0.12) 40%, transparent);
-}
-.os-intro-sheet-edge::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: -1px;
-  height: 1px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0.1));
-}
-.os-intro-sheet-edge::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: -18px;
-  height: 18px;
-  background: linear-gradient(0deg, rgba(255, 255, 255, 0.1), transparent);
-}
-
-/* ───────── small screens ───────── */
-@media (max-width: 640px) {
-  .os-intro-boot-center,
-  .os-intro-mark {
-    --c: 11px;
-    --g: 2px;
-  }
-  .os-intro-boot-center {
-    gap: 24px;
-  }
-  .os-intro-lock-ui {
-    padding-top: max(env(safe-area-inset-top), 9vh);
-  }
-  .os-intro-when {
-    margin-top: 26px;
-  }
-  .os-intro-clock {
-    letter-spacing: -0.04em;
-  }
-  .os-intro-meta {
-    letter-spacing: 0.1em;
-  }
-}

@@ -4,6 +4,7 @@ import { useI18n } from "@/i18n/client";
 import { Monogram } from "@/components/Monogram";
 import { ArrowUpRight, GithubIcon, RestartIcon, RssIcon } from "./glyphs";
 import { BLOG_RSS, FIRST_COMMIT, SITE_REPO, restartOS, useNow } from "./util";
+import { lockOS } from "../Intro";
 
 /** fastfetch's colour blocks, in Moss. */
 const SWATCHES = [
@@ -99,6 +100,9 @@ export function AboutPanel() {
           <span>{a.rss}</span>
           <ArrowUpRight />
         </a>
+        <button type="button" className="os-menubar-action os-menubar-action--ghost" onClick={lockOS}>
+          <span>{t.shell.menu.lock}</span>
+        </button>
         <button type="button" className="os-menubar-action os-menubar-action--ghost" onClick={restartOS}>
           <RestartIcon />
           <span>{t.shell.menu.restart}</span>

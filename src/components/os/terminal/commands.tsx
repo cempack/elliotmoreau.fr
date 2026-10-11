@@ -154,6 +154,7 @@ const HELP: { cmd: string; label: string; key: keyof Dict["system"]["term"]["hel
   { cmd: "date", label: "date", key: "date" },
   { cmd: "echo", label: "echo <text>", key: "echo", fill: true },
   { cmd: "history", label: "history", key: "history" },
+  { cmd: "lock", label: "lock", key: "lock" },
   { cmd: "clear", label: "clear", key: "clear" },
   { cmd: "exit", label: "exit", key: "exit" },
   { cmd: "sudo hire elliot", label: "sudo hire elliot", key: "hire" },
@@ -792,6 +793,17 @@ const COMMANDS: Command[] = [
     run: (_a, ctx) => {
       window.setTimeout(ctx.close, 260);
       return <Line tone="dim">{ctx.d.system.term.eggs.quit}</Line>;
+    },
+  },
+  {
+    name: "lock",
+    aliases: ["hyprlock", "loginctl"],
+    run: (_a, ctx) => {
+      window.setTimeout(() => {
+        ctx.close();
+        window.dispatchEvent(new CustomEvent("em:lock"));
+      }, 200);
+      return SILENT;
     },
   },
   {

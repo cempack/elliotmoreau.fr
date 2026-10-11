@@ -94,13 +94,13 @@ const BAYER = [
 
 const FIELD = {
   bg: [0, 0, 0, 0] as const, // transparent: the page shows through
-  dim: "#2B2E52", // indigo lattice
-  mid: "#5F5E9E", // lilac dusk
+  dim: "#1E2A26", // moss lattice
+  mid: "#4E6A60", // sage dusk
   lit: "#EBE9E1", // paper white
-  hover: "#B0CC86", // signal lime under the light
-  crest: "#ECFFC8", // white-hot lime
-  extrude: "#0C0D22", // far step of the in-canvas 3D solid, receding up-back
-  extrudeNear: "#1F2050", // near step: moonlit indigo sides
+  hover: "#B0CC86", // moss under the light
+  crest: "#E3EED2", // white-hot moss
+  extrude: "#050807", // far step of the in-canvas 3D solid, receding up-back
+  extrudeNear: "#1B2A26", // near step: deep moss sides
   extrudeTop: "#FBF9F4", // top-face light on skyline edges
 };
 
@@ -124,16 +124,16 @@ const BRIGHTS = [THEME.red, THEME.yellow, THEME.green, THEME.blue, THEME.cyan, T
 type Palette = [string, string, string, string, string];
 const PALETTES: Record<GridEffect, Palette> = {
   "grid-decrypt": ["#EBE9E1", "#B0CC86", "#8FC2A8", "#6F8FA0", "#3B4F5A"],
-  "grid-matrix": ["#EBE9E1", "#B0CC86", "#86A35C", "#5F5E9E", "#393B78"],
-  "grid-laser": ["#EBE9E1", "#BCC2BA", "#89B4A8", "#5F5E9E", "#393B78"],
-  "grid-blackhole": ["#EBE9E1", "#B0CC86", "#E2786B", "#7A6FCC", "#393B78"],
-  "grid-waves": ["#EBE9E1", "#89B4A8", "#AEA3C8", "#6E66C2", "#393B78"],
-  "grid-beams": ["#EBE9E1", "#ECFFC8", "#B0CC86", "#5F5E9E", "#393B78"],
-  "grid-rings": ["#EBE9E1", "#AEA3C8", "#B0CC86", "#6E66C2", "#393B78"],
-  "grid-spotlights": ["#EBE9E1", "#E0BD6E", "#B0CC86", "#5F5E9E", "#393B78"],
-  "grid-fireworks": ["#EBE9E1", "#B0CC86", "#E0BD6E", "#5F5E9E", "#393B78"],
-  "grid-colorshift": ["#EBE9E1", "#B0CC86", "#89B4A8", "#AEA3C8", "#393B78"],
-  "grid-prism": ["#EBE9E1", "#EBE9E1", "#E2786B", "#89B4A8", "#393B78"],
+  "grid-matrix": ["#EBE9E1", "#B0CC86", "#86A35C", "#4E6A60", "#2C3D38"],
+  "grid-laser": ["#EBE9E1", "#BCC2BA", "#89B4A8", "#4E6A60", "#2C3D38"],
+  "grid-blackhole": ["#EBE9E1", "#B0CC86", "#E2786B", "#6A8A7A", "#2C3D38"],
+  "grid-waves": ["#EBE9E1", "#89B4A8", "#AEA3C8", "#5E7F75", "#2C3D38"],
+  "grid-beams": ["#EBE9E1", "#E3EED2", "#B0CC86", "#4E6A60", "#2C3D38"],
+  "grid-rings": ["#EBE9E1", "#AEA3C8", "#B0CC86", "#5E7F75", "#2C3D38"],
+  "grid-spotlights": ["#EBE9E1", "#E0BD6E", "#B0CC86", "#4E6A60", "#2C3D38"],
+  "grid-fireworks": ["#EBE9E1", "#B0CC86", "#E0BD6E", "#4E6A60", "#2C3D38"],
+  "grid-colorshift": ["#EBE9E1", "#B0CC86", "#89B4A8", "#AEA3C8", "#2C3D38"],
+  "grid-prism": ["#EBE9E1", "#EBE9E1", "#E2786B", "#89B4A8", "#2C3D38"],
 };
 const stopsFrom = (pal: Palette): [number, string][] =>
   WORDMARK_BANDS.map(([n], k) => [n, pal[k]] as [number, string]);
@@ -884,9 +884,9 @@ export function playHeroField(
       if (!sheenGrad || sheenAmt !== restSheen) {
         sheenAmt = restSheen;
         const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1 / m);
-        g.addColorStop(0, `rgba(170,176,255,${0.15 * restSheen})`);
-        g.addColorStop(0.6, `rgba(170,176,255,${0.06 * restSheen})`);
-        g.addColorStop(1, "rgba(170,176,255,0)");
+        g.addColorStop(0, `rgba(201,220,192,${0.15 * restSheen})`);
+        g.addColorStop(0.6, `rgba(201,220,192,${0.06 * restSheen})`);
+        g.addColorStop(1, "rgba(201,220,192,0)");
         sheenGrad = g;
       }
       ctx.save();

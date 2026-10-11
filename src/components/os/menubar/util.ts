@@ -144,20 +144,22 @@ export function zoneCity(tz: string) {
 
 /**
  * Restart emOS: forget that this session already booted, fade the screen
- * to ink like a display powering down, and reload into the boot sequence.
+ * to ink like a display powering down, and load the Desktop, where the
+ * boot plays.
  */
 export function restartOS() {
   try {
     sessionStorage.removeItem("em-intro");
   } catch {}
+  const home = /^\/fr(\/|$)/.test(window.location.pathname) ? "/fr" : "/";
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (reduced) {
-    window.location.reload();
+    window.location.assign(home);
     return;
   }
   const veil = document.createElement("div");
   veil.className = "os-menubar-restart";
   veil.setAttribute("aria-hidden", "true");
   document.body.appendChild(veil);
-  window.setTimeout(() => window.location.reload(), 520);
+  window.setTimeout(() => window.location.assign(home), 520);
 }
