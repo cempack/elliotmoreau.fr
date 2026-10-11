@@ -16,7 +16,7 @@ export function countLabel(t: WritingDict, n: number) {
   return n === 1 ? t.countOne : fmt(t.countOther, { n });
 }
 
-/* Dates are formatted by hand from numeric Paris-time parts: numeric
+/* Dates are formatted by hand from numeric Toulouse-time parts: numeric
    Intl output is stable across ICU builds, month names are not, and the
    server and the browser must print the same thing. */
 const PARTS = new Intl.DateTimeFormat("en-CA", {
@@ -67,7 +67,7 @@ export function primaryTag(p: GhostPost) {
   return (p.tags ?? []).find((tag) => tag?.slug && !tag.slug.startsWith("hash-")) ?? null;
 }
 
-/** Group posts (already newest first) by Paris-time year. */
+/** Group posts (already newest first) by Toulouse-time year. */
 export function byYear(posts: GhostPost[]) {
   const groups: { year: number; posts: GhostPost[] }[] = [];
   for (const p of posts) {

@@ -1,5 +1,5 @@
 /**
- * Inline, pre-paint: sets html[data-sky] from the Paris hour and the saved
+ * Inline, pre-paint: sets html[data-sky] from the Toulouse hour and the saved
  * mode before first paint. Mirrors phaseForHour in ./sky.tsx — keep in sync.
  * Plain module (no "use client") so the server layout gets the string.
  */

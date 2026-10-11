@@ -76,7 +76,7 @@ export function useClock(format: (d: Date) => string, ms = 1000) {
 }
 
 const PARIS_HM = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
-/** "14:22" in Paris */
+/** "14:22" in Toulouse */
 export const parisHM = (d: Date) => PARIS_HM.format(d);
 
 /** Whether an element is on screen (for pausing loops). */

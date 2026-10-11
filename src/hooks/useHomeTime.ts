@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
  * Local time in France, ticking. `null` until mounted so server HTML and
  * first client render agree (no hydration mismatch).
  */
-export function useParisTime({ seconds = false }: { seconds?: boolean } = {}) {
+export function useHomeTime({ seconds = false }: { seconds?: boolean } = {}) {
   const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {

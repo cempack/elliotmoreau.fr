@@ -3,7 +3,7 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { m } from "motion/react";
 import { useI18n } from "@/i18n/client";
-import { useParisTime } from "@/hooks/useParisTime";
+import { useHomeTime } from "@/hooks/useHomeTime";
 import { useIsMac, useMedia, useReduced } from "@/hooks/env";
 import { useSound } from "@/lib/sound";
 import { spring } from "@/lib/motion";
@@ -63,7 +63,7 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
   const [phase, setPhaseState] = useState<Phase>("compose");
   const [returned, setReturned] = useState(false);
   const [lifted, setLifted] = useState(false);
-  /** Paris time the letter left, for the postmark */
+  /** Toulouse time the letter left, for the postmark */
   const [postmark, setPostmark] = useState("");
   const liftTimer = useRef(0);
   useEffect(() => () => window.clearTimeout(liftTimer.current), []);
@@ -553,19 +553,19 @@ function NothingOpened({ email }: { email: string }) {
 
 /**
  * Beside the sheet on wide windows, under the envelope: what happens to
- * the letter once it is sent, as a short spec list (the time in Paris is
+ * the letter once it is sent, as a short spec list (the time in Toulouse is
  * live; the key links to its mailbox).
  */
 function Delivery() {
   const { t } = useI18n();
   const c = t.contact;
-  const { time } = useParisTime();
+  const { time } = useHomeTime();
   return (
     <section className="app-contact-delivery" aria-label={c.delivery}>
       <p className="app-contact-delivery-k">{c.delivery}</p>
       <dl>
         <div>
-          <dt>{c.kParis}</dt>
+          <dt>{c.kCity}</dt>
           <dd className="tabular">{time ?? "--:--"}</dd>
         </div>
         <div>

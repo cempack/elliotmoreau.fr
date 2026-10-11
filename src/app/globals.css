@@ -311,13 +311,12 @@ p {
 .em-palette-option[aria-selected="true"] {
   color: var(--color-label);
 }
-/* the selection: a moss wash with a bar on its left edge */
+/* the selection: a quiet moss wash, nothing on its edges */
 .em-palette-hl {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: rgba(176, 204, 134, 0.12);
-  box-shadow: inset 2px 0 0 var(--color-signal);
+  background: rgba(176, 204, 134, 0.1);
 }
 .em-palette-icon {
   display: grid;

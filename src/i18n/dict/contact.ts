@@ -11,7 +11,7 @@ const en = {
   langNote: "English or French, whichever you prefer.",
   /* beside the sheet on wide windows: what happens to the letter */
   delivery: "Delivery",
-  kParis: "Paris",
+  kCity: "Toulouse",
   kReplies: "Replies",
   vReplies: "within a few days",
   kLangs: "Languages",
@@ -142,7 +142,7 @@ const fr: typeof en = {
   replyNote: "Je réponds en général sous quelques jours.",
   langNote: "En français ou en anglais, comme vous préférez.",
   delivery: "Distribution",
-  kParis: "Paris",
+  kCity: "Toulouse",
   kReplies: "Réponse",
   vReplies: "sous quelques jours",
   kLangs: "Langues",

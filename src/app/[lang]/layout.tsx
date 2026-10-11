@@ -53,7 +53,7 @@ export async function generateMetadata({ params }: LayoutProps<"/[lang]">): Prom
   };
 }
 
-// before first paint: sky phase from Paris time, and skip the intro for
+// before first paint: sky phase from Toulouse time, and skip the intro for
 // returning visitors this session
 const INTRO_SCRIPT = `try{if(sessionStorage.getItem("em-intro"))document.documentElement.dataset.intro="done"}catch(e){}`;
 

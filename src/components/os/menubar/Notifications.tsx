@@ -24,12 +24,12 @@ import {
 
 const noop = () => () => {};
 const getZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || PARIS_TZ;
-/** The visitor's IANA zone, Paris until mounted (hydration-safe). */
+/** The visitor's IANA zone, Toulouse until mounted (hydration-safe). */
 function useVisitorZone() {
   return useSyncExternalStore(noop, getZone, () => PARIS_TZ);
 }
 
-/** Menu bar face: "Sat 10 Oct  14:32", Paris time. */
+/** Menu bar face: "Sat 10 Oct  14:32", Toulouse time. */
 export function ClockTrigger({ time }: { time: string | null }) {
   const { lang } = useI18n();
   const now = useNow("minute");
@@ -61,7 +61,7 @@ function ClockCol({ hm, label, sub, glyph }: { hm: string; label: string; sub: s
   );
 }
 
-/** Paris vs you: both clocks, or one when you share Paris time. */
+/** Toulouse vs you: both clocks, or one when you share Toulouse time. */
 function TimeCard() {
   const { t, lang } = useI18n();
   const { phase } = useSky();
@@ -74,8 +74,8 @@ function TimeCard() {
   const diff = zoneOffset(now, zone) - zoneOffset(now, PARIS_TZ);
   const same = diff === 0;
   return (
-    <section className="os-menubar-tile os-menubar-time-card" aria-label={`${t.shell.clock.paris} · ${t.shell.clock.you}`} data-same={same || undefined}>
-      <ClockCol hm={paris} label={t.shell.clock.paris} sub={`${t.shell.control[phase]} · ${parisDay}`} glyph={SKY_GLYPH[phase]} />
+    <section className="os-menubar-tile os-menubar-time-card" aria-label={`${t.shell.clock.city} · ${t.shell.clock.you}`} data-same={same || undefined}>
+      <ClockCol hm={paris} label={t.shell.clock.city} sub={`${t.shell.control[phase]} · ${parisDay}`} glyph={SKY_GLYPH[phase]} />
       {same ? (
         <p className="os-menubar-time-same">{t.shell.clock.sameZone}</p>
       ) : (
@@ -185,7 +185,7 @@ function Feed({ music, nowMs }: { music: Music; nowMs: number | null }) {
   );
 }
 
-/** This month in Paris, Monday first, with dots on days something shipped. */
+/** This month in Toulouse, Monday first, with dots on days something shipped. */
 function Calendar({ now }: { now: Date }) {
   const { t, lang } = useI18n();
   const { posts, activity } = useSiteData();

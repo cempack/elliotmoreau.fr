@@ -18,7 +18,7 @@ const MODES: SkyMode[] = ["auto", "dawn", "day", "dusk", "night"];
 /** endonyms: each language named in itself, whatever the UI language */
 const ENDONYM = { en: "English", fr: "Français" } as const;
 
-/** Sky: a pixel postcard of Paris and a five-way segmented control. */
+/** Sky: a pixel postcard of Toulouse and a five-way segmented control. */
 function SkyTile() {
   const { t } = useI18n();
   const c = t.shell.control;

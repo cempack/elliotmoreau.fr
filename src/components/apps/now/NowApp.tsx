@@ -75,7 +75,7 @@ export function NowApp({ data }: { data: SiteData }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [arrange, setArrange]);
 
-  // "today / yesterday / 6 days ago", by calendar day in Paris
+  // "today / yesterday / 6 days ago", by calendar day in Toulouse
   const now = useNow(60_000);
   let updatedAgo = "";
   if (now) {

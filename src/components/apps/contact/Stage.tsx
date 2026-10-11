@@ -198,7 +198,7 @@ export function Stage({
 }: {
   ref?: React.Ref<StageHandle>;
   phase: Phase;
-  /** Paris time the letter left ("HH:MM"), once it has */
+  /** Toulouse time the letter left ("HH:MM"), once it has */
   postmark: string;
   subject: number;
   lines: number[];
@@ -876,7 +876,7 @@ export function Stage({
             <span className="app-contact-stage-done">
               {postmark && (
                 <span className="app-contact-stamp" aria-hidden>
-                  <PixelLabel text={`Paris ${postmark}`} cell={2} />
+                  <PixelLabel text={`Toulouse ${postmark}`} cell={2} />
                 </span>
               )}
               <span className="app-contact-stage-out">{c.outbox}</span>

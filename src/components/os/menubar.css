@@ -92,26 +92,43 @@
   height: 100%;
   margin-left: 2px;
 }
+.os-menubar-ws-slot {
+  display: block;
+}
+/* an open workspace: its app's glyph, dimmed until it is the current one */
 .os-menubar-ws-btn {
   position: relative;
   display: grid;
   place-items: center;
-  width: 26px;
+  width: 30px;
   height: var(--menubar-h);
-  color: var(--color-label-3);
-  font-size: 13px;
-  transition: color 0.15s;
   -webkit-tap-highlight-color: transparent;
 }
-.os-menubar-ws-btn:hover {
-  color: var(--color-label);
+.os-menubar-ws-btn svg {
+  opacity: 0.5;
+  filter: saturate(0.4);
+  transition:
+    opacity 0.15s,
+    filter 0.15s;
 }
-.os-menubar-ws-on {
-  display: block;
-  width: 11px;
-  height: 11px;
-  border-radius: 3px;
-  background: var(--color-label);
+.os-menubar-ws-btn:hover svg {
+  opacity: 0.85;
+  filter: none;
+}
+.os-menubar-ws-btn[aria-current="page"] svg {
+  opacity: 1;
+  filter: none;
+}
+/* the current one: a bar under it, like Hyprland's active workspace */
+.os-menubar-ws-btn[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  width: 14px;
+  height: 2px;
+  translate: -50% 0;
+  background: var(--color-signal);
 }
 .os-menubar-ws-btn:focus-visible {
   outline: 2px solid var(--color-signal);

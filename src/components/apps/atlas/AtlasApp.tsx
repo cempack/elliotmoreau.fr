@@ -10,7 +10,6 @@ import { useI18n } from "@/i18n/client";
 import { useSound } from "@/lib/sound";
 import { useMedia } from "@/hooks/env";
 import { PressButton } from "@/components/ui/Pressable";
-import { scrollToY } from "@/lib/scroller";
 import { HOME, PLACES } from "@/lib/places";
 import { placeById } from "./geo";
 import { AtlasGlobe } from "./AtlasGlobe";
@@ -81,18 +80,6 @@ export function AtlasApp({ data }: { data: SiteData }) {
   }, []);
 
   // picking a postcard below the fold: glide back up to the globe first
-  const pickPostcard = useCallback(
-    (id: string) => {
-      const stage = stageRef.current;
-      if (stage && stage.getBoundingClientRect().top < -stage.offsetHeight * 0.35) {
-        const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        scrollToY(0, !reduced);
-      }
-      select(id);
-    },
-    [select]
-  );
-
   const onCamera = useCallback(
     (lat: number, lon: number) => {
       if (readoutRef.current) readoutRef.current.textContent = fmtCoordsL(lat, lon, lang);
@@ -144,8 +131,16 @@ export function AtlasApp({ data }: { data: SiteData }) {
               grid places them */}
           {wide && (
             <Glass thickness="regular" refract={false} className="app-atlas-panel app-atlas-panel--places">
+              {/* the only part of Atlas that scrolls on wide screens: the
+                  globe and the card stay whole beside it */}
               <div className="app-atlas-panel-scroll" data-lenis-prevent>
                 <PlacesList selectedId={selectedId} onSelect={select} thumbId="app-atlas-thumb-desk" />
+                <section className="app-atlas-side-pcs" aria-labelledby="app-atlas-pc-title">
+                  <h2 id="app-atlas-pc-title" className="app-atlas-side-h">
+                    {a.postcards.title}
+                  </h2>
+                  <Postcards selectedId={selectedId} onPick={select} compact stack />
+                </section>
               </div>
             </Glass>
           )}
@@ -197,17 +192,6 @@ export function AtlasApp({ data }: { data: SiteData }) {
           )}
         </section>
 
-        {wide && (
-          <section className="app-atlas-cards" aria-labelledby="app-atlas-pc-title">
-            <header className="app-atlas-cards-head">
-              <h2 id="app-atlas-pc-title" className="app-atlas-cards-title">
-                {a.postcards.title}
-              </h2>
-              <p className="app-atlas-cards-lede">{a.postcards.lede}</p>
-            </header>
-            <Postcards selectedId={selectedId} onPick={pickPostcard} />
-          </section>
-        )}
       </div>
     </AppWindow>
   );

@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 /**
- * The sky follows the real time in Paris: dawn, day, dusk, night. The
+ * The sky follows the real time in Toulouse: dawn, day, dusk, night. The
  * wallpaper, glass tints and a few accents read `html[data-sky]`. A head
  * script (SKY_SCRIPT) sets it before first paint so there is no flash;
  * Control Center can pin a phase ("mode"), persisted in localStorage.
@@ -13,7 +13,7 @@ export type SkyMode = "auto" | SkyPhase;
 
 export const SKY_PHASES: SkyPhase[] = ["dawn", "day", "dusk", "night"];
 
-/** Paris hour (0–23, fractional) → phase. */
+/** Toulouse hour (0–23, fractional) → phase. */
 export function phaseForHour(h: number): SkyPhase {
   if (h >= 5.5 && h < 8.5) return "dawn";
   if (h >= 8.5 && h < 17.5) return "day";

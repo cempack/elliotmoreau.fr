@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useI18n } from "@/i18n/client";
 import { stripLocale } from "@/i18n/config";
 import { useHydrated } from "@/hooks/env";
-import { useParisTime } from "@/hooks/useParisTime";
+import { useHomeTime } from "@/hooks/useHomeTime";
 import { useSpotifyStatus } from "@/hooks/useSpotifyStatus";
 import { timeAgo } from "@/lib/format";
 import { useSound } from "@/lib/sound";
@@ -27,7 +27,7 @@ import { restartOS } from "./menubar/util";
  * the first server-rendered paint, so it plays before hydration, and it
  * takes its time on purpose (BOOT_MS). Any key or click skips to the lock.
  *
- * Lock screen (hyprlock-ish): Paris time and date, a few notifications
+ * Lock screen (hyprlock-ish): Toulouse time and date, a few notifications
  * (now playing, the latest post, the last push) and a password field.
  * Any password unlocks (on touch, a tap). The lock comes back on
  * `em:lock` (Spotlight, the Terminal's `lock`, the emOS menu).
@@ -226,8 +226,8 @@ const dateFormat = (lang: string) =>
     month: "long",
   });
 
-/** Long localized date in Paris, after mount only (hydration-safe). */
-function useParisDate(lang: string) {
+/** Long localized date in Toulouse, after mount only (hydration-safe). */
+function useHomeDate(lang: string) {
   const [date, setDate] = useState<string | null>(null);
   useEffect(() => {
     const fmt = dateFormat(lang);
@@ -248,8 +248,8 @@ function LockScreen({ phase, onUnlock }: { phase: Phase; onUnlock: (gesture: boo
   const { t, lang } = useI18n();
   const s = t.system.intro;
   const hydrated = useHydrated();
-  const { time } = useParisTime();
-  const date = useParisDate(lang);
+  const { time } = useHomeTime();
+  const date = useHomeDate(lang);
   const data = useSiteData();
   const music = useSpotifyStatus(data.spotify);
   const post = data.posts[0];

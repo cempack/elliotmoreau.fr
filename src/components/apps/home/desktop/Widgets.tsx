@@ -16,10 +16,10 @@ import { PARIS, fmtOffset, hhmm, offsetMinutes, useMinute, useVisitorZone, zoned
 const fill = (s: string, v: Record<string, string | number>) => s.replace(/\{(\w+)\}/g, (_, k: string) => String(v[k] ?? ""));
 
 /* ───────────────────────────── the sky clock ─────────────────────────────
-   A 24-hour dial drawn in pixels: the ring is the day in Paris, coloured by
+   A 24-hour dial drawn in pixels: the ring is the day in Toulouse, coloured by
    the four sky phases the whole OS follows (dithered where one hands over
    to the next), noon at the top, midnight at the bottom. A paper-white
-   playhead cuts the ring at the current Paris time, the sun (or the moon
+   playhead cuts the ring at the current Toulouse time, the sun (or the moon
    at night) sits in the middle above the clock, and an ion tick marks the
    visitor's own hour when it differs. One cell is 4 CSS px. */
 
@@ -42,7 +42,7 @@ const PHASE_DIM: Record<SkyPhase, string> = {
   day: "#5a6e48",
   dusk: "#7a5444",
 };
-/** phase starts, Paris hours (mirrors phaseForHour) */
+/** phase starts, Toulouse hours (mirrors phaseForHour) */
 const STARTS: [SkyPhase, number][] = [
   ["dawn", 5.5],
   ["day", 8.5],
@@ -136,7 +136,7 @@ function SkyDial({
   visitorHour,
 }: {
   hour: number | null;
-  /** the real phase in Paris (the lit arc) */
+  /** the real phase in Toulouse (the lit arc) */
   phase: SkyPhase | null;
   /** the sky on screen (pinned or real): sun or moon */
   glyphPhase: SkyPhase | null;
@@ -203,7 +203,7 @@ export function ClockWidget() {
   const w = t.home.widgets.clock;
   const now = useMinute();
   const zone = useVisitorZone();
-  // Control Center can pin the sky: the dial stays true to Paris, the
+  // Control Center can pin the sky: the dial stays true to Toulouse, the
   // phase line and the sun or moon follow the sky you are looking at
   const { mode } = useSky();
 

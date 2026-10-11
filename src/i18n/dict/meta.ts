@@ -6,8 +6,8 @@
 // before : and inside « », U+202F (narrow no-break space) before ? ! ;.
 const en = {
   siteName: "Elliot Moreau",
-  title: "Elliot Moreau, developer in France",
-  description: "Elliot Moreau, a developer in France. Projects, writing, travel and what I’m listening to.",
+  title: "Elliot Moreau, developer in Toulouse",
+  description: "Elliot Moreau, a developer in Toulouse, France. Projects, writing, travel and what I’m listening to.",
   pages: {
     home: "Desktop",
     work: "Projects",
@@ -28,8 +28,8 @@ const en = {
 
 const fr: typeof en = {
   siteName: "Elliot Moreau",
-  title: "Elliot Moreau, développeur en France",
-  description: "Elliot Moreau, développeur en France. Projets, écrits, voyages et ce que j’écoute.",
+  title: "Elliot Moreau, développeur à Toulouse",
+  description: "Elliot Moreau, développeur à Toulouse. Projets, écrits, voyages et ce que j’écoute.",
   pages: {
     home: "Bureau",
     work: "Projets",

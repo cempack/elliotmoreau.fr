@@ -16,7 +16,7 @@ import "./wallpaper.css";
  *
  * The scene (see ./wallpaper/paint.ts): a dithered sky that follows the
  * phase, stars and a milky way at night, the sun or the real moon phase on
- * an arc set by the Paris hour, faceted Alps with alpenglow, the Massif
+ * an arc set by the Toulouse hour, faceted Alps with alpenglow, the Massif
  * Central puys with a hilltop village whose windows light up at dusk, and
  * a lake mirroring it all. Life is a few CSS-animated pixels (glinting
  * stars, a rare shooting star, an aircraft crossing in pixel steps), all
@@ -47,7 +47,7 @@ function gridFor(w: number, h: number): Grid {
   return { W: Math.ceil(w / cell), H: Math.ceil(h / cell), cell };
 }
 
-/** The light for a phase: the Paris clock when it agrees with the phase, a
+/** The light for a phase: the Toulouse clock when it agrees with the phase, a
     representative hour when the phase is pinned. Quarter-hour buckets. */
 function lightFor(phase: SkyPhase, hour: number | null) {
   const h = Math.round((hour ?? parisHour()) * 4) / 4;

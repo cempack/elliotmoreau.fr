@@ -11,7 +11,7 @@ export type Place = {
 };
 
 export const PLACES: Place[] = [
-  { id: "france", lat: 46.6034, lon: 1.8883, status: "been", home: true, name: { en: "France", fr: "France" }, region: { en: "europe", fr: "europe" } },
+  { id: "france", lat: 43.6047, lon: 1.4442, status: "been", home: true, name: { en: "France", fr: "France" }, region: { en: "europe", fr: "europe" } },
   { id: "canada", lat: 56.1304, lon: -106.3468, status: "been", name: { en: "Canada", fr: "Canada" }, region: { en: "north america", fr: "amérique du nord" } },
   { id: "ireland", lat: 53.1424, lon: -7.6921, status: "been", name: { en: "Ireland", fr: "Irlande" }, region: { en: "europe", fr: "europe" } },
   { id: "northern-ireland", lat: 54.7877, lon: -6.4923, status: "been", name: { en: "Northern Ireland", fr: "Irlande du Nord" }, region: { en: "europe", fr: "europe" } },

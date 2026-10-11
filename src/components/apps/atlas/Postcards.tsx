@@ -46,10 +46,14 @@ export function Postcards({
   selectedId,
   onPick,
   compact = false,
+  stack = false,
 }: {
   selectedId: string;
   onPick: (id: string) => void;
   compact?: boolean;
+  /** a column of cards that scrolls with its container (Atlas's side
+      panel on wide screens), instead of a strip you fling */
+  stack?: boolean;
 }) {
   const { t, lang } = useI18n();
   const a = t.atlas;
@@ -177,13 +181,15 @@ export function Postcards({
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLUListElement>) => {
-    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
+    const prev = stack ? "ArrowUp" : "ArrowLeft";
+    const next = stack ? "ArrowDown" : "ArrowRight";
+    if (![prev, next, "Home", "End"].includes(e.key)) return;
     const items = Array.from(e.currentTarget.querySelectorAll<HTMLButtonElement>("button.app-atlas-pc"));
     const at = items.indexOf(document.activeElement as HTMLButtonElement);
     if (at === -1) return;
     e.preventDefault();
     const to =
-      e.key === "Home" ? 0 : e.key === "End" ? items.length - 1 : Math.max(0, Math.min(items.length - 1, at + (e.key === "ArrowRight" ? 1 : -1)));
+      e.key === "Home" ? 0 : e.key === "End" ? items.length - 1 : Math.max(0, Math.min(items.length - 1, at + (e.key === next ? 1 : -1)));
     items.forEach((b, i) => (b.tabIndex = i === to ? 0 : -1));
     items[to].focus();
   };
@@ -201,6 +207,75 @@ export function Postcards({
     const to = left < cur ? Math.min(...fits) : Math.max(...fits);
     settle(Number.isFinite(to) ? to : nearest(-left, pts));
   };
+
+  const card = (p: (typeof ORDERED)[number], i: number) => {
+    const name = p.name[lang];
+    const active = p.id === selectedId;
+    const km = distanceKm(HOME, p);
+    return (
+      <li key={p.id} className="app-atlas-pc-li">
+        <button
+          type="button"
+          className="app-atlas-pc"
+          data-active={active || undefined}
+          data-tone={p.home ? "home" : p.status}
+          aria-current={active || undefined}
+          tabIndex={active ? 0 : -1}
+          aria-label={fill(a.labelled, { label: a.postcards.show, value: name })}
+         
+          onClick={() => onPick(p.id)}
+          onFocus={() => !stack && reveal(i)}
+          draggable={false}
+        >
+          <span className="app-atlas-pc-art" role="img" aria-label={fill(a.postcards.map, { place: name })}>
+            <PixelMap place={p} className="app-atlas-pc-map" />
+          </span>
+          <span className="app-atlas-pc-scrim" aria-hidden />
+          <span className="app-atlas-pc-chip">
+            <StatusChip place={p} />
+          </span>
+          <span className="app-atlas-pc-stamp">
+            <Stamp place={p} size="sm" />
+          </span>
+          <span className="app-atlas-pc-text">
+            <span className="app-atlas-pc-kicker">{a.postcards.greetings}</span>
+            <span className="app-atlas-pc-name">{name}</span>
+            {/* each value stays whole: the distance wraps as one
+                unit, never leaving its "km" behind; the compact
+                cards keep to the distance (home: where it is) */}
+            <span className="app-atlas-pc-meta tabular">
+              {(!compact || p.home) && <span className="app-atlas-pc-v">{coords(p.lat, p.lon)}</span>}
+              {!p.home && (
+                <span className="app-atlas-pc-v" data-km="">
+                  {fmt(km)}
+                  {lang === "fr" ? "\u202f" : "\u00a0"}
+                  {a.km}
+                </span>
+              )}
+            </span>
+          </span>
+        </button>
+      </li>
+    );
+  };
+
+  // the tab stop returns to the selected card when focus leaves the list
+  const onBlur = (e: React.FocusEvent<HTMLUListElement>) => {
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    e.currentTarget.querySelectorAll<HTMLButtonElement>("button.app-atlas-pc").forEach((b) => {
+      b.tabIndex = b.hasAttribute("data-active") ? 0 : -1;
+    });
+  };
+
+  if (stack) {
+    return (
+      <div className="app-atlas-pcs" data-compact={compact || undefined} data-stack="">
+        <ul className="app-atlas-pcs-stack" role="list" aria-label={a.postcards.label} onKeyDown={onKeyDown} onBlur={onBlur}>
+          {ORDERED.map(card)}
+        </ul>
+      </div>
+    );
+  }
 
   return (
     <div className="app-atlas-pcs" data-compact={compact || undefined}>
@@ -241,64 +316,9 @@ export function Postcards({
           aria-label={a.postcards.label}
           style={{ x }}
           onKeyDown={onKeyDown}
-          onBlur={(e) => {
-            // leaving the strip: the tab stop returns to the selected card
-            if (e.currentTarget.contains(e.relatedTarget as Node)) return;
-            e.currentTarget.querySelectorAll<HTMLButtonElement>("button.app-atlas-pc").forEach((b) => {
-              b.tabIndex = b.hasAttribute("data-active") ? 0 : -1;
-            });
-          }}
+          onBlur={onBlur}
         >
-          {ORDERED.map((p, i) => {
-            const name = p.name[lang];
-            const active = p.id === selectedId;
-            const km = distanceKm(HOME, p);
-            return (
-              <li key={p.id} className="app-atlas-pc-li">
-                <button
-                  type="button"
-                  className="app-atlas-pc"
-                  data-active={active || undefined}
-                  data-tone={p.home ? "home" : p.status}
-                  aria-current={active || undefined}
-                  tabIndex={active ? 0 : -1}
-                  aria-label={fill(a.labelled, { label: a.postcards.show, value: name })}
-                 
-                  onClick={() => onPick(p.id)}
-                  onFocus={() => reveal(i)}
-                  draggable={false}
-                >
-                  <span className="app-atlas-pc-art" role="img" aria-label={fill(a.postcards.map, { place: name })}>
-                    <PixelMap place={p} className="app-atlas-pc-map" />
-                  </span>
-                  <span className="app-atlas-pc-scrim" aria-hidden />
-                  <span className="app-atlas-pc-chip">
-                    <StatusChip place={p} />
-                  </span>
-                  <span className="app-atlas-pc-stamp">
-                    <Stamp place={p} size="sm" />
-                  </span>
-                  <span className="app-atlas-pc-text">
-                    <span className="app-atlas-pc-kicker">{a.postcards.greetings}</span>
-                    <span className="app-atlas-pc-name">{name}</span>
-                    {/* each value stays whole: the distance wraps as one
-                        unit, never leaving its "km" behind; the compact
-                        cards keep to the distance (home: where it is) */}
-                    <span className="app-atlas-pc-meta tabular">
-                      {(!compact || p.home) && <span className="app-atlas-pc-v">{coords(p.lat, p.lon)}</span>}
-                      {!p.home && (
-                        <span className="app-atlas-pc-v" data-km="">
-                          {fmt(km)}
-                          {lang === "fr" ? "\u202f" : "\u00a0"}
-                          {a.km}
-                        </span>
-                      )}
-                    </span>
-                  </span>
-                </button>
-              </li>
-            );
-          })}
+          {ORDERED.map(card)}
         </m.ul>
       </div>
     </div>

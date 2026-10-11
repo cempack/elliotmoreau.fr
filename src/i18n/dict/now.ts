@@ -6,9 +6,9 @@ const en = {
   live: "Live",
   /** the headline; {doing} comes from content (e.g. "building emOS") */
   sentence: {
-    playing: "Right now I’m {doing}, listening to {track}, and it’s {time} in Paris.",
-    paused: "Right now I’m {doing}, with {track} on pause, and it’s {time} in Paris.",
-    quiet: "Right now I’m {doing}, and it’s {time} in Paris.",
+    playing: "Right now I’m {doing}, listening to {track}, and it’s {time} in Toulouse.",
+    paused: "Right now I’m {doing}, with {track} on pause, and it’s {time} in Toulouse.",
+    quiet: "Right now I’m {doing}, and it’s {time} in Toulouse.",
   },
   whatIs: "What’s a now page?",
   updated: "Updated {date}",
@@ -58,14 +58,14 @@ const en = {
   },
 
   here: {
-    sky: "{phase} in Paris",
+    sky: "{phase} in Toulouse",
     pinned: "{phase}, pinned",
     phases: { dawn: "Dawn", day: "Day", dusk: "Dusk", night: "Night" },
     forYou: "It’s {you} where you are.",
     same: "Same time zone as you.",
-    ahead: "Paris is {n} ahead of you.",
-    behind: "Paris is {n} behind you.",
-    clockLabel: "Paris time",
+    ahead: "Toulouse is {n} ahead of you.",
+    behind: "Toulouse is {n} behind you.",
+    clockLabel: "Toulouse time",
   },
 
   building: {
@@ -128,9 +128,9 @@ const fr: typeof en = {
   kicker: "Ce qui m’occupe",
   live: "En direct",
   sentence: {
-    playing: "Ces jours-ci, {doing}, j’écoute {track}, et il est {time} à Paris.",
-    paused: "Ces jours-ci, {doing}, j’ai mis {track} en pause, et il est {time} à Paris.",
-    quiet: "Ces jours-ci, {doing}, et il est {time} à Paris.",
+    playing: "Ces jours-ci, {doing}, j’écoute {track}, et il est {time} à Toulouse.",
+    paused: "Ces jours-ci, {doing}, j’ai mis {track} en pause, et il est {time} à Toulouse.",
+    quiet: "Ces jours-ci, {doing}, et il est {time} à Toulouse.",
   },
   whatIs: "C’est quoi, une page /now ?",
   updated: "Mis à jour le {date}",
@@ -180,14 +180,14 @@ const fr: typeof en = {
   },
 
   here: {
-    sky: "{phase} à Paris",
+    sky: "{phase} à Toulouse",
     pinned: "{phase}, épinglé",
     phases: { dawn: "Aube", day: "Jour", dusk: "Crépuscule", night: "Nuit" },
     forYou: "Chez vous, il est {you}.",
     same: "Nous sommes sur le même fuseau.",
-    ahead: "Paris a {n} d’avance sur vous.",
-    behind: "Paris a {n} de retard sur vous.",
-    clockLabel: "Heure de Paris",
+    ahead: "Toulouse a {n} d’avance sur vous.",
+    behind: "Toulouse a {n} de retard sur vous.",
+    clockLabel: "Heure de Toulouse",
   },
 
   building: {

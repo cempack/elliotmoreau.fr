@@ -16,6 +16,7 @@ import { useWindowDrag } from "./window/useWindowDrag";
 import { dockIconCenter, markKeyboardClose, setEnterOrigin, setExitOrigin } from "./window/dock";
 import { getZoomPref, setZoomPref } from "./window/zoomPref";
 import { WinIcon } from "./window/WinIcon";
+import { closeWorkspace } from "./workspaces";
 
 export { WinNav, WinNavItem } from "./window/WinNav";
 
@@ -128,6 +129,12 @@ export function AppWindow({
     if (e.detail === 0) markKeyboardClose(app);
   };
 
+  // closing (not minimising) also takes the app's workspace off the bar
+  const onCloseWindow = (e: React.MouseEvent) => {
+    onCloseClick(e);
+    closeWorkspace(app);
+  };
+
   const toggleZoom = () => {
     const next = !zoomed;
     setZoomPref(next);
@@ -190,7 +197,7 @@ export function AppWindow({
             <Link
               href={home}
               transitionTypes={["app-close"]}
-              onClick={onCloseClick}
+              onClick={onCloseWindow}
               aria-label={w.close}
               className="os-win-light os-win-light--close"
             >
@@ -217,7 +224,7 @@ export function AppWindow({
           <Link
             href={home}
             transitionTypes={["app-close"]}
-            onClick={onCloseClick}
+            onClick={onCloseWindow}
             aria-label={w.close}
             className="os-win-x"
           >

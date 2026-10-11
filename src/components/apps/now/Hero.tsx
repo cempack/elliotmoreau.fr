@@ -11,7 +11,7 @@ import type { Listen } from "./widgets/Listening";
 const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s);
 
 /**
- * The headline wants the song, not the edition: "Song (Live in Paris) -
+ * The headline wants the song, not the edition: "Song (Live in Toulouse) -
  * Remastered 2011" → "Song". Falls back to the full title if that leaves
  * nothing. The widget below shows the full title.
  */
@@ -27,7 +27,7 @@ type Word = { id: string; parts: React.ReactNode[] };
 
 /**
  * The headline is a live sentence: hand-written focus, the song that's
- * actually playing (or paused), the actual time in Paris. Words rise out of
+ * actually playing (or paused), the actual time in Toulouse. Words rise out of
  * their masks on arrival, gaining weight as they come (Inter's wght axis,
  * in CSS so it starts at first paint, before hydration). When the song
  * changes, only the words that changed rise again, in order from the first

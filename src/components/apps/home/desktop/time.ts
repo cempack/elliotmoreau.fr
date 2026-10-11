@@ -34,7 +34,7 @@ export function useMinute() {
 
 const noop = () => () => {};
 const zone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || PARIS;
-/** The visitor's IANA zone; Paris on the server and during hydration. */
+/** The visitor's IANA zone; Toulouse on the server and during hydration. */
 export function useVisitorZone() {
   return useSyncExternalStore(noop, zone, () => PARIS);
 }

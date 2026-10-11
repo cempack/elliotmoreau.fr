@@ -8,9 +8,11 @@ import { useI18n } from "@/i18n/client";
 import { spring } from "@/lib/motion";
 import { useIsMac } from "@/hooks/env";
 import { useSpotifyStatus } from "@/hooks/useSpotifyStatus";
-import { useParisTime } from "@/hooks/useParisTime";
+import { useHomeTime } from "@/hooks/useHomeTime";
 import { usePalette } from "@/components/ui/CommandPalette";
 import { APPS, appForPath, type AppDef } from "./apps";
+import { AppGlyph } from "./icons";
+import { openWorkspace, useWorkspaces } from "./workspaces";
 import { useSiteData } from "./SiteData";
 import { MenuItem, MenuProvider, useMenu, type Align, type PanelId } from "./menubar/Panel";
 import { AboutPanel } from "./menubar/About";
@@ -23,8 +25,9 @@ import "./menubar.css";
 
 /**
  * emOS top bar, waybar-style. Left: the emOS mark (About, Restart, Lock)
- * and the workspaces, one per app, numbered like the dock shortcuts.
- * Centre: date and Paris time (Notification Center). Right: now playing,
+ * and the workspaces: like Hyprland's, one exists only while an app is
+ * open in it (see workspaces.ts), drawn with the app's glyph.
+ * Centre: date and Toulouse time (Notification Center). Right: now playing,
  * Control Center and Spotlight. Every panel grows out of its trigger,
  * only one is open at a time, and Spotlight commands can open them too
  * (window event "em:menubar" with a PanelId detail). Under 768px the
@@ -66,29 +69,46 @@ function AppName({ id, label }: { id: string; label: string }) {
   );
 }
 
-/** One workspace per app: the active one is a filled block, the others
-    their number (the dock's 1–6 shortcuts). */
+/** The open workspaces, in dock order: each is its app's glyph, the
+    current one lit with a bar beneath. One appears when you open an app
+    and leaves when you close its window. */
 function Workspaces({ current }: { current: AppDef }) {
   const { t, path } = useI18n();
+  const ids = useWorkspaces(current.id);
+  // opening an app opens its workspace for the rest of the visit
+  useEffect(() => openWorkspace(current.id), [current.id]);
   return (
     <nav className="os-menubar-ws" aria-label={t.shell.menu.workspaces}>
-      {APPS.map((a) => {
-        const on = a.id === current.id;
-        const name = t.shell.apps[a.label];
-        return (
-          <Link
-            key={a.id}
-            href={path(a.path)}
-            transitionTypes={["app-open"]}
-            className="os-menubar-ws-btn"
-            aria-current={on ? "page" : undefined}
-            aria-label={`${a.key} ${name}`}
-            title={name}
-          >
-            {on ? <i className="os-menubar-ws-on" aria-hidden /> : <span aria-hidden>{a.key}</span>}
-          </Link>
-        );
-      })}
+      <AnimatePresence initial={false}>
+        {ids.map((id) => {
+          const a = APPS.find((x) => x.id === id)!;
+          const on = id === current.id;
+          const name = t.shell.apps[a.label];
+          return (
+            <m.span
+              key={id}
+              className="os-menubar-ws-slot"
+              layout="position"
+              initial={{ opacity: 0, scale: 0.6 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.6 }}
+              transition={spring.snappy}
+            >
+              <Link
+                href={path(a.path)}
+                transitionTypes={["app-open"]}
+                className="os-menubar-ws-btn"
+                aria-current={on ? "page" : undefined}
+                aria-label={name}
+                aria-keyshortcuts={a.key}
+                title={`${name} · ${a.key}`}
+              >
+                <AppGlyph app={a.id} size={14} />
+              </Link>
+            </m.span>
+          );
+        })}
+      </AnimatePresence>
     </nav>
   );
 }
@@ -101,7 +121,7 @@ function Bar() {
   const { show } = menu;
   const palette = usePalette();
   const isMac = useIsMac();
-  const { time } = useParisTime();
+  const { time } = useHomeTime();
   const music = useSpotifyStatus(useSiteData().spotify);
 
   // the bar gains material as content scrolls beneath it

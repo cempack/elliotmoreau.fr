@@ -1,8 +1,8 @@
 # elliotmoreau.fr — emOS
 
 Personal site of Elliot Moreau, built as **emOS**: the site works like my
-Omarchy desktop. A waybar-style top bar with workspaces, bordered tiled
-windows over a pixel-art valley whose sky follows the time in Paris, every
+Omarchy desktop. A waybar-style top bar whose workspaces appear as you open apps, bordered tiled
+windows over a pixel-art valley whose sky follows the time in Toulouse, every
 page an app, Spotlight, a Terminal, a boot that plays the pixel name and a
 lock screen. Bilingual (EN at `/`, FR at `/fr`).
 
@@ -70,7 +70,7 @@ src/
   components/os/         the shell: Wallpaper, Glass, MenuBar (+ panels), Dock,
                          AppWindow (+ view transitions), Terminal, Intro (boot
                          with the pixel name, lock screen), Spotlight commands,
-                         sky (Paris time)
+                         sky (Toulouse time)
   components/apps/       one folder per app (home = the Desktop, notfound)
   components/ui/         primitives: CommandPalette, Sheet, SplitText, Marquee,
                          Pressable

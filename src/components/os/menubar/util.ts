@@ -90,7 +90,7 @@ export function fmtTime(d: Date, lang: Locale, timeZone = PARIS_TZ, seconds = fa
   }).format(d);
 }
 
-/** "Sat 10 Oct" / "sam. 10 oct." (Paris unless a zone is given). */
+/** "Sat 10 Oct" / "sam. 10 oct." (Toulouse unless a zone is given). */
 export function fmtShortDate(d: Date, lang: Locale, timeZone = PARIS_TZ) {
   return new Intl.DateTimeFormat(intlLocale(lang), {
     timeZone,

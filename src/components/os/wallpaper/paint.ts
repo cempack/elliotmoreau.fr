@@ -14,7 +14,7 @@ import type { SkyPhase } from "../sky";
  *   glitter path → foreground pines → vignette under the menu bar and dock.
  *
  * Geometry is seeded and identical on every visit (it is a place, not a
- * screensaver); only light and colour follow the phase and the Paris hour.
+ * screensaver); only light and colour follow the phase and the Toulouse hour.
  * Each pass is a small top-level function over a shared buffer, so the JIT
  * keeps the hot loops tight: ~140k art pixels paint in a few milliseconds.
  */
@@ -1077,7 +1077,7 @@ export type PaintOpts = {
   W: number;
   H: number;
   phase: SkyPhase;
-  /** Paris hour, fractional, already coherent with the phase */
+  /** Toulouse hour, fractional, already coherent with the phase */
   hour: number;
   /** synodic moon phase 0..1 (0 new, 0.5 full) */
   moon: number;

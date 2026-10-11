@@ -4,7 +4,7 @@
  *  DRAFT, for Elliot to edit. Everything in this file was written by the
  *  site builder from what is public (GitHub, the blog, this site) and is
  *  meant to be rewritten in your own words. Nothing here is fetched: the
- *  live parts of /now (music, pushes, posts, the Paris clock and sky) come
+ *  live parts of /now (music, pushes, posts, the Toulouse clock and sky) come
  *  from the APIs, and this file holds only what a human has to say.
  *
  *  How to edit

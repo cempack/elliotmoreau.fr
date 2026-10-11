@@ -10,7 +10,7 @@ const en = {
     file: "README.md",
     path: "~/desktop",
     greeting: "Hi, I’m Elliot.",
-    lead: "I’m a developer in France. I build web apps and small tools, make Omarchy themes, and write about how they’re made. I travel whenever I can.",
+    lead: "I’m a developer in Toulouse. I build web apps and small tools, make Omarchy themes, and write about how they’re made. I travel whenever I can.",
     work: "See the work",
     contact: "Say hello",
     close: "Close the README",
@@ -25,17 +25,17 @@ const en = {
   widgets: {
     label: "Widgets",
     clock: {
-      title: "Paris",
+      title: "Toulouse",
       phase: { dawn: "Dawn", day: "Day", dusk: "Dusk", night: "Night" },
-      /** the phase that comes next and when it starts, Paris time */
+      /** the phase that comes next and when it starts, Toulouse time */
       next: { dawn: "Dawn at {time}", day: "Day at {time}", dusk: "Dusk at {time}", night: "Night at {time}" },
-      aria: "Paris time {time}, {phase}. {next}.",
-      ariaYou: "Your time {time}, {offset} from Paris.",
+      aria: "Toulouse time {time}, {phase}. {next}.",
+      ariaYou: "Your time {time}, {offset} from Toulouse.",
       /** the sky pinned in Control Center: the phase line says so */
       pinned: "pinned",
-      /** …and the second line keeps the real phase in Paris */
-      real: "Paris: {phase}",
-      ariaPinned: "Paris time {time}. The sky is pinned to {pinned}; in Paris it is {phase}.",
+      /** …and the second line keeps the real phase in Toulouse */
+      real: "Toulouse: {phase}",
+      ariaPinned: "Toulouse time {time}. The sky is pinned to {pinned}; in Toulouse it is {phase}.",
       open: "Open {app}.",
     },
     post: {
@@ -75,7 +75,7 @@ const fr: typeof en = {
     file: "LISEZ-MOI.md",
     path: "~/bureau",
     greeting: "Salut, moi c’est Elliot.",
-    lead: "Je suis développeur en France. Je fais des applis web, de petits outils et des thèmes Omarchy, et j’écris sur la façon dont je les construis. Je voyage dès que je peux.",
+    lead: "Je suis développeur à Toulouse. Je fais des applis web, de petits outils et des thèmes Omarchy, et j’écris sur la façon dont je les construis. Je voyage dès que je peux.",
     work: "Voir mes projets",
     contact: "Dire bonjour",
     close: "Fermer le LISEZ-MOI",
@@ -89,14 +89,14 @@ const fr: typeof en = {
   widgets: {
     label: "Widgets",
     clock: {
-      title: "Paris",
+      title: "Toulouse",
       phase: { dawn: "Aube", day: "Jour", dusk: "Crépuscule", night: "Nuit" },
       next: { dawn: "Aube à {time}", day: "Jour à {time}", dusk: "Crépuscule à {time}", night: "Nuit à {time}" },
-      aria: "Heure de Paris {time}, {phase}. {next}.",
-      ariaYou: "Chez vous {time}, {offset} par rapport à Paris.",
+      aria: "Heure de Toulouse {time}, {phase}. {next}.",
+      ariaYou: "Chez vous {time}, {offset} par rapport à Toulouse.",
       pinned: "épinglé",
-      real: "Paris : {phase}",
-      ariaPinned: "Heure de Paris {time}. Le ciel est épinglé sur {pinned} ; à Paris, c’est {phase}.",
+      real: "Toulouse : {phase}",
+      ariaPinned: "Heure de Toulouse {time}. Le ciel est épinglé sur {pinned} ; à Toulouse, c’est {phase}.",
       open: "Ouvrir {app}.",
     },
     post: {

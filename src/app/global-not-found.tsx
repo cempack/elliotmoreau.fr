@@ -55,7 +55,7 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-// same as [lang]/layout.tsx: sky phase from Paris time, and no boot for a
+// same as [lang]/layout.tsx: sky phase from Toulouse time, and no boot for a
 // visitor who already saw it this session
 const INTRO_SCRIPT = `try{if(sessionStorage.getItem("em-intro"))document.documentElement.dataset.intro="done"}catch(e){}`;
 

@@ -6,11 +6,11 @@ import { spring } from "@/lib/motion";
 import { SKY_PHASES, phaseForHour, type SkyMode, type SkyPhase } from "../sky";
 
 /**
- * A 104×28 pixel postcard of the Paris sky for Control Center. The sky is
+ * A 104×28 pixel postcard of the Toulouse sky for Control Center. The sky is
  * Bayer-dithered per phase into four tiny canvases painted once and
- * cross-faded; hills and a little Eiffel Tower are SVG cells; the sun or
+ * cross-faded; hills and Saint-Sernin's bell tower are SVG cells; the sun or
  * moon is a sprite that rides its arc on a spring. In Live mode it sits
- * where the real sun is over Paris right now.
+ * where the real sun is over Toulouse right now.
  */
 
 const W = 104;
@@ -113,24 +113,25 @@ const farHill = Array.from({ length: W }, (_, x) =>
 const nearHill = Array.from({ length: W }, (_, x) =>
   Math.round(HORIZON + 2 - (1.4 + 1.3 * Math.sin(x * 0.07 + 2.4) + 0.8 * Math.sin(x * 0.23)))
 );
-const EIFFEL = [
-  "...#...",
+/* Saint-Sernin's bell tower, small: tiers of arcades under a spire */
+const BELFRY = [
   "...#...",
   "...#...",
   "..###..",
   "..#.#..",
   "..###..",
-  ".##.##.",
-  ".#...#.",
   ".#####.",
-  "##...##",
-  "#.....#",
+  ".#.#.#.",
+  ".#####.",
+  "#######",
+  "#.#.#.#",
+  "#######",
 ];
-const EIFFEL_X = 74;
-const EIFFEL_CELLS: [number, number][] = [];
-EIFFEL.forEach((row, y) => {
+const BELFRY_X = 74;
+const BELFRY_CELLS: [number, number][] = [];
+BELFRY.forEach((row, y) => {
   for (let x = 0; x < row.length; x++) {
-    if (row[x] === "#") EIFFEL_CELLS.push([EIFFEL_X + x, nearHill[EIFFEL_X + 3] - EIFFEL.length + y]);
+    if (row[x] === "#") BELFRY_CELLS.push([BELFRY_X + x, nearHill[BELFRY_X + 3] - BELFRY.length + y]);
   }
 });
 
@@ -212,12 +213,12 @@ export function SkyArt({ mode, hour }: { mode: SkyMode; hour: number | null }) {
           {nearHill.map((top, x) => (
             <rect key={`n${x}`} x={x} y={top} width={1.02} height={H - top} />
           ))}
-          {EIFFEL_CELLS.map(([x, y]) => (
+          {BELFRY_CELLS.map(([x, y]) => (
             <rect key={`e${x}-${y}`} x={x} y={y} width={1.02} height={1.02} />
           ))}
         </g>
         {phase !== "day" && (
-          <rect x={EIFFEL_X + 3} y={EIFFEL_CELLS[0][1] - 1} width={1} height={1} fill="var(--color-ember)" />
+          <rect x={BELFRY_X + 3} y={BELFRY_CELLS[0][1] - 1} width={1} height={1} fill="var(--color-ember)" />
         )}
       </svg>
     </div>

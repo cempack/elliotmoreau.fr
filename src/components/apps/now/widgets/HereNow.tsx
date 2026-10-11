@@ -112,26 +112,29 @@ function paintSky(ctx: CanvasRenderingContext2D, phase: SkyPhase, arc: number, H
     const nh = Math.round(HORIZON + 1 + Math.sin(x * 0.11 + 0.4) * 1.6 + Math.sin(x * 0.37 + 2) * 0.7);
     for (let y = nh; y < H; y++) set(x, y, near);
   }
-  // a very small Eiffel Tower, because this is Paris
+  // Saint-Sernin: the octagonal bell tower rising from the nave, its
+  // arcades open to the sky (the holes are the arcade windows)
   const tower = [
-    "...#...",
-    "...#...",
-    "...#...",
-    "..###..",
-    "...#...",
-    "..###..",
-    "..#.#..",
-    ".#####.",
-    ".#...#.",
-    ".#...#.",
-    "#######",
-    "#.....#",
-    "#.....#",
+    "..........#..........",
+    "..........#..........",
+    ".........###.........",
+    ".........###.........",
+    "........#####........",
+    "........#.#.#........",
+    "........#####........",
+    ".......#######.......",
+    ".......#.#.#.#.......",
+    ".......#######.......",
+    "......#########......",
+    "......#.#.#.#.#......",
+    "..#################..",
+    ".###################.",
+    "#####################",
   ];
-  const tx = 44;
+  const tx = 38;
   const ty = HORIZON + 2 - tower.length;
   tower.forEach((row, y) => [...row].forEach((ch, x) => ch === "#" && set(tx + x, ty + y, near)));
-  if (phase === "night" || phase === "dusk") set(tx + 3, ty, hex("#e2786b"));
+  if (phase === "night" || phase === "dusk") set(tx + 10, ty, hex("#e2786b"));
   // windows lit after dark
   if (phase !== "day") {
     const lit = hex("#e0bd6e");
@@ -190,7 +193,7 @@ export function HereMeta() {
 }
 
 /**
- * Paris, live: a pixel sky in the current phase (or the pinned one) with
+ * Toulouse, live: a pixel sky in the current phase (or the pinned one) with
  * the sun or moon where it really is on its arc, the clock with ticking
  * seconds, the date, and your time next to mine.
  */

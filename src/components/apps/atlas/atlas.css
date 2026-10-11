@@ -96,6 +96,8 @@
        truncate, so the list keeps its width */
     grid-template-columns: 15.5rem minmax(0, 1fr) clamp(19.5rem, 24vw, 21.75rem);
     grid-template-rows: minmax(0, 1fr) auto;
+    /* never taller than the window: nothing beside the list scrolls */
+    min-height: 0;
     grid-template-areas:
       "places globe card"
       "places stats card";
@@ -141,7 +143,10 @@
 .app-atlas-panel--card {
   --os-glass-tint: rgba(9, 10, 19, 0.62);
   grid-area: card;
-  overflow: hidden;
+  /* a short window: the card scrolls inside itself rather than the page */
+  overflow: hidden auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
 }
 .app-atlas-panel-scroll {
   min-height: 0;
@@ -802,41 +807,49 @@
 
 /* ───────────────────────────── postcards ───────────────────────────── */
 
-/* below the fold: the first screen ends on the stats strip, the strip
-   starts clear of the Dock */
-.app-atlas-cards {
-  position: relative;
-  padding: calc(var(--dock-h) + 2.5rem) 0 2.5rem;
+/* wide screens: the postcards stack under the places, in the column that scrolls */
+.app-atlas-side-pcs {
+  margin-top: 1.125rem;
+  padding-top: 0.875rem;
+  border-top: 1px solid var(--hairline);
 }
-.app-atlas-cards::before {
-  content: "";
-  position: absolute;
-  inset: 0 2rem auto;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--hairline) 12%, var(--hairline) 88%, transparent);
+.app-atlas-side-h {
+  margin: 0 0.5rem 0.625rem;
+  color: var(--color-label-3);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
-.app-atlas-cards-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 0.75rem 2rem;
-  padding: 0 2rem;
+.app-atlas-pcs-stack {
+  display: grid;
+  gap: 0.625rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
-.app-atlas-cards-title {
-  color: var(--color-label);
-  font-family: var(--font-display);
-  font-size: var(--text-title-2);
-  font-weight: 650;
-  line-height: var(--text-title-2--line-height);
-  letter-spacing: var(--text-title-2--letter-spacing);
+.app-atlas-pcs[data-stack] {
+  --app-atlas-pc-w: 100%;
 }
-.app-atlas-cards-lede {
-  max-width: 30rem;
-  margin-right: auto;
-  color: var(--color-label-2);
-  font-size: var(--text-callout);
-  line-height: 1.5;
+.app-atlas-pcs[data-stack] .app-atlas-pc {
+  border-radius: var(--radius-card);
+}
+.app-atlas-pcs[data-stack] .app-atlas-pc-name {
+  font-size: 1.25rem;
+}
+.app-atlas-pcs[data-stack] .app-atlas-pc-text {
+  inset: auto 0.75rem 0.625rem;
+}
+.app-atlas-pcs[data-stack] .app-atlas-pc[data-active] {
+  box-shadow:
+    0 0 0 2px var(--color-lilac),
+    0 2px 2px rgba(0, 0, 0, 0.2);
+}
+@media (hover: hover) and (pointer: fine) {
+  .app-atlas-pcs[data-stack] .app-atlas-pc:hover {
+    transform: translateY(-2px);
+  }
 }
 
 .app-atlas-pcs {
@@ -1097,8 +1110,7 @@
   }
   /* server-rendered wide panels never flash on small screens */
   .app-atlas-panel,
-  .app-atlas-stats-slot,
-  .app-atlas-cards {
+  .app-atlas-stats-slot {
     display: none;
   }
   .app-atlas-globe-slot {
@@ -1119,10 +1131,11 @@
       visibility 0s 0.2s;
   }
 }
-/* with the sheet, the stage is exactly one window tall and the sheet does
-   its own scrolling: the window must not scroll the stage away (the
-   sheet's off-screen travel would otherwise count as scrollable room) */
-.os-win-main:has(> .app-atlas > .app-atlas-stage[data-layout="sheet"]) {
+/* Atlas is exactly one window tall at every size: the globe never scrolls
+   out of view. On wide screens only the places column scrolls; with the
+   sheet, the sheet does (its off-screen travel would otherwise count as
+   scrollable room) */
+.os-win-main:has(> .app-atlas) {
   overflow: clip;
 }
 @media (max-width: 767px) {
