@@ -601,3 +601,9 @@ html[data-intro="done"] .em-intro {
   height: 40cqmin;
   margin: auto;
 }
+
+/* RepoArt: a repo's code as a pixel minimap */
+.em-repo {
+  border-radius: 14%;
+  box-shadow: 0 0 0 1px rgba(196, 206, 194, 0.14);
+}

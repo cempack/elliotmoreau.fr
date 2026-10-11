@@ -11,7 +11,7 @@ import { lenisRef } from "@/lib/lenisRef";
 import { timeAgo } from "@/lib/format";
 import { SOCIALS } from "@/lib/places";
 import { useReduced } from "@/hooks/env";
-import { Monogram } from "@/components/Monogram";
+import { RepoArt } from "./RepoArt";
 import { GLYPH_STAR, PixelGlyph } from "@/components/glyphs";
 import { useSheetDismiss } from "@/components/ui/Sheet";
 import { DitherStage } from "./DitherStage";
@@ -514,7 +514,7 @@ export function QuickLook({
             animate={{ opacity: 1, scale: 1 }}
             transition={spring.snappy}
           >
-            <Monogram text={repo.name} className="app-work-planet" />
+            <RepoArt name={repo.name} language={repo.language} className="app-work-planet" />
           </m.div>
         </m.div>
       )}
@@ -654,7 +654,7 @@ function QuickLookBody({
               // the planet itself flies in over this slot (see QuickLook)
               <span className="app-work-qlb-planet" data-ql-slot aria-hidden />
             ) : (
-              <Monogram text={repo.name} className="app-work-qlb-planet" />
+              <RepoArt name={repo.name} language={repo.language} className="app-work-qlb-planet" />
             )}
           </>
         )}

@@ -5,7 +5,7 @@ import type { RepoInfo } from "@/lib/github";
 import { useI18n } from "@/i18n/client";
 import { timeAgo } from "@/lib/format";
 import { useFinePointer, useReduced } from "@/hooks/env";
-import { Monogram } from "@/components/Monogram";
+import { RepoArt } from "./RepoArt";
 import { PixelLabel } from "@/components/PixelLabel";
 import { GLYPH_STAR, PixelGlyph } from "@/components/glyphs";
 import { PressAnchor, PressButton } from "@/components/ui/Pressable";
@@ -63,7 +63,7 @@ export function Featured({
       >
         <DitherStage tone="ion" />
         <m.span className="app-work-hero-orbit" style={lean ? { x, y } : undefined} data-hero-origin>
-          <Monogram text={repo.name} className="app-work-hero-planet" />
+          <RepoArt name={repo.name} language={repo.language} className="app-work-hero-planet" />
         </m.span>
       </button>
 

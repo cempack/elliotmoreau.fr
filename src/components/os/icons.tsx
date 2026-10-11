@@ -1,14 +1,13 @@
 "use client";
 
-import { useId } from "react";
 import type { AppId } from "./apps";
 
 /**
  * CONTRACT (owner: dock agent)
  * Pixel app icons: hand-drawn 16×16 cell maps rendered as crisp SVG rects
- * (shapeRendering crispEdges), sitting on a glass squircle tile tinted by
- * the app accent. `size` in CSS px. Decorative (aria-hidden): labels
- * live on the button/link.
+ * (shapeRendering crispEdges), on a flat dark tile with a thin border,
+ * barely tinted by the app accent. `size` in CSS px. Decorative
+ * (aria-hidden): labels live on the button/link.
  *
  * The cell size snaps to whole or half CSS px for the tile size you ask
  * for, so the pixels stay square and even at 28 (menu bar, Spotlight),
@@ -31,15 +30,15 @@ const C = {
   signal: "#b0cc86",
   signalDeep: "#86a35c",
   ion: "#89b4a8",
-  ionLight: "#cdf6ff",
-  ionDeep: "#3fb4dc",
+  ionLight: "#d5e6df",
+  ionDeep: "#5f8f84",
   lilac: "#aea3c8",
-  lilacDeep: "#7a68e6",
+  lilacDeep: "#7d7699",
   ember: "#e0bd6e",
-  emberDeep: "#e8893d",
-  emberLight: "#ffe2b8",
+  emberDeep: "#c99645",
+  emberLight: "#f1dfb8",
   flare: "#e2786b",
-  night: "#1d1a45",
+  night: "#16211f",
 } as const;
 
 /** Tile tint per icon (the app accent); other agents can reuse it. */
@@ -132,25 +131,25 @@ const GLYPHS: Record<IconId, Glyph> = {
       "................",
     ],
   },
-  // Atlas: a pixel globe, land and sea, with a map pin
+  // Atlas: a folded map, a dashed route, a pin where it ends
   atlas: {
-    pal: { L: C.lilac, l: C.lilacDeep, S: C.signal, F: C.flare, W: C.paper },
+    pal: { A: C.paper2, B: C.paper3, r: C.signalDeep, F: C.flare, W: C.paper },
     rows: [
       "..........FFF...",
       ".........FWFFF..",
       ".........FFFFF..",
-      ".....LLLL.FFF...",
-      "...LWSSLLLLF....",
-      "..LSSSSLLSSW....",
-      "..LLSSLLSSSl....",
-      ".LLLSLLLSSSLl...",
-      ".LLLLSLLSSLll...",
-      ".LLLLSSLLSSll...",
-      ".LLLLSSLLSlll...",
-      "..LLLSSLLLll....",
-      "..LLLLSLLlll....",
-      "...LLLLllll.....",
-      ".....llll.......",
+      "..........FFF...",
+      ".AAAA......F....",
+      ".AAAABBBBBAAAAA.",
+      ".AAAABBBBBArAAA.",
+      ".AAAABBBBBrAAAA.",
+      ".AAAABBBrBAAAAA.",
+      ".AAAABBrBBAAAAA.",
+      ".AAArBBBBBAAAAA.",
+      ".ArAABBBBBAAAAA.",
+      ".AAAABBBBBAAAAA.",
+      ".....BBBBB......",
+      "................",
       "................",
     ],
   },
@@ -343,25 +342,6 @@ function mix(a: string, b: string, t: number) {
   return `rgb(${m(16)} ${m(8)} ${m(0)})`;
 }
 
-/**
- * A continuous-corner squircle (iOS-style): flat sides and long, smooth
- * corner onsets instead of circular arcs.
- */
-function squircle(size: number, inset = 0) {
-  const a = inset;
-  const b = size - inset;
-  const p = (b - a) * 0.34; // where the corner curve begins
-  const h = p * 0.3; // handle distance from the corner
-  const f = (n: number) => +n.toFixed(2);
-  return (
-    `M${f(a + p)} ${f(a)}H${f(b - p)}` +
-    `C${f(b - h)} ${f(a)} ${f(b)} ${f(a + h)} ${f(b)} ${f(a + p)}V${f(b - p)}` +
-    `C${f(b)} ${f(b - h)} ${f(b - h)} ${f(b)} ${f(b - p)} ${f(b)}H${f(a + p)}` +
-    `C${f(a + h)} ${f(b)} ${f(a)} ${f(b - h)} ${f(a)} ${f(b - p)}V${f(a + p)}` +
-    `C${f(a)} ${f(a + h)} ${f(a + h)} ${f(a)} ${f(a + p)} ${f(a)}Z`
-  );
-}
-
 function GlyphRects({ id }: { id: IconId }) {
   const { runs, shadow, bloom } = prepare(id);
   return (
@@ -412,14 +392,10 @@ export function AppIcon({
   size?: number;
   className?: string;
 }) {
-  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const accent = ICON_ACCENT[app];
   const cell = glyphCell(size);
   const gp = cell * 16;
   const off = Math.round((size - gp) / 2);
-  const shape = squircle(size);
-  const rimShape = squircle(size, 0.5);
-  const id = (n: string) => `ai-${uid}-${n}`;
   const neutral = app === "terminal" || app === "more";
 
   return (
@@ -432,45 +408,20 @@ export function AppIcon({
         flex: "none",
         width: size,
         height: size,
-        borderRadius: size * 0.24,
-        boxShadow: `0 ${Math.max(1, size / 48).toFixed(1)}px ${Math.max(1.5, size / 32).toFixed(1)}px rgb(0 0 0 / 0.38), 0 ${(size / 8).toFixed(1)}px ${(size / 4).toFixed(1)}px -${(size / 10).toFixed(1)}px rgb(0 0 0 / 0.55)`,
+        borderRadius: Math.round(size * 0.2),
+        background: mix(C.ink800, accent, neutral ? 0.03 : 0.08),
+        boxShadow: `inset 0 0 0 1px rgb(196 206 194 / 0.16), 0 ${(size / 10).toFixed(1)}px ${(size / 5).toFixed(1)}px -${(size / 10).toFixed(1)}px rgb(0 0 0 / 0.6)`,
       }}
     >
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} focusable="false" style={{ display: "block" }}>
-        <defs>
-          <linearGradient id={id("bg")} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor={mix(C.ink600, accent, neutral ? 0.14 : 0.25)} />
-            <stop offset="1" stopColor={mix(C.ink900, accent, neutral ? 0.04 : 0.09)} />
-          </linearGradient>
-          <radialGradient id={id("glow")} cx="0.5" cy="1.12" r="0.78">
-            <stop offset="0" stopColor={accent} stopOpacity={neutral ? 0.16 : 0.34} />
-            <stop offset="0.6" stopColor={accent} stopOpacity={neutral ? 0.04 : 0.1} />
-            <stop offset="1" stopColor={accent} stopOpacity="0" />
-          </radialGradient>
-          <radialGradient id={id("vig")} cx="0.5" cy="0.4" r="0.75">
-            <stop offset="0.6" stopColor={C.ink950} stopOpacity="0" />
-            <stop offset="1" stopColor={C.ink950} stopOpacity="0.26" />
-          </radialGradient>
-          <linearGradient id={id("spec")} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#fff" stopOpacity="0.16" />
-            <stop offset="0.4" stopColor="#fff" stopOpacity="0.035" />
-            <stop offset="0.62" stopColor="#fff" stopOpacity="0" />
-          </linearGradient>
-          <linearGradient id={id("rim")} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#fff" stopOpacity="0.55" />
-            <stop offset="0.22" stopColor="#fff" stopOpacity="0.13" />
-            <stop offset="0.65" stopColor="#fff" stopOpacity="0.03" />
-            <stop offset="1" stopColor={accent} stopOpacity="0.55" />
-          </linearGradient>
-        </defs>
-        <path d={shape} fill={`url(#${id("bg")})`} />
-        <path d={shape} fill={`url(#${id("glow")})`} />
-        <path d={shape} fill={`url(#${id("vig")})`} />
-        <svg x={off} y={off} width={gp} height={gp} viewBox="0 0 16 16" shapeRendering="crispEdges" overflow="visible">
-          <GlyphRects id={app} />
-        </svg>
-        <path d={shape} fill={`url(#${id("spec")})`} />
-        <path d={rimShape} fill="none" stroke={`url(#${id("rim")})`} strokeWidth="1" />
+      <svg
+        width={gp}
+        height={gp}
+        viewBox="0 0 16 16"
+        shapeRendering="crispEdges"
+        focusable="false"
+        style={{ position: "absolute", left: off, top: off, display: "block", overflow: "visible" }}
+      >
+        <GlyphRects id={app} />
       </svg>
     </span>
   );
