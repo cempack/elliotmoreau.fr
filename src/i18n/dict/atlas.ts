@@ -45,7 +45,7 @@ const en = {
   },
   postcards: {
     title: "Postcards",
-    lede: "One for every place, been and next. Fling through them, then pick one to fly there.",
+    lede: "One for each place. Pick one to fly there.",
     label: "Postcards",
     greetings: "Greetings from",
     prev: "Previous postcards",
@@ -76,18 +76,18 @@ const en = {
   } as Record<string, string>,
   /** 16-point compass rose, clockwise from north */
   compass: ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"],
-  /** one short, sincere line per place id (drafts for Elliot to edit) */
+  /** one short line per place id (drafts for Elliot to edit) */
   notes: {
-    france: "Home base. Where the code gets written, and where every trip starts and ends.",
-    canada: "Big skies and a sense of scale that quietly rearranges what you think of as far.",
-    ireland: "A green that photos never get right, and weather that changes its mind every hour.",
-    "northern-ireland": "Basalt coastline, sea spray, and a wind that wakes you up properly.",
-    canaries: "Volcanic ground, Atlantic light, and the odd feeling of summer out of season.",
-    spain: "Late dinners, long evenings, and streets that stay awake well past midnight.",
-    japan: "Top of the list. Trains, quiet craft, and cities designed down to the last pixel.",
-    usa: "A road trip, mostly. The national parks first, the cities second.",
-    "south-africa": "Two oceans meeting, and landscapes everyone describes in superlatives.",
-    norway: "Fjords, long light, and a proper attempt at seeing the northern lights.",
+    france: "Home. Where I work, and where every trip starts and ends.",
+    canada: "Big skies and long drives.",
+    ireland: "Green everywhere, and weather that changes every hour.",
+    "northern-ireland": "The Causeway Coast, and a lot of wind.",
+    canaries: "Volcanic landscapes and sun in winter.",
+    spain: "Late dinners and long evenings.",
+    japan: "First on the list: the trains, the food, the cities.",
+    usa: "A road trip through the national parks.",
+    "south-africa": "Cape Town and the coast.",
+    norway: "Fjords, and hopefully the northern lights.",
   } as Record<string, string>,
 };
 
@@ -135,7 +135,7 @@ const fr: typeof en = {
   },
   postcards: {
     title: "Cartes postales",
-    lede: "Une pour chaque lieu, visité ou à venir. Faites-les défiler d’un geste, puis choisissez-en une pour vous y envoler.",
+    lede: "Une par lieu. Choisissez-en une pour y aller.",
     label: "Cartes postales",
     greetings: "Bons baisers de",
     prev: "Cartes précédentes",
@@ -164,17 +164,18 @@ const fr: typeof en = {
   },
   compass: ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSO", "SO", "OSO", "O", "ONO", "NO", "NNO"],
   notes: {
-    france: "Le camp de base. Là où le code s’écrit, et où chaque voyage commence et se termine.",
-    canada: "Des ciels immenses, et une échelle qui redéfinit doucement ce qu’on appelle « loin ».",
-    ireland: "Un vert que les photos ne rendent jamais, et une météo qui change d’avis toutes les heures.",
-    "northern-ireland": "Une côte de basalte, les embruns, et un vent qui vous réveille pour de bon.",
-    canaries: "Un sol volcanique, la lumière de l’Atlantique, et cette drôle d’impression d’été hors saison.",
-    spain: "Des dîners tardifs, de longues soirées, et des rues qui veillent bien après minuit.",
-    japan: "En tête de liste. Les trains, l’artisanat discret, et des villes pensées jusqu’au dernier pixel.",
-    usa: "Un road trip, surtout. Les parcs nationaux d’abord, les villes ensuite.",
-    "south-africa": "Deux océans qui se rencontrent, et des paysages que tout le monde décrit en superlatifs.",
-    norway: "Les fjords, la lumière qui s’étire, et une vraie tentative pour voir les aurores boréales.",
+    france: "Chez moi. Là où je travaille, et où chaque voyage commence et finit.",
+    canada: "De grands ciels et de longues routes.",
+    ireland: "Du vert partout, et une météo qui change toutes les heures.",
+    "northern-ireland": "La Chaussée des Géants, et beaucoup de vent.",
+    canaries: "Des paysages volcaniques et du soleil en hiver.",
+    spain: "Des dîners tardifs et de longues soirées.",
+    japan: "En tête de liste : les trains, la cuisine, les villes.",
+    usa: "Un road trip à travers les parcs nationaux.",
+    "south-africa": "Le Cap et la côte.",
+    norway: "Les fjords, et avec un peu de chance les aurores boréales.",
   },
+
 };
 
 const atlas = { en, fr };

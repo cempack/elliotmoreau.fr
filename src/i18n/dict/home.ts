@@ -6,26 +6,16 @@ const en = {
   /** the page heading (the pixel wordmark is decorative) */
   name: "Elliot Moreau",
   desktop: "Desktop",
-  hero: {
-    /** the glass cursor's label over the letters */
-    cursor: "Replay",
-  },
   hello: {
     file: "hello.txt",
     path: "~/Desktop",
     greeting: "Hi, I’m Elliot.",
-    lead: "Developer in France. I build software and small tools that feel good to use, then write up how they were made. Between projects I’m usually somewhere new, headphones on.",
+    lead: "I’m a developer in France. I build web apps and small tools, make Omarchy themes, and write about how they’re made. I travel whenever I can.",
     work: "See the work",
     contact: "Say hello",
     close: "Close hello.txt",
     minimize: "Tuck hello.txt into the README",
     status: "Live status",
-    /** "pushed 2h ago" */
-    pushed: "pushed {ago}",
-    openRepo: "{repo} on GitHub",
-    /** the latest-post chip (narrow desks, where its widget is hidden) */
-    post: "new post",
-    openPost: "Latest post: {title}, {ago}. Open in Writing.",
     /** the places chip: "6 places → Japan" */
     places: "{n} places",
     openAtlas: "{n} places visited. Open Atlas.",
@@ -59,9 +49,7 @@ const en = {
       aria: "Latest post: {title}, {minutes}, {ago}. Open in Writing.",
       ariaEmpty: "No posts yet. Open Writing.",
     },
-    /** the phone's widget pages */
-    page: "Widget page {n} of {total}",
-    /** the last push (phones, beside the clock) */
+    /** the last push */
     push: {
       title: "Last push",
       aria: "Last push to {repo}, {ago}: {message}. Open on GitHub.",
@@ -79,32 +67,21 @@ const en = {
     /** announced when a sweep or ⌘A selects more than one icon */
     selected: "{n} icons selected",
   },
-  scroll: {
-    label: "Scroll",
-    aria: "Scroll to the story",
-  },
 };
 
 const fr: typeof en = {
   name: "Elliot Moreau",
   desktop: "Bureau",
-  hero: {
-    cursor: "Rejouer",
-  },
   hello: {
     file: "hello.txt",
     path: "~/Bureau",
     greeting: "Salut, moi c’est Elliot.",
-    lead: "Développeur en France. Je crée des logiciels et de petits outils agréables à utiliser, puis je raconte comment ils sont nés. Entre deux projets, je bourlingue, casque sur les oreilles.",
+    lead: "Je suis développeur en France. Je fais des applis web, de petits outils et des thèmes Omarchy, et j’écris sur la façon dont je les construis. Je voyage dès que je peux.",
     work: "Voir mes projets",
     contact: "Dire bonjour",
     close: "Fermer hello.txt",
     minimize: "Ranger hello.txt dans le LISEZ-MOI",
     status: "En direct",
-    pushed: "pushé {ago}",
-    openRepo: "{repo} sur GitHub",
-    post: "nouvel article",
-    openPost: "Dernier article : {title}, {ago}. Ouvrir dans Écrits.",
     places: "{n} lieux",
     openAtlas: "{n} lieux visités. Ouvrir Atlas.",
     openAtlasNext: "{n} lieux visités, prochain : {next}. Ouvrir Atlas.",
@@ -132,7 +109,6 @@ const fr: typeof en = {
       aria: "Dernier article : {title}, {minutes}, {ago}. Ouvrir dans Écrits.",
       ariaEmpty: "Pas encore d’article. Ouvrir Écrits.",
     },
-    page: "Page de widgets {n} sur {total}",
     push: {
       title: "Dernier push",
       aria: "Dernier push sur {repo}, {ago} : {message}. Ouvrir sur GitHub.",
@@ -148,10 +124,6 @@ const fr: typeof en = {
     hintTouch: "Touchez pour ouvrir. Maintenez le doigt pour déplacer.",
     hintPhone: "Touchez pour ouvrir.",
     selected: "{n} icônes sélectionnées",
-  },
-  scroll: {
-    label: "Défiler",
-    aria: "Faire défiler jusqu’à la suite",
   },
 };
 

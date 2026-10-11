@@ -76,7 +76,7 @@ const en = {
     whoami: [
       "Elliot Moreau, a developer in France.",
       "I make Omarchy and Hyprland themes, write at blog.elliotmoreau.fr,",
-      "travel whenever I can, and there is always a song on.",
+      "and travel whenever I can.",
     ],
     open: {
       opening: "Opening {app}…",
@@ -92,7 +92,7 @@ const en = {
       want: "on the list",
     },
     secrets: [
-      "1. The pixel name on the Desktop is etched cell by cell. Click it.",
+      "1. Type reboot to see the boot again, or lock to lock the screen.",
       "2. Press ` anywhere and I'll show up.",
       "3. sudo make me a sandwich",
     ],
@@ -132,7 +132,7 @@ const en = {
       locale: "Locale",
       display: "Display",
       langs: "Langs",
-      wmValue: "Liquid Glass (Hyprland at home)",
+      wmValue: "emWM (Hyprland at home)",
       uptimeValue: "{m} min {s} s",
     },
     contact: {
@@ -163,9 +163,9 @@ const en = {
     },
     theme: {
       title: "Moss",
-      ink: "the night under everything",
-      paper: "text, warm paper white",
-      signal: "the one loud colour",
+      ink: "backgrounds",
+      paper: "text",
+      signal: "the accent",
       ion: "live data and links",
       lilac: "sky and secondary accents",
       ember: "sun, moon and warmth",
@@ -185,12 +185,12 @@ const en = {
       needSudo: "hire: permission denied (try sudo)",
     },
     eggs: {
-      rm: "Nice try. emOS is made of glass, not paper.",
+      rm: "rm: permission denied",
       vim: "You're in vim now. Kidding: type :q to leave (it even works).",
       quit: "bye",
       reboot: "Rebooting…",
       moo: "hire Elliot, moo",
-      coffee: "Brewing a flat white… done. Focus +12%.",
+      coffee: "No coffee machine on this system.",
       ping: "pong from Paris, {ms} ms",
       hello: "Hello there. Try {help}.",
     },
@@ -270,7 +270,7 @@ const fr: typeof en = {
     whoami: [
       "Elliot Moreau, développeur en France.",
       "Je fais des thèmes Omarchy et Hyprland, j’écris sur blog.elliotmoreau.fr,",
-      "je voyage dès que je peux, et il y a toujours un morceau qui tourne.",
+      "et je voyage dès que je peux.",
     ],
     open: {
       opening: "Ouverture de {app}…",
@@ -286,7 +286,7 @@ const fr: typeof en = {
       want: "sur la liste",
     },
     secrets: [
-      "1. Le nom en pixels du Bureau est gravé case par case. Cliquez dessus.",
+      "1. Tapez reboot pour revoir le démarrage, ou lock pour verrouiller l’écran.",
       "2. Appuyez sur ` n’importe où et j’arrive.",
       "3. sudo make me a sandwich",
     ],
@@ -326,7 +326,7 @@ const fr: typeof en = {
       locale: "Langue",
       display: "Écran",
       langs: "Langages",
-      wmValue: "Liquid Glass (Hyprland à la maison)",
+      wmValue: "emWM (Hyprland à la maison)",
       uptimeValue: "depuis {m} min {s} s",
     },
     contact: {
@@ -357,9 +357,9 @@ const fr: typeof en = {
     },
     theme: {
       title: "Moss",
-      ink: "la nuit sous tout le reste",
-      paper: "le texte, blanc papier chaud",
-      signal: "la seule couleur qui crie",
+      ink: "les fonds",
+      paper: "le texte",
+      signal: "l’accent",
       ion: "données en direct et liens",
       lilac: "le ciel et les accents secondaires",
       ember: "soleil, lune et chaleur",
@@ -379,12 +379,12 @@ const fr: typeof en = {
       needSudo: "hire : permission refusée (essayez sudo)",
     },
     eggs: {
-      rm: "Bien essayé. emOS est fait de verre, pas de papier.",
+      rm: "rm : permission refusée",
       vim: "Vous êtes dans vim. Je plaisante : tapez :q pour sortir (ça marche, en plus).",
       quit: "salut",
       reboot: "Redémarrage…",
       moo: "embauchez Elliot, meuh",
-      coffee: "Un flat white en préparation… prêt. Concentration +12 %.",
+      coffee: "Pas de machine à café sur ce système.",
       ping: "pong depuis Paris, {ms} ms",
       hello: "Bonjour ! Essayez {help}.",
     },

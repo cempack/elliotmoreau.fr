@@ -8,7 +8,7 @@ const en = {
   boxElsewhere: "Elsewhere",
   boxKey: "PGP key",
   parisNow: "{time} in Paris",
-  replyNote: "I usually reply within a few days, a little slower when I’m travelling.",
+  replyNote: "I usually reply within a few days.",
   langNote: "English or French, whichever you prefer.",
 
   /* toolbar */
@@ -20,7 +20,7 @@ const en = {
   /* compose */
   composeEyebrow: "New message",
   composeTitle: "Say hello.",
-  composeLead: "A project, a role, or a kind word about a theme? Write it here, and your own mail app takes it from there.",
+  composeLead: "Write your message here. Send opens it in your mail app.",
   composeLabel: "New message to Elliot",
   to: "To",
   me: "Elliot Moreau",
@@ -84,7 +84,7 @@ const en = {
   /* elsewhere */
   elsewhereEyebrow: "{n} profiles",
   elsewhereTitle: "Elsewhere.",
-  elsewhereLead: "Where else to find me, and what ends up there.",
+  elsewhereLead: "Other places to find me.",
   elsewhereLabel: "Profiles on other sites",
   githubNote: "Code, themes and dotfiles",
   githubLive: "Last push {when} · {repo}",
@@ -134,7 +134,7 @@ const fr: typeof en = {
   boxElsewhere: "Ailleurs",
   boxKey: "Clé PGP",
   parisNow: "{time} à Paris",
-  replyNote: "Je réponds en général sous quelques jours, un peu moins vite quand je voyage.",
+  replyNote: "Je réponds en général sous quelques jours.",
   langNote: "En français ou en anglais, comme vous préférez.",
 
   copyAddress: "Copier l’adresse",
@@ -144,7 +144,7 @@ const fr: typeof en = {
 
   composeEyebrow: "Nouveau message",
   composeTitle: "Écrivez-moi.",
-  composeLead: "Un projet, un poste, ou un mot gentil sur un thème ? Écrivez-le ici, votre messagerie se charge du reste.",
+  composeLead: "Écrivez votre message ici. Envoyer l’ouvre dans votre messagerie.",
   composeLabel: "Nouveau message pour Elliot",
   to: "À",
   me: "Elliot Moreau",
@@ -206,7 +206,7 @@ const fr: typeof en = {
 
   elsewhereEyebrow: "{n} profils",
   elsewhereTitle: "Ailleurs.",
-  elsewhereLead: "Où me trouver ailleurs, et ce qu’on y trouve.",
+  elsewhereLead: "Ailleurs sur le web.",
   elsewhereLabel: "Profils sur d’autres sites",
   githubNote: "Du code, des thèmes et des dotfiles",
   githubLive: "Dernier push {when} · {repo}",

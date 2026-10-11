@@ -46,8 +46,8 @@ export const NOW = {
 
   /** One or two sentences under the headline. */
   intro: {
-    en: "A snapshot of what has my attention at this point in my life. The live bits update themselves; the rest I write by hand, now and then.",
-    fr: "Un instantané de ce qui occupe mon attention ces temps-ci. Les éléments en direct se mettent à jour tout seuls ; le reste, je l’écris à la main, de temps en temps.",
+    en: "What I’m working on right now. Music, pushes and posts update live; the rest I edit by hand.",
+    fr: "Ce sur quoi je travaille en ce moment. La musique, les pushs et les articles se mettent à jour seuls, le reste je l’écris à la main.",
   } satisfies L10n,
 
   /** The current focus: the one thing most of my time goes into. */
@@ -56,67 +56,24 @@ export const NOW = {
     /** Completes the headline. EN: "Right now I'm {doing}, …"; FR: "Ces jours-ci, {doing}, …". Keep {name}. */
     doing: { en: "building {name}", fr: "je construis {name}" } satisfies L10n,
     title: {
-      en: "Rebuilding this site as a tiny operating system",
-      fr: "Je refais ce site comme un petit système d’exploitation",
+      en: "Rebuilding this site to work like my desktop",
+      fr: "Je refais ce site pour qu’il marche comme mon bureau",
     } satisfies L10n,
     body: {
-      en: "Glass windows over a pixel night, a real terminal, and far too many springs. You’re clicking around in it right now.",
-      fr: "Des fenêtres en verre sur une nuit en pixels, un vrai terminal et bien trop de ressorts. Vous cliquez dedans.",
+      en: "Workspaces, tiled windows and a terminal, in the colours of my Omarchy theme.",
+      fr: "Des espaces de travail, des fenêtres en mosaïque et un terminal, aux couleurs de mon thème Omarchy.",
     } satisfies L10n,
     url: "https://github.com/cempack/elliotmoreau.fr",
   },
 
-  /** Books (TODO: replace with what you're actually reading). */
-  reading: [
-    {
-      title: "Practical Typography",
-      author: "Matthew Butterick",
-      status: "rereading",
-      note: { en: "The spacing chapters, again.", fr: "Les chapitres sur l’espacement." },
-      url: "https://practicaltypography.com",
-    },
-    {
-      title: "The Design of Everyday Things",
-      author: "Don Norman",
-      status: "reading",
-      note: { en: "Affordances, before another gesture.", fr: "Les affordances, avant tout geste." },
-    },
-    {
-      title: "Crafting Interpreters",
-      author: "Robert Nystrom",
-      status: "next",
-      note: { en: "For a real shell in the terminal.", fr: "Pour un vrai shell dans le terminal." },
-      url: "https://craftinginterpreters.com",
-    },
-  ] satisfies Book[],
+  /** Books: add what you're actually reading (an empty list hides the block). */
+  reading: [] as Book[],
 
-  /** Skills and topics (TODO: confirm). */
-  learning: [
-    {
-      label: { en: "Spring physics for interfaces", fr: "La physique des ressorts" },
-      note: { en: "Damping, response, earned bounces.", fr: "Amortir, répondre, rebondir juste." },
-    },
-    {
-      label: { en: "SVG filters and refraction", fr: "Filtres SVG et réfraction" },
-      note: { en: "The Liquid Glass on this page.", fr: "Le Liquid Glass de cette page." },
-    },
-    {
-      label: { en: "Basic Japanese", fr: "Les bases du japonais" },
-      note: { en: "For the trip I keep planning.", fr: "Pour le voyage que je repousse." },
-    },
-  ] satisfies Learning[],
+  /** Skills and topics (empty hides the block). */
+  learning: [] as Learning[],
 
-  /** Posts in progress (TODO: confirm titles). */
-  drafting: [
-    {
-      title: { en: "How emOS is built", fr: "Comment emOS est construit" },
-      note: { en: "Glass, pixels and a lot of springs.", fr: "Verre, pixels et ressorts." },
-    },
-    {
-      title: { en: "Liquid Glass in the browser", fr: "Le Liquid Glass dans le navigateur" },
-      note: { en: "What refracts, what fakes it, and why.", fr: "Ce qui réfracte, ce qui triche." },
-    },
-  ] satisfies Draft[],
+  /** Posts in progress (empty hides the block). */
+  drafting: [] as Draft[],
 
   /**
    * The "uses" sheet, fastfetch style. Rows with `todo: true` stay hidden.
@@ -129,11 +86,11 @@ export const NOW = {
     { key: { en: "Editor", fr: "Éditeur" }, value: "Neovim" },
     { key: { en: "Terminal", fr: "Terminal" }, value: "Ghostty" },
     { key: { en: "Theme", fr: "Thème" }, value: { en: "Dos Moos (my own)", fr: "Dos Moos (le mien)" } },
-    { key: { en: "Font", fr: "Police" }, value: "JetBrains Mono" },
+    { key: { en: "Font", fr: "Police" }, value: "JetBrainsMono Nerd Font" },
     { key: { en: "Shell", fr: "Shell" }, value: "TODO: zsh? bash? fish?", todo: true },
-    { key: { en: "Bar", fr: "Barre" }, value: "TODO: Waybar (Omarchy default)?", todo: true },
+    { key: { en: "Bar", fr: "Barre" }, value: "Waybar" },
     { key: { en: "Launcher", fr: "Lanceur" }, value: "TODO: Walker? wofi?", todo: true },
-    { key: { en: "Browser", fr: "Navigateur" }, value: "TODO", todo: true },
+    { key: { en: "Browser", fr: "Navigateur" }, value: "Chromium" },
     { key: { en: "Keyboard", fr: "Clavier" }, value: "TODO: board, switches, layout", todo: true },
     { key: { en: "Machine", fr: "Machine" }, value: "TODO: laptop / desktop model", todo: true },
     { key: { en: "Music", fr: "Musique" }, value: "Spotify" },

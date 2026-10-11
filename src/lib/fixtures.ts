@@ -15,7 +15,7 @@ export const FIXTURE_POSTS: GhostPost[] = [
     title: "Ricing a laptop until it feels like mine",
     slug: "ricing-a-laptop",
     excerpt:
-      "Three weekends, one theme, zero regrets. Notes on building a desktop that gets out of the way — and the small details that make it feel alive.",
+      "Notes on building a desktop that gets out of the way, and the details that make it mine.",
     published_at: daysAgo(6),
     reading_time: 7,
     feature_image: null,
@@ -47,7 +47,7 @@ export const FIXTURE_POSTS: GhostPost[] = [
 export const FIXTURE_REPOS: RepoInfo[] = [
   {
     name: "elliotmoreau.fr",
-    description: "emOS, this website: a personal OS made of glass and pixels, and too many springs.",
+    description: "This website: workspaces, tiled windows and a terminal, in Next.js.",
     url: "https://github.com/cempack/elliotmoreau.fr",
     homepage: "https://elliotmoreau.fr",
     language: "TypeScript",

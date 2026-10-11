@@ -6,9 +6,8 @@
 // before : and inside « », U+202F (narrow no-break space) before ? ! ;.
 const en = {
   siteName: "Elliot Moreau",
-  title: "Elliot Moreau — a personal OS made of glass and pixels",
-  description:
-    "Developer in France, making software, Omarchy themes and small tools that feel good to use. Plus writing, music and the places in between.",
+  title: "Elliot Moreau, developer in France",
+  description: "Elliot Moreau, a developer in France. Projects, writing, travel and what I’m listening to.",
   pages: {
     home: "Desktop",
     work: "Projects",
@@ -19,19 +18,18 @@ const en = {
     notFound: "Not found",
   },
   pageDescriptions: {
-    work: "Open-source work by Elliot Moreau, live from GitHub: Omarchy themes, web experiments and small tools that feel good to use.",
-    writing: "Essays and field notes by Elliot Moreau on code, design, travel and music, straight from his blog.",
-    atlas: "Where Elliot Moreau has been and where he’s headed next, on a spinning pixel globe, with a postcard from every stop.",
-    now: "What Elliot Moreau is building, reading and listening to right now, with live updates from GitHub and Spotify.",
-    contact: "Write to Elliot Moreau about a project, a question or just to say hello. The inbox is open, PGP welcome.",
+    work: "Elliot Moreau’s open-source projects, from GitHub: Omarchy themes, web experiments and small tools.",
+    writing: "Posts by Elliot Moreau on code, design, travel and music.",
+    atlas: "Places Elliot Moreau has been to and wants to visit, on a pixel globe.",
+    now: "What Elliot Moreau is working on, reading and listening to right now.",
+    contact: "Get in touch with Elliot Moreau: email, socials and a PGP key.",
   },
 };
 
 const fr: typeof en = {
   siteName: "Elliot Moreau",
-  title: "Elliot Moreau — un OS personnel fait de verre et de pixels",
-  description:
-    "Développeur en France. Des logiciels, des thèmes Omarchy et de petits outils agréables à utiliser. Et aussi des écrits, de la musique, des voyages.",
+  title: "Elliot Moreau, développeur en France",
+  description: "Elliot Moreau, développeur en France. Projets, écrits, voyages et ce que j’écoute.",
   pages: {
     home: "Bureau",
     work: "Projets",
@@ -42,11 +40,11 @@ const fr: typeof en = {
     notFound: "Introuvable",
   },
   pageDescriptions: {
-    work: "Les projets open source d’Elliot Moreau, en direct de GitHub : thèmes Omarchy, expériences web et petits outils agréables à utiliser.",
-    writing: "Essais et carnets d’Elliot Moreau sur le code, le design, le voyage et la musique, tout droit sortis de son blog.",
-    atlas: "Là où Elliot Moreau est allé et là où il ira ensuite, sur un globe en pixels, avec une carte postale de chaque étape.",
-    now: "Ce qu’Elliot Moreau construit, lit et écoute en ce moment, avec GitHub et Spotify en direct.",
-    contact: "Écrire à Elliot Moreau pour un projet, une question ou simplement dire bonjour. La boîte est ouverte, PGP bienvenu.",
+    work: "Les projets open source d’Elliot Moreau, depuis GitHub : thèmes Omarchy, expériences web et petits outils.",
+    writing: "Les articles d’Elliot Moreau sur le code, le design, le voyage et la musique.",
+    atlas: "Les lieux qu’Elliot Moreau a visités et ceux qu’il veut voir, sur un globe en pixels.",
+    now: "Ce sur quoi Elliot Moreau travaille, ce qu’il lit et ce qu’il écoute en ce moment.",
+    contact: "Contacter Elliot Moreau : e-mail, réseaux et clé PGP.",
   },
 };
 

@@ -1,10 +1,10 @@
 # elliotmoreau.fr — emOS
 
-Personal site of Elliot Moreau, built as **emOS**: a small personal operating
-system made of glass and pixels. Liquid Glass chrome over a pixel-art valley
-whose sky follows the real time in Paris; every page is an app that opens
-from the dock as a window; Spotlight, a real Terminal, a flingable mini
-player, a boot + lock screen. Bilingual (EN at `/`, FR at `/fr`).
+Personal site of Elliot Moreau, built as **emOS**: the site works like my
+Omarchy desktop. A waybar-style top bar with workspaces, bordered tiled
+windows over a pixel-art valley whose sky follows the time in Paris, every
+page an app, Spotlight, a Terminal, a boot that plays the pixel name and a
+lock screen. Bilingual (EN at `/`, FR at `/fr`).
 
 Stack: Next.js 16 (App Router) · React 19 · TypeScript · Tailwind v4 ·
 `motion` · Lenis. Deploys on Vercel.
@@ -30,7 +30,7 @@ the empty states locally.
 | Var | Used for |
 | --- | --- |
 | `GITHUB_TOKEN` | Projects + last push (higher rate limit, README screenshots) |
-| `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` / `SPOTIFY_REFRESH_TOKEN` | Now playing (menu bar, mini player, Now app) |
+| `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` / `SPOTIFY_REFRESH_TOKEN` | Now playing (top bar, lock screen, Now app) |
 | `GHOST_API_URL` / `GHOST_CONTENT_KEY` | Latest posts (Writing app, Desktop, Spotlight) |
 | `GHOST_ADMIN_KEY` | Newsletter subscribe (server-side only) |
 | `NEXT_PUBLIC_BLOG_URL` | Links out to the blog |
@@ -68,12 +68,13 @@ src/
   i18n/                  config, server getDict + appMetadata, client I18nProvider,
                          dict/<area>.ts (meta.ts = titles, descriptions, share cards)
   components/os/         the shell: Wallpaper, Glass, MenuBar (+ panels), Dock,
-                         AppWindow (+ view transitions), MiniPlayer, Terminal,
-                         Intro (boot/lock), Spotlight commands, sky (Paris time)
-  components/apps/       one folder per app (home = Desktop + scroll story, notfound)
+                         AppWindow (+ view transitions), Terminal, Intro (boot
+                         with the pixel name, lock screen), Spotlight commands,
+                         sky (Paris time)
+  components/apps/       one folder per app (home = the Desktop, notfound)
   components/ui/         primitives: CommandPalette, Sheet, SplitText, Marquee,
-                         Cursor, Pressable, IntroGate
-  components/            pixel bits: PixelLabel, PixelPlanet, PixelWordmark, glyphs
+                         Pressable
+  components/            pixel bits: PixelLabel, PixelWordmark, Monogram, glyphs
   lib/motion.ts          house springs (physics-defined so gesture velocity is
                          handed off), project() momentum, rubberband()
   lib/data.ts            server data for every app (Ghost, GitHub, Spotify),
@@ -83,16 +84,16 @@ src/
   content/now.ts         hand-written /now content — edit me
 ```
 
-## Design system — Nocturne
+## Design system — Moss
 
-Tokens live in `src/app/globals.css` (`@theme`): ink 950→500, warm paper
-text (`label`, `label-2`, `label-3`, all ≥4.5:1), one loud **signal** lime,
-plus **ion**, **lilac**, **ember**, **flare**. Type is Inter (optical
-sizing) + JetBrains Mono, with a size-specific scale (`text-display` …
-`text-caption`) whose tracking tightens and leading closes as size grows.
-Materials: `glass-thin`, `glass`, `glass-thick`, and the refracting
-`<Glass>` (Chromium) — opaque under reduced transparency, solid under more
-contrast.
+Tokens live in `src/app/globals.css` (`@theme`), taken from my Omarchy
+theme: near-black greens (ink 950→500), warm paper text (`label`,
+`label-2`, `label-3`, all ≥4.5:1), a **signal** moss accent, plus **ion**
+(sage), **lilac**, **ember**, **flare**. Type is Inter (optical sizing) +
+JetBrains Mono (the top bar, titles, the lock screen). Surfaces are
+`<Glass>`: a dark, mostly opaque tint with a little blur and a thin even
+border, like a Hyprland window; opaque under reduced transparency, solid
+under more contrast.
 
 Motion follows Apple's fluid-interface rules: respond on press, 1:1
 tracking, interruptible springs (critically damped unless thrown), velocity

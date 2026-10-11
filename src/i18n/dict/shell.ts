@@ -1,5 +1,5 @@
-// Strings for the OS chrome: menu bar, dock, control center, notification
-// center, spotlight, windows, mini player, boot, terminal.
+// Strings for the OS chrome: top bar, dock, control center, notification
+// center, spotlight, windows.
 // Templates use {placeholders}; the dict crosses the server → client
 // boundary, so it holds plain strings only (no functions).
 const en = {
@@ -33,7 +33,7 @@ const en = {
     user: "elliot",
     host: "emos",
     version: "Version 26 · Moss",
-    tagline: "A personal operating system made of glass and pixels.",
+    tagline: "My website, set up like my desktop.",
     keys: {
       os: "OS",
       built: "Built with",
@@ -197,7 +197,7 @@ const fr: typeof en = {
     user: "elliot",
     host: "emos",
     version: "Version 26 · Moss",
-    tagline: "Un système d’exploitation personnel, fait de verre et de pixels.",
+    tagline: "Mon site, réglé comme mon bureau.",
     keys: {
       os: "Système",
       built: "Conçu avec",
