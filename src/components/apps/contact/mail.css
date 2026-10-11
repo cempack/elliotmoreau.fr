@@ -1401,90 +1401,276 @@
   }
 }
 
-/* ── elsewhere ── */
-.app-contact-nets {
-  margin: 2.25rem 0 0;
-  padding: 0;
-  border-top: 1px solid var(--hairline);
-  list-style: none;
-}
-.app-contact-net-li {
-  border-bottom: 1px solid var(--hairline);
-}
-.app-contact-net {
-  position: relative;
-  isolation: isolate;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) minmax(0, 15rem) auto;
-  align-items: center;
-  gap: 0.75rem 1.5rem;
-  padding: 1.375rem 0.875rem;
-}
-.app-contact-net::before {
-  content: "";
-  position: absolute;
-  inset: 0.25rem -0.25rem;
-  z-index: -1;
-  border-radius: var(--radius-card);
-  background: color-mix(in oklab, var(--app-contact-net) 7%, rgba(255, 255, 255, 0.025));
-  opacity: 0;
-  transition: opacity 0.25s var(--ease-out-quint);
-}
-.app-contact-net:hover::before,
-.app-contact-net:focus-visible::before {
-  opacity: 1;
-}
-.app-contact-net:focus-visible {
-  outline-offset: -2px;
-  border-radius: var(--radius-card);
-}
-.app-contact-net-tile {
-  display: grid;
-  place-items: center;
-  width: 3.25rem;
-  height: 3.25rem;
-  border-radius: 14px;
-  background: color-mix(in oklab, var(--app-contact-net) 13%, rgba(10, 12, 11, 0.4));
+/* ── elsewhere: a bank of letterboxes in a brick wall ── */
+.app-contact-wall {
+  margin-top: 2rem;
+  padding: 1rem;
+  border-radius: 10px;
+  background: var(--app-contact-brick, none) 0 0 / 64px 16px repeat, #151816;
   box-shadow:
-    inset 0 0 0 1px color-mix(in oklab, var(--app-contact-net) 30%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  color: var(--app-contact-net);
-  transition: scale 0.3s var(--ease-spring);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 14px 24px -14px rgba(0, 0, 0, 0.7);
+  image-rendering: pixelated;
+}
+.app-contact-boxes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+  image-rendering: auto;
+}
+.app-contact-boxes-list {
+  display: contents;
+}
+.app-contact-box {
+  position: relative;
+  order: calc(var(--i) * 2);
+  min-width: 0;
+}
+/* the door: the profile link, ink with a one-cell bevel */
+.app-contact-box-door {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.3125rem 0.75rem;
+  min-height: 4.75rem;
+  padding: 0.75rem 6rem 0.75rem 0.875rem;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #1d221f, #171b18);
+  box-shadow:
+    inset 2px 2px 0 #2e3530,
+    inset -2px -2px 0 #0b0d0c,
+    0 3px 0 rgba(0, 0, 0, 0.45);
+  color: var(--color-label);
+  transition: box-shadow 0.2s;
 }
 @media (hover: hover) and (pointer: fine) {
-  .app-contact-net:hover .app-contact-net-tile {
-    scale: 1.06;
+  .app-contact-box-door:hover {
+    box-shadow:
+      inset 2px 2px 0 #414a43,
+      inset -2px -2px 0 #0b0d0c,
+      0 3px 0 rgba(0, 0, 0, 0.45);
   }
 }
-.app-contact-net-main {
+.app-contact-box-door:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 2px;
+}
+/* the network's mark, engraved: cut dark into the metal, lit on its lower edge */
+.app-contact-box-glyph {
+  grid-row: span 2;
   display: grid;
-  min-width: 0;
-  gap: 0.375rem;
+  color: #080a09;
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.24));
 }
-.app-contact-net-name {
-  font-size: var(--text-title-2);
-  font-weight: 650;
-  line-height: var(--text-title-2--line-height);
-  letter-spacing: var(--text-title-2--letter-spacing);
+.app-contact-box-slot {
+  position: absolute;
+  top: 1.375rem;
+  right: 1rem;
+  width: 4rem;
+  height: 6px;
+  border-radius: 1px;
+  background: #040505;
+  box-shadow:
+    inset 0 2px 0 #000,
+    0 1px 0 rgba(255, 255, 255, 0.09);
 }
-.app-contact-net-meta {
+/* the cream tenant label */
+.app-contact-box-label {
+  display: grid;
+  justify-self: start;
+  max-width: 100%;
+  padding: 0.25rem 0.4375rem 0.3125rem;
+  border-radius: 1px;
+  background: #e7e1cd;
+  box-shadow: inset 0 0 0 1px #c9c2ab;
+  color: #1a1e1b;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.3;
+}
+.app-contact-box-name {
+  font-weight: 700;
+}
+.app-contact-box-handle,
+.app-contact-box-note {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app-contact-box-handle {
+  color: #4b524c;
+}
+.app-contact-box-note {
+  grid-column: 2;
+  color: var(--color-label-3);
+  font-size: var(--text-footnote);
+}
+/* the slot's mouth: whatever is below its line is inside the box */
+.app-contact-box-mouth {
+  position: absolute;
+  top: calc(1.375rem + 3px - 72px);
+  right: 1.5rem;
+  width: 3rem;
+  height: 72px;
+  clip-path: inset(-240px -60px 0 -60px);
+  pointer-events: none;
+}
+.app-contact-box-letter {
+  position: absolute;
+  top: calc(100% - 22px);
+  left: 0;
+  width: 100%;
+  height: 72px;
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: grab;
+  pointer-events: auto;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.app-contact-box-letter:active {
+  cursor: grabbing;
+}
+.app-contact-box-letter:focus-visible {
+  outline: none;
+}
+.app-contact-box-letter:focus-visible .app-contact-box-paper {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 2px;
+}
+.app-contact-box-paper {
   display: flex;
-  min-width: 0;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.25rem 0.875rem;
-  font: 500 0.8125rem/1.35 var(--font-mono);
+  justify-content: center;
+  height: 100%;
+  overflow: hidden;
+  padding-top: 6px;
+  border-radius: 1px 1px 0 0;
+  background: #ece6d3;
+  box-shadow:
+    inset 0 1px 0 #fffaf0,
+    inset -2px 0 0 #d2cbb6,
+    0 -1px 0 rgba(0, 0, 0, 0.25);
+  color: #3f4842;
+  transition: translate 0.12s steps(1, end);
 }
-.app-contact-net-handle {
-  color: var(--color-label-2);
-  overflow-wrap: anywhere;
+/* Spotify's is a ticket: lime card, notched corners */
+.app-contact-box[data-id="spotify"] .app-contact-box-paper {
+  background: #d3e2b6;
+  box-shadow: inset 0 1px 0 #eef5df;
+  clip-path: polygon(0 4px, 4px 4px, 4px 0, calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px, 100% 100%, 0 100%);
+  color: #2c3a1f;
 }
-.app-contact-net-live {
-  display: inline-flex;
+@media (hover: hover) and (pointer: fine) {
+  .app-contact-box-letter:hover .app-contact-box-paper {
+    translate: 0 -4px;
+  }
+}
+/* the ledge: where a pulled letter lands, opened */
+.app-contact-ledge {
+  order: calc(var(--app-contact-open) * 2 + 1);
   min-width: 0;
+}
+.app-contact-ledge:not([data-open]) {
+  display: none;
+}
+.app-contact-ledge-letter {
+  position: relative;
+  padding: 1rem 3rem 1.125rem 1.125rem;
+  border-radius: 3px;
+  background: #ece6d3;
+  box-shadow:
+    inset 0 1px 0 #fffaf0,
+    0 14px 26px -14px rgba(0, 0, 0, 0.85);
+  color: #1b1f1c;
+  outline: none;
+  transform-origin: 50% 0;
+}
+.app-contact-ledge-letter:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 3px;
+}
+.app-contact-ledge-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  min-width: 0;
+}
+.app-contact-ledge-art {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border-radius: 2px;
+  object-fit: cover;
+}
+.app-contact-ledge-art[data-dithered] {
+  image-rendering: pixelated;
+}
+.app-contact-ledge-text {
+  min-width: 0;
+}
+.app-contact-ledge-k {
+  display: flex;
   align-items: center;
   gap: 0.4375rem;
-  color: var(--color-ion);
+  margin: 0;
+  color: #4b524c;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+.app-contact-ledge-k[data-live] {
+  color: #3e5a22;
+}
+.app-contact-ledge-k .app-contact-net-dot {
+  background: #5d8a2e;
+}
+.app-contact-ledge-title {
+  margin: 0.3125rem 0 0;
+  color: #121513;
+  font-size: var(--text-headline);
+  font-weight: 650;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.app-contact-ledge-meta {
+  margin: 0.125rem 0 0;
+  color: #3f4842;
+  font-size: var(--text-callout);
+}
+.app-contact-ledge-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 0.625rem;
+  color: #1b1f1c;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-decoration: underline;
+  text-decoration-color: rgba(27, 31, 28, 0.35);
+  text-underline-offset: 3px;
+}
+.app-contact-ledge-link:hover {
+  text-decoration-color: currentColor;
+}
+.app-contact-ledge-close {
+  position: absolute;
+  top: 0.375rem;
+  right: 0.375rem;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(27, 31, 28, 0.07);
+  color: #1b1f1c;
+  font-size: 1.125rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.app-contact-ledge-close:hover {
+  background: rgba(27, 31, 28, 0.14);
 }
 .app-contact-net-dot {
   flex: none;
@@ -1492,60 +1678,67 @@
   height: 6px;
   background: var(--color-signal);
 }
-.app-contact-net-note {
-  color: var(--color-label-3);
-  font-size: var(--text-callout);
-  line-height: var(--text-callout--line-height);
-}
-.app-contact-net-go {
-  display: grid;
-  place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 999px;
-  box-shadow: inset 0 0 0 1px var(--hairline);
-  color: var(--color-label-3);
-  transition:
-    background-color 0.25s,
-    color 0.25s,
-    translate 0.3s var(--ease-spring);
-}
-@media (hover: hover) and (pointer: fine) {
-  .app-contact-net:hover .app-contact-net-go {
-    background: var(--color-signal);
-    box-shadow: none;
-    color: var(--color-ink-950);
-    translate: 2px -2px;
+@media (pointer: coarse) {
+  .app-contact-ledge-link {
+    min-height: 2.75rem;
+    margin-block: 0.25rem -0.5rem;
   }
-}
-@container app-contact (max-width: 640px) {
-  .app-contact-net {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: 0.25rem 1rem;
-    padding: 1.125rem 0.25rem;
-  }
-  .app-contact-net-tile {
-    grid-row: span 2;
-    align-self: start;
+  .app-contact-ledge-close {
     width: 2.75rem;
     height: 2.75rem;
-    border-radius: 12px;
   }
-  .app-contact-net-name {
-    font-size: var(--text-title-3);
-    line-height: var(--text-title-3--line-height);
-    letter-spacing: var(--text-title-3--letter-spacing);
+}
+/* wide: one row of five boxes, each a tall door with the slot across it */
+@container app-contact (min-width: 640px) {
+  .app-contact-boxes {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.875rem 0.75rem;
   }
-  .app-contact-net-note {
-    grid-column: 2;
-    grid-row: 2;
-    font-size: var(--text-footnote);
+  .app-contact-wall {
+    padding: 1.75rem 1.25rem 1.25rem;
   }
-  .app-contact-net-go {
-    grid-column: 3;
-    grid-row: 1 / span 2;
-    width: 2.25rem;
-    height: 2.25rem;
+  .app-contact-ledge {
+    grid-column: 1 / -1;
+    order: 99;
+  }
+  .app-contact-box-door {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.4375rem;
+    min-height: 10.5rem;
+    padding: 4.25rem 0.625rem 0.75rem;
+  }
+  .app-contact-box-glyph {
+    position: absolute;
+    top: 0.625rem;
+    left: 0.625rem;
+  }
+  .app-contact-box-slot {
+    top: 2.875rem;
+    right: 14%;
+    left: 14%;
+    width: auto;
+  }
+  .app-contact-box-mouth {
+    top: calc(2.875rem + 3px - 72px);
+    right: 24%;
+    left: 24%;
+    width: auto;
+  }
+  .app-contact-box-label {
+    justify-self: stretch;
+  }
+  .app-contact-box-note {
+    font-size: 0.75rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-contact-box-paper {
+    transition: none;
+  }
+  .app-contact-box-letter:hover .app-contact-box-paper {
+    translate: none;
   }
 }
 
@@ -1845,18 +2038,12 @@
     animation: app-contact-fade 0.15s linear both;
   }
   .app-contact-slot-env,
-  .app-contact-net-tile,
-  .app-contact-net-go,
   .app-contact-btn,
   .app-contact-chev {
     transition: none;
   }
-  .app-contact-slot[data-throwable]:hover .app-contact-slot-env,
-  .app-contact-net:hover .app-contact-net-tile {
+  .app-contact-slot[data-throwable]:hover .app-contact-slot-env {
     scale: none;
-  }
-  .app-contact-net:hover .app-contact-net-go {
-    translate: none;
   }
   .app-contact-stage-done {
     animation: app-contact-fade 0.2s linear both;

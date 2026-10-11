@@ -144,6 +144,8 @@ export const Meter = forwardRef<
   const shake = useMotionValue(0);
   const anims = useRef<AnimationPlaybackControls[]>([]);
   const g = useRef<{ pid: number; y0: number; start: number; s: { t: number; y: number }[]; moved: boolean } | null>(null);
+  /** the press was handled as a pointer; the click that follows isn't a second pull */
+  const handled = useRef(false);
   const cbs = useRef({ onStrike, onRefuse, empty, disabled, reduced });
   useEffect(() => {
     cbs.current = { onStrike, onRefuse, empty, disabled, reduced };
@@ -205,6 +207,7 @@ export const Meter = forwardRef<
     if (e.button !== 0 || disabled || reduced) return;
     e.preventDefault();
     stop();
+    handled.current = true;
     e.currentTarget.setPointerCapture(e.pointerId);
     g.current = { pid: e.pointerId, y0: e.clientY - ly.get(), start: e.clientY, s: [{ t: e.timeStamp, y: e.clientY }], moved: false };
   };
@@ -293,10 +296,13 @@ export const Meter = forwardRef<
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerUp}
-            onClick={(e) => {
-              // pointers are handled above (but under reduced motion it is just a button); this is the keyboard's press
-              if (disabled || (e.detail !== 0 && !reduced)) return;
-              pull();
+            onClick={() => {
+              // pointers are handled above (under reduced motion it is just a button); this is the keyboard's press
+              if (handled.current) {
+                handled.current = false;
+                return;
+              }
+              if (!disabled) pull();
             }}
           >
             <span className="app-contact-meter-knob" aria-hidden />
