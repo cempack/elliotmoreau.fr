@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { animate, m, useMotionValue, useTransform } from "motion/react";
+import { dieCells, diePath, type Mark } from "./postmark";
 
 /**
  * The pixel envelope: a letter standing in an open envelope, drawn as
@@ -13,6 +14,10 @@ import { animate, m, useMotionValue, useTransform } from "motion/react";
  * `sealed` plays the fold in pixel steps: the letter slides in, the open
  * flap folds down to nothing and the closed flap unfolds over the pocket,
  * then the seal stamps. `instant` jumps straight to the end.
+ *
+ * `mark` is the franking meter's postmark, struck on the pocket's front:
+ * the date ring and the flamme, or just the ring when the envelope is
+ * too small for the flamme to read.
  */
 
 export const ENV_W = 33;
@@ -48,6 +53,7 @@ const P = {
   limeDeep: "#86a35c",
   limeLight: "#d7e4bf",
   subject: "#86a35c",
+  mark: "#7d70a8",
 } as const;
 
 type Run = { x: number; y: number; w: number; fill: string };
@@ -179,6 +185,10 @@ export function Envelope({
   lifted = false,
   instant = false,
   stamp = false,
+  mark = null,
+  markCompact = false,
+  markInk = 1,
+  markFresh = false,
   onFolded,
   className = "",
 }: {
@@ -192,6 +202,11 @@ export function Envelope({
   instant?: boolean;
   /** mounted sealed: the seal is still stamping (the fold happened in the slot) */
   stamp?: boolean;
+  /** the postmark struck on the front, its ink (0.75–1), and whether it was struck just now */
+  mark?: Mark | null;
+  markCompact?: boolean;
+  markInk?: number;
+  markFresh?: boolean;
   /** the flaps are shut and the seal starts to stamp (or at once when `instant`) */
   onFolded?: () => void;
   className?: string;
@@ -276,6 +291,9 @@ export function Envelope({
   }, [sealed, instant, letter, back, front, seal]);
 
   const maxW = TEXT_CELLS;
+  const die = useMemo(() => (mark ? dieCells(mark, { flamme: !markCompact }) : null), [mark, markCompact]);
+  // a die cell is a quarter of an envelope cell (a little more for the ring alone, on small envelopes)
+  const dk = markCompact ? 0.3 : 0.25;
   return (
     <svg
       viewBox={`0 0 ${ENV_W} ${ENV_H}`}
@@ -299,6 +317,19 @@ export function Envelope({
         )}
       </m.g>
       {L_POCKET}
+      {die && (
+        <g className="app-contact-env-mark" data-fresh={markFresh || undefined} style={{ opacity: markInk }}>
+          <svg
+            x={markCompact ? 19 : 13.5}
+            y={markCompact ? 15.25 : 18}
+            width={die.w * dk}
+            height={die.h * dk}
+            viewBox={`0 0 ${die.w} ${die.h}`}
+          >
+            <path d={diePath(die)} fill={P.mark} />
+          </svg>
+        </g>
+      )}
       <m.g style={{ scaleY: frontS, originY: 0 }}>{L_FLAP_SHUT}</m.g>
       <m.g style={{ scale: sealS, opacity: sealO, originX: 0.5, originY: 0.5 }}>{L_SEAL}</m.g>
     </svg>

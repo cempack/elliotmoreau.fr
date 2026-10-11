@@ -8,11 +8,11 @@ import { bounce, visibleIcon } from "@/components/os/dock/launch";
 import { useI18n } from "@/i18n/client";
 import { useSound } from "@/lib/sound";
 import { PixelGlyph } from "@/components/glyphs";
-import { PixelLabel } from "@/components/PixelLabel";
 import type { Phase } from "./Compose";
 import { Envelope } from "./Envelope";
 import { G_DOWN } from "./glyphs";
 import { activationFresh } from "./mail";
+import type { Mark } from "./postmark";
 
 /**
  * The envelope on its stage, and the one gesture this app is about.
@@ -184,7 +184,8 @@ function tick() {
 export function Stage({
   ref,
   phase,
-  postmark,
+  mark,
+  markInk,
   subject,
   lines,
   lifted,
@@ -198,8 +199,9 @@ export function Stage({
 }: {
   ref?: React.Ref<StageHandle>;
   phase: Phase;
-  /** Toulouse time the letter left ("HH:MM"), once it has */
-  postmark: string;
+  /** the franking meter's postmark, once the letter is franked, and its ink */
+  mark: Mark | null;
+  markInk: number;
   subject: number;
   lines: number[];
   lifted: boolean;
@@ -224,6 +226,15 @@ export function Stage({
   const { blip } = useSound();
 
   const slotRef = useRef<HTMLDivElement>(null);
+  /** a small envelope (phones) keeps only the postmark's ring */
+  const [small, setSmall] = useState(false);
+  useEffect(() => {
+    const el = slotRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setSmall(e.contentRect.width < 170));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const [sealed, setSealed] = useState(false);
   const [instant, setInstant] = useState(false);
   const [gone, setGone] = useState(false);
@@ -865,6 +876,10 @@ export function Stage({
             lifted={lifted && !reduced}
             sealed={sealed}
             instant={instant}
+            mark={mark}
+            markInk={markInk}
+            markCompact={small}
+            markFresh
             onFolded={onFolded}
           />
         </m.div>
@@ -874,11 +889,6 @@ export function Stage({
         {phase === "sent" ? (
           home && (
             <span className="app-contact-stage-done">
-              {postmark && (
-                <span className="app-contact-stamp" aria-hidden>
-                  <PixelLabel text={`Toulouse ${postmark}`} cell={2} />
-                </span>
-              )}
               <span className="app-contact-stage-out">{c.outbox}</span>
             </span>
           )
@@ -916,7 +926,15 @@ export function Stage({
                 onPointerDown={onCatch}
                 {...handlers}
               >
-                <Envelope subject={subject} lines={lines} sealed={carry.sealed} stamp={carry.stamp} />
+                <Envelope
+                  subject={subject}
+                  lines={lines}
+                  sealed={carry.sealed}
+                  stamp={carry.stamp}
+                  mark={mark}
+                  markInk={markInk}
+                  markCompact={carry.w < 170}
+                />
               </m.div>
             )}
             {/* above the envelope, so the ring always reads */}

@@ -3,7 +3,6 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { m } from "motion/react";
 import { useI18n } from "@/i18n/client";
-import { useHomeTime } from "@/hooks/useHomeTime";
 import { useIsMac, useMedia, useReduced } from "@/hooks/env";
 import { useSound } from "@/lib/sound";
 import { spring } from "@/lib/motion";
@@ -13,6 +12,8 @@ import { PixelGlyph } from "@/components/glyphs";
 import { EmosMark } from "@/components/os/menubar/glyphs";
 import { CopyButton } from "./Copy";
 import { MAX_LINES, TEXT_CELLS } from "./Envelope";
+import { Meter, type MeterHandle } from "./Meter";
+import { markAt, type Mark } from "./postmark";
 import { Stage, type StageHandle } from "./Stage";
 import { G_OPEN, G_SEND } from "./glyphs";
 import { MAILTO_SAFE, draftFile, fill, launchMail, letterLines, mailtoHref, plural, slug, wordCount } from "./mail";
@@ -77,16 +78,29 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
   const [phase, setPhaseState] = useState<Phase>("compose");
   const [returned, setReturned] = useState(false);
   const [lifted, setLifted] = useState(false);
-  /** Toulouse time the letter left, for the postmark */
-  const [postmark, setPostmark] = useState("");
+  /** the franking meter's postmark on the letter, once it is franked, and how hard it was struck */
+  const [mark, setMark] = useState<Mark | null>(null);
+  const [ink, setInk] = useState(1);
+  /** an empty letter was refused: the status says so for a moment */
+  const [refused, setRefused] = useState(false);
   const liftTimer = useRef(0);
-  useEffect(() => () => window.clearTimeout(liftTimer.current), []);
+  const refuseTimer = useRef(0);
+  const sendTimer = useRef(0);
+  useEffect(
+    () => () => {
+      window.clearTimeout(liftTimer.current);
+      window.clearTimeout(refuseTimer.current);
+      window.clearTimeout(sendTimer.current);
+    },
+    []
+  );
   const go = (p: Phase) => {
     setPhaseState(p);
     onPhase(p);
   };
 
   const stageRef = useRef<StageHandle>(null);
+  const meterRef = useRef<MeterHandle>(null);
   const sendRef = useRef<HTMLButtonElement>(null);
   const footRef = useRef<HTMLDivElement>(null);
   const footEndRef = useRef<HTMLSpanElement>(null);
@@ -238,13 +252,6 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
     liftTimer.current = window.setTimeout(() => setLifted(false), 900);
   };
 
-  const stampNow = () =>
-    setPostmark(
-      new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(
-        new Date()
-      )
-    );
-
   /**
    * The envelope is nearly in the Dock (or sealed in place): over to the
    * mail app, unless the browser would refuse (`canOpen` false), in which
@@ -253,14 +260,35 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
   const land = (canOpen: boolean) => {
     state.sent();
     const opened = canOpen && launchMail(href);
-    if (opened) stampNow();
     focusNext.current = "result";
     go(opened ? "sent" : "ready");
     return opened;
   };
 
+  /** Send, ⌘↵ and the toolbar pull the franking meter's lever; it strikes, then the letter leaves */
   const send = () => {
     if (phase !== "compose") return;
+    meterRef.current?.pull();
+  };
+
+  /** the die struck the envelope: the postmark is on it, and off it goes */
+  const onStrike = (strength: number) => {
+    if (phase !== "compose") return;
+    setMark(markAt(new Date()));
+    setInk(strength);
+    blip("tick");
+    navigator.vibrate?.(8);
+    window.clearTimeout(sendTimer.current);
+    sendTimer.current = window.setTimeout(leave, reduced ? 0 : 140);
+  };
+
+  const onRefuse = () => {
+    setRefused(true);
+    window.clearTimeout(refuseTimer.current);
+    refuseTimer.current = window.setTimeout(() => setRefused(false), 1800);
+  };
+
+  const leave = () => {
     window.clearTimeout(liftTimer.current);
     setLifted(false);
     if (!reduced) {
@@ -271,6 +299,7 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
   };
 
   const backToCompose = (clear: boolean) => {
+    setMark(null);
     if (clear) state.clear();
     else state.restore();
     focusNext.current = clear ? "subject" : "body";
@@ -308,7 +337,8 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
         <Stage
           ref={stageRef}
           phase={phase}
-          postmark={postmark}
+          mark={mark}
+          markInk={ink}
           subject={subjectCells}
           lines={lines}
           lifted={lifted}
@@ -324,11 +354,24 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
           onThrow={() => {
             window.clearTimeout(liftTimer.current);
             setLifted(false);
+            // thrown by hand, franked all the same: the lever pulls itself
+            setMark(markAt(new Date()));
+            setInk(1);
+            meterRef.current?.pull(false);
             go("sending");
           }}
           onLand={land}
         />
-        <Delivery />
+        <Meter
+          ref={meterRef}
+          empty={empty}
+          load={href.length / MAILTO_SAFE}
+          tooLong={tooLong}
+          disabled={phase !== "compose"}
+          reduced={reduced}
+          onStrike={onStrike}
+          onRefuse={onRefuse}
+        />
       </div>
 
       {!done ? (
@@ -463,11 +506,13 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
 
           <div ref={footRef} className="app-contact-foot">
             <span className="sr-only" aria-live="polite">
-              {busy ? c.flying : ""}
+              {busy ? c.flying : refused ? c.writeFirst : ""}
             </span>
             <p className="app-contact-status">
               {busy ? (
                 <span className="app-contact-status-busy">{c.flying}</span>
+              ) : refused ? (
+                <span className="app-contact-status-refused">{c.writeFirst}</span>
               ) : (
                 <>
                   <span className="tabular">{wordsLabel}</span>
@@ -525,7 +570,7 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
               onClick={(e) => {
                 // a real click opens the mail app: the sealed letter makes the trip it waited for
                 if (phase === "ready") {
-                  stampNow();
+                  if (!mark) setMark(markAt(new Date()));
                   go("sent");
                 }
                 stageRef.current?.deliver(e.currentTarget);
@@ -548,11 +593,6 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
           {phase === "sent" && <NothingOpened email={email} />}
         </m.section>
       )}
-
-      <div className="app-contact-reply app-contact-reply--inline">
-        <p>{c.replyNote}</p>
-        <p>{c.langNote}</p>
-      </div>
     </div>
   );
 }
@@ -577,43 +617,5 @@ function NothingOpened({ email }: { email: string }) {
       </span>
       {after}
     </p>
-  );
-}
-
-/**
- * Beside the sheet on wide windows, under the envelope: what happens to
- * the letter once it is sent, as a short spec list (the time in Toulouse is
- * live; the key links to its mailbox).
- */
-function Delivery() {
-  const { t } = useI18n();
-  const c = t.contact;
-  const { time } = useHomeTime();
-  return (
-    <section className="app-contact-delivery" aria-label={c.delivery}>
-      <p className="app-contact-delivery-k">{c.delivery}</p>
-      <dl>
-        <div>
-          <dt>{c.kCity}</dt>
-          <dd className="tabular">{time ?? "--:--"}</dd>
-        </div>
-        <div>
-          <dt>{c.kReplies}</dt>
-          <dd>{c.vReplies}</dd>
-        </div>
-        <div>
-          <dt>{c.kLangs}</dt>
-          <dd>{c.vLangs}</dd>
-        </div>
-        <div>
-          <dt>{c.kPrivate}</dt>
-          <dd>
-            <a href="#pgp" className="app-contact-delivery-link">
-              {c.vPrivate}
-            </a>
-          </dd>
-        </div>
-      </dl>
-    </section>
   );
 }
