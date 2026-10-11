@@ -536,7 +536,7 @@ html:has(.os-term-win:focus-within) .os-win .os-win-lights:not(:hover) .os-win-l
 
 /* sudo: lines land one after another */
 .os-term-stagger > * {
-  animation: os-term-in 1ms steps(1, end) both;
+  animation: os-term-in 1ms steps(1, end) backwards;
   animation-delay: calc(var(--i) * 460ms);
 }
 @keyframes os-term-in {

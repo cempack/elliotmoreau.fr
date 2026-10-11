@@ -47,20 +47,6 @@ html[data-sky="dawn"] .app-home-scene,
 html[data-sky="dusk"] .app-home-scene {
   --app-home-l3: var(--color-label-2);
 }
-html[data-sky="day"] .app-home-hello-glass {
-  --os-glass-tint: rgba(12, 18, 15, 0.74);
-}
-html[data-sky="dawn"] .app-home-hello-glass,
-html[data-sky="dusk"] .app-home-hello-glass {
-  --os-glass-tint: rgba(20, 18, 17, 0.64);
-}
-html[data-sky="day"] .app-home-widget-glass {
-  --os-glass-tint: rgba(12, 18, 15, 0.66);
-}
-html[data-sky="dawn"] .app-home-widget-glass,
-html[data-sky="dusk"] .app-home-widget-glass {
-  --os-glass-tint: rgba(20, 18, 17, 0.58);
-}
 
 /* ── hello.txt: top left ── */
 .app-home-hello-slot {

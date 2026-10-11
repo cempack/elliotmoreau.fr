@@ -1,13 +1,13 @@
 "use client";
 
 import { useId } from "react";
-import { GLYPH_H, WORDMARK_LINES, bandInk, rasterizePixelLine, WORDMARK_BAND_ROWS } from "@/lib/pixelword";
+import { EMOS_LINES, GLYPH_H, bandInk, rasterizePixelLine, WORDMARK_BAND_ROWS } from "@/lib/pixelword";
 
 /* ───────────────────────────── the stamp ─────────────────────────────
-   How the live field lays the name on its grid (8 px cells up to 150 × 80,
-   both lines as big as fit at a whole-cell scale, centred): the canvas,
-   the still face, and the hover/click hit-test all read this one layout,
-   so the still name lands on exactly the cells the canvas lights. */
+   How the live field lays a word on its grid (8 px cells, every line as
+   big as fits at a whole-cell scale, centred): the canvas and the still
+   face both read this one layout, so the still word lands on exactly the
+   cells the canvas lights. */
 
 export type Stamp = {
   cols: number;
@@ -22,18 +22,20 @@ export type Stamp = {
 
 const stamps = new Map<string, Stamp>();
 
-export function stampWordmark(w: number, h: number): Stamp {
-  const k = `${w}x${h}`;
+export function stampWordmark(w: number, h: number, words: readonly string[] = EMOS_LINES): Stamp {
+  const k = `${w}x${h}:${words.join("/")}`;
   const hit = stamps.get(k);
   if (hit) return hit;
-  const cols = Math.max(44, Math.min(150, Math.round(w / 8)));
-  const rows = Math.max(30, Math.min(80, Math.round(h / 8)));
-  const glyphs = WORDMARK_LINES.map((l) => rasterizePixelLine(l));
+  const cols = Math.max(12, Math.min(150, Math.round(w / 8)));
+  const rows = Math.max(8, Math.min(80, Math.round(h / 8)));
+  const glyphs = words.map((l) => rasterizePixelLine(l));
+  const n = glyphs.length;
   const nativeW = Math.max(...glyphs.map((l) => l.cols));
-  const gapFor = (s: number) => Math.max(2, Math.round(s * 0.85));
+  const gapFor = (s: number) => (n > 1 ? Math.max(2, Math.round(s * 0.85)) : 0);
+  const height = (s: number) => n * GLYPH_H * s + (n - 1) * gapFor(s);
   let s = Math.max(1, Math.floor((cols * 0.97) / nativeW));
-  while (s > 1 && 2 * GLYPH_H * s + gapFor(s) > rows) s--;
-  const top = Math.floor((rows - (2 * GLYPH_H * s + gapFor(s))) / 2);
+  while (s > 1 && height(s) > rows) s--;
+  const top = Math.floor((rows - height(s)) / 2);
   const lit = new Uint8Array(cols * rows);
   const lines = glyphs.map((g, i) => {
     const y0 = top + i * (GLYPH_H * s + gapFor(s));

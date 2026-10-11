@@ -58,15 +58,15 @@
 .os-boot-mark {
   position: relative;
   width: calc(1040px * var(--k));
-  height: calc(448px * var(--k));
-  margin: calc(-36px * var(--k)) 0 calc(-44px * var(--k));
+  height: calc(320px * var(--k));
+  margin: calc(-36px * var(--k)) 0;
 }
 .os-boot-hero {
   position: absolute;
   left: 0;
   top: 0;
   width: 1040px;
-  height: 448px;
+  height: 320px;
   transform-origin: 0 0;
   scale: var(--k);
 }
@@ -137,9 +137,11 @@
   inset: 0;
   background: var(--color-signal);
   opacity: 0;
-  animation: os-boot-on 1ms steps(1, end) var(--d) forwards;
+  animation: os-boot-on 1ms linear var(--d) forwards;
 }
+/* (from and to both: a 1ms steps() can stop at 0.9999… and never jump) */
 @keyframes os-boot-on {
+  from,
   to {
     opacity: 1;
   }
@@ -158,12 +160,13 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   opacity: 0;
-  animation: os-boot-line 1ms steps(1, end) calc(260ms + var(--i) * 390ms) forwards;
+  animation: os-boot-line 1ms linear calc(260ms + var(--i) * 390ms) forwards;
 }
 .os-boot-log li:last-child {
   color: var(--color-label);
 }
 @keyframes os-boot-line {
+  from,
   to {
     opacity: 1;
   }
@@ -478,17 +481,17 @@
 @media (max-width: 767px) {
   .os-boot-center {
     --k: 0.4375;
-    width: min(calc(700px * var(--k)), 88vw);
+    width: min(calc(720px * var(--k)), 88vw);
     gap: 22px;
   }
   .os-boot-mark {
-    width: calc(700px * var(--k));
-    height: calc(296px * var(--k));
-    margin: calc(-20px * var(--k)) 0 calc(-28px * var(--k));
+    width: calc(720px * var(--k));
+    height: calc(184px * var(--k));
+    margin: 0;
   }
   .os-boot-hero {
-    width: 700px;
-    height: 296px;
+    width: 720px;
+    height: 184px;
   }
   .os-boot-word-still--desk {
     display: none;

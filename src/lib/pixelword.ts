@@ -50,6 +50,24 @@ const GLYPHS: Record<string, string[]> = {
     "##.",
     "##.",
   ],
+  m: [
+    "........",
+    "........",
+    "#######.",
+    "##.##.##",
+    "##.##.##",
+    "##.##.##",
+    "##.##.##",
+  ],
+  s: [
+    "......",
+    "......",
+    ".#####",
+    "##....",
+    ".####.",
+    "....##",
+    "#####.",
+  ],
   l: [
     "##.",
     "##.",
@@ -132,6 +150,8 @@ export function rasterizePixelLine(text: string): PixelLine {
 }
 
 export const WORDMARK_LINES = ["Elliot", "Moreau"] as const;
+/** The OS's own name, as the boot screen and the emOS menu draw it. */
+export const EMOS_LINES = ["emos"] as const;
 
 /* Canonical wordmark band stack, in omarchy's laser-band proportions,
  * wearing Moss inks: a paper-white crest, the signal-lime band, a

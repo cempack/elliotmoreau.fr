@@ -21,8 +21,8 @@ import { restartOS } from "./menubar/util";
 /**
  * Boot → lock screen → desktop.
  *
- * Boot (the first visit of a session that lands on the Desktop): the pixel
- * name decrypts over a black screen while a systemd-style log and a
+ * Boot (the first visit of a session that lands on the Desktop): "emos" in
+ * pixels decrypts over a black screen while a systemd-style log and a
  * segmented bar run through the loading steps. It is CSS keyframes from
  * the first server-rendered paint, so it plays before hydration, and it
  * takes its time on purpose (BOOT_MS). Any key or click skips to the lock.
@@ -40,8 +40,8 @@ import { restartOS } from "./menubar/util";
 const BOOT_MS = 3800;
 /** The unlock: the UI rises away and the veil clears. */
 const OUT_MS = 560;
-/** The wordmark's boxes (8 px cells; CSS scales them, see intro.css). */
-const BOX = { desk: { w: 1040, h: 448 }, phone: { w: 700, h: 296 } };
+/** The name's boxes (8 px cells; CSS scales them, see intro.css). */
+const BOX = { desk: { w: 1040, h: 320 }, phone: { w: 720, h: 184 } };
 /** Progress segments light at uneven times, the way real boots stall. */
 const SEGMENTS = [
   160, 230, 300, 360, 520, 600, 640, 700, 980, 1040, 1100, 1260, 1300, 1340, 1700, 1760, 1820, 1880, 2160, 2240, 2500,
