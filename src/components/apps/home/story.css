@@ -76,7 +76,9 @@
   position: absolute;
   z-index: -1;
   inset: -4rem -2rem -3rem;
-  background: radial-gradient(48% 62% at 26% 52%, rgba(5, 6, 10, 0.62), rgba(5, 6, 10, 0.3) 55%, transparent 100%);
+  /* closest-side: it fades out before every edge of its box, so it never
+     shows as a shape wherever the box starts */
+  background: radial-gradient(closest-side at 30% 50%, rgba(5, 6, 10, 0.62), rgba(5, 6, 10, 0.3) 60%, transparent);
   pointer-events: none;
 }
 .app-story-kicker {

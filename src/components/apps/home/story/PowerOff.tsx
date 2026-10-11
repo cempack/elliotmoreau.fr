@@ -298,13 +298,14 @@ export function PowerOff({ open, onDone }: { open: boolean; onDone: () => void }
 
   const titleId = "story-off-title";
   const hintId = "story-off-hint";
+  const wakeId = "story-off-wake";
 
   return (
     <dialog
       ref={ref}
       className="app-story-off"
       aria-label={s.label}
-      aria-describedby={`${titleId} ${hintId}`}
+      aria-describedby={`${titleId} ${hintId} ${wakeId}`}
       data-phase={phase}
       onCancel={(e) => {
         e.preventDefault();
@@ -355,7 +356,9 @@ export function PowerOff({ open, onDone }: { open: boolean; onDone: () => void }
         >
           <PowerGlyph size={22} />
         </button>
-        <p className="app-story-off-wake">{fine ? s.wake : s.wakeTouch}</p>
+        <p id={wakeId} className="app-story-off-wake">
+          {fine ? s.wake : s.wakeTouch}
+        </p>
       </m.div>
     </dialog>
   );

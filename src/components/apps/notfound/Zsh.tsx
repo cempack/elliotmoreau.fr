@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useI18n } from "@/i18n/client";
 import { useFinePointer } from "@/hooks/env";
-import type { Suggestion } from "./suggest";
+import { shortTarget, type Suggestion } from "./suggest";
 
 /**
  * The tiny terminal under the alert's message: what zsh would have said
@@ -160,8 +160,8 @@ export function Zsh({
           <p className="app-nf-zsh-line">
             <span lang="en">
               zsh: correct &apos;{cmd}&apos; to &apos;
-              <bdi className="app-nf-zsh-fix" translate="no">
-                {suggestion.to}
+              <bdi className="app-nf-zsh-fix" translate="no" title={suggestion.to}>
+                {shortTarget(suggestion.to)}
               </bdi>
               &apos;
             </span>{" "}

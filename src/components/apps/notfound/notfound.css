@@ -41,12 +41,22 @@
 .app-nf-matrix-ghost {
   fill: rgba(179, 164, 255, 0.075);
 }
+.app-nf-matrix-ghost--dead {
+  fill: rgba(179, 164, 255, 0.12);
+}
 .app-nf-matrix-bloom {
   opacity: 0.42;
 }
-/* the 0 is the app that isn't there: a dim ghost of its LEDs */
+/* the 0 is the app that isn't there: a dim ghost of its LEDs (phones,
+   where it's in the open), or just unlit cells where the alert's glass
+   sits over it (wide screens: the glass bends grid lines, not colour) */
 .app-nf-matrix-dead {
   opacity: 0.3;
+}
+@media (min-width: 900px) {
+  .app-nf-matrix-dead {
+    opacity: 0;
+  }
 }
 @media (prefers-reduced-motion: no-preference) {
   .app-nf-matrix-col {
@@ -55,6 +65,11 @@
   /* …which lights with the rest, sputters, and dies */
   .app-nf-matrix-dead {
     animation: app-nf-die 1500ms steps(1, end) var(--d) both;
+  }
+  @media (min-width: 900px) {
+    .app-nf-matrix-dead {
+      animation-name: app-nf-die-out;
+    }
   }
   .app-nf-matrix-bloom {
     animation: app-nf-bloom 900ms var(--ease-out-quint) 700ms backwards;
@@ -110,6 +125,38 @@
   76%,
   100% {
     opacity: 0.3;
+  }
+}
+/* the same death, all the way out (under the alert) */
+@keyframes app-nf-die-out {
+  0% {
+    opacity: 0;
+  }
+  11% {
+    opacity: 1;
+  }
+  17% {
+    opacity: 0.25;
+  }
+  24%,
+  52% {
+    opacity: 1;
+  }
+  55% {
+    opacity: 0.3;
+  }
+  58% {
+    opacity: 0.85;
+  }
+  62% {
+    opacity: 0.2;
+  }
+  70% {
+    opacity: 0.55;
+  }
+  76%,
+  100% {
+    opacity: 0;
   }
 }
 @keyframes app-nf-bloom {
@@ -214,10 +261,59 @@ html[data-sky="day"] .app-nf-alert .os-glass {
   opacity: 0;
   pointer-events: none;
 }
+/* it takes focus as it appears (a macOS alert is the key window); the
+   ring belongs to its controls, not the sheet */
+.app-nf-alert:focus {
+  outline: none;
+}
 .app-nf-alert[data-refused] {
   box-shadow:
     0 0 0 2px var(--color-flare),
     0 30px 70px -26px rgba(0, 0, 0, 0.78);
+}
+
+/* "Drag me": beside the pointer after a moment's rest on the sheet
+   (DragHint.tsx positions it with a transform) */
+.app-nf-hint {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  padding: 0.3125rem 0.625rem 0.3125rem 0.5625rem;
+  border-radius: 999px;
+  background: rgba(10, 11, 18, 0.9);
+  box-shadow:
+    inset 0 0 0 1px var(--hairline),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 8px 20px -8px rgba(0, 0, 0, 0.7);
+  color: var(--color-label);
+  font-size: var(--text-caption);
+  font-weight: 560;
+  line-height: 1rem;
+  letter-spacing: 0.005em;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 160ms var(--ease-out-quint),
+    translate 220ms var(--ease-out-quint);
+  translate: 0 4px;
+}
+.app-nf-hint[data-show] {
+  opacity: 1;
+  translate: 0 0;
+}
+.app-nf-hint-grip {
+  flex: none;
+  color: var(--color-signal);
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-nf-hint {
+    translate: none;
+  }
 }
 
 /* follows its content's height on a spring (Alert.tsx) */
@@ -444,6 +540,14 @@ html[data-sky="day"] .app-nf-alert .os-glass {
 .app-nf-btn--primary:hover {
   background: #d4ff80;
 }
+/* Return pressed it (NotFoundApp): the press shows, as on macOS */
+.app-nf-btn--primary[data-key-press] {
+  background: #b4ec4e;
+  scale: 0.97;
+  transition:
+    background-color 0.06s linear,
+    scale 0.06s linear;
+}
 .app-nf-btn:focus-visible {
   outline: 2px solid var(--color-signal);
   outline-offset: 2px;
@@ -461,13 +565,18 @@ html[data-sky="day"] .app-nf-alert .os-glass {
   .app-nf-btn {
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
   }
-  .app-nf-zsh {
+  .app-nf-zsh,
+  .app-nf-hint {
     background: var(--color-ink-950);
+  }
+  .app-nf-hint {
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
   }
 }
 @media (forced-colors: active) {
   .app-nf-btn,
-  .app-nf-zsh {
+  .app-nf-zsh,
+  .app-nf-hint {
     border: 1px solid CanvasText;
   }
 }
@@ -499,22 +608,44 @@ html[data-sky="day"] .app-nf-alert .os-glass {
   }
 }
 /* short phones (Safari with its toolbars): everything tightens so the
-   default button clears the tab bar without scrolling */
+   alert, buttons included, clears both the tab bar and the mini player's
+   pill parked over it (≈3rem tall, 0.75rem above the bar) */
 @media (max-width: 767px) and (max-height: 760px) {
   .app-nf {
-    --nf-cell: calc((100vw - 1.5rem) / 38);
+    --nf-cell: calc((100vw - 1.5rem) / 40);
     padding-top: calc(var(--menubar-h) + 0.25rem);
-    padding-bottom: calc(var(--dock-h) + 4.5rem);
+    padding-bottom: calc(var(--dock-h) + 4.25rem);
     row-gap: 0;
+  }
+  /* the panel's unlit border rows go under the menu bar and the alert */
+  .app-nf-backdrop {
+    margin-block: calc(var(--nf-cell) * -0.75);
   }
   .app-nf-alert-body {
     padding: 0.875rem 1rem 0.875rem;
   }
+  /* a smaller icon, still on whole device pixels at 2× and 3× */
+  .app-nf-grip {
+    zoom: 0.75;
+    margin-bottom: 1.25rem;
+  }
+  .app-nf-title {
+    line-height: 1.26;
+  }
+  .app-nf-zsh {
+    padding: 0.5rem 0.6875rem 0.5625rem;
+    line-height: 1.5;
+  }
   .app-nf-zsh,
   .app-nf-actions {
-    margin-top: 0.75rem;
+    margin-top: 0.6875rem;
+  }
+  .app-nf-actions,
+  .app-nf-actions-row {
+    gap: 0.4375rem;
   }
   .app-nf-text {
-    margin-top: 0.375rem;
+    margin-top: 0.3125rem;
+    line-height: 1.4;
   }
 }

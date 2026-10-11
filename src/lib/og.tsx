@@ -693,11 +693,15 @@ function TopBar({ left, right }: { left: React.ReactNode; right: string }) {
 
 const host = SITE_URL.replace(/^https?:\/\//, "");
 
+/** Typographer's apostrophes for copy that arrives with straight ones
+    ("d'Elliot" → "d’Elliot"): the cards and their alt text are set type. */
+const curly = (text: string) => text.replace(/(\p{L})'(?=\p{L})/gu, "$1’");
+
 /** The home card: the wordmark is the hero, the meta description beneath. */
 export async function homeCard(lang: Locale) {
   const t = getDict(lang).meta;
   const fonts = await loadFonts();
-  const tagline = t.description;
+  const tagline = curly(t.description);
   const cell = 14;
   return new ImageResponse(
     (
@@ -751,7 +755,7 @@ export async function appCard(lang: Locale, app: OgApp) {
   const d = getDict(lang);
   const fonts = await loadFonts();
   const name = d.meta.pages[app];
-  const description = d.meta.pageDescriptions[app];
+  const description = curly(d.meta.pageDescriptions[app]);
   const path = APP_PATH[app];
   const tile = 216;
   const nameSize = name.length > 9 ? 96 : 116;
@@ -812,8 +816,8 @@ export async function appCard(lang: Locale, app: OgApp) {
 /** Localized alt text for a card (generateImageMetadata). */
 export function cardAlt(lang: Locale, app?: OgApp) {
   const d = getDict(lang);
-  if (!app) return d.notfound.seo.homeAlt.replace("{tagline}", d.meta.description);
-  return d.notfound.seo.appAlt.replace("{app}", d.meta.pages[app]).replace("{description}", d.meta.pageDescriptions[app]);
+  if (!app) return d.notfound.seo.homeAlt.replace("{tagline}", curly(d.meta.description));
+  return d.notfound.seo.appAlt.replace("{app}", d.meta.pages[app]).replace("{description}", curly(d.meta.pageDescriptions[app]));
 }
 
 /* ───────────────────────────── icons ───────────────────────────── */
@@ -836,38 +840,33 @@ export function markIcon(size: number) {
   );
 }
 
-/** Home-screen icon (Apple touch, manifest): the mark on the night sky,
-    full bleed, inside the maskable safe zone, with a few stars. */
-export function tileIcon(size: number) {
-  const cell = Math.max(1, Math.floor((size * 0.54) / 16));
-  const s = cell * 16;
-  const off = Math.round((size - s) / 2);
-  const rnd = mulberry32(size);
-  const P = Math.max(1, Math.round(size / 90));
-  const stars: Rect[] = [];
-  for (let i = 0; i < 16; i++) {
-    const x = Math.floor((rnd() * size) / P) * P;
-    const y = Math.floor((rnd() * size * 0.9) / P) * P;
-    const near = x > off - P * 4 && x < off + s + P * 4 && y > off - P * 4 && y < off + s + P * 4;
-    if (near) continue;
-    stars.push({ x, y, w: P, h: P, fill: i % 4 === 0 ? C.ion : C.paper, o: 0.35 + rnd() * 0.5 });
-  }
+/** Home-screen icon (Apple touch, manifest): the mark's lime field full
+    bleed (iOS and Android cut their own corners), the ink "e" centred at
+    `letter` of the width, over a half-cell deep-lime drop (a pixel
+    bevel). At ~52% the letter sits inside the maskable safe circle, so
+    the 512 serves as both `any` and `maskable`. */
+export function tileIcon(size: number, letter = 0.6) {
+  // the letter's cells in MARK16: rows 3–12, columns 3–12
+  const cell = Math.max(1, Math.round((size * letter) / 10));
+  const s = cell * 10;
+  const ox = Math.round((size - s) / 2) - 3 * cell;
+  // optically centred: the drop adds weight below, so lift by a quarter cell
+  const oy = Math.round((size - s) / 2 - cell / 4) - 3 * cell;
+  const glyph = markRects(cell, ox, oy).filter((r) => r.fill === C.ink950);
+  const drop = glyph.map((r) => ({ ...r, y: r.y + Math.max(1, Math.round(cell / 2)), fill: C.signalDeep, o: 0.55 }));
   return new ImageResponse(
     (
-      <div style={{ position: "relative", display: "flex", width: size, height: size, backgroundImage: SKY }}>
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ position: "absolute", left: 0, top: 0 }}>
-          <defs>
-            <radialGradient id="g" cx="0.5" cy="0.5" r="0.5">
-              <stop offset="0" stopColor={C.signal} stopOpacity="0.26" />
-              <stop offset="0.6" stopColor={C.signal} stopOpacity="0.05" />
-              <stop offset="1" stopColor={C.signal} stopOpacity="0" />
-            </radialGradient>
-          </defs>
-          <circle cx={size / 2} cy={size / 2} r={size * 0.5} fill="url(#g)" />
-          <g shapeRendering="crispEdges">
-            {rects(stars, "s")}
-            {rects(markRects(cell, off, off), "m")}
-          </g>
+      <div
+        style={{
+          display: "flex",
+          width: size,
+          height: size,
+          backgroundImage: `linear-gradient(180deg, #d3ff7c 0%, ${C.signal} 48%, #b9f24c 100%)`,
+        }}
+      >
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} shapeRendering="crispEdges">
+          {rects(drop, "d")}
+          {rects(glyph, "e")}
         </svg>
       </div>
     ),

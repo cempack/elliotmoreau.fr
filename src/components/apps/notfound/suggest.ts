@@ -64,6 +64,20 @@ export function middleTruncate(s: string, max = 40) {
   return `${chars.slice(0, head).join("")}…${chars.slice(chars.length - tail).join("")}`;
 }
 
+/** A correction that points off-site, short enough to keep zsh's prompt
+    on two lines: "blog.elliotmoreau.fr/ricing-a-laptop" →
+    "blog.…/ricing-a-laptop" (the subdomain says where it went, the last
+    segment is the part you recognise). Short ones are left alone. */
+export function shortTarget(to: string, max = 30) {
+  if ([...to].length <= max) return to;
+  const slash = to.indexOf("/");
+  if (slash < 0) return middleTruncate(to, max);
+  const host = to.slice(0, slash);
+  const last = to.slice(to.lastIndexOf("/") + 1);
+  const label = host.split(".")[0];
+  return middleTruncate(`${label}.…/${last}`, max);
+}
+
 /** Optimal string alignment distance (Levenshtein + adjacent swaps). */
 function distance(a: string, b: string) {
   const m = a.length;

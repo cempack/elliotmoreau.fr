@@ -6,6 +6,7 @@ import { useI18n } from "@/i18n/client";
 import { Glass } from "@/components/os/Glass";
 import { PressAnchor, PressButton, PressLink } from "@/components/ui/Pressable";
 import { BrokenIcon } from "./BrokenIcon";
+import { DragHint } from "./DragHint";
 import { Zsh, type Answer } from "./Zsh";
 import type { Suggestion } from "./suggest";
 import type { useTether } from "./useTether";
@@ -15,8 +16,9 @@ import type { useTether } from "./useTether";
  * opened" line, the informative text, a zsh transcript, and its buttons
  * (two side by side; three stacked when there's something to suggest,
  * the default one in lime). The whole sheet of glass is the drag handle
- * (the cursor shows a quiet ring over it, and "Drag" over the icon, its
- * natural grip); the controls on it are not. When an answer changes the
+ * (a quiet cursor ring over it, and after a moment's rest a small "Drag
+ * me" pill beside the pointer); the controls on it are not. It's an
+ * alertdialog that takes focus as it appears. When an answer changes the
  * copy, the sheet resizes on a spring instead of jumping.
  */
 
@@ -134,6 +136,8 @@ export function Alert({
       <m.section
         ref={surfaceRef as React.RefObject<HTMLElement>}
         className="app-nf-alert"
+        role="alertdialog"
+        tabIndex={-1}
         aria-labelledby="app-nf-title"
         aria-describedby="app-nf-body"
         data-cursor=""
@@ -145,7 +149,7 @@ export function Alert({
 
         <m.div className="app-nf-alert-sizer" style={{ height }}>
           <div ref={bodyRef} className="app-nf-alert-body">
-            <span className="app-nf-grip" data-cursor={s.drag}>
+            <span className="app-nf-grip">
               <BrokenIcon size={64} ox={ox} oy={tether.y} loose={!reduced} />
             </span>
 
@@ -178,6 +182,7 @@ export function Alert({
             )}
           </div>
         </m.div>
+        <DragHint surfaceRef={surfaceRef} label={s.drag} />
       </m.section>
     </m.div>
   );

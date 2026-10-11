@@ -8,9 +8,11 @@ import { bandIndexFor, bandInk } from "@/lib/pixelword";
  * ignite left to right in CSS like the boot mark.
  *
  * The 0 is the app that isn't there: it lights with the rest, sputters
- * and dies back to a dim ghost, and one of its LEDs keeps trying. The
- * alert sits over it, so the glass bends crisp grid lines, not glare,
- * and the text stays on calm glass.
+ * and dies, and one of its LEDs keeps trying. Where the alert sits over
+ * it (wide screens) it dies all the way down to unlit cells, a shade
+ * brighter than the panel, so the glass bends crisp grid lines and the
+ * text sits on calm glass, not on coloured blocks; where the alert sits
+ * below the 404 (phones) it stays a dim ghost of its colours, readable.
  */
 
 const FOUR = ["...###", "..####", ".##.##", "##..##", "######", "....##", "....##"];
@@ -42,6 +44,8 @@ type Cell = { x: number; y: number; fill: string; flicker: boolean; dead: boolea
 
 const LIT: Cell[] = [];
 const GHOST: { x: number; y: number }[] = [];
+/** the dead 0's cells, unlit: what's left when it gives up */
+const DEAD: { x: number; y: number }[] = [];
 (() => {
   const on = new Set<string>();
   DIGITS.forEach((g, i) => {
@@ -55,7 +59,9 @@ const GHOST: { x: number; y: number }[] = [];
       const key = `${x},${y}`;
       if (on.has(key)) {
         const fill = bandInk(bandIndexFor((y - MARGIN) / 7.5));
-        LIT.push({ x, y, fill, flicker: `${x - MARGIN},${y - MARGIN}` === FLICKER, dead: isZero(x - MARGIN) });
+        const dead = isZero(x - MARGIN);
+        LIT.push({ x, y, fill, flicker: `${x - MARGIN},${y - MARGIN}` === FLICKER, dead });
+        if (dead) DEAD.push({ x, y });
       } else GHOST.push({ x, y });
     }
   }
@@ -103,6 +109,11 @@ export function Matrix404({ className = "" }: { className?: string }) {
       </defs>
       <g className="app-nf-matrix-ghost">
         {GHOST.map((g) => (
+          <rect key={`${g.x}-${g.y}`} x={g.x + O} y={g.y + O} width={LED} height={LED} />
+        ))}
+      </g>
+      <g className="app-nf-matrix-ghost app-nf-matrix-ghost--dead">
+        {DEAD.map((g) => (
           <rect key={`${g.x}-${g.y}`} x={g.x + O} y={g.y + O} width={LED} height={LED} />
         ))}
       </g>

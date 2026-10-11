@@ -366,6 +366,7 @@ export function useTether({
       while held or gone. */
   const nudge = () => {
     if (reduced || grab.current || gone.current) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     animate(x, 0, { ...FLICK, velocity: 190 });
     animate(y, 0, { ...FLICK, velocity: -110 });
   };

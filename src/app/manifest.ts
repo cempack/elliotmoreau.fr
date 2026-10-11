@@ -4,8 +4,8 @@ import { getDict } from "@/i18n";
 /**
  * emOS as an installable app. The icons are generated under [lang] (the
  * locale proxy sends extension-less paths there), so they're listed by
- * their English URLs; the 512 is maskable-safe (the mark sits inside the
- * centre 80%).
+ * their English URLs. They're the lime field edge to edge; on the 512
+ * the letter sits inside the maskable safe circle, so it's both.
  */
 export default function manifest(): MetadataRoute.Manifest {
   const t = getDict("en").meta;

@@ -3,7 +3,8 @@
 // builder: add keys to `en` and the type forces the same keys in `fr`.
 // French typography: U+00A0 (no-break space) inside « » and before :,
 // U+202F (narrow no-break space) before ? ! ;, so no line ever starts
-// with a lone mark.
+// with a lone mark; U+2011 (no-break hyphen) in "Vouliez‑vous", which
+// must never break.
 const en = {
   /** h1. `{path}` is the address that failed, set in its own span */
   title: "The application “{path}” can’t be opened.",
@@ -19,8 +20,8 @@ const en = {
   open: "Open {app}",
   read: "Read “{name}”",
   openRepo: "Open {name} on GitHub",
-  /** the glass cursor's label over the alert's grip (its icon) */
-  drag: "Drag",
+  /** the hint pill beside the pointer when it rests on the alert */
+  drag: "Drag me",
   /** the little zsh transcript */
   console: "Terminal",
   /** the [nyae] keys, as one keyboard stop (arrows move between them) */
@@ -43,15 +44,15 @@ const en = {
 const fr: typeof en = {
   title: "L’application « {path} » ne peut pas être ouverte.",
   body: "Aucune app à cette adresse. Elle a peut-être déménagé, changé de nom, ou n’a jamais existé. Tout le reste d’emOS est là où vous l’avez laissé.",
-  bodySuggest: "Aucune app à cette adresse. Vouliez-vous dire {app} ?",
-  bodyPost: "Les articles ont déménagé sur le blog. Vouliez-vous dire « {name} » ?",
-  bodyRepo: "On dirait l’un des dépôts d’Elliot. Vouliez-vous dire {name} ?",
+  bodySuggest: "Aucune app à cette adresse. Vouliez‑vous dire {app} ?",
+  bodyPost: "Les articles ont déménagé sur le blog. Vouliez‑vous dire « {name} » ?",
+  bodyRepo: "On dirait l’un des dépôts d’Elliot. Vouliez‑vous dire {name} ?",
   desktop: "Aller au Bureau",
   search: "Rechercher",
   open: "Ouvrir {app}",
   read: "Lire « {name} »",
   openRepo: "Ouvrir {name} sur GitHub",
-  drag: "Glisser",
+  drag: "Déplacez-moi",
   console: "Terminal",
   answerGroup: "Répondre à zsh",
   answers: {

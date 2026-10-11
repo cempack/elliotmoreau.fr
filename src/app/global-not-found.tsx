@@ -78,7 +78,7 @@ export default async function GlobalNotFound() {
               <ToastProvider>
                 <OSShell data={data}>
                   <main id="content" tabIndex={-1} className="flex flex-1 flex-col outline-none">
-                    <NotFoundApp />
+                    <NotFoundApp standalone />
                   </main>
                 </OSShell>
               </ToastProvider>
