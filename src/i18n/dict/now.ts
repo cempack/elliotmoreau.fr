@@ -61,7 +61,7 @@ const en = {
     sky: "{phase} in Paris",
     pinned: "{phase}, pinned",
     phases: { dawn: "Dawn", day: "Day", dusk: "Dusk", night: "Night" },
-    forYou: "It’s {here} here, {you} for you.",
+    forYou: "It’s {you} where you are.",
     same: "Same time zone as you.",
     ahead: "Paris is {n} ahead of you.",
     behind: "Paris is {n} behind you.",
@@ -107,7 +107,6 @@ const en = {
 
   writing: {
     drafting: "Drafting",
-    draft: "draft",
     latest: "Latest post",
     minutes: "{n} min read",
     read: "Read “{title}” on the blog",
@@ -180,7 +179,7 @@ const fr: typeof en = {
     sky: "{phase} à Paris",
     pinned: "{phase}, épinglé",
     phases: { dawn: "Aube", day: "Jour", dusk: "Crépuscule", night: "Nuit" },
-    forYou: "Il est {here} ici, {you} chez vous.",
+    forYou: "Chez vous, il est {you}.",
     same: "Nous sommes sur le même fuseau.",
     ahead: "Paris a {n} d’avance sur vous.",
     behind: "Paris a {n} de retard sur vous.",
@@ -225,7 +224,6 @@ const fr: typeof en = {
 
   writing: {
     drafting: "En brouillon",
-    draft: "brouillon",
     latest: "Dernier article",
     minutes: "{n} min de lecture",
     read: "Lire «\u00a0{title}\u00a0» sur le blog",

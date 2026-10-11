@@ -99,6 +99,11 @@ function ScrubWord({
   const k = useTransform(p, (v) => (still ? 1 : clamp01((v - a) / (b - a))));
   const opacity = useTransform(k, (v) => 0.16 + 0.84 * v);
   const w = useTransform(k, (v) => Math.round((accent ? 280 : 260) + (accent ? 480 : 360) * v));
+  // a light word is ~0.046em a letter narrower than the bold width its cell
+  // reserves: open its tracking by that much and close it as the weight
+  // swells, so unread lines keep even word spaces (light type wants the
+  // air anyway)
+  const ls = useTransform(k, (v) => +((1 - v) * (accent ? 0.058 : 0.046)).toFixed(4));
   // the underline fills in eight pixel steps
   const line = useTransform(k, (v) => Math.round(v * 8) / 8);
   // a terminal block cursor sits after the word being read
@@ -110,7 +115,7 @@ function ScrubWord({
         <span className="app-story-mf-ghost" aria-hidden>
           {children}
         </span>
-        <m.span className="app-story-mf-live" style={{ opacity, "--app-story-w": w } as MotionStyle}>
+        <m.span className="app-story-mf-live" style={{ opacity, "--app-story-w": w, "--app-story-ls": ls } as MotionStyle}>
           {children}
         </m.span>
         {accent && <m.span aria-hidden className="app-story-mf-under" style={{ scaleX: line }} />}

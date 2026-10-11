@@ -366,6 +366,12 @@ a.app-now-tok:hover {
     grid-column: span 4;
   }
 }
+/* laptops: the 4 columns are narrow, so the tall tiles get a little more height */
+@container app-now (min-width: 1000px) and (max-width: 1159px) {
+  .app-now-board {
+    grid-auto-rows: 15rem;
+  }
+}
 
 /* the dashed slot the carried widget will land in */
 .app-now-ghost {
@@ -1468,36 +1474,43 @@ a.app-now-book:hover .app-now-spine {
 /* ───────────────────────── Writing ───────────────────────── */
 
 .app-now-drafts li {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.1875rem;
-  padding: 0.5625rem 0;
+  padding: 0.5625rem 0 0.5625rem 0.9375rem;
   border-top: 1px dashed rgba(255, 255, 255, 0.12);
 }
 .app-now-drafts li:first-child {
   padding-top: 0.25rem;
   border-top: 0;
 }
+/* an unfinished pixel square: dashed, in ember */
+.app-now-drafts li::before {
+  content: "";
+  position: absolute;
+  top: 15px;
+  left: 0;
+  width: 7px;
+  height: 7px;
+  background:
+    linear-gradient(var(--color-ember) 0 0) 0 0 / 2px 1px no-repeat,
+    linear-gradient(var(--color-ember) 0 0) 100% 0 / 2px 1px no-repeat,
+    linear-gradient(var(--color-ember) 0 0) 0 100% / 2px 1px no-repeat,
+    linear-gradient(var(--color-ember) 0 0) 100% 100% / 2px 1px no-repeat,
+    linear-gradient(var(--color-ember) 0 0) 0 0 / 1px 2px no-repeat,
+    linear-gradient(var(--color-ember) 0 0) 0 100% / 1px 2px no-repeat,
+    linear-gradient(var(--color-ember) 0 0) 100% 0 / 1px 2px no-repeat,
+    linear-gradient(var(--color-ember) 0 0) 100% 100% / 1px 2px no-repeat;
+}
+.app-now-drafts li:first-child::before {
+  top: 10px;
+}
 .app-now-draft-title {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem;
   color: var(--color-label);
   font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.3;
-}
-.app-now-draft-tag {
-  flex: none;
-  padding: 0 0.3125rem;
-  border-radius: 4px;
-  outline: 1px dashed color-mix(in oklab, var(--color-ember) 60%, transparent);
-  outline-offset: -1px;
-  color: var(--color-ember);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 400;
 }
 .app-now-draft-note {
   color: var(--color-label-3);
@@ -1641,6 +1654,11 @@ a.app-now-book:hover .app-now-spine {
   }
   .app-now-fetch-rows {
     line-height: 1.78;
+  }
+}
+@container app-now-w (max-width: 260px) {
+  .app-now-post-excerpt {
+    -webkit-line-clamp: 2;
   }
 }
 @container app-now-w (max-width: 240px) {

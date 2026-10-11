@@ -93,7 +93,7 @@ export const NOW = {
   /** Skills and topics (TODO: confirm). */
   learning: [
     {
-      label: { en: "Spring physics for interfaces", fr: "La physique des ressorts dans les interfaces" },
+      label: { en: "Spring physics for interfaces", fr: "La physique des ressorts" },
       note: { en: "Damping, response, earned bounces.", fr: "Amortir, répondre, rebondir juste." },
     },
     {

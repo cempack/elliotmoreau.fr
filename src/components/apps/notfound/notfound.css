@@ -1,11 +1,12 @@
 /* ─────────────────────────── emOS · 404 (notfound) ───────────────────────────
-   One Liquid Glass alert over the desktop, sitting on the 0 of a giant
-   voxel "404" so the glass bends the pixels behind it. Calm type, one
-   lime default button, mono for the zsh transcript. */
+   One Liquid Glass alert over the desktop, sitting on the dead 0 of a
+   giant LED "404" so the glass bends the pixel grid behind it. Calm type,
+   one lime default button, mono for the zsh transcript. */
 
 .app-nf {
-  /* one cell of the 404's LED panel: 26 cells across */
-  --nf-cell: clamp(16px, 2.5vw, 38px);
+  /* one cell of the 404's LED panel (26 across). The 0 and its two gaps
+     are 12 cells: never narrower than the alert, or it eats the 4s */
+  --nf-cell: max(clamp(16px, 2.5vw, 38px), calc((min(22.5rem, 100vw - 2rem) + 1rem) / 12));
   position: relative;
   display: grid;
   flex: 1;
@@ -31,8 +32,9 @@
 /* ── the giant 404 ── */
 .app-nf-matrix {
   display: block;
+  flex: none;
   width: calc(var(--nf-cell) * 26);
-  max-width: 100%;
+  max-width: none;
   height: auto;
   overflow: visible;
 }
@@ -42,15 +44,26 @@
 .app-nf-matrix-bloom {
   opacity: 0.42;
 }
+/* the 0 is the app that isn't there: a dim ghost of its LEDs */
+.app-nf-matrix-dead {
+  opacity: 0.3;
+}
 @media (prefers-reduced-motion: no-preference) {
   .app-nf-matrix-col {
     animation: app-nf-ignite 560ms steps(1, end) var(--d) backwards;
   }
+  /* …which lights with the rest, sputters, and dies */
+  .app-nf-matrix-dead {
+    animation: app-nf-die 1500ms steps(1, end) var(--d) both;
+  }
   .app-nf-matrix-bloom {
     animation: app-nf-bloom 900ms var(--ease-out-quint) 700ms backwards;
   }
+  /* one of its LEDs keeps trying */
   .app-nf-matrix-flicker {
-    animation: app-nf-flicker 7.5s steps(1, end) 2.6s infinite;
+    animation:
+      app-nf-die 1500ms steps(1, end) var(--d) both,
+      app-nf-flicker 6.5s steps(1, end) 2.4s infinite;
   }
 }
 @keyframes app-nf-ignite {
@@ -68,34 +81,73 @@
     opacity: 1;
   }
 }
+@keyframes app-nf-die {
+  0% {
+    opacity: 0;
+  }
+  11% {
+    opacity: 1;
+  }
+  17% {
+    opacity: 0.25;
+  }
+  24%,
+  52% {
+    opacity: 1;
+  }
+  55% {
+    opacity: 0.3;
+  }
+  58% {
+    opacity: 0.85;
+  }
+  62% {
+    opacity: 0.2;
+  }
+  70% {
+    opacity: 0.55;
+  }
+  76%,
+  100% {
+    opacity: 0.3;
+  }
+}
 @keyframes app-nf-bloom {
   from {
     opacity: 0;
   }
 }
-/* a dying LED: mostly on, a stutter, a long dark blink */
+/* the LED that keeps trying: dead like the rest of its 0, then every few
+   seconds it sparks, stutters, and gives up again */
+.app-nf-matrix-flicker {
+  opacity: 0.3;
+}
 @keyframes app-nf-flicker {
   0%,
+  78%,
   100% {
-    opacity: 1;
-  }
-  58% {
-    opacity: 0.18;
-  }
-  59% {
-    opacity: 1;
-  }
-  61% {
-    opacity: 0.12;
-  }
-  63% {
-    opacity: 1;
-  }
-  86% {
     opacity: 0.3;
   }
-  92% {
+  79% {
     opacity: 1;
+  }
+  80% {
+    opacity: 0.35;
+  }
+  81.5% {
+    opacity: 1;
+  }
+  84% {
+    opacity: 0.85;
+  }
+  85% {
+    opacity: 0.3;
+  }
+  86% {
+    opacity: 0.7;
+  }
+  87.5% {
+    opacity: 0.3;
   }
 }
 
@@ -115,25 +167,36 @@
 }
 
 .app-nf-alert {
-  --os-glass-rblur: 6px;
   position: relative;
   width: min(22.5rem, calc(100vw - 2rem));
   border-radius: var(--radius-window);
   box-shadow:
     0 1px 2px rgba(0, 0, 0, 0.3),
     0 30px 70px -26px rgba(0, 0, 0, 0.78);
-  cursor: grab;
   touch-action: none;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
-.app-nf-alert[data-dragging] {
+/* short phones scroll: a vertical swipe on the alert is the page's
+   (useTether only claims sideways starts there) */
+@media (pointer: coarse) {
+  .app-nf[data-scrolls] .app-nf-alert {
+    touch-action: pan-y;
+  }
+}
+/* the native cursor, where the glass cursor isn't drawn */
+html:not(.has-cursor) .app-nf-alert {
+  cursor: grab;
+}
+html:not(.has-cursor) .app-nf-alert[data-dragging] {
   cursor: grabbing;
 }
-/* the thick glass leans darker here: the brightest bands of the 404 sit
-   right behind the title */
+/* on the material itself (it declares its own thickness): a light blur
+   after the refraction, so the pixel grid behind bends crisply instead
+   of smearing, and a deeper tint for the text */
 .app-nf-alert .os-glass {
   --os-glass-tint: rgba(11, 12, 21, 0.72);
+  --os-glass-rblur: 4px;
 }
 html[data-sky="day"] .app-nf-alert .os-glass {
   --os-glass-tint: rgba(6, 14, 30, 0.82);
@@ -157,6 +220,12 @@ html[data-sky="day"] .app-nf-alert .os-glass {
     0 30px 70px -26px rgba(0, 0, 0, 0.78);
 }
 
+/* follows its content's height on a spring (Alert.tsx) */
+.app-nf-alert-sizer {
+  position: relative;
+  overflow: clip;
+  border-radius: inherit;
+}
 .app-nf-alert-body {
   position: relative;
   display: flex;
@@ -175,13 +244,20 @@ html[data-sky="day"] .app-nf-alert .os-glass {
     opacity: 0;
   }
 }
+/* copy and buttons that an answer swaps cross-fade in */
+.app-nf-swap {
+  animation: app-nf-fade 260ms var(--ease-out-quint) backwards;
+}
 
-/* broken icon + its fallen pixels */
-.app-nf-icon {
-  position: relative;
+/* broken icon + its fallen pixels (the grip the cursor names) */
+.app-nf-grip {
   display: block;
   flex: none;
   margin-bottom: 1.5rem;
+}
+.app-nf-icon {
+  position: relative;
+  display: block;
 }
 .app-nf-icon-tile {
   display: block;
@@ -253,34 +329,37 @@ html[data-sky="day"] .app-nf-alert .os-glass {
   color: var(--color-ion);
 }
 .app-nf-zsh-key {
+  color: var(--color-signal);
+}
+.app-nf-zsh-key--btn {
   position: relative;
   padding: 0 0.0625rem;
   border-radius: 3px;
-  color: var(--color-signal);
   font: inherit;
   text-decoration: underline dotted rgba(198, 255, 94, 0.55);
   text-underline-offset: 3px;
   cursor: pointer;
   transition: background-color 0.15s var(--ease-out-quint);
 }
-/* a bigger hit area than the letter itself */
-.app-nf-zsh-key::before {
+/* a taller hit area than the letter itself (they're inline in a line of
+   text; the alert's buttons are the full-size equivalents) */
+.app-nf-zsh-key--btn::before {
   content: "";
   position: absolute;
-  inset: -6px -2px;
+  inset: -6px 0;
 }
-.app-nf-zsh-key:hover:not(:disabled) {
+.app-nf-zsh-key--btn:hover:not([aria-disabled]) {
   background: rgba(198, 255, 94, 0.18);
 }
-.app-nf-zsh-key:disabled {
+.app-nf-zsh-key--btn[aria-disabled] {
   color: var(--color-label-3);
   text-decoration: none;
   cursor: default;
 }
-.app-nf-zsh-key[data-picked] {
+.app-nf-zsh-key--btn[data-picked] {
   color: var(--color-signal);
 }
-.app-nf-zsh-key:focus-visible {
+.app-nf-zsh-key--btn:focus-visible {
   outline: 2px solid var(--color-signal);
   outline-offset: 1px;
 }
@@ -344,6 +423,16 @@ html[data-sky="day"] .app-nf-alert .os-glass {
 .app-nf-btn:hover {
   background: rgba(255, 255, 255, 0.16);
 }
+.app-nf-btn-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.app-nf-btn-out {
+  flex: none;
+  margin-left: 0.3em;
+  font-family: var(--font-mono);
+}
 .app-nf-btn--primary {
   background: var(--color-signal);
   box-shadow:
@@ -383,16 +472,14 @@ html[data-sky="day"] .app-nf-alert .os-glass {
   }
 }
 
-/* ── phones: the 404 heads the screen, the alert below it ── */
-@media (max-width: 767px) {
+/* ── tablets in portrait and phones: the 404 heads the screen, the alert
+   below it (side by side there isn't room for the 4s and the alert) ── */
+@media (max-width: 899px) {
   .app-nf {
-    --nf-cell: calc((100vw - 1.5rem) / 26);
+    --nf-cell: min(calc((100vw - 1.5rem) / 26), 28px);
     grid-template-rows: auto auto;
     align-content: center;
     row-gap: 0.25rem;
-    padding-top: calc(var(--menubar-h) + 1rem);
-    /* clears the mini player's pill, parked over the tab bar */
-    padding-bottom: calc(var(--dock-h) + 4.75rem);
   }
   .app-nf-backdrop {
     grid-area: 1 / 1;
@@ -400,7 +487,34 @@ html[data-sky="day"] .app-nf-alert .os-glass {
   .app-nf-center {
     grid-area: 2 / 1;
   }
+}
+@media (max-width: 767px) {
+  .app-nf {
+    padding-top: calc(var(--menubar-h) + 1rem);
+    /* clears the mini player's pill, parked over the tab bar */
+    padding-bottom: calc(var(--dock-h) + 4.75rem);
+  }
   .app-nf-alert {
     width: min(22rem, calc(100vw - 2rem));
+  }
+}
+/* short phones (Safari with its toolbars): everything tightens so the
+   default button clears the tab bar without scrolling */
+@media (max-width: 767px) and (max-height: 760px) {
+  .app-nf {
+    --nf-cell: calc((100vw - 1.5rem) / 38);
+    padding-top: calc(var(--menubar-h) + 0.25rem);
+    padding-bottom: calc(var(--dock-h) + 4.5rem);
+    row-gap: 0;
+  }
+  .app-nf-alert-body {
+    padding: 0.875rem 1rem 0.875rem;
+  }
+  .app-nf-zsh,
+  .app-nf-actions {
+    margin-top: 0.75rem;
+  }
+  .app-nf-text {
+    margin-top: 0.375rem;
   }
 }

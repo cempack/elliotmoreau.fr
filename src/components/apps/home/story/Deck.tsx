@@ -156,6 +156,7 @@ export function WorkDeck() {
                 q={q}
                 geo={geo}
                 focused={r === index}
+                piled={r > index}
                 onBringForward={() => {
                   go(r);
                   blip("tick");
@@ -205,6 +206,7 @@ function DeckCard({
   q,
   geo,
   focused,
+  piled,
   onBringForward,
   refCb,
 }: {
@@ -214,6 +216,7 @@ function DeckCard({
   q: MotionValue<number>;
   geo: DeckGeo | null;
   focused: boolean;
+  piled: boolean;
   onBringForward: () => void;
   refCb: (el: HTMLAnchorElement | null) => void;
 }) {
@@ -257,6 +260,7 @@ function DeckCard({
     <m.div
       className="app-story-deck-card"
       data-deck-card={r}
+      data-piled={piled || undefined}
       style={geo ? { x, scale, zIndex: n - r, visibility } : { zIndex: n - r }}
     >
       <m.span className="app-story-deck-label" aria-hidden style={geo ? { opacity: name, x: rowX } : undefined}>

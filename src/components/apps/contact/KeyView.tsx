@@ -245,7 +245,7 @@ export function KeyView({ active }: { active: boolean }) {
           <CopyButton
             text={command}
             ok={c.commandCopied}
-            fail={c.keyCopyFailed}
+            fail={c.commandCopyFailed}
             label={c.copyCommand}
             className="app-contact-iconbtn"
           />

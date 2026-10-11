@@ -184,7 +184,8 @@ export function Pulse({ repos, posts, activity }: { repos: RepoInfo[]; posts: Gh
 
   const cell = width && width < 560 ? 2 : 3;
   const cols = width ? Math.floor(width / cell) : 0;
-  const rows = cell === 2 ? 40 : 30;
+  // the 2-column grid gives Pulse a shorter tile than its width suggests
+  const rows = cell === 2 ? 40 : width < 980 ? 24 : 30;
   const events = eventsFrom(repos, posts, activity);
   const data = now && cols > 40 ? plot(events, now.getTime(), cols, rows, p.ticks) : null;
   // axis labels that fit, placed from "now" leftward: none may touch the

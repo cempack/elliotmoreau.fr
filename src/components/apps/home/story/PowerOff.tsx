@@ -240,8 +240,9 @@ export function PowerOff({ onDone }: { onDone: () => void }) {
         void wake();
       }}
       onClose={() => {
-        // the browser may close it on a repeated Esc: wake for real
-        if (phaseRef.current === "off") doneRef.current();
+        // the browser may close it itself on a repeated Esc: wake for real
+        // (a close queued by a remount finds it open again, and is ignored)
+        if (!ref.current?.open && phaseRef.current === "off") doneRef.current();
       }}
     >
       {reduced ? (

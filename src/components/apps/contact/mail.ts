@@ -43,6 +43,34 @@ export function wordCount(text: string) {
   return m ? m.length : 0;
 }
 
+/** "{n} word" / "{n} words" by the language's own plural rule (French: 0 and 1 are singular). */
+export function plural(lang: string, n: number, one: string, other: string) {
+  const rule = new Intl.PluralRules(lang === "fr" ? "fr" : "en").select(n);
+  return fill(rule === "one" ? one : other, { n });
+}
+
+/**
+ * The saved draft's file name, for the window subtitle. A tiny external
+ * store so typing re-renders only the subtitle, never the window around it.
+ */
+let fileSlug = "";
+const fileSubs = new Set<() => void>();
+export const draftFile = {
+  get: () => fileSlug,
+  server: () => "",
+  set(next: string) {
+    if (next === fileSlug) return;
+    fileSlug = next;
+    for (const f of fileSubs) f();
+  },
+  subscribe(f: () => void) {
+    fileSubs.add(f);
+    return () => {
+      fileSubs.delete(f);
+    };
+  },
+};
+
 /** "A project idea" → "a-project-idea" (ASCII, ≤ 28 chars). */
 export function slug(text: string) {
   return text

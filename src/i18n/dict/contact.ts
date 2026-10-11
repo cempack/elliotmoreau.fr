@@ -19,8 +19,7 @@ const en = {
   /* compose */
   composeEyebrow: "New message",
   composeTitle: "Say hello.",
-  composeLead:
-    "A project, a role, or a kind word about a theme? Write it here and it goes straight to my inbox, through your own mail app.",
+  composeLead: "A project, a role, or a kind word about a theme? Write it here, and your own mail app takes it from there.",
   composeLabel: "New message to Elliot",
   to: "To",
   me: "Elliot Moreau",
@@ -45,13 +44,14 @@ const en = {
   sendLabel: "Send: opens your mail app with this message",
   honest: "Send opens your mail app with all of this filled in. Nothing is sent from this page.",
   draftSaved: "Draft saved",
-  draftEmpty: "Empty draft",
+  opensMail: "Opens in your mail app",
   words: "{n} words",
-  word: "1 word",
+  wordOne: "{n} word",
   untitled: "untitled",
   longNote: "That’s a long one. Some mail apps cut messages this size short: if yours does, copy it and paste it in.",
   copyMessage: "Copy message",
   copiedMessage: "Message copied",
+  copyMessageFailed: "Couldn’t copy. Select the text and copy it by hand.",
   copied: "Address copied",
   copyFailed: "Couldn’t copy. The address is {email}",
   toastTitle: "Mail",
@@ -59,14 +59,10 @@ const en = {
   /* the envelope (signature) */
   envelopeLabel: "Your letter, in miniature",
   throwHint: "Or throw the envelope into the Dock",
-  flickHint: "Or flick the envelope down to send",
-  cursorThrow: "Throw",
+  holdHint: "Hold, then flick down",
   dropHint: "Let go to send",
-  sealing: "Sealing your letter…",
+  writeFirst: "Write something first",
   flying: "On its way to your mail app…",
-  envTo: "To",
-  envSubject: "Re",
-  envLength: "Length",
 
   /* after sending */
   sentEyebrow: "Sent to your mail app",
@@ -126,6 +122,7 @@ const en = {
   importHint: "Or import it from a terminal",
   copyCommand: "Copy command",
   commandCopied: "Command copied",
+  commandCopyFailed: "Couldn’t copy. Select the command and copy it by hand.",
 };
 
 const fr: typeof en = {
@@ -144,8 +141,7 @@ const fr: typeof en = {
 
   composeEyebrow: "Nouveau message",
   composeTitle: "Écrivez-moi.",
-  composeLead:
-    "Un projet, un poste, ou un mot gentil sur un thème ? Écrivez-le ici : il arrive directement dans ma boîte, via votre propre messagerie.",
+  composeLead: "Un projet, un poste, ou un mot gentil sur un thème ? Écrivez-le ici, votre messagerie se charge du reste.",
   composeLabel: "Nouveau message pour Elliot",
   to: "À",
   me: "Elliot Moreau",
@@ -170,28 +166,25 @@ const fr: typeof en = {
   sendLabel: "Envoyer : ouvre votre messagerie avec ce message",
   honest: "« Envoyer » ouvre votre messagerie avec tout ceci déjà rempli. Rien n’est envoyé depuis cette page.",
   draftSaved: "Brouillon enregistré",
-  draftEmpty: "Brouillon vide",
+  opensMail: "S’ouvre dans votre messagerie",
   words: "{n} mots",
-  word: "1 mot",
+  wordOne: "{n} mot",
   untitled: "sans-titre",
   longNote:
     "Message long : certaines messageries coupent les messages de cette taille. Si c’est le cas, copiez-le et collez-le.",
   copyMessage: "Copier le message",
   copiedMessage: "Message copié",
+  copyMessageFailed: "Copie impossible. Sélectionnez le texte et copiez-le à la main.",
   copied: "Adresse copiée",
   copyFailed: "Copie impossible. L’adresse : {email}",
   toastTitle: "Mail",
 
   envelopeLabel: "Votre lettre, en miniature",
   throwHint: "Ou lancez l’enveloppe dans le Dock",
-  flickHint: "Ou envoyez l’enveloppe d’une pichenette vers le bas",
-  cursorThrow: "Lancer",
+  holdHint: "Maintenez, puis lancez",
   dropHint: "Lâchez pour envoyer",
-  sealing: "Fermeture de l’enveloppe…",
+  writeFirst: "Écrivez d’abord un mot",
   flying: "En route vers votre messagerie…",
-  envTo: "À",
-  envSubject: "Objet",
-  envLength: "Longueur",
 
   sentEyebrow: "Transmis à votre messagerie",
   sentTitle: "Direction votre messagerie.",
@@ -248,6 +241,7 @@ const fr: typeof en = {
   importHint: "Ou importez-la depuis un terminal",
   copyCommand: "Copier la commande",
   commandCopied: "Commande copiée",
+  commandCopyFailed: "Copie impossible. Sélectionnez la commande et copiez-la à la main.",
 };
 
 const contact = { en, fr };

@@ -2,6 +2,18 @@
 
 import { AppIcon, glyphCell } from "@/components/os/icons";
 import type { AppId } from "@/components/os/apps";
+import type { Cells } from "@/components/glyphs";
+
+/** 7×7 pencil, for the latest post (widget and chip). */
+export const G_PEN: Cells = [
+  [5, 0], [6, 0],
+  [4, 1], [5, 1], [6, 1],
+  [3, 2], [4, 2], [5, 2],
+  [2, 3], [3, 3], [4, 3],
+  [1, 4], [2, 4], [3, 4],
+  [1, 5], [2, 5],
+  [0, 6],
+];
 
 /** The six things on the desktop: five apps and the README that is hello.txt. */
 export type DesktopIconId = Exclude<AppId, "home"> | "readme";

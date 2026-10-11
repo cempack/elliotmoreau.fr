@@ -16,15 +16,19 @@ import { G_DOWN } from "./glyphs";
  *
  * Pick the envelope up and it follows the pointer 1:1 from where you
  * grabbed it, lifted out of the window into a layer above the Dock. A
- * ring lights up around Mail in the Dock (the tab bar on phones). Let go
- * and the release velocity is projected (`project()`): if it lands in the
- * Dock, or the throw is clearly headed there, the envelope seals as it
- * flies along an arc into the icon, carrying the release velocity into
- * the spring, and the icon bounces as it lands. Otherwise it springs back
- * to its place, with a little bounce only if it was thrown.
+ * ring lights up around Mail in the Dock (the tab bar on phones). Over
+ * the Dock it folds shut in your hand and hovers just above the icon.
+ * Let go and the release velocity is projected (`project()`): if it lands
+ * on Mail, or the throw is clearly headed there, it flies an arc into the
+ * icon carrying the release velocity, and the icon bounces as it lands.
+ * Otherwise it springs home, with a little bounce only if it was thrown,
+ * and it can be caught again on the way.
+ *
+ * Touch: hold the envelope still for a moment to lift it (as iOS does for
+ * drag and drop), so a scroll that starts on it stays a scroll.
  *
  * Pressing Send does the same from rest: the envelope folds where it
- * stands, hops, and flies the same arc. Reduced motion: no gesture and no
+ * stands and leaves as the seal stamps. Reduced motion: no gesture and no
  * flight; it seals in place.
  */
 
@@ -38,6 +42,34 @@ export type StageHandle = {
 type Pt = { x: number; y: number };
 type Target = { x: number; y: number; w: number; h: number; bounceEl: HTMLElement | null; tab: boolean };
 type Sample = Pt & { t: number };
+type Carry = { w: number; h: number; sealed: boolean; stamp: boolean };
+type Gesture = {
+  id: number;
+  touch: boolean;
+  el: HTMLElement;
+  /** grab point in the envelope's unscaled box */
+  ox: number;
+  oy: number;
+  w: number;
+  h: number;
+  sx: number;
+  sy: number;
+  last: Pt;
+  /** carried (touch: lifted) */
+  moved: boolean;
+  timer: number;
+  samples: Sample[];
+  target: Target;
+  armed: boolean;
+};
+
+/** touch: hold this long, within LIFT_SLOP px, to pick the envelope up */
+const LIFT_MS = 260;
+const LIFT_SLOP = 8;
+const DRAG_SLOP = 4;
+/** the launch goes out a little before the envelope is all the way in */
+const LAUNCH_AT = 0.8;
+const ARRIVE_AT = 0.965;
 
 /** eight pixels thrown out from the icon on delivery (px offsets) */
 const BURST = Array.from({ length: 8 }, (_, i) => {
@@ -60,13 +92,17 @@ function dockTarget(): Target {
   return { x: window.innerWidth / 2, y: window.innerHeight - 40, w: 48, h: 48, bounceEl: null, tab };
 }
 
-/** px/s over the last ~90ms of samples; 0 if the pointer had come to rest. */
+/**
+ * px/s over the last ~100ms of samples (from the oldest sample inside that
+ * window, so a long still hold before the flick doesn't water it down);
+ * 0 if the pointer had come to rest.
+ */
 function velocity(s: Sample[], now: number): Pt {
   if (s.length < 2) return { x: 0, y: 0 };
   const last = s[s.length - 1];
   if (now - last.t > 80) return { x: 0, y: 0 };
   let i = s.length - 2;
-  while (i > 0 && last.t - s[i].t < 90) i--;
+  while (i > 0 && last.t - s[i - 1].t <= 100) i--;
   const a = s[i];
   const dt = (last.t - a.t) / 1000;
   if (dt <= 0) return { x: 0, y: 0 };
@@ -78,13 +114,22 @@ function velocity(s: Sample[], now: number): Pt {
  * visual center and `half` its visual half-size, `v` the release velocity.
  */
 function headedForDock(ptr: Pt, c: Pt, half: Pt, v: Pt, t: Target) {
-  const vh = window.innerHeight;
   const top = t.y - t.h / 2;
-  const reach = t.tab ? Infinity : Math.max(240, window.innerWidth * 0.2);
-  // held over the Dock (or just above it)
-  if (ptr.y > Math.max(top - 110, vh * 0.6) && Math.abs(ptr.x - t.x) < reach) return true;
   // the envelope itself touches the icon
   if (Math.abs(c.x - t.x) < half.x + t.w / 2 + 16 && Math.abs(c.y - t.y) < half.y + t.h / 2 + 16) return true;
+  if (t.tab) {
+    // phones: held over the Mail tab…
+    if (ptr.y > top - 70 && Math.abs(ptr.x - t.x) < 80) return true;
+    // …or flicked down so that it would land on it
+    if (v.y < 250) return false;
+    if (ptr.y + project(v.y) < t.y - 60) return false;
+    const xAt = ptr.x + ((t.y - ptr.y) * v.x) / v.y;
+    return Math.abs(xAt - t.x) < 90;
+  }
+  const vh = window.innerHeight;
+  const reach = Math.max(200, window.innerWidth * 0.16);
+  // held over the Dock (or just above it)
+  if (ptr.y > Math.max(top - 110, vh * 0.6) && Math.abs(ptr.x - t.x) < reach) return true;
   // thrown: where the release velocity would carry it
   const p = { x: ptr.x + project(v.x), y: ptr.y + project(v.y) };
   if (v.y > 150 && p.y > top - 20 && Math.abs(p.x - t.x) < reach) return true;
@@ -97,17 +142,19 @@ function headedForDock(ptr: Pt, c: Pt, half: Pt, v: Pt, t: Target) {
   return false;
 }
 
-/**
- * The contextual cursor reads `data-cursor` / `data-cursor-hide` on
- * pointerover: while the envelope is carried it shows the plain dot, not
- * a label sitting on top of the letter.
- */
+/** The contextual cursor reads `data-cursor-hide` on pointerover: plain dot while carrying. */
 function quietCursor(el: HTMLElement, quiet: boolean) {
-  if (quiet) {
-    el.setAttribute("data-cursor-hide", "");
-    el.removeAttribute("data-cursor");
-  } else el.removeAttribute("data-cursor-hide");
+  if (quiet) el.setAttribute("data-cursor-hide", "");
+  else el.removeAttribute("data-cursor-hide");
   el.dispatchEvent(new PointerEvent("pointerover", { bubbles: true, pointerType: "mouse" }));
+}
+
+/** a short haptic tick on the lift, where the platform has one */
+function tick() {
+  const ua = (navigator as Navigator & { userActivation?: { hasBeenActive: boolean } }).userActivation;
+  try {
+    if (ua?.hasBeenActive) navigator.vibrate?.(8);
+  } catch {}
 }
 
 export function Stage({
@@ -118,7 +165,8 @@ export function Stage({
   interactive,
   reduced,
   coarse,
-  originRef,
+  empty,
+  origin,
   onThrow,
   onLand,
 }: {
@@ -130,11 +178,13 @@ export function Stage({
   interactive: boolean;
   reduced: boolean;
   coarse: boolean;
+  /** nothing written yet: the gesture won't send an empty letter */
+  empty: boolean;
   /** where the envelope leaves from when the stage is scrolled away */
-  originRef: React.RefObject<HTMLElement | null>;
+  origin: () => DOMRect | null;
   /** the gesture decided to send */
   onThrow: () => void;
-  /** the envelope reached the Dock (or sealed in place, reduced) */
+  /** time to hand over to the mail app (or sealed in place, reduced) */
   onLand: () => void;
 }) {
   const { t } = useI18n();
@@ -145,60 +195,125 @@ export function Stage({
   const [sealed, setSealed] = useState(false);
   const [instant, setInstant] = useState(false);
   const [gone, setGone] = useState(false);
-  const [carry, setCarry] = useState<{ w: number; sealed: boolean } | null>(null);
+  const [carry, setCarry] = useState<Carry | null>(null);
+  /** springing home: the flyer can be caught */
+  const [returning, setReturning] = useState(false);
   const [target, setTarget] = useState<Target | null>(null);
   const [armed, setArmed] = useState(false);
-  const [held, setHeld] = useState(false);
+  const [grip, setGrip] = useState<"slot" | "flyer" | null>(null);
+  /** touch: held, not yet lifted */
+  const [press, setPress] = useState(false);
   const [burst, setBurst] = useState<{ x: number; y: number; id: number } | null>(null);
+  /** mouse over the envelope: a faint ring shows where it goes */
+  const [peek, setPeek] = useState<Target | null>(null);
   const burstTimer = useRef(0);
   const pendingFlight = useRef(false);
 
-  // in-slot envelope: hop on tap, rise back in on reset
+  // in-slot envelope: hop on tap, shake when refused, rise back in on reset
+  const slotX = useMotionValue(0);
   const slotY = useMotionValue(0);
   const slotO = useMotionValue(1);
-  // the carried / flying envelope (top-left in viewport px)
+  // the carried / flying envelope: top-left in viewport px, scaled about its center
   const fx = useMotionValue(0);
   const fy = useMotionValue(0);
   const fs = useMotionValue(1);
   const fr = useMotionValue(0);
   const fo = useMotionValue(1);
-  // scale about the grab point while carried, about the center in flight
-  const fox = useMotionValue(0.5);
-  const foy = useMotionValue(0.5);
-  // the "let go to send" pill rides above the carried envelope
+  /** 0 → 1 as it settles above the icon, folded */
+  const arm = useMotionValue(0);
+  /** the touch lift's little pop */
+  const pop = useMotionValue(1);
+  // the pill rides above the carried envelope
   const px = useMotionValue(0);
   const py = useMotionValue(0);
 
-  const gesture = useRef<{
-    id: number;
-    ox: number;
-    oy: number;
-    w: number;
-    h: number;
-    sx: number;
-    sy: number;
-    moved: boolean;
-    samples: Sample[];
-    target: Target;
-    armed: boolean;
-  } | null>(null);
+  const gesture = useRef<Gesture | null>(null);
   const anims = useRef<AnimationPlaybackControls[]>([]);
+  const armAnim = useRef<AnimationPlaybackControls | null>(null);
   const stopAll = () => {
     for (const a of anims.current) a.stop();
     anims.current = [];
   };
+
+  const cbs = useRef({ onThrow, onLand, blip, empty, origin });
+  useEffect(() => {
+    cbs.current = { onThrow, onLand, blip, empty, origin };
+  });
+
+  /** where the carried envelope sits for pointer `g.last` (free = as if not armed) */
+  const geometry = (g: Gesture) => {
+    const P = g.last;
+    const T = g.target;
+    const near = clamp(1 - (Math.hypot(P.x - T.x, P.y - T.y) - 80) / 460, 0, 1);
+    // it shrinks as it nears the Dock, so the Dock stays in sight
+    const sFree = (1.04 - 0.6 * near * near * (3 - 2 * near)) * pop.get();
+    const a = arm.get();
+    const s = sFree + (Math.max(T.w * 1.3, 56) / g.w - sFree) * a;
+    const free = { x: P.x + (g.w / 2 - g.ox) * sFree, y: P.y + (g.h / 2 - g.oy) * sFree };
+    // armed: centered on the pointer, its bottom edge 0.6 icon above it, so the icon and ring stay in view
+    const held = { x: P.x + (g.w / 2 - g.ox) * s, y: P.y + (g.h / 2 - g.oy) * s };
+    const above = { x: P.x, y: P.y - T.h * 0.6 - (g.h * s) / 2 };
+    return {
+      s,
+      c: { x: held.x + (above.x - held.x) * a, y: held.y + (above.y - held.y) * a },
+      free,
+      half: { x: (g.w / 2) * sFree, y: (g.h / 2) * sFree },
+    };
+  };
+
+  const place = (g: Gesture) => {
+    const geo = geometry(g);
+    fx.set(geo.c.x - g.w / 2);
+    fy.set(geo.c.y - g.h / 2);
+    fs.set(geo.s);
+    px.set(geo.c.x);
+    py.set(geo.c.y - (g.h * geo.s) / 2 - 10);
+    return geo;
+  };
+
+  // the arm spring and the pop move the envelope even while the pointer rests
+  const placeRef = useRef(place);
+  useEffect(() => {
+    placeRef.current = place;
+  });
+  useEffect(() => {
+    const follow = () => {
+      const g = gesture.current;
+      if (g?.moved) placeRef.current(g);
+    };
+    const a = arm.on("change", follow);
+    const b = pop.on("change", follow);
+    return () => {
+      a();
+      b();
+    };
+  }, [arm, pop]);
+
   useEffect(
     () => () => {
       stopAll();
+      armAnim.current?.stop();
       window.clearTimeout(burstTimer.current);
+      if (gesture.current) window.clearTimeout(gesture.current.timer);
     },
     []
   );
 
-  const cbs = useRef({ onThrow, onLand, blip });
+  // touch: once lifted, the page must not scroll under the finger
   useEffect(() => {
-    cbs.current = { onThrow, onLand, blip };
-  });
+    const el = slotRef.current;
+    if (!el) return;
+    const onTouchMove = (e: TouchEvent) => {
+      if (gesture.current?.moved && e.cancelable) e.preventDefault();
+    };
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    return () => el.removeEventListener("touchmove", onTouchMove);
+  }, []);
+
+  const springArm = (to: number) => {
+    armAnim.current?.stop();
+    armAnim.current = animate(arm, to, spring.snappy);
+  };
 
   /** Fly from `from` (center, viewport px) at scale `s0` into the Dock. */
   const fly = (from: Pt, v: Pt, s0: number, w: number, h: number, tg: Target, duration: number) => {
@@ -219,17 +334,22 @@ export function Stage({
     const L = (dist + Math.hypot(P1.x - P0.x, P1.y - P0.y) + Math.hypot(P2.x - P1.x, P2.y - P1.y) + Math.hypot(P3.x - P2.x, P3.y - P2.y)) / 2;
     const v0 = Math.hypot(v.x, v.y) / Math.max(1, L);
     const s1 = (tg.w * 0.8) / w;
-    let landed = false;
-    const land = () => {
-      if (landed) return;
-      landed = true;
+    let launched = false;
+    let arrived = false;
+    const launch = () => {
+      if (launched) return;
+      launched = true;
+      cbs.current.onLand();
+    };
+    const arrive = () => {
+      if (arrived) return;
+      arrived = true;
       bounce(tg.bounceEl, tg.tab ? 7 : 16);
       // delivered: a little puff of pixels around the icon
       setBurst({ x: T.x, y: T.y, id: performance.now() });
       window.clearTimeout(burstTimer.current);
       burstTimer.current = window.setTimeout(() => setBurst(null), 700);
       cbs.current.blip("success");
-      cbs.current.onLand();
     };
     const a = animate(0, 1, {
       type: "spring",
@@ -249,10 +369,12 @@ export function Stage({
         fr.set(clamp((tx / tl) * 24, -24, 24) * u);
         fs.set(s0 + (s1 - s0) * q * q * (3 - 2 * q));
         fo.set(q < 0.86 ? 1 : Math.max(0, 1 - (q - 0.86) / 0.12));
-        if (q >= 0.965) land();
+        if (q >= LAUNCH_AT) launch();
+        if (q >= ARRIVE_AT) arrive();
       },
       onComplete: () => {
-        land();
+        launch();
+        arrive();
         setCarry(null);
         setTarget(null);
       },
@@ -260,37 +382,35 @@ export function Stage({
     anims.current.push(a);
   };
 
-  /** Send from rest (the button): fold where it stands, then fly. */
-  const startFromSlot = () => {
-    const slot = slotRef.current;
+  const slotVisible = (r: DOMRect | undefined): r is DOMRect =>
+    !!r && r.width > 0 && r.bottom > 120 && r.top < window.innerHeight - 90;
+
+  /** Send from rest (the button): the envelope leaves its slot as the seal stamps. */
+  const startFromSlot = (stamp: boolean) => {
+    const r = slotRef.current?.getBoundingClientRect();
     const tg = dockTarget();
-    const r = slot?.getBoundingClientRect();
     const vh = window.innerHeight;
-    const visible = !!r && r.width > 0 && r.top < vh - 40 && r.bottom > 40;
     let from: Pt;
     let s0 = 1;
-    let w = r?.width ?? 240;
-    let h = r?.height ?? 220;
-    if (r && visible) {
+    const w = r?.width || 200;
+    const h = r?.height || (w * 30) / 33;
+    if (slotVisible(r)) {
       from = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
     } else {
-      const o = originRef.current?.getBoundingClientRect();
-      from = o ? { x: o.left + o.width / 2, y: o.top + o.height / 2 } : { x: window.innerWidth / 2, y: vh / 2 };
-      w = Math.max(w, 120);
-      h = Math.max(h, 110);
-      s0 = 0.32;
+      // scrolled away: a small envelope leaves from the Send button
+      const o = cbs.current.origin();
+      from = o && o.width ? { x: o.left + o.width / 2, y: o.top + o.height / 2 } : { x: window.innerWidth / 2, y: vh / 2 };
+      s0 = clamp(60 / w, 0.2, 1);
     }
     fx.set(from.x - w / 2);
     fy.set(from.y - h / 2);
     fs.set(s0);
     fr.set(0);
     fo.set(1);
-    fox.set(0.5);
-    foy.set(0.5);
-    setCarry({ w, sealed: true });
+    setCarry({ w, h, sealed: true, stamp });
     setGone(true);
     setTarget(tg);
-    fly(from, { x: 0, y: -760 }, s0, w, h, tg, 0.58);
+    fly(from, { x: 0, y: -760 }, s0, w, h, tg, 0.5);
   };
 
   useImperativeHandle(ref, () => ({
@@ -301,11 +421,14 @@ export function Stage({
         cbs.current.onLand();
         return;
       }
-      setInstant(false);
-      if (sealed) {
-        startFromSlot();
+      if (sealed || !slotVisible(slotRef.current.getBoundingClientRect())) {
+        // nobody would see the fold: leave at once
+        setInstant(true);
+        setSealed(true);
+        startFromSlot(true);
         return;
       }
+      setInstant(false);
       pendingFlight.current = true;
       setSealed(true);
     },
@@ -315,9 +438,11 @@ export function Stage({
       setCarry(null);
       setTarget(null);
       setArmed(false);
+      setReturning(false);
       setInstant(!!reduced);
       setSealed(false);
       setGone(false);
+      slotX.set(0);
       if (!reduced) {
         slotY.set(28);
         slotO.set(0);
@@ -351,134 +476,189 @@ export function Stage({
     return () => window.clearTimeout(id);
   }, [interactive, reduced, slotY]);
 
-  const onSealed = () => {
+  /** the in-slot fold is done: leave as the seal stamps */
+  const onFolded = () => {
     if (!pendingFlight.current) return;
     pendingFlight.current = false;
-    startFromSlot();
+    startFromSlot(true);
   };
 
-  /** the carried envelope's visual center and half-size at scale `sc` */
-  const visual = (g: { ox: number; oy: number; w: number; h: number }, sc: number) => {
-    const px = fx.get() + g.ox;
-    const py = fy.get() + g.oy;
-    return {
-      c: { x: px + (g.w / 2 - g.ox) * sc, y: py + (g.h / 2 - g.oy) * sc },
-      half: { x: (g.w / 2) * sc, y: (g.h / 2) * sc },
-    };
+  const hop = () => {
+    stopAll();
+    anims.current.push(
+      animate(slotY, [0, -14, 0], { duration: 0.46, times: [0, 0.4, 1], ease: ["easeOut", [0.6, 0, 0.85, 0.5]] })
+    );
   };
 
   /* ── the gesture ── */
+
+  /** start carrying: the envelope rises out of the window into the air layer */
+  const begin = (g: Gesture, lift: boolean) => {
+    g.moved = true;
+    stopAll();
+    armAnim.current?.stop();
+    arm.jump(0);
+    fr.set(0);
+    fo.set(1);
+    setCarry({ w: g.w, h: g.h, sealed: false, stamp: false });
+    setTarget(g.target);
+    setReturning(false);
+    setPeek(null);
+    if (!g.touch) quietCursor(g.el, true);
+    if (lift) {
+      // iOS-style lift: settle in a touch smaller, then rise toward the finger
+      pop.jump(0.94);
+      place(g);
+      anims.current.push(animate(pop, 1, { type: "spring", visualDuration: 0.3, bounce: 0.25 }));
+      tick();
+    } else {
+      pop.jump(1);
+      place(g);
+    }
+  };
+
+  const abort = (g: Gesture) => {
+    window.clearTimeout(g.timer);
+    if (gesture.current === g) gesture.current = null;
+    setPress(false);
+    setGrip(null);
+  };
+
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!interactive || gone || carry || (e.pointerType === "mouse" && e.button !== 0)) return;
+    if (!interactive || gone || carry || gesture.current || (e.pointerType === "mouse" && e.button !== 0)) return;
     const r = e.currentTarget.getBoundingClientRect();
-    const now = e.timeStamp;
-    gesture.current = {
+    const touch = e.pointerType !== "mouse";
+    const P = { x: e.clientX, y: e.clientY };
+    const g: Gesture = {
       id: e.pointerId,
-      ox: e.clientX - r.left,
-      oy: e.clientY - r.top,
+      touch,
+      el: e.currentTarget,
+      ox: P.x - r.left,
+      oy: P.y - r.top,
       w: r.width,
       h: r.height,
-      sx: e.clientX,
-      sy: e.clientY,
+      sx: P.x,
+      sy: P.y,
+      last: P,
       moved: false,
-      samples: [{ x: e.clientX, y: e.clientY, t: now }],
+      timer: 0,
+      samples: [{ ...P, t: e.timeStamp }],
       target: dockTarget(),
       armed: false,
     };
+    gesture.current = g;
+    setGrip("slot"); // respond on pointer-down
+    if (touch) {
+      // a scroll may start here: only a still hold picks the envelope up
+      setPress(true);
+      g.timer = window.setTimeout(() => {
+        if (gesture.current !== g) return;
+        setPress(false);
+        try {
+          g.el.setPointerCapture(g.id);
+        } catch {}
+        // the finger is at rest here: velocity counts from the lift, not the press
+        g.samples = [{ ...g.last, t: performance.now() }];
+        begin(g, true);
+      }, LIFT_MS);
+    } else {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    }
+  };
+
+  /** catch the envelope as it springs home */
+  const onCatch = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!returning || !carry || gesture.current || (e.pointerType === "mouse" && e.button !== 0)) return;
+    stopAll();
+    const s = fs.get();
+    const { w, h } = carry;
+    const ctr = { x: fx.get() + w / 2, y: fy.get() + h / 2 };
+    const P = { x: e.clientX, y: e.clientY };
+    const g: Gesture = {
+      id: e.pointerId,
+      touch: e.pointerType !== "mouse",
+      el: e.currentTarget,
+      ox: w / 2 + (P.x - ctr.x) / s,
+      oy: h / 2 + (P.y - ctr.y) / s,
+      w,
+      h,
+      sx: P.x,
+      sy: P.y,
+      last: P,
+      moved: true,
+      timer: 0,
+      samples: [{ ...P, t: e.timeStamp }],
+      target: dockTarget(),
+      armed: false,
+    };
+    gesture.current = g;
     e.currentTarget.setPointerCapture(e.pointerId);
-    setHeld(true); // respond on pointer-down
+    setReturning(false);
+    setGrip("flyer");
+    setTarget(g.target);
+    if (!g.touch) quietCursor(g.el, true);
+    // no jump: carry on from the scale it had in the air
+    pop.jump(1);
+    const free = geometry(g).s;
+    pop.jump(s / free);
+    anims.current.push(animate(pop, 1, spring.snappy));
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const g = gesture.current;
     if (!g || g.id !== e.pointerId) return;
-    g.samples.push({ x: e.clientX, y: e.clientY, t: e.timeStamp });
-    if (g.samples.length > 12) g.samples.shift();
+    const P = { x: e.clientX, y: e.clientY };
+    // every sample the browser folded into this frame, for an honest release velocity
+    const folded = e.nativeEvent.getCoalescedEvents?.() ?? [];
+    for (const q of folded.length ? folded : [e.nativeEvent]) g.samples.push({ x: q.clientX, y: q.clientY, t: q.timeStamp });
+    if (g.samples.length > 16) g.samples.splice(0, g.samples.length - 16);
+    g.last = P;
     if (!g.moved) {
-      if (Math.hypot(e.clientX - g.sx, e.clientY - g.sy) < 4) return;
-      g.moved = true;
-      stopAll();
-      fs.set(1.04);
-      fr.set(0);
-      fo.set(1);
-      fox.set(g.ox / g.w);
-      foy.set(g.oy / g.h);
-      setCarry({ w: g.w, sealed: false });
-      setTarget(g.target);
-      quietCursor(e.currentTarget, true);
+      const d = Math.hypot(P.x - g.sx, P.y - g.sy);
+      if (g.touch) {
+        // moved before the lift: that's a scroll, not a pick-up
+        if (d > LIFT_SLOP) abort(g);
+        return;
+      }
+      if (d < DRAG_SLOP) return;
+      begin(g, false);
     }
-    fx.set(e.clientX - g.ox);
-    fy.set(e.clientY - g.oy);
     const v = velocity(g.samples, e.timeStamp);
     // lean into the motion, like something held by one corner
-    fr.set(clamp(v.x / 90, -10, 10));
-    // it shrinks as it nears the Dock, so the Dock stays in sight
-    const ptr = { x: e.clientX, y: e.clientY };
-    const near = clamp(1 - (Math.hypot(ptr.x - g.target.x, ptr.y - g.target.y) - 80) / 460, 0, 1);
-    const sc = 1.04 - 0.6 * near * near * (3 - 2 * near);
-    fs.set(sc);
-    const vis = visual(g, sc);
-    px.set(vis.c.x);
-    py.set(vis.c.y - vis.half.y - 12);
-    const a = headedForDock(ptr, vis.c, vis.half, v, g.target);
+    fr.set(clamp(v.x / 90, -10, 10) * (1 - arm.get()));
+    const geo = place(g);
+    const a = headedForDock(P, geo.free, geo.half, v, g.target);
     if (a !== g.armed) {
-      // over the Dock it folds shut in your hand; away again, it opens
+      // over the Dock it folds shut in your hand and settles above the icon; away again, it opens
       g.armed = a;
       setArmed(a);
-      setCarry({ w: g.w, sealed: a });
+      const live = a && !cbs.current.empty;
+      springArm(live ? 1 : 0);
+      setCarry((k) => (k ? { ...k, sealed: live } : k));
     }
   };
 
-  const release = (e: React.PointerEvent<HTMLDivElement>, cancelled: boolean) => {
-    const g = gesture.current;
-    if (!g || g.id !== e.pointerId) return;
-    gesture.current = null;
-    setHeld(false);
-    setArmed(false);
-    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
-    if (g.moved) quietCursor(e.currentTarget, false);
-
-    if (!g.moved) {
-      if (cancelled) return;
-      // a tap: a little hop says "pick me up"
-      stopAll();
-      anims.current.push(
-        animate(slotY, [0, -14, 0], { duration: 0.46, times: [0, 0.4, 1], ease: ["easeOut", [0.6, 0, 0.85, 0.5]] })
-      );
-      return;
-    }
-
-    const v = cancelled ? { x: 0, y: 0 } : velocity(g.samples, e.timeStamp);
-    const vis = visual(g, fs.get());
-    const ptr = { x: fx.get() + g.ox, y: fy.get() + g.oy };
-    if (!cancelled && headedForDock(ptr, vis.c, vis.half, v, g.target)) {
-      // re-anchor about the center without a visual jump, then fly
-      fox.set(0.5);
-      foy.set(0.5);
-      fx.set(vis.c.x - g.w / 2);
-      fy.set(vis.c.y - g.h / 2);
-      setCarry({ w: g.w, sealed: true });
-      setGone(true);
-      setSealed(true);
-      setInstant(true);
-      cbs.current.onThrow();
-      fly(vis.c, v, fs.get(), g.w, g.h, dockTarget(), 0.5);
-      return;
-    }
-
-    // home: back to the slot, carrying the release velocity
+  const goHome = (w: number, h: number, v: Pt, refused: boolean) => {
     const slot = slotRef.current?.getBoundingClientRect();
-    const hx = slot ? slot.left : vis.c.x - g.w / 2;
-    const hy = slot ? slot.top : vis.c.y - g.h / 2;
+    const ctr = { x: fx.get() + w / 2, y: fy.get() + h / 2 };
+    const hx = slot ? slot.left : ctr.x - w / 2;
+    const hy = slot ? slot.top : ctr.y - h / 2;
     const thrown = Math.hypot(v.x, v.y) > 500;
     const sp = thrown ? spring.flick : spring.default;
     stopAll();
+    setCarry({ w, h, sealed: false, stamp: false });
+    setReturning(true);
     let done = 0;
-    setCarry({ w: g.w, sealed: false });
     const finish = () => {
       if (++done < 2) return;
       setCarry(null);
       setTarget(null);
+      setReturning(false);
+      if (refused) {
+        // nothing written: a little "no" from the envelope
+        cbs.current.blip("tick");
+        anims.current.push(animate(slotX, [0, -7, 6, -4, 2, 0], { duration: 0.42, ease: "easeOut" }));
+      }
     };
     anims.current.push(
       animate(fx, hx, { ...sp, velocity: v.x, onComplete: finish }),
@@ -488,13 +668,63 @@ export function Stage({
     );
   };
 
+  const release = (e: React.PointerEvent<HTMLDivElement>, cancelled: boolean) => {
+    const g = gesture.current;
+    if (!g || g.id !== e.pointerId) return;
+    gesture.current = null;
+    window.clearTimeout(g.timer);
+    setPress(false);
+    setGrip(null);
+    setArmed(false);
+    armAnim.current?.stop();
+    try {
+      if (g.el.hasPointerCapture(e.pointerId)) g.el.releasePointerCapture(e.pointerId);
+    } catch {}
+    if (g.moved && !g.touch) quietCursor(g.el, false);
+
+    if (!g.moved) {
+      // a tap: a little hop says "pick me up"
+      if (!cancelled) hop();
+      return;
+    }
+
+    const v = cancelled ? { x: 0, y: 0 } : velocity(g.samples, e.timeStamp);
+    const geo = geometry(g);
+    arm.jump(0);
+    const ctr = { x: fx.get() + g.w / 2, y: fy.get() + g.h / 2 };
+    if (!cancelled && headedForDock(g.last, geo.free, geo.half, v, g.target)) {
+      if (cbs.current.empty) {
+        goHome(g.w, g.h, v, true);
+        return;
+      }
+      setCarry({ w: g.w, h: g.h, sealed: true, stamp: false });
+      setGone(true);
+      setSealed(true);
+      setInstant(true);
+      cbs.current.onThrow();
+      fly(ctr, v, fs.get(), g.w, g.h, dockTarget(), 0.5);
+      return;
+    }
+    // home: back to the slot, carrying the release velocity
+    goHome(g.w, g.h, v, false);
+  };
+
   const canThrow = interactive && !reduced;
   const showSlot = !carry && !gone;
+  const handlers = {
+    onPointerMove,
+    onPointerUp: (e: React.PointerEvent<HTMLDivElement>) => release(e, false),
+    onPointerCancel: (e: React.PointerEvent<HTMLDivElement>) => release(e, true),
+    onLostPointerCapture: (e: React.PointerEvent<HTMLDivElement>) => release(e, true),
+  };
+  const refuse = armed && empty;
+  const ring = carry ? target : canThrow && !gone ? peek : null;
 
   return (
     <div
       className="app-contact-stage"
-      data-held={held || undefined}
+      data-held={grip ? "" : undefined}
+      data-press={press || undefined}
       data-carry={carry ? "" : undefined}
       data-gone={gone || undefined}
     >
@@ -503,28 +733,22 @@ export function Stage({
         ref={slotRef}
         className="app-contact-slot"
         data-throwable={canThrow || undefined}
-        data-cursor={canThrow && !carry ? c.cursorThrow : undefined}
         onPointerDown={canThrow ? onPointerDown : undefined}
-        onPointerMove={canThrow ? onPointerMove : undefined}
-        onPointerUp={canThrow ? (e) => release(e, false) : undefined}
-        onPointerCancel={canThrow ? (e) => release(e, true) : undefined}
-        onLostPointerCapture={canThrow ? (e) => release(e, true) : undefined}
+        {...(canThrow ? handlers : {})}
+        onContextMenu={canThrow ? (e) => e.preventDefault() : undefined}
+        onPointerEnter={
+          canThrow ? (e) => e.pointerType === "mouse" && !carry && !gone && setPeek(dockTarget()) : undefined
+        }
+        onPointerLeave={canThrow ? () => setPeek(null) : undefined}
         role="img"
         aria-label={c.envelopeLabel}
       >
         <span className="app-contact-socket" aria-hidden />
         <m.div
           className="app-contact-slot-env"
-          style={{ y: slotY, opacity: slotO, visibility: showSlot || (reduced && gone) ? "visible" : "hidden" }}
+          style={{ x: slotX, y: slotY, opacity: slotO, visibility: showSlot || (reduced && gone) ? "visible" : "hidden" }}
         >
-          <Envelope
-            subject={subject}
-            lines={lines}
-            lifted={lifted}
-            sealed={sealed}
-            instant={instant}
-            onSealed={onSealed}
-          />
+          <Envelope subject={subject} lines={lines} lifted={lifted} sealed={sealed} instant={instant} onFolded={onFolded} />
         </m.div>
       </div>
 
@@ -534,12 +758,12 @@ export function Stage({
         ) : canThrow ? (
           <>
             <PixelGlyph cells={G_DOWN} size={10} />
-            <span>{coarse ? c.flickHint : c.throwHint}</span>
+            <span>{coarse ? c.holdHint : c.throwHint}</span>
           </>
         ) : null}
       </p>
 
-      {(carry || burst) &&
+      {(carry || burst || (peek && canThrow && !gone)) &&
         createPortal(
           <div className="app-contact-air" aria-hidden>
             {burst && (
@@ -552,28 +776,37 @@ export function Stage({
             {carry && (
               <m.div
                 className="app-contact-flyer"
-                data-held={held || undefined}
-                style={{ x: fx, y: fy, scale: fs, rotate: fr, opacity: fo, originX: fox, originY: foy, width: carry.w }}
+                data-held={grip === "flyer" || grip === "slot" || undefined}
+                data-catch={returning || grip === "flyer" || undefined}
+                style={{ x: fx, y: fy, scale: fs, rotate: fr, opacity: fo, width: carry.w }}
+                onPointerDown={onCatch}
+                {...handlers}
               >
-                <Envelope subject={subject} lines={lines} sealed={carry.sealed} />
+                <Envelope subject={subject} lines={lines} sealed={carry.sealed} stamp={carry.stamp} />
               </m.div>
             )}
-            {carry && target && (
+            {/* above the envelope, so the ring always reads */}
+            {ring && (
               <span
                 className="app-contact-target"
-                data-armed={armed || undefined}
+                data-armed={(carry && armed && !empty) || undefined}
+                data-peek={!carry || undefined}
                 style={{
-                  left: target.x - target.w / 2,
-                  top: target.y - target.h / 2,
-                  width: target.w,
-                  height: target.h,
+                  left: ring.x - ring.w / 2,
+                  top: ring.y - ring.h / 2,
+                  width: ring.w,
+                  height: ring.h,
                 }}
-              >
-              </span>
+              />
             )}
-            {carry && (
-              <m.span className="app-contact-pill" data-armed={armed || undefined} style={{ x: px, y: py }}>
-                <span>{c.dropHint}</span>
+            {carry && grip && (
+              <m.span
+                className="app-contact-pill"
+                data-armed={armed || undefined}
+                data-refuse={refuse || undefined}
+                style={{ x: px, y: py }}
+              >
+                <span>{refuse ? c.writeFirst : c.dropHint}</span>
               </m.span>
             )}
           </div>,

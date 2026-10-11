@@ -60,7 +60,10 @@ export function WritingChapter() {
     const w = plate.offsetWidth;
     const h = plate.offsetHeight;
     const gap = 12;
-    const fitsBelow = r.bottom + gap + h <= window.innerHeight - 16;
+    // the clear band ends above the Dock (the story's probe measures it)
+    const probe = document.querySelector(".app-story-probe");
+    const floor = window.innerHeight - (probe ? parseFloat(getComputedStyle(probe).paddingBottom) || 96 : 96);
+    const fitsBelow = r.bottom + gap + h <= floor;
     const x = Math.min(Math.max(16, clientX - 56), window.innerWidth - w - 16);
     const y = fitsBelow ? r.bottom + gap : r.top - gap - h;
     setAbove(!fitsBelow);

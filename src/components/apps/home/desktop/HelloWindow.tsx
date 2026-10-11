@@ -5,22 +5,20 @@ import { useEffect, useImperativeHandle, useRef } from "react";
 import { animate, m, useMotionValue, type MotionStyle } from "motion/react";
 import { useI18n } from "@/i18n/client";
 import { useHydrated } from "@/hooks/env";
-import { useSpotifyStatus } from "@/hooks/useSpotifyStatus";
 import { timeAgo } from "@/lib/format";
 import { spring } from "@/lib/motion";
 import { useSound } from "@/lib/sound";
 import { PixelGlyph, type Cells } from "@/components/glyphs";
 import { useSiteData } from "@/components/os/SiteData";
-import { phaseForHour } from "@/components/os/sky";
-import { PixelEq } from "@/components/os/window/PixelEq";
 import { G_CLOSE, G_EXTERNAL, G_MIN } from "@/components/os/window/glyphs";
 import { Glass } from "@/components/os/Glass";
 import { FLING, INTERACTIVE, band, pushSample, releaseVelocity, type Sample } from "./physics";
-import { PARIS, hhmm, useMinute, zoned } from "./time";
+import { G_PEN } from "./icons";
+import { isPhone, menubarPx } from "./layout";
 
 const fill = (s: string, v: Record<string, string | number>) => s.replace(/\{(\w+)\}/g, (_, k: string) => String(v[k] ?? ""));
 
-/* 7×7 glyphs for the file and the sky chip */
+/* 7×7 glyphs for the file and the push chip */
 const G_DOC: Cells = [
   [1, 0], [2, 0], [3, 0], [4, 0],
   [1, 1], [4, 1], [5, 1],
@@ -28,12 +26,6 @@ const G_DOC: Cells = [
   [1, 3], [2, 3], [3, 3], [5, 3],
   [1, 4], [5, 4],
   [1, 5], [2, 5], [3, 5], [4, 5], [5, 5],
-];
-const G_SUN: Cells = [
-  [3, 0], [1, 1], [5, 1], [2, 2], [3, 2], [4, 2], [0, 3], [2, 3], [3, 3], [4, 3], [6, 3], [2, 4], [3, 4], [4, 4], [1, 5], [5, 5], [3, 6],
-];
-const G_MOON: Cells = [
-  [2, 0], [3, 0], [4, 0], [1, 1], [2, 1], [0, 2], [1, 2], [0, 3], [1, 3], [0, 4], [1, 4], [1, 5], [2, 5], [5, 5], [2, 6], [3, 6], [4, 6],
 ];
 const G_COMMIT: Cells = [
   [3, 0], [3, 1], [2, 2], [3, 2], [4, 2], [1, 3], [2, 3], [4, 3], [5, 3], [2, 4], [3, 4], [4, 4], [3, 5], [3, 6],
@@ -204,7 +196,7 @@ export function HelloWindow({
     if (e.pointerType === "mouse" && e.button !== 0) return;
     if ((e.target as Element).closest(INTERACTIVE)) return;
     // phones: hello.txt is a widget, it doesn't move
-    if (!window.matchMedia("(min-width: 768px)").matches) return;
+    if (isPhone()) return;
     const el = rootRef.current;
     if (!el) return;
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -214,7 +206,7 @@ export function HelloWindow({
     const r = el.getBoundingClientRect();
     const root = getComputedStyle(document.documentElement);
     const rem = parseFloat(root.fontSize) || 16;
-    const top = parseFloat(root.getPropertyValue("--menubar-h")) * rem || 44;
+    const top = menubarPx();
     const dockRaw = root.getPropertyValue("--dock-h").trim();
     const dock = dockRaw.endsWith("rem") ? parseFloat(dockRaw) * rem : parseFloat(dockRaw) || 76;
     const homeL = r.left - x.get();
@@ -339,53 +331,19 @@ export function HelloWindow({
 }
 
 function StatusChips({ label, lang }: { label: string; lang: "en" | "fr" }) {
-  const { t } = useI18n();
+  const { t, path } = useI18n();
   const h = t.home.hello;
-  const { spotify, activity } = useSiteData();
-  const { track, playing } = useSpotifyStatus(spotify);
-  const now = useMinute();
+  const { activity, posts } = useSiteData();
   const hydrated = useHydrated();
-  const hour = now ? zoned(now, PARIS).h + zoned(now, PARIS).m / 60 : null;
-  const phase = hour == null ? null : phaseForHour(hour);
-  const day = phase === "day" || phase === "dawn";
+  const post = posts[0];
+  if (!activity && !post) return null;
 
+  // the menu bar already carries the clock and the song, and the mini
+  // player the song again: hello.txt keeps only what is nowhere else on
+  // this screen. The latest post rides along on desks too narrow for its
+  // widget.
   return (
     <ul className="app-home-chips" aria-label={label}>
-      {track && (
-        <li>
-          {track.url ? (
-            <a
-              href={track.url}
-              target="_blank"
-              rel="noreferrer"
-              className="app-home-chip app-home-chip--link"
-              aria-label={fill(h.openSpotify, { title: track.title, artist: track.artist })}
-            >
-              <PixelEq playing={playing} className="app-home-chip-eq" />
-              <span className="app-home-chip-k app-home-chip-k--state">{playing ? h.nowPlaying : h.lastPlayed}</span>
-              <span className="app-home-chip-v">
-                {track.title} · {track.artist}
-              </span>
-            </a>
-          ) : (
-            <span className="app-home-chip">
-              <PixelEq playing={playing} className="app-home-chip-eq" />
-              <span className="app-home-chip-k app-home-chip-k--state">{playing ? h.nowPlaying : h.lastPlayed}</span>
-              <span className="app-home-chip-v">
-                {track.title} · {track.artist}
-              </span>
-            </span>
-          )}
-        </li>
-      )}
-      <li>
-        <span className="app-home-chip">
-          <PixelGlyph cells={day ? G_SUN : G_MOON} size={11} className={day ? "app-home-chip-sun" : "app-home-chip-moon"} />
-          <span className="app-home-chip-v tabular" suppressHydrationWarning>
-            {fill(h.paris, { time: now ? hhmm(now, lang) : "--:--" })}
-          </span>
-        </span>
-      </li>
       {activity && (
         <li>
           <a
@@ -400,10 +358,24 @@ function StatusChips({ label, lang }: { label: string; lang: "en" | "fr" }) {
             <PixelGlyph cells={G_COMMIT} size={11} className="app-home-chip-commit" />
             <span className="app-home-chip-v">{activity.repo}</span>
             <span className="app-home-chip-k" suppressHydrationWarning>
-              {hydrated ? fill(h.pushed, { ago: timeAgo(activity.createdAt, lang) }) : " "}
+              {hydrated ? fill(h.pushed, { ago: timeAgo(activity.createdAt, lang) }) : " "}
             </span>
             <PixelGlyph cells={G_EXTERNAL} size={8} className="app-home-chip-ext" />
           </a>
+        </li>
+      )}
+      {post && (
+        <li className="app-home-chip-slot--post">
+          <Link
+            href={`${path("/writing")}?p=${encodeURIComponent(post.slug)}`}
+            transitionTypes={["app-open"]}
+            className="app-home-chip app-home-chip--link"
+            aria-label={fill(h.openPost, { title: post.title, ago: hydrated ? timeAgo(post.published_at, lang) : "" })}
+          >
+            <PixelGlyph cells={G_PEN} size={11} className="app-home-chip-note" />
+            <span className="app-home-chip-k">{h.post}</span>
+            <span className="app-home-chip-v">{post.title}</span>
+          </Link>
         </li>
       )}
     </ul>

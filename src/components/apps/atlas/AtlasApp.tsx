@@ -2,7 +2,7 @@
 
 import "./atlas.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useMotionValue, useTransform, m } from "motion/react";
+import { useMotionValue, useTransform } from "motion/react";
 import type { SiteData } from "@/lib/data";
 import { AppWindow } from "@/components/os/AppWindow";
 import { Glass } from "@/components/os/Glass";
@@ -11,7 +11,7 @@ import { useSound } from "@/lib/sound";
 import { useMedia } from "@/hooks/env";
 import { PressButton } from "@/components/ui/Pressable";
 import { lenisRef } from "@/lib/lenisRef";
-import { HOME, PLACES, fmtCoords } from "@/lib/places";
+import { HOME, PLACES } from "@/lib/places";
 import { placeById } from "./geo";
 import { AtlasGlobe } from "./AtlasGlobe";
 import { PlaceCard } from "./PlaceCard";
@@ -19,6 +19,7 @@ import { PlacesList } from "./PlacesList";
 import { Stats } from "./Stats";
 import { Postcards } from "./Postcards";
 import { MapSheet, type Detent } from "./MapSheet";
+import { fmtCoordsL } from "./fmt";
 
 /** Layout switch: floating panels around the globe from here up, the
     Maps-style sheet below. Must match the breakpoint in atlas.css. */
@@ -39,7 +40,7 @@ const BESIDE = "(min-width: 768px) and (min-aspect-ratio: 5/4)";
  */
 export function AtlasApp({ data }: { data: SiteData }) {
   void data; // the Atlas is drawn from lib/places, not from live site data
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const a = t.atlas;
   const { blip } = useSound();
   // server and hydration render the wide layout; CSS hides its panels on
@@ -51,7 +52,6 @@ export function AtlasApp({ data }: { data: SiteData }) {
   const [detent, setDetent] = useState<Detent>("peek");
   const readoutRef = useRef<HTMLSpanElement>(null);
   const stageRef = useRef<HTMLElement>(null);
-  const globeRef = useRef<HTMLDivElement>(null);
   const place = placeById(selectedId) ?? HOME;
 
   const select = useCallback(
@@ -95,25 +95,26 @@ export function AtlasApp({ data }: { data: SiteData }) {
     [select]
   );
 
-  const onCamera = useCallback((lat: number, lon: number) => {
-    if (readoutRef.current) readoutRef.current.textContent = fmtCoords(lat, lon);
-  }, []);
+  const onCamera = useCallback(
+    (lat: number, lon: number) => {
+      if (readoutRef.current) readoutRef.current.textContent = fmtCoordsL(lat, lon, lang);
+    },
+    [lang]
+  );
 
-  // the sheet drives the globe: it rises and shrinks to stay centred above
+  // the sheet drives the globe: as it rises the planet is redrawn smaller
+  // and higher, centred in the room left above it
   const sheetY = useMotionValue(0);
   const peekY = useMotionValue(0);
   const halfY = useMotionValue(0);
-  const shift = useMotionValue(0);
-  const shrink = useMotionValue(0);
-  const sheetMetrics = useMemo(() => ({ peekY, halfY, shift, shrink }), [peekY, halfY, shift, shrink]);
+  const room = useMotionValue(0);
+  const sheetMetrics = useMemo(() => ({ peekY, halfY, room }), [peekY, halfY, room]);
   const lift = useTransform(() => {
     const pk = sheetMetrics.peekY.get();
     const hf = sheetMetrics.halfY.get();
     if (pk - hf < 1) return 0;
     return Math.min(1, Math.max(0, (pk - sheetY.get()) / (pk - hf)));
   });
-  const globeY = useTransform(() => -sheetMetrics.shift.get() * lift.get());
-  const globeScale = useTransform(() => 1 - sheetMetrics.shrink.get() * lift.get());
 
   const toolbar = (
     <div className="app-atlas-tools">
@@ -123,7 +124,7 @@ export function AtlasApp({ data }: { data: SiteData }) {
           <path d="M6 0v3M6 9v3M0 6h3M9 6h3" stroke="currentColor" strokeWidth="1.2" />
         </svg>
         <span ref={readoutRef} className="tabular">
-          {fmtCoords(HOME.lat, HOME.lon)}
+          {fmtCoordsL(HOME.lat, HOME.lon, lang)}
         </span>
       </span>
       <PressButton className="app-atlas-tool" onClick={() => setRecenter((n) => n + 1)} aria-label={a.recenterLabel}>
@@ -150,11 +151,7 @@ export function AtlasApp({ data }: { data: SiteData }) {
               </div>
             </Glass>
           )}
-          <m.div
-            ref={globeRef}
-            className="app-atlas-globe-slot"
-            style={wide ? undefined : { y: globeY, scale: globeScale }}
-          >
+          <div className="app-atlas-globe-slot">
             <AtlasGlobe
               places={PLACES}
               selectedId={selectedId}
@@ -165,8 +162,10 @@ export function AtlasApp({ data }: { data: SiteData }) {
               label={a.globe}
               spinLabel={a.spin}
               onCamera={onCamera}
+              lift={wide ? undefined : lift}
+              liftRoom={wide ? undefined : room}
             />
-          </m.div>
+          </div>
 
           {wide ? (
             <>
@@ -182,7 +181,6 @@ export function AtlasApp({ data }: { data: SiteData }) {
               y={sheetY}
               metrics={sheetMetrics}
               place={place}
-              globeRef={globeRef}
               beside={beside}
               onDetent={setDetent}
               card={<PlaceCard place={place} onSelect={select} compact titleId={cardTitle} />}

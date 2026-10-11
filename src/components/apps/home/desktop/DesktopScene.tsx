@@ -1,18 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { m, useScroll, useTransform } from "motion/react";
+import { m, useMotionValue, useMotionValueEvent, useScroll, useTransform, type MotionStyle } from "motion/react";
 import { useI18n } from "@/i18n/client";
-import { useFinePointer, useReduced } from "@/hooks/env";
+import { useFinePointer, useHydrated, useReduced } from "@/hooks/env";
 import { lenisRef } from "@/lib/lenisRef";
 import { useSound } from "@/lib/sound";
 import { HeroNameFx } from "@/components/HeroNameFx";
 import { DesktopIcons } from "./DesktopIcons";
 import { HelloWindow, type HelloHandle } from "./HelloWindow";
-import { ClockWidget, MusicWidget, PushWidget } from "./Widgets";
+import { ClockWidget, LatestPostWidget, MusicWidget } from "./Widgets";
+import { WidgetPager } from "./WidgetPager";
 import { DESKTOP_ICONS, type DesktopIconId } from "./icons";
 import { desktopMemory } from "./store";
 import { INTERACTIVE, intersects, type Rect } from "./physics";
+import { StillWordmark, letterRects } from "./hero";
+import { isPhone, menubarPx, pipRect } from "./layout";
 
 /* The wordmark's stage box. HeroNameFx sizes its pixel field from its box
    (8 CSS px cells up to 150 × 80), so a fixed box keeps the letters at a
@@ -30,6 +33,23 @@ const DRIFT = 20;
 const FADE = 8;
 /** Clearance between the band and the glass around it (menu bar, desk). */
 const AIR = 8;
+/** Where the letters are in each box, so only the name itself replays. */
+const LETTERS = { desk: letterRects(BOX.desk.w, BOX.desk.h), phone: letterRects(BOX.phone.w, BOX.phone.h) };
+/** Hover/click slack around the letters: the drift tilts them a little. */
+const LETTER_PAD = 14;
+
+/* leaving: how far the name rises and shrinks over the first 900px */
+const LEAVE = 900;
+const RISE = -170;
+const SHRINK = 0.16;
+const leaving = (s: number) => Math.min(1, Math.max(0, s / LEAVE));
+
+/** Page offset of an element's layout box (transforms don't count). */
+function pageTop(el: HTMLElement) {
+  let y = 0;
+  for (let n: HTMLElement | null = el; n; n = n.offsetParent as HTMLElement | null) y += n.offsetTop;
+  return y;
+}
 
 type Marquee = {
   pid: number;
@@ -50,9 +70,14 @@ export function DesktopScene() {
   const { t } = useI18n();
   const reduced = useReduced();
   const fine = useFinePointer();
+  const hydrated = useHydrated();
+  // the live field (a canvas loop) only runs after hydration and never
+  // under reduced motion; until then, and instead, the still wordmark
+  const live = hydrated && !reduced;
   const { blip } = useSound();
   const sceneRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
   const widgetsRef = useRef<HTMLDivElement>(null);
   const helloSlotRef = useRef<HTMLDivElement>(null);
@@ -61,8 +86,53 @@ export function DesktopScene() {
   const helloRef = useRef<HelloHandle>(null);
   const mq = useRef<Marquee | null>(null);
   const suppressClick = useRef(false);
+  /** the press that began this click cleared a selection (no replay then) */
+  const deselect = useRef(false);
+  /** the pointer is over the letters (the cursor says Replay) */
+  const overName = useRef(false);
+  /** the band's resting geometry, for the scroll clip */
+  const geo = useRef({ top: 0, h: 0, origin: 0.3, bar: 44 });
   const [selected, setSelectedState] = useState<Set<DesktopIconId>>(() => new Set());
   const [helloClosed, setHelloClosed] = useState(() => desktopMemory.helloClosed());
+
+  /* ── leaving: the camera tilts down onto the desk. The name rises away
+     a little faster than the page and shrinks into the distance; the desk
+     lags a touch, heavier. They part, never overlap (no glass over the
+     living wordmark). ── */
+  const { scrollY } = useScroll();
+  const deskY = useTransform(scrollY, [0, LEAVE], [0, 60], { clamp: true });
+  const heroY = useTransform(scrollY, (s) => RISE * leaving(s));
+  const heroS = useTransform(scrollY, (s) => 1 - SHRINK * leaving(s));
+  const hintO = useTransform(scrollY, [0, 120], [1, 0], { clamp: true });
+
+  /* ── the name never goes under the menu bar's glass ──
+     The live field redraws every frame; a backdrop filter over it would
+     re-render every frame too. As the page scrolls (and the name rises
+     faster than it), the band's top edge is held at the menu bar's lower
+     edge: a hard clip there, the soft fade just under it. Once the whole
+     band is behind that line it leaves the layout, which also stops the
+     field's loop (it watches its own visibility). */
+  const clip = useMotionValue("0px");
+  const reducedRef = useRef(reduced);
+  useEffect(() => {
+    reducedRef.current = reduced;
+  }, [reduced]);
+  const clipToBar = (s: number) => {
+    const g = geo.current;
+    if (!g.h) return;
+    const p = reducedRef.current ? 0 : leaving(s);
+    const k = 1 - SHRINK * p;
+    const oy = g.top + g.origin * g.h;
+    // the local y (in the band) that the transform puts on the bar's edge
+    const ly = g.origin * g.h + (g.bar + s - RISE * p - oy) / k;
+    const v = Math.max(0, Math.min(g.h, ly));
+    clip.set(`${v.toFixed(1)}px`);
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    if (v >= g.h - 1) wrap.dataset.gone = "";
+    else delete wrap.dataset.gone;
+  };
+  useMotionValueEvent(scrollY, "change", clipToBar);
 
   const setSelected = useCallback((next: Set<DesktopIconId>) => {
     setSelectedState((prev) => {
@@ -82,7 +152,7 @@ export function DesktopScene() {
     const stage = stageRef.current;
     if (!scene || !stage) return;
     const fit = () => {
-      const phone = !window.matchMedia("(min-width: 768px)").matches;
+      const phone = isPhone();
       const b = phone ? BOX.phone : BOX.desk;
       const cs = getComputedStyle(scene);
       const num = (k: string, d: number) => {
@@ -95,7 +165,8 @@ export function DesktopScene() {
       let bandT = 0;
       let bandB = 0;
       if (phone) {
-        k = sw / b.fitW;
+        // a phone held sideways is short: the name keeps to ~40% of it
+        k = Math.min(sw / b.fitW, (0.42 * window.innerHeight) / b.h);
       } else {
         // keep clear of the icon column on the right, symmetrically, so
         // the name stays centred on the screen
@@ -115,9 +186,7 @@ export function DesktopScene() {
         const availW = symmetric ? sw - 2 * rail : sw - rail;
         shift = symmetric ? 0 : -rail / 2;
         // the band, in scene px (layout offsets: transforms don't count)
-        const root = getComputedStyle(document.documentElement);
-        const rem = parseFloat(root.fontSize) || 16;
-        const menubar = (parseFloat(root.getPropertyValue("--menubar-h")) || 2.75) * rem;
+        const menubar = menubarPx();
         const stageTop = stage.offsetTop;
         const stageBottom = stageTop + stage.offsetHeight;
         // the highest glass on the desk (hello.txt or a widget)
@@ -140,13 +209,25 @@ export function DesktopScene() {
       scene.style.setProperty("--app-home-hero-x", `${Math.round(shift)}px`);
       scene.style.setProperty("--app-home-band-t", `${Math.round(bandT)}px`);
       scene.style.setProperty("--app-home-band-b", `${Math.round(bandB)}px`);
+      // where the band rests on the page, and where the menu bar ends
+      const wrap = wrapRef.current;
+      if (wrap) {
+        const bar = document.querySelector(".os-menubar")?.getBoundingClientRect().bottom;
+        geo.current = { top: pageTop(wrap), h: wrap.offsetHeight, origin: phone ? 0 : 0.3, bar: bar || menubarPx() };
+        clipToBar(scrollY.get());
+      }
     };
     fit();
     const ro = new ResizeObserver(fit);
     ro.observe(stage);
     ro.observe(scene);
     if (deskRef.current) ro.observe(deskRef.current);
-    return () => ro.disconnect();
+    window.addEventListener("resize", fit);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", fit);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* ── when the lock screen lifts (first visit this session), the desk
@@ -185,27 +266,82 @@ export function DesktopScene() {
     return () => window.removeEventListener("em:intro-done", play);
   }, []);
 
-  /* HeroNameFx reads its replay hint from the legacy dictionary, which has
-     no provider here: give its tooltip the real words */
-  useEffect(() => {
-    const el = heroRef.current?.querySelector<HTMLElement>("[title]");
-    if (el && /^hero\./.test(el.title)) el.title = t.home.hero.replay;
-  }, [t]);
+  /* HeroNameFx brings its own heading and tooltip from the legacy
+     dictionary, which has no provider here (raw keys). This page already
+     has its h1 and the glass cursor says Replay: drop both before paint.
+     (It mounts only on the client, so neither reaches the server HTML.) */
+  useLayoutEffect(() => {
+    if (!live) return;
+    const box = heroRef.current;
+    box?.querySelectorAll("h1").forEach((h) => h.remove());
+    box?.querySelectorAll("[title]").forEach((n) => n.removeAttribute("title"));
+  }, [live]);
 
-  /* ── icons may not land on the widgets or hello.txt ── */
+  /* ── the name, and only the name, replays ──
+     The field is ~1000 × 420 px; clicking its empty corners is clicking
+     the desktop (to deselect, say), not the wordmark. */
+  const overLetters = (x: number, y: number) => {
+    const el = heroRef.current;
+    if (!el) return false;
+    const r = el.getBoundingClientRect();
+    if (!r.width || !r.height) return false;
+    const phone = isPhone();
+    const b = phone ? BOX.phone : BOX.desk;
+    const lx = ((x - r.left) / r.width) * b.w;
+    const ly = ((y - r.top) / r.height) * b.h;
+    return (phone ? LETTERS.phone : LETTERS.desk).some(
+      (q) => lx >= q.left - LETTER_PAD && lx <= q.right + LETTER_PAD && ly >= q.top - LETTER_PAD && ly <= q.bottom + LETTER_PAD
+    );
+  };
+
+  const onHeroMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== "mouse" || !live) return;
+    const over = overLetters(e.clientX, e.clientY);
+    if (over === overName.current) return;
+    overName.current = over;
+    const el = e.currentTarget;
+    if (over) el.dataset.cursor = t.home.hero.cursor;
+    else delete el.dataset.cursor;
+    // the glass cursor reads its label on pointerover
+    e.target.dispatchEvent(new PointerEvent("pointerover", { bubbles: true, pointerType: "mouse" }));
+  };
+
+  const onHeroLeave = (e: React.PointerEvent<HTMLDivElement>) => {
+    overName.current = false;
+    delete e.currentTarget.dataset.cursor;
+  };
+
+  const onHeroClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // HeroNameFx would restart on any click in its box: decide here instead
+    e.stopPropagation();
+    if (!live || deselect.current || !overLetters(e.clientX, e.clientY)) return;
+    window.dispatchEvent(new CustomEvent("em:replay"));
+  };
+
+  /* ── icons may not land on the widgets, hello.txt or the mini player ──
+     (all in scene px as the desktop rests, scrolled to the top) */
   const blockers = useCallback((): Rect[] => {
     const scene = sceneRef.current;
     if (!scene) return [];
     const s = scene.getBoundingClientRect();
+    // the desk lags the scroll by a transform: measure it where it rests
+    const lag = reduced ? 0 : deskY.get();
     const out: Rect[] = [];
     for (const el of [widgetsRef.current, helloSlotRef.current]) {
       if (!el || !el.getClientRects().length) continue;
       const r = el.getBoundingClientRect();
       if (r.width === 0) continue;
-      out.push({ left: r.left - s.left - 8, top: r.top - s.top - 8, right: r.right - s.left + 8, bottom: r.bottom - s.top + 8 });
+      out.push({ left: r.left - s.left - 8, top: r.top - lag - s.top - 8, right: r.right - s.left + 8, bottom: r.bottom - lag - s.top + 8 });
+    }
+    // the mini player is fixed: where it rests over the screen at the top
+    const pip = pipRect();
+    if (pip) {
+      const top0 = s.top + window.scrollY;
+      out.push({ left: pip.left - s.left - 8, top: pip.top - top0 - 8, right: pip.right - s.left + 8, bottom: pip.bottom - top0 + 8 });
     }
     return out;
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reduced]);
 
   /* ── hello.txt ⇄ README ── */
   const readmeCenter = () => {
@@ -236,25 +372,7 @@ export function DesktopScene() {
       requestAnimationFrame(() => helloRef.current?.focus());
     } else {
       win.focus();
-      // phones: hello.txt is the Notes widget at the top of the home
-      // screen, usually scrolled away by the time you reach the icons;
-      // bring it back into view first, then nod once it has arrived
-      const phone = !window.matchMedia("(min-width: 768px)").matches;
-      const el = phone ? sceneRef.current?.querySelector<HTMLElement>(".app-home-hello") : null;
-      const r = el?.getBoundingClientRect();
-      const root = getComputedStyle(document.documentElement);
-      const top = (parseFloat(root.getPropertyValue("--menubar-h")) || 2.75) * (parseFloat(root.fontSize) || 16);
-      if (el && r && (r.top < top || r.bottom > window.innerHeight * 0.85)) {
-        const y = Math.max(0, window.scrollY + r.top - top - 12);
-        const lenis = lenisRef.current;
-        if (lenis) lenis.scrollTo(y, { immediate: reduced, onComplete: () => helloRef.current?.nudge() });
-        else {
-          window.scrollTo({ top: y, behavior: "auto" });
-          win.nudge();
-        }
-      } else {
-        win.nudge();
-      }
+      win.nudge();
     }
   };
 
@@ -267,10 +385,11 @@ export function DesktopScene() {
     }));
 
   const onPointerDown = (e: React.PointerEvent<HTMLElement>) => {
+    deselect.current = selected.size > 0;
     if (e.pointerType === "touch" || e.button !== 0) return;
     const target = e.target as Element;
-    if (target.closest(`${INTERACTIVE},.app-home-icon,.app-home-hello,.app-home-widget`)) return;
-    if (!window.matchMedia("(min-width: 768px)").matches) return;
+    if (target.closest(`${INTERACTIVE},.app-home-icon,.app-home-hello,.app-home-widgets`)) return;
+    if (isPhone()) return;
     const additive = e.shiftKey || e.metaKey || e.ctrlKey;
     mq.current = { pid: e.pointerId, sx: e.clientX, sy: e.clientY, moved: false, additive, base: additive ? new Set(selected) : new Set() };
   };
@@ -322,15 +441,6 @@ export function DesktopScene() {
     if (!g.additive) setSelected(new Set());
   };
 
-  /* ── leaving: the camera tilts down onto the desk. The name rises away
-     a little faster than the page and shrinks into the distance; the desk
-     lags a touch, heavier. They part, never overlap (no glass over the
-     living wordmark). ── */
-  const { scrollY } = useScroll();
-  const deskY = useTransform(scrollY, [0, 900], [0, 60], { clamp: true });
-  const heroY = useTransform(scrollY, [0, 900], [0, -170], { clamp: true });
-  const heroS = useTransform(scrollY, [0, 900], [1, 0.84], { clamp: true });
-  const hintO = useTransform(scrollY, [0, 120], [1, 0], { clamp: true });
 
   const toStory = () => {
     const y = sceneRef.current?.offsetHeight ?? window.innerHeight;
@@ -357,9 +467,21 @@ export function DesktopScene() {
       <h1 className="sr-only">{t.home.name}</h1>
 
       <div ref={stageRef} className="app-home-stage">
-        <m.div className="app-home-hero-wrap" style={reduced ? undefined : { y: heroY, scale: heroS }}>
-          <div ref={heroRef} className="app-home-hero" aria-hidden data-cursor={fine ? t.home.hero.cursor : undefined}>
-            <HeroNameFx className="h-full" />
+        <m.div
+          ref={wrapRef}
+          className="app-home-hero-wrap"
+          style={(reduced ? { "--app-home-clip": clip } : { y: heroY, scale: heroS, "--app-home-clip": clip }) as unknown as MotionStyle}
+        >
+          <div
+            ref={heroRef}
+            className="app-home-hero"
+            aria-hidden
+            data-live={live || undefined}
+            onPointerMove={onHeroMove}
+            onPointerLeave={onHeroLeave}
+            onClickCapture={onHeroClick}
+          >
+            {live ? <HeroNameFx className="h-full" /> : <StillWordmark />}
           </div>
         </m.div>
       </div>
@@ -369,11 +491,18 @@ export function DesktopScene() {
         <div ref={helloSlotRef} className="app-home-hello-slot">
           <HelloWindow ref={helloRef} closed={helloClosed} onClose={closeHello} reduced={reduced} />
         </div>
-        <div ref={widgetsRef} className="app-home-widgets" role="group" aria-label={t.home.widgets.label}>
-          <ClockWidget />
-          <PushWidget />
-          <MusicWidget />
-        </div>
+        <WidgetPager
+          viewRef={widgetsRef}
+          label={t.home.widgets.label}
+          reduced={reduced}
+          pages={[
+            <>
+              <ClockWidget />
+              <MusicWidget />
+            </>,
+            <LatestPostWidget key="post" />,
+          ]}
+        />
       </m.div>
 
       <DesktopIcons

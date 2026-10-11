@@ -23,6 +23,16 @@
     linear-gradient(180deg, rgba(5, 6, 10, 0.94) 0%, rgba(7, 8, 16, 0.86) 45%, rgba(5, 6, 10, 0.97) 100%);
 }
 
+/* measures the clear band between the menu bar and the Dock (Story.tsx) */
+.app-story-probe {
+  position: absolute;
+  width: 0;
+  height: 0;
+  padding: calc(var(--menubar-h) + 1rem) 0 calc(var(--dock-h) + 1.25rem);
+  visibility: hidden;
+  pointer-events: none;
+}
+
 /* loops rest off-screen */
 .app-story > section[data-idle] * {
   animation-play-state: paused !important;
@@ -155,6 +165,8 @@
 .app-story-mc[data-mode="pin"] .app-story-lede {
   /* clears the title masks' bottom padding (0.24em) */
   margin-top: max(1rem, 0.26em);
+  /* one line in every language: the grid keeps its height */
+  max-width: none;
 }
 @media (max-height: 880px) {
   .app-story-mc[data-mode="pin"] .app-story-title {
@@ -346,32 +358,6 @@
 .app-story-pv-projects > *,
 .app-story-pv-now > * {
   flex-shrink: 0;
-}
-@container (max-height: 200px) {
-  .app-story-pv-more,
-  .app-story-pv-status {
-    display: none;
-  }
-  .app-story-pv-row:nth-child(n + 4) {
-    display: none;
-  }
-  .app-story-pv-time {
-    font-size: 2rem;
-  }
-  .app-story-pv-body {
-    margin-top: 0.5rem;
-  }
-}
-@container (max-height: 160px) {
-  .app-story-pv-excerpt,
-  .app-story-pv-th,
-  .app-story-pv-body,
-  .app-story-pv-homeline {
-    display: none;
-  }
-  .app-story-pv-stats {
-    gap: 0.625rem;
-  }
 }
 
 /* kinetic title: words rise out of masks while the weight swells; the
@@ -818,6 +804,52 @@
   background: var(--color-signal);
 }
 
+/* pinned bodies shed detail as they get shorter, never clipping a line:
+   each step is the content height that detail needs (after the rules
+   above, so they win). Laptops (900px tall) land at ~161px. */
+@container (max-height: 199px) {
+  .app-story-pv-row:nth-child(n + 4) {
+    display: none;
+  }
+}
+@container (max-height: 177px) {
+  .app-story-pv-more {
+    display: none;
+  }
+}
+@container (max-height: 168px) {
+  .app-story-pv-coord {
+    display: none;
+  }
+}
+@container (max-height: 157px) {
+  .app-story-pv-status {
+    display: none;
+  }
+}
+@container (max-height: 150px) {
+  .app-story-pv-homeline {
+    display: none;
+  }
+  .app-story-pv-stats {
+    gap: 0.625rem;
+  }
+  .app-story-pv-time {
+    font-size: 2rem;
+  }
+}
+@container (max-height: 146px) {
+  .app-story-pv-body {
+    display: none;
+  }
+}
+@container (max-height: 124px) {
+  .app-story-pv-excerpt,
+  .app-story-pv-th {
+    display: none;
+  }
+}
+
 /* ───────────── 2 · Manifesto ───────────── */
 
 .app-story-mf {
@@ -873,10 +905,12 @@
   font-variation-settings: "wght" 760;
 }
 /* the live word is narrower than its reserved (boldest) cell until it is
-   read: centred, the slack splits on both sides instead of opening a
+   read: its tracking opens to make up most of it (Manifesto.tsx), and
+   centred, what slack is left splits on both sides instead of opening a
    river after every word; a line's first word keeps the left edge */
 .app-story-mf-live {
   justify-self: center;
+  letter-spacing: calc(-0.045em + var(--app-story-ls, 0) * 1em);
   font-variation-settings: "wght" var(--app-story-w, 620);
 }
 .app-story-mf-word[data-first] .app-story-mf-live {
@@ -899,9 +933,10 @@
 /* the reading cursor: a pixel block after the current word */
 .app-story-mf-caret {
   position: absolute;
-  left: calc(100% + 0.035em);
+  /* centred in the word space that follows */
+  left: calc(100% + 0.075em);
   bottom: 0.06em;
-  width: max(4px, 0.1em);
+  width: max(4px, 0.08em);
   height: 0.8em;
   background: var(--color-signal);
   pointer-events: none;
@@ -1110,6 +1145,16 @@
 }
 .app-story-deck-card[data-pressed] .app-story-deck-win {
   transform: scale(0.985);
+}
+/* a piled card slides a little out of the pile under the mouse: a tap
+   brings it forward */
+@media (hover: hover) {
+  .app-story-deck-vp:not([data-dragging]) .app-story-deck-card[data-piled]:hover .app-story-deck-win {
+    transform: translateX(12px);
+  }
+  .app-story-deck-vp:not([data-dragging]) .app-story-deck-card[data-piled][data-pressed] .app-story-deck-win {
+    transform: translateX(12px) scale(0.985);
+  }
 }
 .app-story-deck-win:focus-visible {
   outline-offset: 4px;
@@ -1865,6 +1910,11 @@
 }
 
 /* tablets: three full rows in reading order, Mail across the bottom */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .app-story-mc-grid {
+    grid-template-rows: 19rem 19rem 15.5rem;
+  }
+}
 @media (max-width: 1023px) {
   .app-story-mc-cell[data-app="work"] {
     grid-column: 1 / span 7;

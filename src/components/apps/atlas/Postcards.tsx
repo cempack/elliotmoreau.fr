@@ -7,12 +7,12 @@ import { nearest, project, rubberband, spring } from "@/lib/motion";
 import { useReduced } from "@/hooks/env";
 import { PixelGlyph } from "@/components/glyphs";
 import { G_CHEVRON } from "@/components/os/window/glyphs";
-import { HOME, fmtCoords } from "@/lib/places";
+import { HOME } from "@/lib/places";
 import { ORDERED, distanceKm } from "./geo";
 import { PixelMap } from "./PixelMap";
 import { Stamp } from "./Stamp";
 import { StatusChip } from "./PlaceCard";
-import { fill, useKm } from "./fmt";
+import { fill, useCoords, useKm } from "./fmt";
 
 type Sample = { t: number; x: number };
 
@@ -37,7 +37,10 @@ const band = (v: number, min: number, max: number, dim: number) =>
  * velocity is projected (project()) and the strip springs to the nearest
  * card edge carrying that velocity (a little bounce only after a real
  * throw). Trackpad swipes, arrow buttons and focus all land on the same
- * snap points. A click (not a drag) flies the globe there.
+ * snap points. A click (not a drag) flies the globe there. Keyboard: one
+ * tab stop (the selected card), ←/→ move between cards, Home/End jump.
+ * The view clips (overflow: clip) rather than hides, so focus can never
+ * scroll it natively underneath the transform.
  */
 export function Postcards({
   selectedId,
@@ -51,11 +54,12 @@ export function Postcards({
   const { t, lang } = useI18n();
   const a = t.atlas;
   const fmt = useKm();
+  const coords = useCoords();
   const reduced = useReduced();
   const viewRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLUListElement>(null);
   const x = useMotionValue(0);
-  const geo = useRef({ min: 0, step: 1, w: 1 });
+  const geo = useRef({ min: 0, step: 1, cw: 1, w: 1 });
   const [ends, setEnds] = useState({ start: true, end: false });
   const grab = useRef<{ id: number; sx: number; sy: number; x0: number; on: boolean; samples: Sample[] } | null>(null);
   const dragged = useRef(false);
@@ -84,9 +88,13 @@ export function Postcards({
     const measure = () => {
       const first = track.querySelector<HTMLElement>("li");
       const gap = parseFloat(getComputedStyle(track).columnGap) || 0;
-      const w = view.clientWidth;
+      // the strip's room is the view's content box: the last card ends at
+      // the same gutter the first one starts from
+      const cs = getComputedStyle(view);
+      const w = view.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
       const min = Math.min(0, w - track.scrollWidth);
-      geo.current = { min, step: (first?.offsetWidth ?? 300) + gap, w };
+      const cw = first?.offsetWidth ?? 300;
+      geo.current = { min, step: cw + gap, cw, w };
       if (x.get() < min) x.jump(min);
     };
     measure();
@@ -168,14 +176,30 @@ export function Postcards({
     settle(nearest(to, snaps()));
   };
 
-  // keyboard focus brings its card into view on the same snap points
+  const onKeyDown = (e: React.KeyboardEvent<HTMLUListElement>) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
+    const items = Array.from(e.currentTarget.querySelectorAll<HTMLButtonElement>("button.app-atlas-pc"));
+    const at = items.indexOf(document.activeElement as HTMLButtonElement);
+    if (at === -1) return;
+    e.preventDefault();
+    const to =
+      e.key === "Home" ? 0 : e.key === "End" ? items.length - 1 : Math.max(0, Math.min(items.length - 1, at + (e.key === "ArrowRight" ? 1 : -1)));
+    items.forEach((b, i) => (b.tabIndex = i === to ? 0 : -1));
+    items[to].focus();
+  };
+
+  // keyboard focus brings its card fully into view, on the nearest snap
+  // point that does
   const reveal = (i: number) => {
-    const { min, step, w } = geo.current;
+    const { step, cw, w } = geo.current;
     const left = i * step;
+    const right = left + cw;
     const cur = -x.get();
-    if (left >= cur && left + step <= cur + w + 1) return;
-    const want = left < cur ? -left : -(left + step - w);
-    settle(nearest(Math.max(min, Math.min(0, want)), snaps()));
+    if (left >= cur - 1 && right <= cur + w + 1) return;
+    const pts = snaps();
+    const fits = left < cur ? pts.filter((s) => s >= -left - 1) : pts.filter((s) => s <= w - right + 1);
+    const to = left < cur ? Math.min(...fits) : Math.max(...fits);
+    settle(Number.isFinite(to) ? to : nearest(-left, pts));
   };
 
   return (
@@ -194,6 +218,10 @@ export function Postcards({
         ref={viewRef}
         className="app-atlas-pcs-view"
         data-atlas-hscroll=""
+        onScroll={(e) => {
+          // belt and braces: the strip only ever moves by its transform
+          e.currentTarget.scrollLeft = 0;
+        }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -206,7 +234,21 @@ export function Postcards({
           }
         }}
       >
-        <m.ul ref={trackRef} className="app-atlas-pcs-track" role="list" aria-label={a.postcards.label} style={{ x }}>
+        <m.ul
+          ref={trackRef}
+          className="app-atlas-pcs-track"
+          role="list"
+          aria-label={a.postcards.label}
+          style={{ x }}
+          onKeyDown={onKeyDown}
+          onBlur={(e) => {
+            // leaving the strip: the tab stop returns to the selected card
+            if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+            e.currentTarget.querySelectorAll<HTMLButtonElement>("button.app-atlas-pc").forEach((b) => {
+              b.tabIndex = b.getAttribute("aria-pressed") === "true" ? 0 : -1;
+            });
+          }}
+        >
           {ORDERED.map((p, i) => {
             const name = p.name[lang];
             const active = p.id === selectedId;
@@ -219,7 +261,8 @@ export function Postcards({
                   data-active={active || undefined}
                   data-tone={p.home ? "home" : p.status}
                   aria-pressed={active}
-                  aria-label={`${a.postcards.show}: ${name}`}
+                  tabIndex={active ? 0 : -1}
+                  aria-label={fill(a.labelled, { label: a.postcards.show, value: name })}
                   data-cursor={a.postcards.show}
                   onClick={() => onPick(p.id)}
                   onFocus={() => reveal(i)}
@@ -239,7 +282,7 @@ export function Postcards({
                     <span className="app-atlas-pc-kicker">{a.postcards.greetings}</span>
                     <span className="app-atlas-pc-name">{name}</span>
                     <span className="app-atlas-pc-meta tabular">
-                      {fmtCoords(p.lat, p.lon)}
+                      {coords(p.lat, p.lon)}
                       {!p.home && ` · ${fmt(km)} ${a.km}`}
                     </span>
                   </span>

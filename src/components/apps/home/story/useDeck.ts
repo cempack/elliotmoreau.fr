@@ -101,9 +101,10 @@ function releaseVelocity(samples: Sample[], now: number) {
 /**
  * The deck's physics: 1:1 tracking from the grab offset (the card under
  * the hand stays under it, the rest follow with parallax), rubber-band
- * past both ends, momentum projected through the geometry to pick the
- * card it would come to rest on, then a spring that carries the release
- * velocity (bounce only after a real fling). Interruptible at any time.
+ * past both ends, momentum projected in card widths to pick the card it
+ * would come to rest on, then a spring that carries the release velocity
+ * (bounce only after a real fling). Interruptible at any time: a press
+ * mid-flight catches the deck, and releasing it settles the nearest card.
  * Horizontal trackpad swipes scroll it 1:1 and settle on the nearest
  * card. Reduced motion: drags still track, snaps are instant.
  */
@@ -278,10 +279,12 @@ export function useDeck({ count, reduced, onSnap }: { count: number; reduced: bo
       const vx = e.type === "pointercancel" ? 0 : releaseVelocity(gr.samples, e.timeStamp);
       const now = q.get();
       const d = now - gr.r;
-      // where the hand's momentum would carry the grabbed card, mapped
-      // back through the geometry to the card that would end up in focus
-      // (offsets run against the screen: x = A − f)
-      const target = clamp(Math.round(gr.r + depthFor(offsetAt(d, g) - project(vx), g)), 0, max);
+      // where the hand's momentum would carry the deck, counted in full
+      // card widths (the big cards are what the eye follows; a card pushed
+      // into the tight pile must not multiply the throw), against the
+      // screen (x = A − f). The spring starts at the grabbed card's own
+      // speed, so the release never jolts.
+      const target = clamp(Math.round(now - project(vx) / g.R), 0, max);
       const vq = -vx / slopeAt(d, g);
       settle(target, vq, Math.abs(vx) > 420);
       if (target !== gr.from) onSnapRef.current?.(target);

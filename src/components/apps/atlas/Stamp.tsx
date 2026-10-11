@@ -1,9 +1,12 @@
 "use client";
 
+import { useId } from "react";
 import { PixelPlanet } from "@/components/PixelPlanet";
 import { PixelLabel } from "@/components/PixelLabel";
+import type { Locale } from "@/i18n/config";
 import type { Place } from "@/lib/places";
 import { isoOf } from "./geo";
+import { fmtAxis } from "./fmt";
 
 /**
  * A perforated postage stamp. `lg`: the place card's stamp, a PixelPlanet
@@ -18,19 +21,22 @@ export function Stamp({
   value,
   label,
   name,
+  lang = "en",
   postmark = false,
 }: {
   place: Place;
   size?: "lg" | "sm";
-  /** short pixel text on the value strip (lg), e.g. "1050 KM" */
+  /** short pixel text on the value strip (lg, A–Z 0–9), e.g. "1050 KM" */
   value?: string;
   /** accessible name; omit for a decorative stamp */
   label?: string;
   /** display name, for the postmark */
   name?: string;
+  lang?: Locale;
   postmark?: boolean;
 }) {
   const tone = place.home ? "home" : place.status;
+  const mark = postmark ? <Postmark place={place} name={name ?? place.name.en} lang={lang} /> : null;
   return (
     <span
       className="app-atlas-stamp"
@@ -40,42 +46,74 @@ export function Stamp({
       aria-label={label}
       aria-hidden={label ? undefined : true}
     >
-      <span className="app-atlas-stamp-paper">
-        <span className="app-atlas-stamp-art">
-          {size === "lg" ? (
-            <>
-              <PixelPlanet seed={place.id} className="app-atlas-stamp-planet" />
-              <span className="app-atlas-stamp-iso">
-                <PixelLabel text={isoOf(place)} cell={2} />
+      {/* the postmark is inked twice: in pale ink where it lands on the
+          card, and in dark ink inside the paper's cut-out where it lands
+          on the stamp, as a real cancellation would */}
+      {mark}
+      <span className="app-atlas-stamp-sheet">
+        <span className="app-atlas-stamp-paper">
+          <span className="app-atlas-stamp-art">
+            {size === "lg" ? (
+              <>
+                <PixelPlanet seed={place.id} className="app-atlas-stamp-planet" />
+                <span className="app-atlas-stamp-iso">
+                  <PixelLabel text={isoOf(place)} cell={2} />
+                </span>
+                <span className="app-atlas-stamp-value">
+                  <PixelLabel text={value ?? isoOf(place)} cell={2} />
+                </span>
+              </>
+            ) : (
+              <span className="app-atlas-stamp-code">
+                <PixelLabel text={isoOf(place)} cell={3} />
               </span>
-              <span className="app-atlas-stamp-value">
-                <PixelLabel text={value ?? isoOf(place)} cell={2} />
-              </span>
-            </>
-          ) : (
-            <span className="app-atlas-stamp-code">
-              <PixelLabel text={isoOf(place)} cell={3} />
-            </span>
-          )}
+            )}
+          </span>
+          {mark && <span className="app-atlas-stamp-ink">{mark}</span>}
         </span>
       </span>
-      {postmark && <Postmark place={place} name={name ?? place.name.en} />}
     </span>
   );
 }
 
-/** Circular date-stamp with wavy cancellation lines, in hairline ink.
-    Drawn 1:1 (no scaling) so its 12px lettering stays 12px. */
-function Postmark({ place, name }: { place: Place; name: string }) {
-  const id = `app-atlas-pm-${place.id}`;
-  const lat = `${Math.round(Math.abs(place.lat))}°${place.lat >= 0 ? "N" : "S"}`;
-  const text = `${name.toUpperCase()} · ${lat}`;
-  // baseline circle r=28 around (44,44), starting at 9 o'clock, clockwise
-  const ring = 2 * Math.PI * 28;
+/** Top and bottom ring text: a short name over its latitude, or a long
+    one split over both arcs at the most even word break. */
+function ringText(name: string, lat: number, lang: Locale): [string, string] {
+  const up = name.toLocaleUpperCase(lang === "fr" ? "fr-FR" : "en-GB");
+  if (up.length <= 11 || !up.includes(" ")) return [up, fmtAxis(lat, "lat", lang, 0)];
+  const words = up.split(" ");
+  let best: [string, string] = [up, ""];
+  let score = Infinity;
+  for (let i = 1; i < words.length; i++) {
+    const a = words.slice(0, i).join(" ");
+    const b = words.slice(i).join(" ");
+    const s = Math.max(a.length, b.length);
+    if (s < score) {
+      score = s;
+      best = [a, b];
+    }
+  }
+  return best;
+}
+
+/** Circular date-stamp with wavy cancellation lines. Both ring lines
+    read upright (the top one over the arc, the bottom one under it), and
+    it is drawn 1:1 so its 12px lettering stays 12px. */
+function Postmark({ place, name, lang }: { place: Place; name: string; lang: Locale }) {
+  const uid = `app-atlas-pm${useId().replace(/[^\w-]/g, "")}`;
+  const top = `${uid}-t`;
+  const bottom = `${uid}-b`;
+  const [a, b] = ringText(name, place.lat, lang);
+  // 12px mono advances ~7.2px; squeeze only what would not fit its arc
+  const fitA = a.length * 7.4 > 84 ? 84 : undefined;
+  const fitB = b.length * 7.4 > 92 ? 92 : undefined;
   return (
     <svg className="app-atlas-postmark" width="176" height="88" viewBox="0 0 176 88" aria-hidden focusable="false">
       <defs>
-        <path id={id} d="M 16,44 a 28,28 0 1,1 56,0 a 28,28 0 1,1 -56,0" />
+        {/* baseline r=28 over the top, left to right; r=36.5 under the
+            bottom, left to right, so the letters stand inside the ring */}
+        <path id={top} d="M 16,44 A 28,28 0 0 1 72,44" />
+        <path id={bottom} d="M 7.5,44 A 36.5,36.5 0 0 0 80.5,44" />
       </defs>
       <g fill="none" stroke="currentColor" strokeWidth="1.5">
         <circle cx="44" cy="44" r="41" />
@@ -84,14 +122,23 @@ function Postmark({ place, name }: { place: Place; name: string }) {
           <path key={i} d={`M 90 ${23 + i * 14} q 10.5 -6 21 0 t 21 0 t 21 0 t 21 0`} />
         ))}
       </g>
-      <text className="app-atlas-postmark-ring">
-        <textPath href={`#${id}`} textLength={Math.min(ring * 0.96, text.length * 7.6)} lengthAdjust="spacing">
-          {text}
-        </textPath>
-      </text>
-      <text x="44" y="48.5" textAnchor="middle" className="app-atlas-postmark-mid">
-        {isoOf(place)}
-      </text>
+      <g className="app-atlas-postmark-text">
+        <text>
+          <textPath href={`#${top}`} startOffset="50%" textAnchor="middle" textLength={fitA} lengthAdjust="spacingAndGlyphs">
+            {a}
+          </textPath>
+        </text>
+        {b && (
+          <text>
+            <textPath href={`#${bottom}`} startOffset="50%" textAnchor="middle" textLength={fitB} lengthAdjust="spacingAndGlyphs">
+              {b}
+            </textPath>
+          </text>
+        )}
+        <text x="44" y="48.5" textAnchor="middle">
+          {isoOf(place)}
+        </text>
+      </g>
     </svg>
   );
 }

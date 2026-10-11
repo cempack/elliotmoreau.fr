@@ -1,7 +1,7 @@
 "use client";
 
 import "./notfound.css";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { animate, useMotionValue } from "motion/react";
 import { useI18n } from "@/i18n/client";
@@ -10,6 +10,7 @@ import { useSound } from "@/lib/sound";
 import { useReduced } from "@/hooks/env";
 import { usePalette } from "@/components/ui/CommandPalette";
 import { APPS } from "@/components/os/apps";
+import { useSiteData } from "@/components/os/SiteData";
 import { dockIconCenter } from "@/components/os/window/dock";
 import { Matrix404 } from "./Matrix404";
 import { Alert } from "./Alert";
@@ -19,15 +20,17 @@ import type { Answer } from "./Zsh";
 
 /**
  * 404: "The application “/the-path” can't be opened." A Liquid Glass
- * alert floats over the desktop, covering the 0 of a giant voxel "404"
- * drawn like the hero wordmark, so the glass refracts the hard pixels
+ * alert floats over the desktop, covering the dead 0 of a giant LED
+ * "404" drawn like the hero wordmark, so the glass bends the pixel grid
  * behind it. The signature: the alert is a physical sheet on a tether.
  * Pull it anywhere (the 0 shows through, bending in the glass) and it
  * springs home with your velocity; throw it into the Dock and it lands
- * on the Desktop; click the desktop behind it and it shakes its head,
- * like every macOS alert. A zsh transcript underneath offers the app you
- * probably meant ([nyae] answers for real). Return takes the default
- * button; ⌘K / "/" open Spotlight. Renders inside the OS shell.
+ * on the Desktop (the Desktop buttons send it the same way); click the
+ * desktop behind it and it shakes its head, like every macOS alert. A
+ * zsh transcript underneath offers what you probably meant (an app, or
+ * one of Elliot's posts or repos from the live data), and [nyae] answers
+ * for real. Return takes the default button; ⌘K / "/" open Spotlight.
+ * Renders inside the OS shell.
  */
 export function NotFoundApp() {
   const { t, path } = useI18n();
@@ -35,18 +38,42 @@ export function NotFoundApp() {
   const palette = usePalette();
   const { blip } = useSound();
   const reduced = useReduced();
+  const { posts, repos } = useSiteData();
   const pathname = usePathname() ?? "/";
 
   const command = commandFor(stripLocale(pathname));
-  const suggestion = suggest(command);
-  const app = suggestion ? (APPS.find((a) => a.id === suggestion.app) ?? APPS[0]) : null;
-  const appName = app ? t.shell.apps[app.label] : "";
-  const suggestHref = path(app?.path ?? "/");
+  const suggestion = useMemo(() => suggest(command, { posts, repos }), [command, posts, repos]);
   const home = path("/");
 
+  // what the suggestion opens, and how the alert words it
+  const s = t.notfound;
+  let target = "";
+  let suggestHref = home;
+  let openLabel = "";
+  let suggestBody = s.body;
+  if (suggestion?.kind === "app") {
+    const app = APPS.find((a) => a.id === suggestion.app) ?? APPS[0];
+    target = t.shell.apps[app.label];
+    suggestHref = path(app.path);
+    openLabel = s.open.replace("{app}", target);
+    suggestBody = s.bodySuggest.replace("{app}", target);
+  } else if (suggestion) {
+    target = middleTruncate(suggestion.name, 26);
+    suggestHref = suggestion.href;
+    if (suggestion.kind === "post") {
+      openLabel = s.read.replace("{name}", target);
+      suggestBody = s.bodyPost.replace("{name}", middleTruncate(suggestion.name, 56));
+    } else {
+      openLabel = s.openRepo.replace("{name}", target);
+      suggestBody = s.bodyRepo.replace("{name}", suggestion.name);
+    }
+  }
+
   const [answer, setAnswer] = useState<Answer | null>(null);
+  const offering = suggestion != null && answer !== "n" && answer !== "a";
   const stageRef = useRef<HTMLDivElement>(null);
   const surfaceRef = useRef<HTMLElement>(null);
+  const titleRef = useRef<HTMLTitleElement>(null);
   const shake = useMotionValue(0);
   const flash = useRef(0);
 
@@ -55,11 +82,10 @@ export function NotFoundApp() {
     stageRef,
     reduced,
     target: () => dockIconCenter("home", home),
-    onThrow: () => {
-      blip("close");
-      router.push(home);
-    },
+    onLeave: () => blip("close"),
+    onThrow: () => router.push(home),
   });
+  const { dismiss } = tether;
 
   // a hard 404 can arrive client-rendered (Next's error shell), so the
   // layout's pre-paint "returning visitor?" check never ran: repeat it
@@ -70,20 +96,29 @@ export function NotFoundApp() {
     } catch {}
   }, []);
 
-  // the tab says what happened (not-found can't export metadata). Next may
-  // stream its own <title> in after hydration, so: retitle the one that's
-  // there, or add one; on the way out, restore it or take ours away
-  const docTitle = `${t.meta.pages.notFound} — ${t.meta.siteName}`;
+  // the tab says what happened. React hoists our <title> into <head> and
+  // removes it when the 404 unmounts, but on a client-side navigation
+  // Next's metadata title can land after it (and in front of it): while
+  // mounted, keep ours the first title in the document, the one that counts
   useEffect(() => {
-    const existing = document.head.querySelector("title");
-    const prev = existing?.textContent ?? "";
-    const el = existing ?? document.head.appendChild(document.createElement("title"));
-    el.textContent = docTitle;
-    return () => {
-      if (existing) existing.textContent = prev;
-      else el.remove();
+    const own = titleRef.current;
+    if (!own) return;
+    const head = document.head;
+    const keepFirst = () => {
+      const first = head.querySelector("title");
+      if (own.parentNode === head && first && first !== own) head.insertBefore(own, first);
     };
-  }, [docTitle]);
+    keepFirst();
+    const mo = new MutationObserver(keepFirst);
+    mo.observe(head, { childList: true });
+    return () => mo.disconnect();
+  }, []);
+
+  const openSuggestion = useCallback(() => {
+    if (!suggestion) return;
+    if (suggestion.kind === "app") router.push(suggestHref, { transitionTypes: ["app-open"] });
+    else window.location.assign(suggestHref);
+  }, [suggestion, suggestHref, router]);
 
   // macOS: clicking outside a modal alert gets a shake of the head
   const refuse = useCallback(() => {
@@ -103,11 +138,22 @@ export function NotFoundApp() {
   const onAnswer = useCallback(
     (a: Answer) => {
       setAnswer(a);
-      if (a === "y") router.push(suggestHref, { transitionTypes: ["app-open"] });
+      if (a === "y") openSuggestion();
       else if (a === "e") palette.open();
-      else blip("select");
+      else {
+        blip("select");
+        // the keys go inert: focus moves on to the new default button
+        // (never left on a dead control, never dropped on <body>)
+        const active = document.activeElement;
+        if (!active || active === document.body || surfaceRef.current?.contains(active)) {
+          requestAnimationFrame(() => {
+            const el = surfaceRef.current;
+            (el?.querySelector<HTMLElement>(".app-nf-btn--primary") ?? el?.querySelector<HTMLElement>(".app-nf-btn"))?.focus();
+          });
+        }
+      }
     },
-    [router, suggestHref, palette, blip]
+    [openSuggestion, palette, blip]
   );
 
   // keyboard: Return presses the default button; [nyae] answer zsh
@@ -123,9 +169,8 @@ export function NotFoundApp() {
         // a focused control answers its own Return
         if (el?.closest?.("a,button,[role=button]")) return;
         e.preventDefault();
-        const offering = suggestion && answer !== "n" && answer !== "a";
-        if (offering) router.push(suggestHref, { transitionTypes: ["app-open"] });
-        else router.push(home);
+        if (offering) openSuggestion();
+        else dismiss();
         return;
       }
       if (suggestion && answer == null && e.key.length === 1) {
@@ -138,7 +183,7 @@ export function NotFoundApp() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [suggestion, answer, suggestHref, home, router, onAnswer]);
+  }, [suggestion, answer, offering, openSuggestion, dismiss, onAnswer]);
 
   useEffect(() => () => window.clearTimeout(flash.current), []);
 
@@ -153,6 +198,7 @@ export function NotFoundApp() {
         if (!(e.target as Element).closest?.(".app-nf-alert")) refuse();
       }}
     >
+      <title ref={titleRef}>{`${t.meta.pages.notFound} — ${t.meta.siteName}`}</title>
       <div className="app-nf-backdrop" aria-hidden>
         <Matrix404 />
       </div>
@@ -167,10 +213,13 @@ export function NotFoundApp() {
           command={middleTruncate(command, 40)}
           suggestion={suggestion}
           suggestHref={suggestHref}
-          appName={appName}
+          target={target}
+          openLabel={openLabel}
+          bodyText={offering ? suggestBody : s.body}
           answer={answer}
           onAnswer={onAnswer}
           onSearch={palette.open}
+          onDesktop={dismiss}
         />
       </div>
     </div>

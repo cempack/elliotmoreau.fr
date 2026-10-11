@@ -147,15 +147,30 @@ const LETTER_BODY = paint(LETTER.x, LETTER.x + LETTER.w, LETTER.y, BOTTOM - 1 - 
 /** ruled lines on the letter, under the writing */
 const RULES = Array.from({ length: MAX_LINES }, (_, i) => LETTER.y + 4 + i * 2);
 
-function Runs({ runs }: { runs: Run[] }) {
-  return (
-    <>
-      {runs.map((r) => (
-        <rect key={`${r.x}-${r.y}`} x={r.x} y={r.y} width={r.w} height={1} fill={r.fill} />
-      ))}
-    </>
-  );
+/**
+ * A layer as one <path> per colour (a few elements instead of hundreds of
+ * rects). Built once at module load; React skips identical elements, so
+ * typing never touches them.
+ */
+function layer(runs: Run[]) {
+  const byFill = new Map<string, string>();
+  for (const r of runs) byFill.set(r.fill, `${byFill.get(r.fill) ?? ""}M${r.x} ${r.y}h${r.w}v1h${-r.w}z`);
+  return [...byFill].map(([fill, d]) => <path key={fill} d={d} fill={fill} />);
 }
+
+const L_SHADOW = layer(SHADOW);
+const L_LINER = layer(LINER);
+const L_FLAP_OPEN = layer(FLAP_OPEN);
+const L_LETTER = layer([...LETTER_BODY, ...RULES.map((y) => ({ x: TEXT_X, y, w: TEXT_CELLS, fill: P.rule }))]);
+const L_POCKET = layer(POCKET);
+const L_FLAP_SHUT = layer(FLAP_SHUT);
+const L_SEAL = layer(SEAL);
+
+/** fold timings (s): the letter slides in, the flaps swap, then the seal stamps */
+const FOLD = { letter: 0.22, back: [0.15, 0.1], front: [0.24, 0.12] } as const;
+/** when the fold is done and the seal starts to stamp */
+export const FOLDED_AT = 0.36;
+const STAMP = { duration: 0.24, ease: [0.3, 1.6, 0.6, 1] as const };
 
 export function Envelope({
   subject = 0,
@@ -163,7 +178,8 @@ export function Envelope({
   sealed = false,
   lifted = false,
   instant = false,
-  onSealed,
+  stamp = false,
+  onFolded,
   className = "",
 }: {
   /** subject line length in cells (0 = none) */
@@ -174,14 +190,16 @@ export function Envelope({
   /** the letter rises a row while it's being written */
   lifted?: boolean;
   instant?: boolean;
-  /** called once the fold has finished (or at once when `instant`) */
-  onSealed?: () => void;
+  /** mounted sealed: the seal is still stamping (the fold happened in the slot) */
+  stamp?: boolean;
+  /** the flaps are shut and the seal starts to stamp (or at once when `instant`) */
+  onFolded?: () => void;
   className?: string;
 }) {
   const letter = useMotionValue(sealed ? SLIDE : 0);
   const back = useMotionValue(sealed ? 0 : 1);
   const front = useMotionValue(sealed ? 1 : 0);
-  const seal = useMotionValue(sealed ? 1 : 0);
+  const seal = useMotionValue(sealed && !stamp ? 1 : 0);
   // pixel steps: whole rows for the letter, whole rows of each flap
   const letterY = useTransform(letter, (v) => Math.round(v));
   const backS = useTransform(back, (v) => Math.round(v * FLAP) / FLAP);
@@ -189,9 +207,9 @@ export function Envelope({
   const sealS = useTransform(seal, (v) => Math.max(0, v));
   const sealO = useTransform(seal, (v) => (v > 0.05 ? 1 : 0));
 
-  const onSealedRef = useRef(onSealed);
+  const onFoldedRef = useRef(onFolded);
   useEffect(() => {
-    onSealedRef.current = onSealed;
+    onFoldedRef.current = onFolded;
   });
 
   // the letter breathes up a row while it's being written
@@ -203,32 +221,39 @@ export function Envelope({
 
   // fold (sealed) and unfold (unsealed), in pixel steps
   useEffect(() => {
-    const closed = letter.get() === SLIDE && front.get() === 1 && seal.get() === 1;
+    const shut = letter.get() === SLIDE && front.get() === 1;
     const open = front.get() === 0 && back.get() === 1 && seal.get() === 0;
     if (sealed) {
-      if (instant || closed) {
+      if (instant) {
         letter.jump(SLIDE);
         back.jump(0);
         front.jump(1);
         seal.jump(1);
-        onSealedRef.current?.();
+        onFoldedRef.current?.();
         return;
       }
-      const c = animate([
-        [letter, SLIDE, { duration: 0.3, ease: [0.5, 0, 0.75, 0] }],
-        [back, 0, { duration: 0.12, ease: "easeIn", at: 0.22 }],
-        [front, 1, { duration: 0.15, ease: "easeOut", at: 0.34 }],
-        [seal, 1, { duration: 0.26, ease: [0.3, 1.6, 0.6, 1], at: 0.5 }],
+      if (shut) {
+        // already folded: only the seal is left to stamp
+        if (seal.get() === 1) return;
+        const c = animate(seal, 1, STAMP);
+        return () => c.stop();
+      }
+      const fold = animate([
+        [letter, SLIDE, { duration: FOLD.letter, ease: [0.5, 0, 0.75, 0] }],
+        [back, 0, { duration: FOLD.back[1], ease: "easeIn", at: FOLD.back[0] }],
+        [front, 1, { duration: FOLD.front[1], ease: "easeOut", at: FOLD.front[0] }],
       ]);
+      const stamp = animate(seal, 1, { ...STAMP, delay: FOLDED_AT });
       let done = false;
-      c.then(() => {
+      fold.then(() => {
         if (done) return;
         done = true;
-        onSealedRef.current?.();
+        onFoldedRef.current?.();
       });
       return () => {
         done = true;
-        c.stop();
+        fold.stop();
+        stamp.stop();
       };
     }
     if (open) return;
@@ -240,10 +265,10 @@ export function Envelope({
       return;
     }
     const c = animate([
-      [seal, 0, { duration: 0.12, ease: "easeIn" }],
-      [front, 0, { duration: 0.14, ease: "easeIn", at: 0.08 }],
-      [back, 1, { duration: 0.14, ease: "easeOut", at: 0.2 }],
-      [letter, 0, { duration: 0.32, ease: [0.22, 1, 0.36, 1], at: 0.3 }],
+      [seal, 0, { duration: 0.1, ease: "easeIn" }],
+      [front, 0, { duration: 0.12, ease: "easeIn", at: 0.06 }],
+      [back, 1, { duration: 0.12, ease: "easeOut", at: 0.16 }],
+      [letter, 0, { duration: 0.3, ease: [0.22, 1, 0.36, 1], at: 0.24 }],
     ]);
     return () => c.stop();
   }, [sealed, instant, letter, back, front, seal]);
@@ -257,16 +282,11 @@ export function Envelope({
       aria-hidden
       focusable="false"
     >
-      <Runs runs={SHADOW} />
-      <Runs runs={LINER} />
-      <m.g style={{ scaleY: backS, originY: 1 }}>
-        <Runs runs={FLAP_OPEN} />
-      </m.g>
+      {L_SHADOW}
+      {L_LINER}
+      <m.g style={{ scaleY: backS, originY: 1 }}>{L_FLAP_OPEN}</m.g>
       <m.g style={{ y: letterY }}>
-        <Runs runs={LETTER_BODY} />
-        {RULES.map((y) => (
-          <rect key={y} x={TEXT_X} y={y} width={maxW} height={1} fill={P.rule} />
-        ))}
+        {L_LETTER}
         {subject > 0 && (
           <rect x={TEXT_X} y={LETTER.y + 2} width={Math.min(subject, maxW - 2)} height={1} fill={P.subject} />
         )}
@@ -276,13 +296,9 @@ export function Envelope({
           ) : null
         )}
       </m.g>
-      <Runs runs={POCKET} />
-      <m.g style={{ scaleY: frontS, originY: 0 }}>
-        <Runs runs={FLAP_SHUT} />
-      </m.g>
-      <m.g style={{ scale: sealS, opacity: sealO, originX: 0.5, originY: 0.5 }}>
-        <Runs runs={SEAL} />
-      </m.g>
+      {L_POCKET}
+      <m.g style={{ scaleY: frontS, originY: 0 }}>{L_FLAP_SHUT}</m.g>
+      <m.g style={{ scale: sealS, opacity: sealO, originX: 0.5, originY: 0.5 }}>{L_SEAL}</m.g>
     </svg>
   );
 }

@@ -1,15 +1,32 @@
 import type { Transition } from "motion/react";
 
 /**
+ * A spring from Apple-style designer params (response ≈ visualDuration in
+ * seconds, bounce 0 = critically damped), expressed as physics
+ * (stiffness/damping/mass) with Motion's own conversion. Physics-defined
+ * springs honour a `velocity` handoff; time-defined ones (visualDuration /
+ * duration + bounce) silently drop it in motion 12 ("time-defined springs
+ * ignore inherited velocity") — which would put a seam between every
+ * gesture and the animation that follows it. Always build springs here.
+ */
+export function springFrom(visualDuration: number, bounce = 0) {
+  const root = (2 * Math.PI) / (visualDuration * 1.2);
+  const stiffness = root * root;
+  const damping = 2 * Math.min(1, Math.max(0.05, 1 - bounce)) * Math.sqrt(stiffness);
+  return { type: "spring" as const, stiffness, damping, mass: 1 };
+}
+
+/**
  * House springs, after Apple's damping + response model. Critically damped
  * by default (bounce 0): graceful, never distracting. Bounce is reserved for
- * motion that a gesture actually threw (`flick`).
+ * motion that a gesture actually threw (`flick`). Spread one and add
+ * `velocity` (px/s) to hand off a gesture: `{ ...spring.flick, velocity }`.
  */
 export const spring = {
-  default: { type: "spring", visualDuration: 0.35, bounce: 0 },
-  snappy: { type: "spring", visualDuration: 0.22, bounce: 0 },
-  gentle: { type: "spring", visualDuration: 0.5, bounce: 0 },
-  flick: { type: "spring", visualDuration: 0.4, bounce: 0.18 },
+  default: springFrom(0.35),
+  snappy: springFrom(0.22),
+  gentle: springFrom(0.5),
+  flick: springFrom(0.4, 0.18),
 } satisfies Record<string, Transition>;
 
 /** Press feedback: lands on pointer-down, springs back on release. */

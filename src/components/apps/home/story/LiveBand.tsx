@@ -43,13 +43,13 @@ export function LiveBand({ music }: { music: Music }) {
     {
       key: "music",
       label: track ? (playing ? s.playing : s.played) : s.playing,
-      value: track ? `${track.title} — ${track.artist}` : s.silent,
+      value: track ? `${track.title}\u00a0— ${track.artist}` : s.silent,
       live: playing,
     },
     ...(activity
-      ? [{ key: "push", label: s.push, value: `${activity.repo}${hydrated ? ` · ${timeAgo(activity.createdAt, lang)}` : ""}` }]
+      ? [{ key: "push", label: s.push, value: `${activity.repo}${hydrated ? `\u00a0· ${timeAgo(activity.createdAt, lang)}` : ""}` }]
       : []),
-    { key: "time", label: s.paris, value: `${time ?? "––:––"} · ${t.shell.control.short[phase]}` },
+    { key: "time", label: s.paris, value: `${time ?? "––:––"}\u00a0· ${t.shell.control.short[phase]}` },
     { key: "atlas", label: s.countries, value: fill(s.countriesValue, { n: been, next }) },
     ...(posts[0] ? [{ key: "post", label: s.post, value: posts[0].title }] : []),
   ];

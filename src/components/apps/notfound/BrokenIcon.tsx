@@ -8,8 +8,9 @@ import { m, useSpring, useTransform, type MotionValue } from "motion/react";
  * lines of content, a lime button) cracked top to bottom, its right half
  * slipped down a cell, on a flare-tinted glass squircle like the Dock's
  * tiles. Three pixels have fallen out of the crack and lie under the
- * tile; they hang off the alert on soft springs, so when you drag or
- * throw the alert they trail behind and wobble back into place.
+ * tile, square on the pixel grid; they hang off the alert on soft
+ * springs, so when you drag or throw the alert they trail behind,
+ * tumbling a little, and settle back square.
  */
 
 const C = {
@@ -116,15 +117,19 @@ function squircle(size: number, inset = 0) {
   );
 }
 
-/** Each fragment: where it rests (in cells, relative to the glyph box), its
-    size in cells, colour, and how loosely it hangs (spring). */
+/** Each fragment: where it rests (whole cells from the glyph's origin, so
+    it sits on the pixel grid), its size in cells, colour, and how loosely
+    it hangs (spring). They lie on one floor a cell under the tile, in its
+    shadow, in a little heap below the crack they fell out of. */
 const FRAGMENTS = [
-  { x: 8.4, y: 17.2, w: 2, h: 2, fill: C.paper, k: { stiffness: 210, damping: 9, mass: 0.7 }, r: -14 },
-  { x: 4.6, y: 18.5, w: 2, h: 1, fill: C.signal, k: { stiffness: 150, damping: 7, mass: 0.6 }, r: 9 },
-  { x: 12, y: 18.8, w: 1, h: 1, fill: C.paper, k: { stiffness: 260, damping: 11, mass: 0.5 }, r: 0 },
+  { x: 8, y: 20, w: 2, h: 2, fill: C.paper, k: { stiffness: 210, damping: 9, mass: 0.7 } },
+  { x: 5, y: 21, w: 2, h: 1, fill: C.signal, k: { stiffness: 150, damping: 7, mass: 0.6 } },
+  { x: 10, y: 21, w: 1, h: 1, fill: C.paper, k: { stiffness: 260, damping: 11, mass: 0.5 } },
 ] as const;
 
 const LAG = 18; // px: the furthest a fragment trails
+/** degrees at full trail: square at rest (crisp pixels), tumbling only in flight */
+const TUMBLE = 14;
 
 function Fragment({
   frag,
@@ -143,6 +148,7 @@ function Fragment({
   const sy = useSpring(oy, frag.k);
   const x = useTransform(() => Math.max(-LAG, Math.min(LAG, sx.get() - ox.get())));
   const y = useTransform(() => Math.max(-LAG, Math.min(LAG, sy.get() - oy.get())));
+  const rotate = useTransform(x, [-LAG, LAG], [-TUMBLE, TUMBLE]);
   return (
     <m.span
       aria-hidden
@@ -153,7 +159,7 @@ function Fragment({
         width: frag.w * cell,
         height: frag.h * cell,
         background: frag.fill,
-        rotate: frag.r,
+        rotate,
         x,
         y,
       }}
@@ -239,7 +245,6 @@ export function BrokenIcon({
               width: f.w * cell,
               height: f.h * cell,
               background: f.fill,
-              transform: `rotate(${f.r}deg)`,
             }}
           />
         )

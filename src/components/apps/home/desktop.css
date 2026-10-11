@@ -3,7 +3,10 @@
    up top, hello.txt and two widgets on the desk below it, app icons down
    the right edge on an invisible snap grid. Phones: an iOS home screen.
 
-   Grid variables are plain px: DesktopIcons reads them back to snap. */
+   Grid variables are plain px: DesktopIcons reads them back to snap.
+   "Phone" means narrow, or short and touch (a phone held sideways): the
+   same condition as PHONE in desktop/layout.ts. Desk-only rules carry its
+   negation. */
 
 .app-home-scene {
   --app-home-pad: 32px;
@@ -66,16 +69,25 @@ html[data-sky="dusk"] .app-home-widget-glass {
    just above the desk (DesktopScene measures it; negative insets reach
    past the stage). Its soft edges keep the canvas off the glass around it
    (no backdrop filter re-rendering over a redrawing canvas) without a
-   hard line through the field. */
+   hard line through the field. While the page scrolls, --app-home-clip
+   holds the top edge on the menu bar's lower edge: clipped hard there,
+   fading in just below. */
 .app-home-hero-wrap {
   position: absolute;
   inset: var(--app-home-band-t, 0px) 0 var(--app-home-band-b, 0px);
   transform-origin: 50% 30%;
+  clip-path: inset(var(--app-home-clip, 0px) 0 0);
+  mask-image: linear-gradient(
+    to bottom,
+    transparent var(--app-home-clip, 0px),
+    #000 calc(var(--app-home-clip, 0px) + 10px),
+    #000 calc(100% - 8px),
+    transparent
+  );
 }
-@media (min-width: 768px) {
-  .app-home-hero-wrap {
-    mask-image: linear-gradient(to bottom, transparent, #000 8px, #000 calc(100% - 8px), transparent);
-  }
+/* entirely behind the bar: out of the layout, so the field's loop rests */
+.app-home-hero-wrap[data-gone] .app-home-hero {
+  display: none;
 }
 .app-home-hero {
   position: absolute;
@@ -93,6 +105,13 @@ html[data-sky="dusk"] .app-home-widget-glass {
    hard pixel against the smooth glass instead of a soft bilinear blur */
 .app-home-hero canvas {
   image-rendering: pixelated;
+}
+/* only the letters replay: the field around them is desktop */
+.app-home-hero > * {
+  cursor: default;
+}
+.app-home-hero[data-cursor] > * {
+  cursor: pointer;
 }
 
 /* ── the desk: widgets · hello.txt · (air) ── */
@@ -113,9 +132,18 @@ html[data-sky="dusk"] .app-home-widget-glass {
   grid-row: 1;
   grid-column: 1;
   justify-self: start;
+}
+.app-home-widgets-track {
   display: flex;
   align-items: flex-end;
   gap: 16px;
+}
+/* desks have no pages: the widgets sit in one row */
+.app-home-widgets-page {
+  display: contents;
+}
+.app-home-widgets-dots {
+  display: none;
 }
 .app-home-hello-slot {
   grid-row: 1;
@@ -269,81 +297,73 @@ html[data-sky="dusk"] .app-home-widget-glass {
   background: currentColor;
 }
 
-/* last push */
-.app-home-widget--push {
+/* latest post */
+.app-home-widget--post {
   display: flex;
   flex-direction: column;
   padding: 15px 15px 13px;
 }
-.app-home-push-glyph {
-  color: var(--color-ion);
+.app-home-post-glyph {
+  flex: none;
+  color: var(--color-ember);
 }
-.app-home-push {
+.app-home-post-tag {
+  display: none;
+  margin-left: auto;
+  font-family: var(--font-mono);
+  letter-spacing: 0;
+}
+.app-home-post {
   display: flex;
   flex: 1;
   flex-direction: column;
   min-height: 0;
   margin-top: 12px;
 }
-.app-home-push-repo {
+.app-home-post-title {
   display: -webkit-box;
   overflow: hidden;
   font-size: 0.9375rem;
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1.25;
   letter-spacing: -0.012em;
-  overflow-wrap: anywhere;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-.app-home-push-msg {
-  display: -webkit-box;
-  overflow: hidden;
-  margin-top: 6px;
-  color: var(--color-label-2);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  line-height: 1.42;
+  text-wrap: pretty;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }
-.app-home-push-foot {
+/* the title takes up to three lines and the excerpt fills what's left:
+   two lines fit under a three-line title in the 168px tile */
+.app-home-post-excerpt {
+  display: -webkit-box;
+  overflow: hidden;
+  margin-top: 5px;
+  color: var(--color-label-2);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.app-home-post-foot {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
   margin-top: auto;
+  padding-top: 8px;
   color: var(--app-home-l3);
   font-size: 0.75rem;
   line-height: 1;
-}
-.app-home-push-lang {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-  overflow: hidden;
   white-space: nowrap;
 }
-.app-home-push-lang > span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.app-home-push-lang i {
-  width: 7px;
-  height: 7px;
-  flex: none;
-}
-.app-home-push-ago {
-  flex: none;
+.app-home-post-ago {
   color: var(--color-ion);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
 }
-.app-home-push--empty .app-home-push-msg {
-  font-family: var(--font-sans);
+.app-home-post--empty .app-home-post-title {
+  color: var(--color-label-2);
   font-size: 0.8125rem;
+  font-weight: 500;
 }
 
 /* now playing (phones) */
@@ -703,6 +723,10 @@ html[data-sky="dusk"] .app-home-widget-glass {
   flex: none;
   color: var(--color-signal);
 }
+.app-home-chip-note {
+  flex: none;
+  color: var(--color-ember);
+}
 .app-home-chip-ext {
   flex: none;
   color: var(--app-home-l3);
@@ -800,6 +824,11 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   color: var(--color-ink-950);
   text-shadow: none;
 }
+/* phone-only icons (Terminal, Search) and the slot under the mini player */
+.app-home-icon--phone,
+.app-home-icon-gap {
+  display: none;
+}
 .app-home-doc {
   display: grid;
   place-items: center;
@@ -890,7 +919,7 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
 }
 
 /* shorter screens (laptops): a tighter hello.txt gives the name more room */
-@media (min-width: 768px) and (max-height: 860px) {
+@media (min-width: 768px) and (not ((pointer: coarse) and (max-height: 520px))) and (max-height: 860px) {
   .app-home-hello-body {
     padding: 16px 20px 16px;
   }
@@ -918,13 +947,17 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   }
 }
 
-/* narrower desks: one widget beside hello.txt */
-@media (min-width: 768px) and (max-width: 1199px) {
-  .app-home-widget--push {
+/* wide desks show the latest post as a widget; narrower ones keep one
+   widget (the clock) and carry the post as a chip in hello.txt instead */
+@media (min-width: 768px) and (not ((pointer: coarse) and (max-height: 520px))) and (min-width: 1200px) {
+  .app-home-chips > .app-home-chip-slot--post {
     display: none;
   }
 }
-@media (min-width: 768px) and (max-width: 1199px) {
+@media (min-width: 768px) and (not ((pointer: coarse) and (max-height: 520px))) and (max-width: 1199px) {
+  .app-home-widget--post {
+    display: none;
+  }
   /* hello.txt sits beside the clock, leaving the corner to a mini player */
   .app-home-desk {
     grid-template-columns: auto auto 1fr;
@@ -932,7 +965,7 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
 }
 /* tablets upright: hello.txt in the middle, the widgets on a shelf below
    it on the left (a mini player parks bottom right) */
-@media (min-width: 768px) and (max-width: 1099px) and (orientation: portrait) {
+@media (min-width: 768px) and (not ((pointer: coarse) and (max-height: 520px))) and (max-width: 1099px) and (orientation: portrait) {
   .app-home-desk {
     display: flex;
     flex-direction: column;
@@ -945,19 +978,29 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   .app-home-widgets {
     align-self: flex-start;
   }
-  .app-home-widget--push {
+  .app-home-widget--post {
     display: flex;
+  }
+  .app-home-chips > .app-home-chip-slot--post {
+    display: none;
   }
 }
 
-/* phones: an iOS home screen */
-@media (max-width: 767px) {
+/* phones: an iOS home screen (and a phone held sideways: the column stays
+   phone-wide in the middle) */
+@media (max-width: 767px), (pointer: coarse) and (max-height: 520px) {
   .app-home-scene {
     display: flex;
     flex-direction: column;
+    align-items: center;
     gap: 16px;
     min-height: 0;
     padding: calc(var(--menubar-h) + 10px) 16px 36px;
+  }
+  .app-home-stage,
+  .app-home-desk,
+  .app-home-icons {
+    width: min(100%, 560px);
   }
   .app-home-stage {
     min-height: 0;
@@ -983,19 +1026,31 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   .app-home-hello-slot {
     order: -1;
   }
+
+  /* widget pages: swipe sideways, the page scrolls on */
   .app-home-widgets {
+    width: 100%;
+    overflow-x: clip;
+    overflow-clip-margin: 20px;
+    container-type: inline-size;
+    touch-action: pan-y;
+  }
+  .app-home-widgets-track {
+    align-items: stretch;
+    gap: 40px;
+  }
+  .app-home-widgets[data-swiping] .app-home-widgets-track {
+    will-change: transform;
+  }
+  .app-home-widgets-page {
     display: grid;
+    flex: 0 0 100%;
     grid-template-columns: 1fr 1fr;
     gap: 16px;
-    width: 100%;
   }
   .app-home-widget {
     width: auto;
-    height: auto;
-    aspect-ratio: 1;
-  }
-  .app-home-widget--push {
-    display: none;
+    height: calc((100cqw - 16px) / 2);
   }
   .app-home-widget--music {
     display: flex;
@@ -1003,6 +1058,62 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   .app-home-widget--clock {
     justify-content: center;
   }
+  /* the latest post is a medium widget: the page to itself */
+  .app-home-widget--post {
+    grid-column: 1 / -1;
+    padding: 16px 18px 15px;
+  }
+  .app-home-post-tag {
+    display: block;
+  }
+  .app-home-post {
+    margin-top: 14px;
+  }
+  .app-home-post-title {
+    font-size: 1.0625rem;
+    -webkit-line-clamp: 2;
+  }
+  .app-home-post-excerpt {
+    font-size: 0.8125rem;
+  }
+  .app-home-widgets-dots {
+    display: flex;
+    justify-content: center;
+    margin-top: 4px;
+    margin-bottom: -10px;
+  }
+  .app-home-widgets-dot {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 0;
+    background: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .app-home-widgets-dot::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    background: rgba(245, 242, 236, 0.34);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    transition: background-color 0.25s;
+  }
+  .app-home-widgets-dot[aria-current]::before {
+    background: var(--color-label);
+  }
+  .app-home-widgets-dot::after {
+    content: "";
+    position: absolute;
+    inset: -7px;
+  }
+  .app-home-widgets-dot:focus-visible {
+    outline: 2px solid var(--color-signal);
+    outline-offset: -4px;
+  }
+
   .app-home-hello {
     width: 100%;
   }
@@ -1032,8 +1143,14 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   .app-home-hello-greeting {
     font-size: 1.25rem;
   }
+  .app-home-hello-lead {
+    margin-top: 8px;
+    font-size: 0.9375rem;
+    line-height: 1.52;
+  }
   .app-home-hello-ctas {
     flex-wrap: nowrap;
+    margin-top: 18px;
   }
   .app-home-hello-ctas .app-home-btn {
     flex: 1 1 0;
@@ -1043,12 +1160,14 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   .app-home-chips {
     display: none;
   }
+
+  /* the app grid: what the tab bar doesn't already hold */
   .app-home-icons {
     position: static;
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     row-gap: 14px;
-    margin-top: 6px;
+    margin-top: 2px;
     pointer-events: auto;
   }
   .app-home-icon {
@@ -1057,6 +1176,15 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
     height: auto;
     padding: 0;
     transform: none !important;
+  }
+  .app-home-icon--desk {
+    display: none;
+  }
+  .app-home-icon--phone {
+    display: flex;
+  }
+  .app-home-icon-gap {
+    display: block;
   }
   .app-home-icon-tile {
     width: 68px;
@@ -1073,6 +1201,9 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
       0 1px 2px rgba(0, 0, 0, 0.85),
       0 0 12px rgba(0, 0, 0, 0.55);
   }
+  .app-home-icon:focus-visible .app-home-icon-tile {
+    outline-offset: 2px;
+  }
   .app-home-icon-label {
     max-width: 100%;
     font-size: 0.75rem;
@@ -1080,6 +1211,32 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   .app-home-scroll,
   .app-home-marquee {
     display: none;
+  }
+}
+
+/* a phone held sideways: hello.txt and the widget pages side by side, so
+   the first screen isn't one enormous column */
+@media (pointer: coarse) and (max-height: 520px) and (min-width: 600px) {
+  .app-home-stage,
+  .app-home-desk,
+  .app-home-icons {
+    width: min(100%, 800px);
+  }
+  .app-home-desk {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  .app-home-hello-slot {
+    flex: 1.2 1 0;
+    min-width: 0;
+  }
+  .app-home-widgets {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .app-home-icons {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 }
 

@@ -222,7 +222,7 @@ export function HereNow() {
         h.same
       ) : (
         <>
-          {fill(h.forYou, { here: paris, you: hm(now) })}{" "}
+          {fill(h.forYou, { you: hm(now) })}{" "}
           <span className="app-now-here-diff">{fill(diff > 0 ? h.ahead : h.behind, { n: fmtDiff(diff) })}</span>
         </>
       );

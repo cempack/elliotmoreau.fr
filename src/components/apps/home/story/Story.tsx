@@ -4,6 +4,7 @@ import "../story.css";
 import { useEffect, useRef } from "react";
 import { useSiteData } from "@/components/os/SiteData";
 import { useSpotifyStatus } from "@/hooks/useSpotifyStatus";
+import { lenisRef } from "@/lib/lenisRef";
 import { MissionControl } from "./MissionControl";
 import { Manifesto } from "./Manifesto";
 import { LiveBand } from "./LiveBand";
@@ -32,6 +33,7 @@ export function Story() {
   const veilRef = useRef<HTMLDivElement>(null);
   useVeil(rootRef, veilRef);
   useIdleOffscreen(rootRef);
+  useRevealFocus(rootRef);
 
   return (
     <div ref={rootRef} className="app-story">
@@ -76,6 +78,54 @@ function useIdleOffscreen(rootRef: React.RefObject<HTMLDivElement | null>) {
     return () => {
       mo.disconnect();
       io.disconnect();
+    };
+  }, [rootRef]);
+}
+
+/**
+ * Keyboard focus lands clear of the chrome. Browsers only scroll a focused
+ * element that is off-screen, so a card that is "visible" under the Dock
+ * (or the menu bar) stays half-hidden; this glides it into the clear
+ * band between them. Pinned Mission Control moves its own scene.
+ */
+function useRevealFocus(rootRef: React.RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    // resolves the chrome's heights (CSS vars with calc) to pixels
+    const probe = document.createElement("span");
+    probe.className = "app-story-probe";
+    probe.setAttribute("aria-hidden", "true");
+    root.appendChild(probe);
+    let raf = 0;
+    const reveal = (el: HTMLElement) => {
+      const cs = getComputedStyle(probe);
+      const top = parseFloat(cs.paddingTop) || 0;
+      const bottom = window.innerHeight - (parseFloat(cs.paddingBottom) || 0);
+      const r = el.getBoundingClientRect();
+      let dy = 0;
+      if (r.top < top || r.height > bottom - top) dy = r.top - top;
+      else if (r.bottom > bottom) dy = r.bottom - bottom;
+      if (Math.abs(dy) < 2) return;
+      const y = window.scrollY + dy;
+      if (lenisRef.current) lenisRef.current.scrollTo(y, { duration: 0.5, easing: (t) => 1 - Math.pow(1 - t, 4) });
+      else window.scrollTo({ top: y, behavior: "instant" });
+    };
+    const onFocus = (e: FocusEvent) => {
+      const el = e.target as HTMLElement;
+      if (!el.matches?.(":focus-visible") || el.closest('.app-story-mc[data-mode="pin"]')) return;
+      // a glide still running (from the previous Tab) would undo the
+      // browser's own focus scroll: settle it where it is first
+      const l = lenisRef.current;
+      if (l?.isScrolling === "smooth") l.scrollTo(window.scrollY, { immediate: true, force: true });
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => reveal(el));
+    };
+    root.addEventListener("focusin", onFocus);
+    return () => {
+      cancelAnimationFrame(raf);
+      root.removeEventListener("focusin", onFocus);
+      probe.remove();
     };
   }, [rootRef]);
 }

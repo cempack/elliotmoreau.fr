@@ -30,6 +30,8 @@ const en = {
     next: "Next place",
     steps: "Step through places",
     stampAlt: "Postage stamp for {place}",
+    /** pixel text on the home stamp's value strip (A–Z only) */
+    stampHome: "HOME",
   },
   stats: {
     label: "Travel so far",
@@ -60,6 +62,8 @@ const en = {
     places: "All places",
   },
   km: "km",
+  /** an accessible name with its value: "Next place: Canada" */
+  labelled: "{label}: {value}",
   /** display names for lib/places regions (keyed by the English value) */
   regions: {
     europe: "Europe",
@@ -117,6 +121,7 @@ const fr: typeof en = {
     next: "Lieu suivant",
     steps: "Parcourir les lieux",
     stampAlt: "Timbre de {place}",
+    stampHome: "MAISON",
   },
   stats: {
     label: "Jusqu'ici",
@@ -147,6 +152,7 @@ const fr: typeof en = {
     places: "Tous les lieux",
   },
   km: "km",
+  labelled: "{label}\u202F: {value}",
   regions: {
     europe: "Europe",
     "north america": "Amérique du Nord",

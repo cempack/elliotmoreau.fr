@@ -27,10 +27,8 @@ export function Writing({ posts }: { posts: GhostPost[] }) {
           <ul className="app-now-drafts">
             {NOW.drafting.map((d) => (
               <li key={d.title.en}>
-                <span className="app-now-draft-title">
-                  {loc(d.title, lang)}
-                  <span className="app-now-draft-tag">{w.draft}</span>
-                </span>
+                {/* the section label says "drafting"; a dashed, unfinished pixel marks each */}
+                <span className="app-now-draft-title">{loc(d.title, lang)}</span>
                 {d.note && <span className="app-now-draft-note">{loc(d.note, lang)}</span>}
               </li>
             ))}

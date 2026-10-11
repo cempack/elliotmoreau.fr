@@ -6,13 +6,13 @@ import { useI18n } from "@/i18n/client";
 import { useHydrated } from "@/hooks/env";
 import { useSpotifyStatus } from "@/hooks/useSpotifyStatus";
 import { timeAgo } from "@/lib/format";
-import { LANG_COLORS, LANG_FALLBACK } from "@/lib/langColors";
-import { GLYPH_CODE, PixelGlyph } from "@/components/glyphs";
+import { PixelGlyph } from "@/components/glyphs";
 import { PixelPlanet } from "@/components/PixelPlanet";
 import { Glass } from "@/components/os/Glass";
 import { useSiteData } from "@/components/os/SiteData";
 import { phaseForHour, type SkyPhase } from "@/components/os/sky";
 import { PixelEq } from "@/components/os/window/PixelEq";
+import { G_PEN } from "./icons";
 import { PARIS, fmtOffset, hhmm, offsetMinutes, useMinute, useVisitorZone, zoned } from "./time";
 
 const fill = (s: string, v: Record<string, string | number>) => s.replace(/\{(\w+)\}/g, (_, k: string) => String(v[k] ?? ""));
@@ -216,7 +216,7 @@ export function ClockWidget() {
         href={path("/now")}
         transitionTypes={["app-open"]}
         className="app-home-widget-hit"
-        aria-label={`${label} ${w.open}`}
+        aria-label={`${label} ${fill(w.open, { app: t.shell.apps.now })}`}
       />
       {offset !== 0 && (
         <span className="app-home-clock-you" aria-hidden>
@@ -245,48 +245,60 @@ export function ClockWidget() {
   );
 }
 
-export function PushWidget() {
+export function LatestPostWidget() {
   const { t, lang, path } = useI18n();
-  const w = t.home.widgets.push;
-  const { activity, repos } = useSiteData();
+  const w = t.home.widgets.post;
+  const { posts } = useSiteData();
   const hydrated = useHydrated();
-  const repo = activity ? repos.find((r) => r.name === activity.repo) : undefined;
-  const ago = activity && hydrated ? timeAgo(activity.createdAt, lang) : "";
-  const label = activity ? fill(w.aria, { repo: activity.repo, ago, message: activity.message }) : w.ariaEmpty;
+  const post = posts[0];
+
+  if (!post) {
+    return (
+      <Tile size="s" className="app-home-widget--post">
+        <Link href={path("/writing")} transitionTypes={["app-open"]} className="app-home-widget-hit" aria-label={w.ariaEmpty} />
+        <div className="app-home-widget-head" aria-hidden>
+          <PixelGlyph cells={G_PEN} size={14} className="app-home-post-glyph" />
+          <span>{w.title}</span>
+        </div>
+        <div className="app-home-post app-home-post--empty" aria-hidden>
+          <p className="app-home-post-title">{w.empty}</p>
+          <p className="app-home-post-foot">
+            <span>{w.blog}</span>
+          </p>
+        </div>
+      </Tile>
+    );
+  }
+
+  const ago = hydrated ? timeAgo(post.published_at, lang) : "";
+  const n = Math.max(1, post.reading_time || 1);
+  const minutes = fill(w.minutes, { n });
+  const tag = post.tags[0]?.name;
+  const label = fill(w.aria, { title: post.title, minutes, ago });
 
   return (
-    <Tile size="s" className="app-home-widget--push">
-      <Link href={path("/work")} transitionTypes={["app-open"]} className="app-home-widget-hit" aria-label={label} />
+    <Tile size="s" className="app-home-widget--post">
+      <Link
+        href={`${path("/writing")}?p=${encodeURIComponent(post.slug)}`}
+        transitionTypes={["app-open"]}
+        className="app-home-widget-hit"
+        aria-label={label}
+      />
       <div className="app-home-widget-head" aria-hidden>
-        <PixelGlyph cells={GLYPH_CODE} size={14} className="app-home-push-glyph" />
+        <PixelGlyph cells={G_PEN} size={14} className="app-home-post-glyph" />
         <span>{w.title}</span>
+        {tag && <span className="app-home-post-tag">{tag}</span>}
       </div>
-      {activity ? (
-        <div className="app-home-push" aria-hidden>
-          <p className="app-home-push-repo">{activity.repo}</p>
-          <p className="app-home-push-msg">{activity.message}</p>
-          <p className="app-home-push-foot">
-            {repo?.language ? (
-              <span className="app-home-push-lang">
-                <i style={{ background: LANG_COLORS[repo.language] ?? LANG_FALLBACK }} />
-                <span>{repo.language}</span>
-              </span>
-            ) : (
-              <span />
-            )}
-            <span className="app-home-push-ago" suppressHydrationWarning>
-              {ago}
-            </span>
-          </p>
-        </div>
-      ) : (
-        <div className="app-home-push app-home-push--empty" aria-hidden>
-          <p className="app-home-push-msg">{w.empty}</p>
-          <p className="app-home-push-foot">
-            <span>{w.profile}</span>
-          </p>
-        </div>
-      )}
+      <div className="app-home-post" aria-hidden>
+        <p className="app-home-post-title">{post.title}</p>
+        {post.excerpt && <p className="app-home-post-excerpt">{post.excerpt}</p>}
+        <p className="app-home-post-foot">
+          <span className="tabular">{fill(w.minutesShort, { n })}</span>
+          <span className="app-home-post-ago" suppressHydrationWarning>
+            {ago}
+          </span>
+        </p>
+      </div>
     </Tile>
   );
 }

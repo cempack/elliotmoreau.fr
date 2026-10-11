@@ -5,9 +5,12 @@ import { bandIndexFor, bandInk } from "@/lib/pixelword";
  * laser bands (paper crest → lime → seafoam → lilac → indigo foot), each
  * lit cell a bevelled pixel with a soft bloom, on a faint grid of unlit
  * cells. Static SVG, so the first paint is already finished; the columns
- * ignite left to right in CSS like the boot mark, and one cell in the
- * last 4 is a dying LED. The alert sits over the 0, and the regular grid
- * is what lets you see the glass bend.
+ * ignite left to right in CSS like the boot mark.
+ *
+ * The 0 is the app that isn't there: it lights with the rest, sputters
+ * and dies back to a dim ghost, and one of its LEDs keeps trying. The
+ * alert sits over it, so the glass bends crisp grid lines, not glare,
+ * and the text stays on calm glass.
  */
 
 const FOUR = ["...###", "..####", ".##.##", "##..##", "######", "....##", "....##"];
@@ -26,12 +29,16 @@ const MATRIX_ROWS = ROWS + MARGIN * 2;
 const LED = 0.84;
 const O = (1 - LED) / 2;
 
-/** a dying LED in the last 4 */
-const FLICKER = `${2 * (DIGIT_W + TRACK) + 1},3`;
+/** the 0's columns (ink space) */
+const ZERO_X0 = DIGIT_W + TRACK;
+const isZero = (inkX: number) => inkX >= ZERO_X0 && inkX < ZERO_X0 + DIGIT_W;
+/** the LED in the dead 0 that keeps trying (ink space): in its foot, so on
+    a desktop it hides behind the alert's buttons until you pull it away */
+const FLICKER = `${ZERO_X0 + 3},6`;
 
 const jitter = (i: number) => ((((i + 1) * 2654435761) >>> 0) % 1000) / 1000;
 
-type Cell = { x: number; y: number; fill: string; flicker: boolean };
+type Cell = { x: number; y: number; fill: string; flicker: boolean; dead: boolean };
 
 const LIT: Cell[] = [];
 const GHOST: { x: number; y: number }[] = [];
@@ -48,29 +55,34 @@ const GHOST: { x: number; y: number }[] = [];
       const key = `${x},${y}`;
       if (on.has(key)) {
         const fill = bandInk(bandIndexFor((y - MARGIN) / 7.5));
-        LIT.push({ x, y, fill, flicker: `${x - MARGIN},${y - MARGIN}` === FLICKER });
+        LIT.push({ x, y, fill, flicker: `${x - MARGIN},${y - MARGIN}` === FLICKER, dead: isZero(x - MARGIN) });
       } else GHOST.push({ x, y });
     }
   }
 })();
 
+const delay = (col: number) => Math.round(90 + col * 30 + jitter(col) * 110);
+
 /** lit cells grouped by column, each column with its ignition delay */
 const COLUMNS = Array.from({ length: MATRIX_COLS }, (_, col) => ({
   col,
-  d: Math.round(90 + col * 30 + jitter(col) * 110),
+  d: delay(col),
+  dead: isZero(col - MARGIN),
   cells: LIT.filter((c) => c.x === col),
 })).filter((c) => c.cells.length > 0);
+
+const TRYING = LIT.find((c) => c.flicker);
 
 function Led({ c }: { c: Cell }) {
   const x = c.x + O;
   const y = c.y + O;
   return (
-    <g className={c.flicker ? "app-nf-matrix-flicker" : undefined}>
+    <>
       <rect x={x} y={y} width={LED} height={LED} fill={c.fill} />
       {/* bevel: lit top edge, shaded foot */}
       <rect x={x} y={y} width={LED} height={0.1} fill="#fff" opacity={0.38} />
       <rect x={x} y={y + LED - 0.1} width={LED} height={0.1} fill="#05060a" opacity={0.22} />
-    </g>
+    </>
   );
 }
 
@@ -94,18 +106,26 @@ export function Matrix404({ className = "" }: { className?: string }) {
           <rect key={`${g.x}-${g.y}`} x={g.x + O} y={g.y + O} width={LED} height={LED} />
         ))}
       </g>
+      {/* the dead 0 doesn't glow */}
       <g className="app-nf-matrix-bloom" filter="url(#app-nf-bloom)" shapeRendering="auto">
-        {LIT.map((c) => (
+        {LIT.filter((c) => !c.dead).map((c) => (
           <rect key={`${c.x}-${c.y}`} x={c.x} y={c.y} width={1} height={1} fill={c.fill} />
         ))}
       </g>
       {COLUMNS.map((c) => (
-        <g key={c.col} className="app-nf-matrix-col" style={{ "--d": `${c.d}ms` } as React.CSSProperties}>
-          {c.cells.map((cell) => (
-            <Led key={cell.y} c={cell} />
-          ))}
+        <g
+          key={c.col}
+          className={c.dead ? "app-nf-matrix-col app-nf-matrix-dead" : "app-nf-matrix-col"}
+          style={{ "--d": `${c.d}ms` } as React.CSSProperties}
+        >
+          {c.cells.map((cell) => (cell.flicker ? null : <Led key={cell.y} c={cell} />))}
         </g>
       ))}
+      {TRYING && (
+        <g className="app-nf-matrix-flicker" style={{ "--d": `${delay(TRYING.x)}ms` } as React.CSSProperties}>
+          <Led c={TRYING} />
+        </g>
+      )}
     </svg>
   );
 }

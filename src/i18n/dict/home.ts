@@ -7,7 +7,7 @@ const en = {
   name: "Elliot Moreau",
   desktop: "Desktop",
   hero: {
-    replay: "Click to replay",
+    /** the glass cursor's label over the letters */
     cursor: "Replay",
   },
   hello: {
@@ -20,14 +20,12 @@ const en = {
     close: "Close hello.txt",
     minimize: "Tuck hello.txt into the README",
     status: "Live status",
-    nowPlaying: "Now playing",
-    lastPlayed: "Last played",
-    /** "{time} in Paris" */
-    paris: "{time} in Paris",
-    /** "Pushed {ago}" */
+    /** "pushed 2h ago" */
     pushed: "pushed {ago}",
-    openSpotify: "{title} by {artist}, open in Spotify",
     openRepo: "{repo} on GitHub",
+    /** the latest-post chip (narrow desks, where its widget is hidden) */
+    post: "new post",
+    openPost: "Latest post: {title}, {ago}. Open in Writing.",
   },
   widgets: {
     label: "Widgets",
@@ -38,15 +36,20 @@ const en = {
       next: { dawn: "Dawn at {time}", day: "Day at {time}", dusk: "Dusk at {time}", night: "Night at {time}" },
       aria: "Paris time {time}, {phase}. {next}.",
       ariaYou: "Your time {time}, {offset} from Paris.",
-      open: "Open Now",
+      open: "Open {app}.",
     },
-    push: {
-      title: "Last push",
-      empty: "No public pushes lately.",
-      profile: "github.com/cempack",
-      aria: "Last push to {repo}, {ago}: {message}. Open Projects.",
-      ariaEmpty: "No recent pushes. Open Projects.",
+    post: {
+      title: "Latest post",
+      /** reading time (spoken, then shown) */
+      minutes: "{n} min read",
+      minutesShort: "{n} min",
+      empty: "The first post is on its way.",
+      blog: "blog.elliotmoreau.fr",
+      aria: "Latest post: {title}, {minutes}, {ago}. Open in Writing.",
+      ariaEmpty: "No posts yet. Open Writing.",
     },
+    /** the phone's widget pages */
+    page: "Widget page {n} of {total}",
     music: {
       nowPlaying: "Now playing",
       lastPlayed: "Last played",
@@ -58,8 +61,10 @@ const en = {
   icons: {
     label: "Desktop icons",
     readme: "README",
+    search: "Search",
     hint: "Double-click or press Enter to open. Drag to rearrange.",
-    hintTouch: "Tap to open.",
+    hintTouch: "Tap to open. Touch and hold to move.",
+    hintPhone: "Tap to open.",
     /** announced when a sweep or ⌘A selects more than one icon */
     selected: "{n} icons selected",
   },
@@ -73,7 +78,6 @@ const fr: typeof en = {
   name: "Elliot Moreau",
   desktop: "Bureau",
   hero: {
-    replay: "Cliquer pour rejouer",
     cursor: "Rejouer",
   },
   hello: {
@@ -86,12 +90,10 @@ const fr: typeof en = {
     close: "Fermer hello.txt",
     minimize: "Ranger hello.txt dans le LISEZ-MOI",
     status: "En direct",
-    nowPlaying: "En écoute",
-    lastPlayed: "Dernière écoute",
-    paris: "{time} à Paris",
     pushed: "pushé {ago}",
-    openSpotify: "{title} par {artist}, ouvrir dans Spotify",
     openRepo: "{repo} sur GitHub",
+    post: "nouvel article",
+    openPost: "Dernier article : {title}, {ago}. Ouvrir dans Écrits.",
   },
   widgets: {
     label: "Widgets",
@@ -101,15 +103,18 @@ const fr: typeof en = {
       next: { dawn: "Aube à {time}", day: "Jour à {time}", dusk: "Crépuscule à {time}", night: "Nuit à {time}" },
       aria: "Heure de Paris {time}, {phase}. {next}.",
       ariaYou: "Chez vous {time}, {offset} par rapport à Paris.",
-      open: "Ouvrir Now",
+      open: "Ouvrir {app}.",
     },
-    push: {
-      title: "Dernier push",
-      empty: "Aucun push public récemment.",
-      profile: "github.com/cempack",
-      aria: "Dernier push sur {repo}, {ago} : {message}. Ouvrir Projets.",
-      ariaEmpty: "Aucun push récent. Ouvrir Projets.",
+    post: {
+      title: "Dernier article",
+      minutes: "{n} min de lecture",
+      minutesShort: "{n} min",
+      empty: "Le premier article arrive bientôt.",
+      blog: "blog.elliotmoreau.fr",
+      aria: "Dernier article : {title}, {minutes}, {ago}. Ouvrir dans Écrits.",
+      ariaEmpty: "Pas encore d’article. Ouvrir Écrits.",
     },
+    page: "Page de widgets {n} sur {total}",
     music: {
       nowPlaying: "En écoute",
       lastPlayed: "Dernière écoute",
@@ -121,8 +126,10 @@ const fr: typeof en = {
   icons: {
     label: "Icônes du bureau",
     readme: "LISEZ-MOI",
+    search: "Recherche",
     hint: "Double-cliquez ou appuyez sur Entrée pour ouvrir. Faites glisser pour ranger.",
-    hintTouch: "Touchez pour ouvrir.",
+    hintTouch: "Touchez pour ouvrir. Maintenez le doigt pour déplacer.",
+    hintPhone: "Touchez pour ouvrir.",
     selected: "{n} icônes sélectionnées",
   },
   scroll: {

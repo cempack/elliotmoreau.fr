@@ -9,10 +9,10 @@ import { spring } from "@/lib/motion";
 import { useReduced } from "@/hooks/env";
 import { PixelGlyph } from "@/components/glyphs";
 import { G_CHEVRON } from "@/components/os/window/glyphs";
-import { HOME, fmtCoords, type Place } from "@/lib/places";
+import { HOME, type Place } from "@/lib/places";
 import { BEEN, NEXT, ORDERED, bearingDeg, compassIndex, distanceKm } from "./geo";
 import { Stamp } from "./Stamp";
-import { capitalize, fill, useKm } from "./fmt";
+import { capitalize, fill, useCoords, useKm } from "./fmt";
 
 /** The status chip: Home / Visited / Next up, marker drawn like the globe's. */
 export function StatusChip({ place }: { place: Place }) {
@@ -49,12 +49,16 @@ function Rolling({ value }: { value: number }) {
 function KineticName({ text, id }: { text: string; id: string }) {
   const reduced = useReduced();
   const words = text.split(" ");
+  // the longest unbreakable run sets the size cap, so "États-Unis" never
+  // runs out of its column (each word clips its rising letters)
+  const longest = Math.max(...words.map((w) => w.length));
   let n = 0;
   return (
     <AnimatePresence mode="popLayout" initial={false}>
       <m.span
         key={id}
         className="app-atlas-name-inner"
+        style={{ "--app-atlas-name-ch": longest } as React.CSSProperties}
         exit={reduced ? { opacity: 0 } : { opacity: 0, y: "-0.35em", transition: { duration: 0.18, ease: [0.4, 0, 1, 1] } }}
       >
         <span className="sr-only">{text}</span>
@@ -111,6 +115,7 @@ export function PlaceCard({
   const { blip } = useSound();
   const { notify } = useToast();
   const reduced = useReduced();
+  const coordsText = useCoords();
   const isHome = !!place.home || place.id === HOME.id;
   const km = distanceKm(HOME, place);
   const heading = bearingDeg(HOME, place);
@@ -139,9 +144,10 @@ export function PlaceCard({
         transition: { ...spring.gentle, delay: 0.12 },
       };
 
+  const shown = coordsText(place.lat, place.lon);
   const coords = (
-    <button type="button" className="app-atlas-coords" onClick={copy} aria-label={`${a.card.copy}: ${fmtCoords(place.lat, place.lon)}`}>
-      <span className="tabular">{fmtCoords(place.lat, place.lon)}</span>
+    <button type="button" className="app-atlas-coords" onClick={copy} aria-label={fill(a.labelled, { label: a.card.copy, value: shown })}>
+      <span className="tabular">{shown}</span>
       <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden className="app-atlas-coords-icon">
         <path d="M4 1.5h5.5a1 1 0 0 1 1 1V8M2.5 4h5a1 1 0 0 1 1 1v5.5a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" fill="none" stroke="currentColor" strokeWidth="1.2" />
       </svg>
@@ -171,7 +177,8 @@ export function PlaceCard({
                 place={place}
                 name={name}
                 postmark={!compact}
-                value={isHome ? "HOME" : `${Math.round(km)} KM`}
+                lang={lang}
+                value={isHome ? a.card.stampHome : `${Math.round(km)} ${a.km.toUpperCase()}`}
                 label={fill(a.card.stampAlt, { place: name })}
               />
             </m.div>
@@ -221,32 +228,35 @@ export function PlaceCard({
                 </div>
               </>
             )}
-            {compact && (
-              <>
-                <div className="app-atlas-fact app-atlas-fact--sub">
-                  <dt>{a.card.region}</dt>
-                  <dd className="app-atlas-fact-text">{region}</dd>
-                </div>
-                <div className="app-atlas-fact app-atlas-fact--sub">
-                  <dt>{a.card.coords}</dt>
-                  <dd>{coords}</dd>
-                </div>
-              </>
-            )}
           </dl>
-          <p className="app-atlas-note">{isHome ? `${a.notes[place.id] ?? ""} ${a.card.homeLine}` : a.notes[place.id]}</p>
+          {/* the sheet's half detent ends under the note */}
+          <p className="app-atlas-note" data-sheet-half="">
+            {isHome ? `${a.notes[place.id] ?? ""} ${a.card.homeLine}` : a.notes[place.id]}
+          </p>
+          {compact && (
+            <dl className="app-atlas-facts app-atlas-facts--details">
+              <div className="app-atlas-fact">
+                <dt>{a.card.region}</dt>
+                <dd className="app-atlas-fact-text">{region}</dd>
+              </div>
+              <div className="app-atlas-fact">
+                <dt>{a.card.coords}</dt>
+                <dd>{coords}</dd>
+              </div>
+            </dl>
+          )}
         </m.div>
       </AnimatePresence>
 
       <nav className="app-atlas-card-nav" aria-label={a.card.steps}>
-        <button type="button" className="app-atlas-step" onClick={() => onSelect(prev.id)} aria-label={`${a.card.prev}: ${prev.name[lang]}`}>
+        <button type="button" className="app-atlas-step" onClick={() => onSelect(prev.id)} aria-label={fill(a.labelled, { label: a.card.prev, value: prev.name[lang] })}>
           <PixelGlyph cells={G_CHEVRON} size={9} className="app-atlas-step-prev" />
           <span>{prev.name[lang]}</span>
         </button>
         <span className="app-atlas-step-count tabular" aria-hidden>
           {String(i + 1).padStart(2, "0")} / {String(ORDERED.length).padStart(2, "0")}
         </span>
-        <button type="button" className="app-atlas-step app-atlas-step--next" onClick={() => onSelect(next.id)} aria-label={`${a.card.next}: ${next.name[lang]}`}>
+        <button type="button" className="app-atlas-step app-atlas-step--next" onClick={() => onSelect(next.id)} aria-label={fill(a.labelled, { label: a.card.next, value: next.name[lang] })}>
           <span>{next.name[lang]}</span>
           <PixelGlyph cells={G_CHEVRON} size={9} className="app-atlas-step-next" />
         </button>
