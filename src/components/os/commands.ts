@@ -19,6 +19,12 @@ import { useTerminal } from "./Terminal";
 import type { PanelId } from "./menubar/Panel";
 import { BLOG_URL, fill, restartOS } from "./menubar/util";
 import { lockOS } from "./Intro";
+import { useMedia } from "@/hooks/env";
+import { useSpotifyStatus } from "@/hooks/useSpotifyStatus";
+import { NOW } from "@/content/now";
+import { DeadLetter } from "./DeadLetter";
+import { loadDraft, saveDraft } from "@/components/apps/contact/mail";
+import { suggest } from "@/components/apps/notfound/suggest";
 
 const SKY_MODES: SkyMode[] = ["auto", "dawn", "day", "dusk", "night"];
 /** 7×7 chevron prompt, for actions */
@@ -42,12 +48,14 @@ const appGlyph = (app: IconId) => createElement(AppGlyph, { app, size: 18 });
 export function useSpotlightCommands(): Command[] {
   const router = useRouter();
   const pathname = usePathname();
-  const { t, other, path } = useI18n();
+  const { t, other, path, lang } = useI18n();
   const { muted, toggle, blip } = useSound();
   const { notify } = useToast();
   const { mode, setMode } = useSky();
   const { setOpen: setTerminal } = useTerminal();
-  const { posts, repos } = useSiteData();
+  const { posts, repos, activity, spotify } = useSiteData();
+  const music = useSpotifyStatus(spotify);
+  const phone = useMedia("(max-width: 767px)");
 
   return useMemo(() => {
     const s = t.shell;
@@ -190,6 +198,127 @@ export function useSpotlightCommands(): Command[] {
     });
 
     const act = actions.map((a) => ({ ...a, icon: a.icon ?? glyph(G_ACTION) }));
-    return [...apps, ...act, ...writing, ...projects, ...links];
-  }, [t, other, path, router, pathname, muted, toggle, blip, notify, mode, setMode, setTerminal, posts, repos]);
+
+    // the departures board: what's new, each row opening what it shows
+    const b = sp.board;
+    const tz = { timeZone: "Europe/Paris" } as const;
+    const day = (d: Date) => new Intl.DateTimeFormat("en-CA", { ...tz, dateStyle: "short" }).format(d);
+    const dm = (d: Date) => new Intl.DateTimeFormat("en-GB", { ...tz, day: "2-digit", month: "2-digit" }).format(d);
+    const hm = (d: Date) => new Intl.DateTimeFormat("en-GB", { ...tz, hour: "2-digit", minute: "2-digit", hour12: false }).format(d);
+    const when = (iso: string) => {
+      const d = new Date(iso);
+      return day(d) === day(new Date()) ? hm(d) : dm(d);
+    };
+    const board: Command[] = [];
+    const post = posts[0];
+    if (post) {
+      const n = Math.max(1, post.reading_time || 1);
+      board.push({
+        id: "board-post",
+        group: b.title,
+        label: fill(b.post, { title: post.title, n }),
+        board: { time: dm(new Date(post.published_at)), dest: post.title, via: post.tags[0]?.name ?? "", status: fill(b.min, { n }), key: post.slug, remember: true },
+        perform: () => router.push(`${path("/writing")}?p=${encodeURIComponent(post.slug)}`, { transitionTypes: ["app-open"] } as never),
+      });
+    }
+    if (activity) {
+      board.push({
+        id: "board-push",
+        group: b.title,
+        label: fill(b.push, { repo: activity.repo, msg: activity.message }),
+        board: { time: when(activity.createdAt), dest: activity.repo, via: activity.message, status: b.pushed, key: activity.createdAt, remember: true },
+        perform: () => router.push(`${path("/work")}?repo=${encodeURIComponent(activity.repo)}`, { transitionTypes: ["app-open"] } as never),
+      });
+    }
+    const track = music.track;
+    if (track) {
+      board.push({
+        id: "board-music",
+        group: b.title,
+        label: fill(music.playing ? b.nowPlaying : b.lastPlayed, { title: track.title, artist: track.artist }),
+        board: {
+          time: music.playing ? hm(new Date()) : track.playedAt ? when(track.playedAt) : "",
+          dest: track.title,
+          via: track.artist,
+          status: music.playing ? b.playing : b.played,
+          lime: music.playing,
+          key: `${track.title}|${track.artist}`,
+          remember: false,
+        },
+        perform: track.url ? ext(track.url) : () => router.push(path("/now")),
+      });
+    }
+    // phones keep three rows, so results stay above the keyboard
+    if (!phone) {
+      board.push({
+        id: "board-focus",
+        group: b.title,
+        label: fill(b.focus, { name: NOW.focus.name, title: NOW.focus.title[lang] }),
+        board: { time: dm(new Date(NOW.updated)), dest: NOW.focus.name, via: NOW.focus.title[lang], status: b.building, key: `${NOW.focus.name}|${NOW.focus.title.en}`, remember: true },
+        perform: () => router.push(path("/now"), { transitionTypes: ["app-open"] } as never),
+      });
+    }
+
+    return [...board, ...apps, ...act, ...writing, ...projects, ...links];
+  }, [t, other, path, router, pathname, muted, toggle, blip, notify, mode, setMode, setTerminal, posts, repos, activity, music, phone, lang]);
+}
+
+/**
+ * When nothing matches: a "did you mean" (the 404's own matcher over apps,
+ * posts and repos) for a typo, and, from three characters, the dead
+ * letter: the query as a letter to Elliot that opens Mail when posted.
+ */
+export function useSpotlightFallback() {
+  const router = useRouter();
+  const { t, path } = useI18n();
+  const { posts, repos } = useSiteData();
+  return useMemo(() => {
+    const sp = t.shell.spotlight;
+    return (query: string): Command[] => {
+      const q = query.trim();
+      if (q.length < 2) return [];
+      const out: Command[] = [];
+      const hit = suggest(q.replace(/\s+/g, "-").toLowerCase(), { posts, repos });
+      if (hit) {
+        const app = APPS.find((a) => a.id === hit.app);
+        const name = hit.kind === "app" ? (app ? t.shell.apps[app.label] : hit.to) : hit.name;
+        out.push({
+          id: "fb-mean",
+          group: sp.didYouMean,
+          label: fill(sp.meant, { name }),
+          icon: hit.kind === "app" ? appGlyph(hit.app) : glyph(hit.kind === "post" ? G_PEN : G_COMMIT),
+          perform: () => {
+            if (hit.kind === "app" && app) router.push(path(app.path), { transitionTypes: ["app-open"] } as never);
+            else if (hit.kind === "repo") router.push(`${path("/work")}?repo=${encodeURIComponent(hit.name)}`, { transitionTypes: ["app-open"] } as never);
+            else if (hit.kind === "post") window.open(hit.href, "_blank", "noopener,noreferrer");
+          },
+        });
+      }
+      if (q.length >= 3) {
+        // the visitor's own date and time, as a postmark prints it: "11.10 19:14"
+        const d = new Date();
+        const two = (n: number) => String(n).padStart(2, "0");
+        const when = `${two(d.getDate())}.${two(d.getMonth() + 1)} ${two(d.getHours())}:${two(d.getMinutes())}`;
+        out.push({
+          id: "fb-letter",
+          group: sp.mail,
+          label: fill(sp.letter, { query: q }),
+          launch: 220,
+          option: function Letter({ active, launching, post }) {
+            return createElement(DeadLetter, { query: q, active, launching, post, labels: { address: sp.address, nothing: sp.nothingMail, when } });
+          },
+          perform: () => {
+            // the search becomes the subject, unless a draft already has one
+            const d = loadDraft();
+            if (!d?.subject.trim()) saveDraft({ subject: q, body: d?.body ?? "" });
+            try {
+              sessionStorage.setItem("em-mail-focus", "body");
+            } catch {}
+            router.push(path("/contact"), { transitionTypes: ["app-open"] } as never);
+          },
+        });
+      }
+      return out;
+    };
+  }, [t, path, router, posts, repos]);
 }

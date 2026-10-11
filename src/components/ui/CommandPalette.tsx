@@ -6,6 +6,8 @@ import { useSound } from "@/lib/sound";
 import { lenisRef } from "@/lib/lenisRef";
 import { spring } from "@/lib/motion";
 import { claimSurface } from "@/components/os/surface";
+import { useReduced } from "@/hooks/env";
+import { DeparturesBoard, type BoardRow } from "./Departures";
 
 export type Command = {
   id: string;
@@ -15,6 +17,12 @@ export type Command = {
   keywords?: string;
   /** the leading glyph: an app's pixel icon, or the kind of thing it is */
   icon?: React.ReactNode;
+  /** a row of the departures board (shown, before everything, when nothing is typed) */
+  board?: Omit<BoardRow, "id" | "label">;
+  /** an option drawn by its owner (the dead letter); `post` runs it */
+  option?: React.ComponentType<{ active: boolean; launching: boolean; post: () => void }>;
+  /** ms its own exit plays before the palette closes (Enter waits for it) */
+  launch?: number;
   perform: () => void;
 };
 
@@ -45,11 +53,17 @@ export function CommandPalette({
   commands,
   placeholder = "Type a command or search…",
   empty = "Nothing found",
+  board,
+  fallback,
   children,
 }: {
   commands: Command[];
   placeholder?: string;
   empty?: string;
+  /** the departures board's header: its title, the airport code, the clock */
+  board?: { title: string; code: string; clock: string };
+  /** what to offer when nothing matches (a "did you mean", the dead letter) */
+  fallback?: (query: string) => Command[];
   children: React.ReactNode;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -63,9 +77,11 @@ export function CommandPalette({
   const [active, setActive] = useState(0);
   const { blip } = useSound();
   const listId = useId();
+  const reduced = useReduced();
+  const boardCmds = useMemo(() => commands.filter((c) => c.board), [commands]);
 
-  const results = useMemo(() => {
-    const scored = commands.map((c) => ({ c, s: score(c, query) })).filter((r) => r.s > 0);
+  const found = useMemo(() => {
+    const scored = commands.filter((c) => !c.board).map((c) => ({ c, s: score(c, query) })).filter((r) => r.s > 0);
     // groups stay contiguous; within the query, the best group leads
     const groupBest = new Map<string, number>();
     for (const r of scored) groupBest.set(r.c.group, Math.max(groupBest.get(r.c.group) ?? 0, r.s));
@@ -79,6 +95,12 @@ export function CommandPalette({
         .map((r) => r.c)
     );
   }, [commands, query]);
+  // nothing typed: the board's rows come first, real options before Apps
+  const showBoard = !!board && visible && !query.trim() && boardCmds.length > 0;
+  const spare = useMemo(() => (found.length === 0 && fallback ? fallback(query) : []), [found.length, fallback, query]);
+  const results = useMemo(() => (showBoard ? [...boardCmds, ...found] : found.length ? found : spare), [showBoard, boardCmds, found, spare]);
+  const [launching, setLaunching] = useState<string | null>(null);
+  const nBoard = showBoard ? boardCmds.length : 0;
 
   const open = useCallback(() => {
     const d = dialogRef.current;
@@ -86,6 +108,7 @@ export function CommandPalette({
     if (!d.open) d.showModal();
     visibleRef.current = true;
     setVisible(true);
+    setLaunching(null);
     setQuery("");
     setActive(0);
     lenisRef.current?.stop();
@@ -135,6 +158,15 @@ export function CommandPalette({
   }, []);
 
   const run = (c: Command) => {
+    // an option with its own exit plays it first, then posts itself
+    if (c.launch && launching !== c.id) {
+      setLaunching(c.id);
+      return;
+    }
+    runNow(c);
+  };
+  const runNow = (c: Command) => {
+    if (!visibleRef.current) return;
     pending.current = c;
     close();
     // safety net in case the exit animation never reports back
@@ -157,11 +189,10 @@ export function CommandPalette({
     }
   };
 
-  const rows = results.map((c, i) => ({
-    c,
-    i,
-    header: i === 0 || results[i - 1].group !== c.group ? c.group : null,
-  }));
+  const rows = results.slice(nBoard).map((c, k) => {
+    const i = k + nBoard;
+    return { c, i, header: k === 0 || results[i - 1].group !== c.group ? c.group : null };
+  });
   const value = useMemo(() => ({ open, close, isOpen: visible }), [open, close, visible]);
 
   return (
@@ -215,6 +246,21 @@ export function CommandPalette({
           </div>
           <ul id={listId} role="listbox" className="em-palette-list" data-lenis-prevent>
             {results.length === 0 && <li className="em-palette-empty">{empty}</li>}
+            {showBoard && board && (
+              <li role="presentation" className="em-palette-board">
+                <DeparturesBoard
+                  title={board.title}
+                  code={board.code}
+                  clock={board.clock}
+                  rows={boardCmds.map((c) => ({ ...c.board!, id: c.id, label: c.label }))}
+                  active={active < nBoard ? active : -1}
+                  reduced={reduced}
+                  optionId={(r) => `${listId}-${r.id}`}
+                  onHover={(i) => setActive(i)}
+                  onPick={(i) => run(boardCmds[i])}
+                />
+              </li>
+            )}
             {rows.map(({ c, i, header }) => {
               return (
                 <li key={c.id} role="presentation">
@@ -225,16 +271,26 @@ export function CommandPalette({
                     aria-selected={i === active}
                     className="em-palette-option"
                     onPointerMove={() => setActive(i)}
-                    onClick={() => run(c)}
+                    onClick={c.option ? undefined : () => run(c)}
+                    data-custom={c.option ? "" : undefined}
                   >
-                    {i === active && (
-                      <m.span layoutId={`${listId}-hl`} className="em-palette-hl" transition={spring.snappy} />
+                    {c.option ? (
+                      <>
+                        <span className="sr-only">{c.label}</span>
+                        <c.option active={i === active} launching={launching === c.id} post={() => runNow(c)} />
+                      </>
+                    ) : (
+                      <>
+                        {i === active && (
+                          <m.span layoutId={`${listId}-hl`} className="em-palette-hl" transition={spring.snappy} />
+                        )}
+                        <span className="em-palette-icon" aria-hidden>
+                          {c.icon}
+                        </span>
+                        <span className="em-palette-label">{c.label}</span>
+                        {c.hint && <span className="em-palette-hint">{c.hint}</span>}
+                      </>
                     )}
-                    <span className="em-palette-icon" aria-hidden>
-                      {c.icon}
-                    </span>
-                    <span className="em-palette-label">{c.label}</span>
-                    {c.hint && <span className="em-palette-hint">{c.hint}</span>}
                   </div>
                 </li>
               );

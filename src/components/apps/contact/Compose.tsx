@@ -47,6 +47,20 @@ function scrollsInside(ta: HTMLTextAreaElement) {
   ta.toggleAttribute("data-lenis-prevent", inside);
 }
 
+/** Spotlight's dead letter asks for the message field on arrival (a
+    session flag, taken once; kept here until focus actually lands, so a
+    remount on the way doesn't lose it) */
+let bodyFocusPending = false;
+function takeBodyFocus() {
+  try {
+    if (sessionStorage.getItem("em-mail-focus") === "body") {
+      sessionStorage.removeItem("em-mail-focus");
+      bodyFocusPending = true;
+    }
+  } catch {}
+  return bodyFocusPending;
+}
+
 export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phase) => void }) {
   const { t, lang } = useI18n();
   const c = t.contact;
@@ -98,6 +112,21 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
     if (saved) draftFile.set(slug(draft.subject));
   }, [saved, draft.subject]);
   useEffect(() => () => draftFile.set(""), []);
+
+  // arriving from Spotlight's dead letter: straight to the message
+  useEffect(() => {
+    if (!takeBodyFocus()) return;
+    // after the window has opened (and anything restoring focus has run)
+    const ids = [420, 900].map((ms) =>
+      window.setTimeout(() => {
+        const el = bodyRef.current;
+        if (!el) return;
+        if (document.activeElement !== el) el.focus({ preventScroll: true });
+        if (document.activeElement === el) bodyFocusPending = false;
+      }, ms)
+    );
+    return () => ids.forEach((id) => window.clearTimeout(id));
+  }, []);
 
   // focus lands where the last action points, once the new state is on screen
   useEffect(() => {
