@@ -1367,11 +1367,19 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
 .app-contact-box-name {
   font-weight: 700;
 }
-.app-contact-box-handle,
-.app-contact-box-note {
+.app-contact-box-handle {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+/* what each place is for: two lines, so it reads whole instead of cut short */
+.app-contact-box-note {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  text-wrap: pretty;
 }
 .app-contact-box-handle {
   color: #4b524c;
@@ -1654,8 +1662,6 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
   width: calc(77 * var(--s));
   height: auto;
   image-rendering: pixelated;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
 }
 .app-contact-wax--fresh {
   animation: app-contact-fade 0.15s linear both;
@@ -1667,15 +1673,7 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
   z-index: 2;
   width: calc(48 * var(--s));
   height: calc(30 * var(--s));
-  border: 0;
-  padding: 0;
-  background: none;
-  cursor: grab;
-  touch-action: none;
-  -webkit-tap-highlight-color: transparent;
-}
-.app-contact-seal-ring:active {
-  cursor: grabbing;
+  pointer-events: none;
 }
 .app-contact-seal-ring img {
   display: block;
@@ -1684,11 +1682,6 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
   image-rendering: pixelated;
   -webkit-user-drag: none;
   user-select: none;
-}
-.app-contact-seal-ring:focus-visible {
-  outline: 2px solid var(--color-signal);
-  outline-offset: 4px;
-  border-radius: 6px;
 }
 /* the ring's shadow where it will land, deeper as it comes down */
 .app-contact-seal-shadow {
@@ -1744,11 +1737,6 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
 }
 .app-contact-fp-g[data-match="bad"] {
   color: var(--color-flare);
-}
-.app-contact-fp-g[data-lit] {
-  background: color-mix(in oklab, var(--color-signal) 24%, transparent);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-signal) 24%, transparent);
-  color: var(--color-label);
 }
 /* check a fingerprint */
 .app-contact-check {

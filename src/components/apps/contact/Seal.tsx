@@ -14,18 +14,14 @@ import { ART_H, ART_W, drunkenBishop, groups, hexBytes, normalizeFp, type KeyInf
  * where it started, ember where it stopped). Under it, the key ID's last
  * eight digits and the year the key was made.
  *
- * Hold the ring down (pointer, or Space; Enter presses all the way): it
- * lowers, and while it's held the wax takes the impression ring by ring
- * from the edge in; let go and it lifts. A short press leaves a shallow
- * impression, and the next one fills it in. The full impression is there
- * from the start: nothing is hidden behind the press. Tap the wax to see
- * which groups of the fingerprint walked over that cell.
- *
- * Beside the facts, "Check a fingerprint" compares one pasted from
- * elsewhere, on this device only: groups go moss up to the first
- * mismatch as you type; with all 40 digits in, a second impression is
- * struck in grey wax with every differing cell outlined, and a plain
- * verdict follows. The verdict is exact hex equality; the art only helps.
+ * The full impression is there from the start. The ring isn't a control:
+ * it answers the one thing to do here, "Check a fingerprint" (beside the
+ * facts), which compares one pasted from elsewhere, on this device only.
+ * Groups go moss up to the first mismatch as you type; with all 40 digits
+ * in and the same key, the ring comes down and presses the seal again,
+ * ring by ring from the edge in; a different key gets a second impression
+ * in grey wax with every differing cell outlined. A plain verdict follows
+ * either way. The verdict is exact hex equality; the art only helps.
  */
 
 /** art px per board cell, the rim around the board, the room drips take below */
@@ -87,7 +83,7 @@ function slabShape(bytes: Uint8Array) {
 function paintWax(
   ctx: CanvasRenderingContext2D,
   bytes: Uint8Array,
-  { tone, depth, lit, diff }: { tone: keyof typeof WAX; depth: number; lit: number | null; diff?: Set<number> | null }
+  { tone, depth, diff }: { tone: keyof typeof WAX; depth: number; diff?: Set<number> | null }
 ) {
   const W = SW + 1;
   const H = SH + DRIP + 1;
@@ -130,7 +126,7 @@ function paintWax(
           else if (lx === C - 1 || ly === C - 1) c = p.lo;
           else c = isStart ? MOSS : isEnd ? EMBER : grid[i] >= 3 ? p.full : p.base;
         }
-        const ring = (lit === i && MOSS) || (diff?.has(i) && FLARE);
+        const ring = diff?.has(i) && FLARE;
         if (ring && (lx === 0 || ly === 0 || lx === C - 1 || ly === C - 1)) c = ring;
       }
       put(x, y, c);
@@ -143,24 +139,20 @@ export function Wax({
   bytes,
   tone = "lilac",
   depth = FULL,
-  lit = null,
   diff = null,
   className = "",
-  onCell,
 }: {
   bytes: Uint8Array;
   tone?: keyof typeof WAX;
   depth?: number;
-  lit?: number | null;
   diff?: Set<number> | null;
   className?: string;
-  onCell?: (i: number | null) => void;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const ctx = ref.current?.getContext("2d");
-    if (ctx) paintWax(ctx, bytes, { tone, depth, lit, diff });
-  }, [bytes, tone, depth, lit, diff]);
+    if (ctx) paintWax(ctx, bytes, { tone, depth, diff });
+  }, [bytes, tone, depth, diff]);
   return (
     <canvas
       ref={ref}
@@ -168,18 +160,6 @@ export function Wax({
       height={SH + DRIP + 1}
       className={`app-contact-wax ${className}`}
       aria-hidden
-      onClick={
-        onCell
-          ? (e) => {
-              const r = e.currentTarget.getBoundingClientRect();
-              const x = ((e.clientX - r.left) / r.width) * (SW + 1) - RIM;
-              const y = ((e.clientY - r.top) / r.height) * (SH + DRIP + 1) - RIM;
-              const cx = Math.floor(x / C);
-              const cy = Math.floor(y / C);
-              onCell(cx >= 0 && cy >= 0 && cx < ART_W && cy < ART_H ? cy * ART_W + cx : null);
-            }
-          : undefined
-      }
     />
   );
 }
@@ -228,19 +208,18 @@ const noop = () => () => {};
 export function Seal({
   info,
   reduced,
-  labels,
-  onLit,
+  verified,
+  label,
 }: {
   info: KeyInfo;
   reduced: boolean;
-  labels: { press: string; seal: string };
-  /** the fingerprint groups that walked over the tapped cell, or null */
-  onLit: (groups: Set<number> | null) => void;
+  /** a pasted fingerprint matches: the ring presses the seal again */
+  verified: boolean;
+  label: string;
 }) {
   const { blip } = useSound();
   const ring = useSyncExternalStore(noop, ringArt, () => null);
   const [depth, setDepth] = useState(FULL);
-  const [lit, setLit] = useState<number | null>(null);
   const [fade, setFade] = useState(0);
   const wrap = useRef<HTMLDivElement>(null);
   const ry = useMotionValue(0);
@@ -249,7 +228,6 @@ export function Seal({
   const shadowO = useTransform(ry, (v) => 0.6 * Math.min(1, v / contact.current));
   const shadowS = useTransform(ry, (v) => 0.5 + 0.5 * Math.min(1, v / contact.current));
   const st = useRef({ holding: false, auto: false, timer: 0, depth: FULL, anim: null as AnimationPlaybackControls | null });
-  const { by } = useMemo(() => drunkenBishop(info.bytes), [info.bytes]);
   useEffect(() => {
     st.current.depth = depth;
   }, [depth]);
@@ -292,7 +270,7 @@ export function Seal({
       s.auto ? 60 : 80
     );
   };
-  const press = (auto = false) => {
+  const press = () => {
     const s = st.current;
     if (reduced) {
       // no travel: a fresh impression fades in
@@ -302,8 +280,8 @@ export function Seal({
       blip("tick");
       return;
     }
-    s.holding = !auto;
-    s.auto = auto;
+    s.holding = false;
+    s.auto = true;
     const w = wrap.current?.getBoundingClientRect().width ?? SW * 4;
     const k = w / SW;
     contact.current = (ABOVE + SH / 2 - FACE_Y) * k;
@@ -311,56 +289,26 @@ export function Seal({
     s.anim = animate(ry, contact.current, { ...springFrom(0.3), onComplete: touch });
   };
 
+  // the same key, checked: the ring comes down and presses the seal again
+  const pressRef = useRef(press);
+  useEffect(() => {
+    pressRef.current = press;
+  });
+  useEffect(() => {
+    if (verified) pressRef.current();
+  }, [verified]);
+
   const year = info.created.getFullYear();
 
   return (
-    <figure className="app-contact-seal" aria-label={labels.seal}>
+    <figure className="app-contact-seal" aria-label={label}>
       <div ref={wrap} className="app-contact-seal-stage">
         <m.span className="app-contact-seal-shadow" style={{ opacity: shadowO, scale: shadowS }} aria-hidden />
-        <Wax
-          key={fade}
-          bytes={info.bytes}
-          depth={depth}
-          lit={lit}
-          className={fade ? "app-contact-wax--fresh" : ""}
-          onCell={(i) => {
-            const next = i === lit || i == null || !by[i]?.size ? null : i;
-            setLit(next);
-            onLit(next == null ? null : by[next]);
-          }}
-        />
-        <m.button
-          type="button"
-          className="app-contact-seal-ring"
-          style={{ y: ry }}
-          aria-label={labels.press}
-          onPointerDown={(e) => {
-            if (e.button !== 0) return;
-            e.preventDefault();
-            e.currentTarget.setPointerCapture(e.pointerId);
-            press();
-          }}
-          onPointerUp={() => st.current.holding && lift()}
-          onPointerCancel={() => st.current.holding && lift()}
-          onKeyDown={(e) => {
-            if (e.key === " " && !e.repeat) {
-              e.preventDefault();
-              press();
-            } else if (e.key === "Enter" && !e.repeat) {
-              e.preventDefault();
-              press(true);
-            }
-          }}
-          onKeyUp={(e) => {
-            if (e.key === " ") {
-              e.preventDefault();
-              if (st.current.holding) lift();
-            }
-          }}
-        >
+        <Wax key={fade} bytes={info.bytes} depth={depth} className={fade ? "app-contact-wax--fresh" : ""} />
+        <m.span className="app-contact-seal-ring" style={{ y: ry }} aria-hidden>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {ring && <img src={ring} alt="" draggable={false} />}
-        </m.button>
+        </m.span>
       </div>
       <figcaption className="app-contact-seal-band" aria-hidden>
         <PixelLabel text={`${info.keyId.slice(-8)}  ${year}`} cell={2} />

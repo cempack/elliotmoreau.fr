@@ -61,6 +61,7 @@ const en = {
     push: {
       wall: "Public pushes, last 13 weeks",
       wallRole: "brick wall",
+      last: "Last push to {repo}, {ago}",
       hint: "Each brick is a day; the redder, the more pushes. Arrow keys move by day (up and down) and by week (left and right); Enter opens that repo in Projects.",
       none: "No public push that day",
       dayOne: "{date}, 1 push to {repo}",
@@ -131,6 +132,7 @@ const fr: typeof en = {
     push: {
       wall: "Pushs publics, 13 dernières semaines",
       wallRole: "mur de briques",
+      last: "Dernier push sur {repo}, {ago}",
       hint: "Chaque brique est un jour ; plus elle est rouge, plus il y a eu de pushs. Les flèches avancent d’un jour (haut et bas) ou d’une semaine (gauche et droite) ; Entrée ouvre le dépôt dans Projets.",
       none: "Aucun push public ce jour-là",
       dayOne: "{date}, 1 push sur {repo}",

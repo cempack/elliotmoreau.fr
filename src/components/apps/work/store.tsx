@@ -14,7 +14,6 @@ import {
   itemId,
   matches,
   pickFeatured,
-  recentNames,
   sameFilter,
   searchTerms,
   sortRepos,
@@ -99,9 +98,8 @@ export function WorkProvider({ data, children }: { data: SiteData; children: Rea
   // CSS owns the layout until the user picks one (no SSR flash on phones)
   const effView = view === "auto" ? (hydrated ? (phone ? "list" : "icons") : null) : view;
 
-  const recent = useMemo(() => recentNames(repos), [repos]);
   const terms = useMemo(() => searchTerms(query), [query]);
-  const scoped = useMemo(() => repos.filter((r) => inFilter(r, filter, recent)), [repos, filter, recent]);
+  const scoped = useMemo(() => repos.filter((r) => inFilter(r, filter)), [repos, filter]);
   const visible = useMemo(() => sortRepos(scoped.filter((r) => matches(r, terms)), sort), [scoped, terms, sort]);
   const widerHits = useMemo(
     () => (terms.length && filter.kind !== "all" ? repos.filter((r) => matches(r, terms)).length : 0),
@@ -144,9 +142,8 @@ export function WorkProvider({ data, children }: { data: SiteData; children: Rea
   const setFilter = (f: Filter) => {
     if (sameFilter(f, filter)) return;
     setFilterState(f);
-    // smart folders bring their natural order
+    // a smart folder brings its natural order
     if (f.kind === "starred") setSort("stars");
-    else if (f.kind === "recent") setSort("recent");
   };
 
   const setView = (v: "icons" | "list") => {

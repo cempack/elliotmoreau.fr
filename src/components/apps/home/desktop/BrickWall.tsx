@@ -142,7 +142,8 @@ export function PushWidget() {
   } else if (activity) {
     repo = activity.repo;
     msg = activity.message || activity.repo;
-    meta = `${activity.repo} · ${hydrated ? timeAgo(activity.createdAt, lang) : ""}`;
+    // idle, the readout names what the wall is about: the last push
+    meta = hydrated ? fill(w.last, { repo: activity.repo, ago: timeAgo(activity.createdAt, lang) }) : activity.repo;
   } else {
     repo = null;
     msg = w.empty;
@@ -246,6 +247,8 @@ export function PushWidget() {
         onKeyDown={onKeyDown}
         onBlur={() => setActive(null)}
       >
+        {/* a mouse gets the wall's name as a tooltip: the bricks are days */}
+        <title>{w.wall}</title>
         <rect x={0} y={0} width={CW} height={CH} fill={MORTAR} />
         {/* half bricks closing the odd courses at the left end */}
         {[1, 3, 5].map((c) => (

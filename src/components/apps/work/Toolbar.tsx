@@ -120,7 +120,8 @@ export function Toolbar({
         </div>
       </LayoutGroup>
 
-      <SortMenu sort={sort} onSort={onSort} disabled={disabled} />
+      {/* the lid lays its stickers out by size: an order only means something in the list */}
+      {view !== "icons" && <SortMenu sort={sort} onSort={onSort} disabled={disabled} />}
     </div>
   );
 }

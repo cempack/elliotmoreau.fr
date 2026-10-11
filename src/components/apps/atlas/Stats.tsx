@@ -6,14 +6,14 @@ import { fill, useKm } from "./fmt";
 
 const STATS = travelStats();
 
-/** Countries been · on the list · furthest from home · continents. */
+/** Countries been · furthest from home · continents. (How many are still
+    to come is the list's own NEXT count, so it isn't repeated here.) */
 export function Stats({ layout = "strip" }: { layout?: "strip" | "grid" }) {
   const { t, lang } = useI18n();
   const s = t.atlas.stats;
   const fmt = useKm();
   const cells = [
     { k: s.countries, v: String(STATS.countries), sub: fill(s.countriesSub, { n: STATS.places }) },
-    { k: s.next, v: String(STATS.next), sub: s.nextSub },
     { k: s.furthest, v: fmt(STATS.furthestKm), unit: t.atlas.km, sub: STATS.furthest.name[lang] },
     { k: s.continents, v: String(STATS.continents), sub: s.continentsSub },
   ];

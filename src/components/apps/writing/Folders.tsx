@@ -6,10 +6,9 @@ import { useI18n } from "@/i18n/client";
 import { spring } from "@/lib/motion";
 import { PixelGlyph } from "@/components/glyphs";
 import { WinNav, WinNavItem } from "@/components/os/AppWindow";
-import type { GhostPost } from "@/lib/ghost";
 import { SubscribeForm } from "./SubscribeForm";
 import { G_ALL, G_FOLDER, G_MAIL, G_RSS } from "./glyphs";
-import { BLOG_URL, RSS_URL, fmt, type Folder } from "./util";
+import { RSS_URL, type Folder } from "./util";
 
 type Props = {
   folders: Folder[];
@@ -17,16 +16,14 @@ type Props = {
   active: string | null;
   total: number;
   onPick: (slug: string | null) => void;
-  /** every post, for the archive calendar */
-  posts?: GhostPost[];
 };
 
 /**
  * Wide windows (≥1280): the folders as a source list, the first of three
- * columns, with the feeds at its foot. Narrower, the reader needs that
- * width more, so the folders become chips in the list column instead.
+ * columns. Narrower, the reader needs that width more, so the folders
+ * become chips in the list column instead.
  */
-export function FolderColumn({ folders, active, total, onPick, posts = [] }: Props) {
+export function FolderColumn({ folders, active, total, onPick }: Props) {
   const { t } = useI18n();
   const w = t.writing;
   return (
@@ -51,76 +48,20 @@ export function FolderColumn({ folders, active, total, onPick, posts = [] }: Pro
             </WinNavItem>
           ))}
         </WinNav>
-        {posts.length > 0 && <Archive posts={posts} />}
-        <FeedLinks className="app-writing-feeds--side" />
       </div>
     </aside>
   );
 }
 
-/**
- * The archive as a pixel calendar: a row of twelve months per year, each
- * cell lit by how many posts came out that month, then the reading time
- * all of it adds up to.
- */
-function Archive({ posts }: { posts: GhostPost[] }) {
-  const { t, lang } = useI18n();
-  const w = t.writing;
-  const byYear = new Map<number, number[]>();
-  let minutes = 0;
-  for (const p of posts) {
-    const d = new Date(p.published_at);
-    if (Number.isNaN(d.getTime())) continue;
-    const y = d.getUTCFullYear();
-    const months = byYear.get(y) ?? new Array(12).fill(0);
-    months[d.getUTCMonth()]++;
-    byYear.set(y, months);
-    minutes += Math.max(1, p.reading_time || 1);
-  }
-  const years = [...byYear].sort((a, b) => b[0] - a[0]).slice(0, 3);
-  const monthName = new Intl.DateTimeFormat(lang === "fr" ? "fr-FR" : "en-GB", { month: "long", timeZone: "UTC" });
-  return (
-    <section className="app-writing-archive" aria-label={w.archive}>
-      <p className="app-writing-side-k">{w.archive}</p>
-      {years.map(([y, months]) => (
-        <div key={y} className="app-writing-archive-year">
-          <span className="app-writing-archive-y tabular">{y}</span>
-          <ol className="app-writing-archive-months">
-            {months.map((n, m) => (
-              <li
-                key={m}
-                data-n={Math.min(2, n) || undefined}
-                title={`${monthName.format(new Date(Date.UTC(y, m, 1)))} ${y} · ${fmt(n === 1 ? w.countOne : w.countOther, { n })}`}
-              >
-                <span className="sr-only">{`${monthName.format(new Date(Date.UTC(y, m, 1)))}: ${fmt(n === 1 ? w.countOne : w.countOther, { n })}`}</span>
-              </li>
-            ))}
-          </ol>
-        </div>
-      ))}
-      <p className="app-writing-archive-legend" aria-hidden>
-        {w.monthInitials.map((c, i) => (
-          <span key={i}>{c}</span>
-        ))}
-      </p>
-      <p className="app-writing-archive-sum tabular">{fmt(w.readingTotal, { n: minutes })}</p>
-    </section>
-  );
-}
-
-/** RSS and the blog itself: the quiet ways to follow along. */
-export function FeedLinks({ className = "" }: { className?: string }) {
+/** RSS, beside the newsletter: the other way to follow along (the blog itself is in the title bar). */
+function RssLink() {
   const { t } = useI18n();
   const w = t.writing;
   return (
-    <p className={`app-writing-news-links ${className}`}>
+    <p className="app-writing-news-links">
       <a href={RSS_URL} target="_blank" rel="noopener" className="app-writing-news-link">
         <PixelGlyph cells={G_RSS} size={12} />
         {w.rss}
-      </a>
-      <a href={BLOG_URL} target="_blank" rel="noopener" className="app-writing-news-link" aria-label={w.openBlog}>
-        {w.blog}
-        <span aria-hidden>↗</span>
       </a>
     </p>
   );
@@ -138,7 +79,7 @@ export function Newsletter({ className = "" }: { className?: string }) {
       </h2>
       <p className="app-writing-news-body">{w.newsBody}</p>
       <SubscribeForm />
-      <FeedLinks />
+      <RssLink />
     </section>
   );
 }

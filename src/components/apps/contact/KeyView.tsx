@@ -11,7 +11,7 @@ import { PixelGlyph } from "@/components/glyphs";
 import { CopyButton } from "./Copy";
 import { G_CHEVRON, G_DOWN, G_RETRY, G_TERM } from "./glyphs";
 import { fill } from "./mail";
-import { groups, loadKey, type KeyInfo } from "./pgp";
+import { groups, loadKey, normalizeFp, type KeyInfo } from "./pgp";
 import { CheckFingerprint, Seal, groupMatches } from "./Seal";
 
 const KEY_FILE = "elliot-moreau.asc";
@@ -33,8 +33,7 @@ export function KeyView({ active }: { active: boolean }) {
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [open, setOpen] = useState(false);
-  /** groups lit by a tap on the wax, and the fingerprint being checked */
-  const [lit, setLit] = useState<Set<number> | null>(null);
+  /** the fingerprint being checked */
   const [check, setCheck] = useState("");
 
   useEffect(() => {
@@ -94,7 +93,12 @@ export function KeyView({ active }: { active: boolean }) {
           <>
             <div className="app-contact-key-top">
               {info ? (
-                <Seal info={info} reduced={reduced} labels={{ press: c.pressSeal, seal: c.sealLabel }} onLit={setLit} />
+                <Seal
+                  info={info}
+                  reduced={reduced}
+                  verified={normalizeFp(check).slice(0, info.fingerprint.length) === info.fingerprint}
+                  label={c.sealLabel}
+                />
               ) : (
                 <div className="app-contact-seal app-contact-seal--empty" aria-hidden />
               )}
@@ -104,14 +108,11 @@ export function KeyView({ active }: { active: boolean }) {
                   {c.fingerprint}
                 </h3>
                 {info ? (
-                  <FingerprintGroups info={info} lit={lit} check={check} />
+                  <FingerprintGroups info={info} check={check} />
                 ) : (
                   <p className="app-contact-fp app-contact-fp--loading">{c.keyLoading}</p>
                 )}
                 <p className="app-contact-seal-hint">{c.sealHint}</p>
-                <p className="sr-only" aria-live="polite">
-                  {lit && info ? fill(c.sealLit, { groups: [...lit].map((i) => groups(info.fingerprint)[i]).join(" ") }) : ""}
-                </p>
                 <dl className="app-contact-dl">
                   <div>
                     <dt>{c.keyId}</dt>
@@ -225,8 +226,8 @@ export function KeyView({ active }: { active: boolean }) {
   );
 }
 
-/** The fingerprint in groups of four: lit by a tap on the wax, moss as a pasted one matches. */
-function FingerprintGroups({ info, lit, check }: { info: KeyInfo; lit: Set<number> | null; check: string }) {
+/** The fingerprint in groups of four, moss as a pasted one matches. */
+function FingerprintGroups({ info, check }: { info: KeyInfo; check: string }) {
   const fp = groups(info.fingerprint);
   const half = Math.ceil(fp.length / 2);
   const match = groupMatches(info.fingerprint, check);
@@ -235,7 +236,6 @@ function FingerprintGroups({ info, lit, check }: { info: KeyInfo; lit: Set<numbe
       key={i}
       className="app-contact-fp-g"
       data-id={(info.version !== 6 && i >= fp.length - 4) || undefined}
-      data-lit={lit?.has(i) || undefined}
       data-match={match[i] ?? undefined}
     >
       {g}

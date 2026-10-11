@@ -93,9 +93,7 @@ function WorkContent() {
   const folder =
     filter.kind === "starred"
       ? t.work.side.starred
-      : filter.kind === "recent"
-        ? t.work.side.recent
-        : filter.kind === "lang"
+      : filter.kind === "lang"
           ? filter.value
           : filter.kind === "tag"
             ? `#${filter.value}`
@@ -106,9 +104,7 @@ function WorkContent() {
       ? h.all
       : filter.kind === "starred"
         ? h.starred
-        : filter.kind === "recent"
-          ? h.recent
-          : filter.kind === "lang"
+        : filter.kind === "lang"
             ? fmt(h.lang, { lang: filter.value })
             : fmt(h.tag, { tag: filter.value });
 
@@ -157,7 +153,7 @@ function WorkContent() {
           </AnimatePresence>
 
           {w.showHero && (
-            <Overview repos={w.repos} hydrated={w.hydrated} onLang={(lang) => w.setFilter({ kind: "lang", value: lang })} />
+            <Overview repos={w.repos} hydrated={w.hydrated} />
           )}
 
           {visible.length > 0 && !lidView && (

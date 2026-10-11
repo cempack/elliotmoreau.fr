@@ -473,7 +473,7 @@ export function WritingApp({ initialSlug = null }: { initialSlug?: string | null
     );
   }
 
-  const folderProps = { folders, active: tag, total: allPosts.length, onPick: pickFolder, posts: allPosts };
+  const folderProps = { folders, active: tag, total: allPosts.length, onPick: pickFolder };
   const live = compact && stack.moving;
   // before hydration: a deep link the server didn't know hides the reader
   // copy (and on phones shows the reader screen) until the client lands

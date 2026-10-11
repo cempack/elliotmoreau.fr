@@ -9,7 +9,6 @@ export type ViewMode = "auto" | "icons" | "list";
 export type Filter =
   | { kind: "all" }
   | { kind: "starred" }
-  | { kind: "recent" }
   | { kind: "lang"; value: string }
   | { kind: "tag"; value: string };
 
@@ -23,9 +22,6 @@ export const SORTS: SortKey[] = ["recent", "stars", "name"];
  * featured instead.
  */
 export const PINNED: string[] = ["omarchy-dos-moos-theme"];
-
-/** "Recent" is the N most recently pushed repos (clock-free, so SSR-safe). */
-export const RECENT_COUNT = 5;
 
 /* ───────────────────────────── helpers ───────────────────────────── */
 
@@ -67,18 +63,12 @@ export function sortRepos(list: RepoInfo[], key: SortKey) {
   return out;
 }
 
-export function recentNames(repos: RepoInfo[]) {
-  return new Set(sortRepos(repos, "recent").slice(0, RECENT_COUNT).map((r) => r.name));
-}
-
-export function inFilter(repo: RepoInfo, f: Filter, recent: Set<string>) {
+export function inFilter(repo: RepoInfo, f: Filter) {
   switch (f.kind) {
     case "all":
       return true;
     case "starred":
       return repo.stars > 0;
-    case "recent":
-      return recent.has(repo.name);
     case "lang":
       return repo.language === f.value;
     case "tag":

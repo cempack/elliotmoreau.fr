@@ -8,8 +8,8 @@ import { useI18n } from "@/i18n/client";
 import { WinNav, WinNavItem } from "@/components/os/AppWindow";
 import { GLYPH_STAR, PixelGlyph } from "@/components/glyphs";
 import { SOCIALS } from "@/lib/places";
-import { G_ALL, G_ARROW, G_CLOCK, G_HASH } from "./glyphs";
-import { type Filter, fmt, langColor, languagesOf, recentNames, sameFilter, tagsOf } from "./model";
+import { G_ALL, G_ARROW, G_HASH } from "./glyphs";
+import { type Filter, fmt, langColor, languagesOf, sameFilter, tagsOf } from "./model";
 
 const TAGS_SHOWN = 8;
 
@@ -47,7 +47,6 @@ export function Sidebar({
   const langs = useMemo(() => languagesOf(repos), [repos]);
   const tags = useMemo(() => tagsOf(repos), [repos]);
   const starred = useMemo(() => repos.filter((r) => r.stars > 0).length, [repos]);
-  const recent = useMemo(() => recentNames(repos).size, [repos]);
 
   // the active tag always stays visible, even past the fold
   const shownTags = useMemo(() => {
@@ -93,7 +92,8 @@ export function Sidebar({
         >
           {s.all}
         </WinNavItem>
-        {starred > 0 && (
+        {/* only when it narrows the list: with every repo starred it would just be All again */}
+        {starred > 0 && starred < repos.length && (
           <WinNavItem
             onClick={() => onFilter({ kind: "starred" })}
             active={is({ kind: "starred" })}
@@ -101,16 +101,6 @@ export function Sidebar({
             count={starred}
           >
             {s.starred}
-          </WinNavItem>
-        )}
-        {repos.length > 0 && (
-          <WinNavItem
-            onClick={() => onFilter({ kind: "recent" })}
-            active={is({ kind: "recent" })}
-            icon={<PixelGlyph cells={G_CLOCK} size={12} />}
-            count={recent}
-          >
-            {s.recent}
           </WinNavItem>
         )}
       </WinNav>
