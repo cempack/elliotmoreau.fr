@@ -240,14 +240,14 @@ export function Reader({ post, posts, epoch, animatePlate, reduced, compact, fol
                   rel="noopener"
                   className="app-writing-cta"
                   aria-label={fmt(w.readOnBlogLabel, { title: post.title })}
-                  data-cursor={w.cursorRead}
+                 
                 >
                   {w.readOnBlog}
                   <span aria-hidden className="app-writing-cta-arrow">
                     ↗
                   </span>
                 </PressAnchor>
-                <PressButton className="app-writing-iconbtn" onClick={copy} aria-label={w.copyLink} data-cursor={w.copyLink}>
+                <PressButton className="app-writing-iconbtn" onClick={copy} aria-label={w.copyLink}>
                   <PixelGlyph cells={G_COPY} size={14} />
                 </PressButton>
               </span>

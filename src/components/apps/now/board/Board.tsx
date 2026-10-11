@@ -829,7 +829,6 @@ export function Board({
               onGripBlur={onGripBlur}
               carried={carry?.id === id}
               moveLabel={fill(strings.move, { name: w.label })}
-              cursorLabel={strings.grab}
               instrId={instrId}
             />
           );
@@ -850,7 +849,6 @@ function BoardItem({
   onGripBlur,
   carried,
   moveLabel,
-  cursorLabel,
   instrId,
 }: {
   w: BoardWidget;
@@ -861,7 +859,6 @@ function BoardItem({
   onGripBlur: (id: string) => void;
   carried: boolean;
   moveLabel: string;
-  cursorLabel: string;
   instrId: string;
 }) {
   const ref = useRef<HTMLElement>(null);
@@ -936,7 +933,7 @@ function BoardItem({
             aria-label={moveLabel}
             aria-describedby={instrId}
             aria-pressed={carried}
-            data-cursor={cursorLabel}
+           
             onPointerDown={(e) => {
               e.stopPropagation();
               onPointerDown(w.id, e, true);

@@ -102,14 +102,14 @@ export function Alert({
     <PressLink
       href={href("/")}
       className={primary ? "app-nf-btn app-nf-btn--primary" : "app-nf-btn"}
-      data-cursor=""
+     
       onClick={desktopClick}
     >
       {s.desktop}
     </PressLink>
   );
   const search = (
-    <PressButton className="app-nf-btn" data-cursor="" onClick={onSearch} aria-keyshortcuts="Meta+K Control+K">
+    <PressButton className="app-nf-btn" onClick={onSearch} aria-keyshortcuts="Meta+K Control+K">
       {s.search}
     </PressButton>
   );
@@ -119,12 +119,12 @@ export function Alert({
         href={suggestHref}
         transitionTypes={["app-open"]}
         className="app-nf-btn app-nf-btn--primary"
-        data-cursor=""
+       
       >
         <span className="app-nf-btn-label">{openLabel}</span>
       </PressLink>
     ) : (
-      <PressAnchor href={suggestHref} className="app-nf-btn app-nf-btn--primary" data-cursor="">
+      <PressAnchor href={suggestHref} className="app-nf-btn app-nf-btn--primary">
         <span className="app-nf-btn-label">{openLabel}</span>
         <span className="app-nf-btn-out" aria-hidden>
           ↗
@@ -141,7 +141,7 @@ export function Alert({
         tabIndex={-1}
         aria-labelledby="app-nf-title"
         aria-describedby="app-nf-body"
-        data-cursor=""
+       
         style={tether.style}
         {...tether.handlers}
       >

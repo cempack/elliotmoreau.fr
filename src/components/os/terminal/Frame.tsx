@@ -238,7 +238,7 @@ export function DesktopWindow({
         <div className={`os-term-shake ${shaking ? "is-shaking" : ""}`}>
           <m.div
             className={`os-term os-term-win ${dragging ? "is-dragging" : ""}`}
-            data-cursor-hide=""
+           
             role="dialog"
             tabIndex={-1}
             aria-label={t.system.term.dialog}
@@ -345,7 +345,7 @@ export function MobileSheet({ shaking, children }: { shaking: boolean; children:
         ref={sheet}
         tabIndex={-1}
         className={`os-term os-term-sheet ${shaking ? "is-shaking" : ""}`}
-        data-cursor-hide=""
+       
         role="dialog"
         aria-label={t.system.term.dialog}
         initial={reduced ? { opacity: 0 } : { y: "100%" }}

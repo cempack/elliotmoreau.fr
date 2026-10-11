@@ -31,7 +31,7 @@
 .os-dock-plate {
   position: absolute;
   inset: 0;
-  border-radius: 24px;
+  border-radius: 14px;
   transform-origin: 50% 50%;
   box-shadow:
     0 22px 48px -20px rgb(0 0 0 / 0.75),
@@ -46,8 +46,11 @@
 /* the shelf holds only icons: clear glass, so the lake shows through and
    its rim visibly bends it (frosted where refraction isn't available) */
 .os-dock-glass {
-  --os-glass-tint: rgb(19 23 20 / 0.32);
-  --os-glass-rblur: 0.75px;
+  --os-glass-tint: rgb(13 16 14 / 0.84);
+  --os-glass-border: rgb(196 206 194 / 0.3);
+}
+.os-dock-glass::after {
+  box-shadow: inset 0 0 0 2px var(--os-glass-border);
 }
 /* during a view transition the dock is captured on its own and its
    backdrop goes blank: swap in a solid twin of the glass for those
@@ -77,21 +80,6 @@ html:active-view-transition .os-dock-solid {
   height: 48px;
 }
 
-/* each tile spills a little of its colour onto the shelf, like light
-   through tinted glass */
-.os-dock-item::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: -9px;
-  width: 52px;
-  height: 18px;
-  margin-left: -26px;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, var(--tile, transparent), transparent);
-  opacity: 0.32;
-  pointer-events: none;
-}
 
 .os-dock-sep {
   position: relative;
@@ -141,14 +129,11 @@ html:active-view-transition .os-dock-solid {
   position: absolute;
   left: 50%;
   bottom: -7px;
-  width: 4px;
-  height: 4px;
-  margin-left: -2px;
-  border-radius: 50%;
+  width: 14px;
+  height: 2px;
+  margin-left: -7px;
+  border-radius: 1px;
   background: var(--color-signal);
-  box-shadow:
-    0 0 4px rgb(176 204 134 / 0.9),
-    0 0 10px 1px rgb(176 204 134 / 0.45);
   opacity: 0;
   transform: scale(0.2);
   transition:

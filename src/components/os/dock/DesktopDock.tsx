@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useI18n } from "@/i18n/client";
-import { useFinePointer, useReduced } from "@/hooks/env";
 import { APPS, appForPath } from "../apps";
 import { AppIcon, ICON_ACCENT, type IconId } from "../icons";
 import { Glass } from "../Glass";
@@ -37,21 +36,20 @@ function Tip({ label, kbd }: { label: string; kbd: string }) {
 }
 
 /**
- * The desktop dock (≥768px): a glass shelf of pixel app icons, a hairline
- * separator, then Terminal. Fine pointers get macOS magnification on
- * springs; everyone gets tooltips, the active-app dot, press feedback and
- * a one-hop bounce when an app launches. Arrow keys rove between icons.
+ * The desktop dock (≥768px): a flat bar of pixel app icons, a hairline
+ * separator, then Terminal. Tooltips, an active-app marker, press
+ * feedback and a one-hop bounce when an app launches. Arrow keys rove
+ * between icons.
  */
 export function DesktopDock() {
   const { t, path } = useI18n();
   const active = appForPath(usePathname());
   const term = useTerminal();
-  const fine = useFinePointer();
-  const reduced = useReduced();
   const zoneRef = useRef<HTMLElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const plateRef = useRef<HTMLDivElement>(null);
-  useMagnification(zoneRef, listRef, plateRef, fine && !reduced);
+  // no macOS magnification: a tiling desktop's bar holds still
+  useMagnification(zoneRef, listRef, plateRef, false);
 
   // roving tabindex: one tab stop, the last focused icon (else the active app)
   const [focusIdx, setFocusIdx] = useState<number | null>(null);
@@ -74,7 +72,7 @@ export function DesktopDock() {
   };
 
   return (
-    <nav ref={zoneRef} aria-label={t.dock.label} className="os-dock" data-os-dock="" data-cursor-hide="">
+    <nav ref={zoneRef} aria-label={t.dock.label} className="os-dock" data-os-dock="">
       <div className="os-dock-shelf">
         <div ref={plateRef} className="os-dock-plate" aria-hidden>
           <span className="os-dock-solid" />

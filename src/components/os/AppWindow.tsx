@@ -180,7 +180,7 @@ export function AppWindow({
           layout="position"
           layoutDependency={zoomed}
           className="os-win-bar"
-          data-cursor-hide=""
+         
           {...drag.handlers}
           onDoubleClick={(e) => {
             if ((e.target as Element).closest("a,button,input")) return;

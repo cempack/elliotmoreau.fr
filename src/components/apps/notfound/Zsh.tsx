@@ -96,7 +96,7 @@ function Keys({
             }}
             type="button"
             className="app-nf-zsh-key app-nf-zsh-key--btn"
-            data-cursor=""
+           
             data-picked={answer === k || undefined}
             // answered: inert, but never `disabled` (that would drop focus on <body>)
             aria-disabled={answer != null || undefined}

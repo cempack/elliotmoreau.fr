@@ -263,7 +263,7 @@ export function Postcards({
                   aria-current={active || undefined}
                   tabIndex={active ? 0 : -1}
                   aria-label={fill(a.labelled, { label: a.postcards.show, value: name })}
-                  data-cursor={a.postcards.show}
+                 
                   onClick={() => onPick(p.id)}
                   onFocus={() => reveal(i)}
                   draggable={false}

@@ -203,11 +203,10 @@
     touch-action: pan-y;
   }
 }
-/* the native cursor, where the glass cursor isn't drawn */
-html:not(.has-cursor) .app-nf-alert {
+.app-nf-alert {
   cursor: grab;
 }
-html:not(.has-cursor) .app-nf-alert[data-dragging] {
+.app-nf-alert[data-dragging] {
   cursor: grabbing;
 }
 /* on the material itself (it declares its own thickness): a light blur

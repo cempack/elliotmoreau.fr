@@ -98,7 +98,7 @@ export function Listening({ status, track, playing }: Listen) {
             rel="noopener noreferrer"
             className="app-now-listen-art"
             aria-label={fill(l.open, { title: track.title })}
-            data-cursor="Spotify"
+           
           >
             <Art image={track.image} seed={`${track.title} · ${track.artist}`} />
           </a>

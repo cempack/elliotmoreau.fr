@@ -80,7 +80,7 @@
   --menubar-h: 2.75rem;
   --dock-h: 4.75rem; /* 76px desktop dock */
 
-  /* foundation component defaults (palette, sheet, cursor, segmented) */
+  /* foundation component defaults (palette, sheet, segmented) */
   --ui-bg: var(--color-ink-900);
   --ui-surface: var(--glass-tint-thick);
   --ui-border: var(--hairline);
@@ -213,106 +213,8 @@ p {
 }
 
 /* ───────────────────────── foundation primitives ─────────────────────────
-   Component primitives themed through the --ui-* / --pal-* / --cursor-*
+   Component primitives themed through the --ui-* / --pal-*
    custom properties defined above (Moss). */
-
-/* cursor */
-html.has-cursor,
-html.has-cursor * {
-  cursor: none !important;
-}
-html.has-cursor input,
-html.has-cursor textarea,
-html.has-cursor [contenteditable="true"] {
-  cursor: text !important;
-}
-.em-cursor {
-  position: fixed;
-  inset: 0;
-  z-index: 2147483000;
-  pointer-events: none;
-  transition: opacity 0.2s;
-}
-.em-cursor[data-hidden] {
-  opacity: 0;
-}
-.em-cursor[data-suppressed] .em-cursor-ring {
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-/* a modal dialog sits in the top layer, above any z-index: hand the
-   pointer back to the native cursor while one is open */
-html.has-cursor:has(dialog[open]) .em-cursor {
-  opacity: 0;
-}
-html.has-cursor:has(dialog[open]),
-html.has-cursor:has(dialog[open]) * {
-  cursor: auto !important;
-}
-html.has-cursor:has(dialog[open]) :is(a, button, [role="option"], [role="button"]) {
-  cursor: pointer !important;
-}
-.em-cursor-ring {
-  position: fixed;
-  left: 0;
-  top: 0;
-  translate: -50% -50%;
-  border-radius: 999px;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--cursor-ring, rgba(235, 233, 225, 0.55));
-  background: var(--cursor-fill, transparent);
-  mix-blend-mode: var(--cursor-blend, normal);
-}
-.em-cursor-label {
-  font: 600 11px/1 var(--ui-font);
-  letter-spacing: 0.02em;
-  color: var(--cursor-label, var(--ui-accent-ink));
-  white-space: nowrap;
-}
-.em-cursor-dot {
-  position: fixed;
-  left: -3px;
-  top: -3px;
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: var(--cursor-dot, var(--ui-accent));
-  transition: scale 0.15s;
-}
-.em-cursor-dot[data-active] {
-  scale: 0;
-}
-.em-cursor--glass .em-cursor-ring {
-  background: var(--cursor-fill, rgba(255, 255, 255, 0.06));
-  backdrop-filter: blur(2px) saturate(1.8) brightness(1.15);
-  border-color: rgba(255, 255, 255, 0.35);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 6px 20px -8px rgba(0, 0, 0, 0.5);
-}
-.em-cursor--glass .em-cursor-ring:has(.em-cursor-label) {
-  background: var(--ui-accent);
-}
-/* over a control: a hairline, never a lens over the label */
-.em-cursor--glass .em-cursor-ring[data-hover]:not(:has(.em-cursor-label)) {
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: none;
-  border-color: rgba(255, 255, 255, 0.5);
-  box-shadow: 0 4px 14px -8px rgba(0, 0, 0, 0.5);
-}
-.em-cursor--block .em-cursor-ring {
-  border-radius: 2px;
-}
-.em-cursor--block .em-cursor-dot {
-  border-radius: 0;
-  width: 8px;
-  height: 14px;
-  left: -4px;
-  top: -7px;
-}
-.em-cursor-ring:has(.em-cursor-label) {
-  background: var(--cursor-label-bg, var(--ui-accent));
-  border-color: transparent;
-}
 
 /* command palette */
 .em-palette {

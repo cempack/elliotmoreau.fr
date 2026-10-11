@@ -1199,7 +1199,7 @@ export function AtlasGlobe({
       tabIndex={0}
       // the shell's cursor keeps to its dot here: a label pill would hide
       // the very markers you aim at (the callout names them instead)
-      data-cursor-hide=""
+     
     >
       <canvas ref={canvasRef} className="app-atlas-globe-canvas" aria-hidden />
       <span ref={tipRef} className="app-atlas-globe-tip" aria-hidden />

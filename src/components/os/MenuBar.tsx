@@ -127,7 +127,7 @@ function Bar() {
   return (
     // the bar's controls carry their own hover pills: the glass cursor
     // steps back to a dot here instead of blurring the labels
-    <header className="os-menubar" data-open={menu.open ?? undefined} data-cursor-hide="">
+    <header className="os-menubar" data-open={menu.open ?? undefined}>
       <div className="os-menubar-bg" aria-hidden />
       <m.div className="os-menubar-tint" style={{ opacity: thick }} aria-hidden />
       <m.div className="os-menubar-edge" style={{ opacity: thick }} aria-hidden />

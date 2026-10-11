@@ -59,7 +59,7 @@ export function Featured({
         className="app-work-hero-stage"
         onClick={onQuickLook}
         aria-label={fmt(f.quickLookOf, { name: repo.name })}
-        data-cursor={f.quickLook}
+       
       >
         <DitherStage tone="ion" />
         <m.span className="app-work-hero-orbit" style={lean ? { x, y } : undefined} data-hero-origin>

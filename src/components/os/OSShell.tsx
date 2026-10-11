@@ -3,7 +3,6 @@
 import { useI18n } from "@/i18n/client";
 import type { SiteData } from "@/lib/data";
 import { CommandPalette } from "@/components/ui/CommandPalette";
-import { Cursor } from "@/components/ui/Cursor";
 import { SmoothScroll } from "@/components/motion/SmoothScroll";
 import { SiteDataProvider } from "./SiteData";
 import { SkyProvider } from "./sky";
@@ -27,7 +26,7 @@ function Spotlight({ children }: { children: React.ReactNode }) {
 /**
  * emOS: the persistent chrome around every app. Order matters for
  * stacking: wallpaper (z0) → app content → dock/menu bar (z50) →
- * terminal → intro (z100) → cursor.
+ * terminal → intro (z100).
  */
 export function OSShell({ data, children }: { data: SiteData; children: React.ReactNode }) {
   return (
@@ -42,7 +41,6 @@ export function OSShell({ data, children }: { data: SiteData; children: React.Re
             <Dock />
             <Terminal />
             <Intro />
-            <Cursor variant="glass" />
           </Spotlight>
         </TerminalProvider>
       </SkyProvider>

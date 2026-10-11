@@ -173,13 +173,6 @@ function thrownAtDock(ptr: Pt, c: Pt, v: Pt, t: Target) {
   return false;
 }
 
-/** The contextual cursor reads `data-cursor-hide` on pointerover: plain dot while carrying. */
-function quietCursor(el: HTMLElement, quiet: boolean) {
-  if (quiet) el.setAttribute("data-cursor-hide", "");
-  else el.removeAttribute("data-cursor-hide");
-  el.dispatchEvent(new PointerEvent("pointerover", { bubbles: true, pointerType: "mouse" }));
-}
-
 /** a short haptic tick on the lift, where the platform has one */
 function tick() {
   const ua = (navigator as Navigator & { userActivation?: { hasBeenActive: boolean } }).userActivation;
@@ -604,7 +597,6 @@ export function Stage({
     setTarget(g.target);
     setReturning(false);
     setPeek(null);
-    if (!g.touch) quietCursor(g.el, true);
     if (lift) {
       // iOS-style lift: settle in a touch smaller, then rise toward the finger
       pop.jump(0.94);
@@ -698,7 +690,6 @@ export function Stage({
     setReturning(false);
     setGrip("flyer");
     setTarget(g.target);
-    if (!g.touch) quietCursor(g.el, true);
     // no jump: carry on from the scale it had in the air
     pop.jump(1);
     const free = geometry(g).s;
@@ -790,7 +781,6 @@ export function Stage({
     try {
       if (g.el.hasPointerCapture(e.pointerId)) g.el.releasePointerCapture(e.pointerId);
     } catch {}
-    if (g.moved && !g.touch) quietCursor(g.el, false);
 
     if (!g.moved) {
       // a tap: a little hop says "pick me up"
