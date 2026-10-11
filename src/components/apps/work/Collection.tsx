@@ -260,8 +260,9 @@ function Item({
   const id = itemId(repo.name);
   // the grid ↔ list morph ripples through the items; filtering doesn't
   const lt = { ...spring.default, delay: stagger ? Math.min(index * 0.014, 0.2) : 0 };
-  const radius = view ? (view === "icons" ? (phone ? 22 : 30) : phone ? 12 : 9) : undefined;
-  // the plate glows faintly in the repo's language colour
+  // inline so the layout morph keeps corners true; the card radius in a grid, tighter in a list
+  const radius = view ? (view === "icons" ? 10 : phone ? 8 : 6) : undefined;
+  // the plate's frame is warmed by the repo's language colour
   const plateStyle = { "--lang": langColor(repo.language), borderRadius: radius } as React.CSSProperties;
 
   return (

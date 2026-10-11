@@ -34,8 +34,8 @@ const en = {
   back: "Back to {folder}",
   /* newsletter (reader) */
   memberKicker: "Newsletter",
-  memberTitle: "Get the next one in your inbox",
-  memberBody: "One short email when a new post is up, a few times a year. Free, no spam, and one click to leave.",
+  memberTitle: "Get the next post by email",
+  memberBody: "A few times a year. Unsubscribe in one click.",
   memberRss: "Prefer a feed? RSS",
   /* newsletter (phones: the list screen) */
   newsTitle: "Newsletter",
@@ -97,8 +97,8 @@ const fr: typeof en = {
   more: "À lire aussi",
   back: "Retour à {folder}",
   memberKicker: "Newsletter",
-  memberTitle: "Recevez le prochain par e‑mail",
-  memberBody: "Un court e‑mail quand un article paraît, quelques fois par an. Gratuit, sans spam, et un clic suffit pour partir.",
+  memberTitle: "Le prochain article par e‑mail",
+  memberBody: "Quelques fois par an. Désinscription en un clic.",
   memberRss: "Plutôt un flux ? RSS",
   newsTitle: "Newsletter",
   newsBody: "Les nouveaux articles par e‑mail, quelques fois par an.",
