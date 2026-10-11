@@ -48,8 +48,14 @@ const en = {
       minutesShort: "{n} min",
       empty: "The first post is on its way.",
       blog: "blog.elliotmoreau.fr",
-      aria: "Latest post: {title}, {minutes}, {ago}. Open in Writing.",
+      aria: "{title}, {minutes}, {date}. Open in Writing.",
       ariaEmpty: "No posts yet. Open Writing.",
+      /** the poster's kicker: under a week old, or its tag */
+      kickerNew: "New",
+      kickerPost: "Post",
+      prev: "Previous post",
+      next: "Next post",
+      hint: "The latest posts, stacked like newsstand posters. Left and right arrows flip through them; Enter opens one.",
     },
     /** the last push: a wall of Toulouse brick, one brick per day */
     push: {
@@ -114,8 +120,13 @@ const fr: typeof en = {
       minutesShort: "{n} min",
       empty: "Le premier article arrive bientôt.",
       blog: "blog.elliotmoreau.fr",
-      aria: "Dernier article : {title}, {minutes}, {ago}. Ouvrir dans Écrits.",
+      aria: "{title}, {minutes}, {date}. Ouvrir dans Écrits.",
       ariaEmpty: "Pas encore d’article. Ouvrir Écrits.",
+      kickerNew: "Nouveau",
+      kickerPost: "Article",
+      prev: "Article précédent",
+      next: "Article suivant",
+      hint: "Les derniers articles, empilés comme des affiches de kiosque. Les flèches gauche et droite les feuillettent ; Entrée en ouvre un.",
     },
     push: {
       wall: "Pushs publics, 13 dernières semaines",

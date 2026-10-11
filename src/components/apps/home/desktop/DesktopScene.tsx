@@ -9,7 +9,7 @@ import { HelloWindow, type HelloHandle } from "./HelloWindow";
 import { ClockWidget } from "./Sundial";
 import { SunHandle } from "./SunHandle";
 import { PushWidget } from "./BrickWall";
-import { LatestPostWidget } from "./Widgets";
+import { LatestPostWidget } from "./Kiosk";
 import { type DesktopIconId } from "./icons";
 import { desktopMemory } from "./store";
 import { INTERACTIVE, intersects, type Rect } from "./physics";
