@@ -120,6 +120,9 @@ const en = {
     offline: "Silence",
     progress: "Track progress",
     topArtists: "On repeat",
+    repeatLately: "On repeat lately",
+    showB: "Turn the tape over: side B, on repeat lately",
+    showA: "Turn the tape over: side A, the track",
   },
   spotlight: {
     placeholder: "Search apps, posts, projects, commands…",
@@ -284,6 +287,9 @@ const fr: typeof en = {
     offline: "Silence",
     progress: "Progression du morceau",
     topArtists: "En boucle",
+    repeatLately: "En boucle ces temps-ci",
+    showB: "Retourner la cassette : face B, en boucle ces temps-ci",
+    showA: "Retourner la cassette : face A, le morceau",
   },
   spotlight: {
     placeholder: "Apps, articles, projets, commandes…",
