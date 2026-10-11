@@ -16,7 +16,7 @@ import { ART_H, ART_W, drunkenBishop, groups, loadKey, type KeyInfo } from "./pg
 const KEY_FILE = "elliot-moreau.asc";
 
 /** visit count → colour, cool to warm; start and end stand out */
-const HEAT = ["", "#3f4842", "#7a68e6", "#aea3c8", "#89b4a8", "#ebe9e1"];
+const HEAT = ["", "#3f4842", "#6f8f84", "#aea3c8", "#89b4a8", "#ebe9e1"];
 
 /** The fingerprint drawn as a 17 × 9 pixel board (the drunken bishop). */
 function VisualFingerprint({ info }: { info: KeyInfo }) {

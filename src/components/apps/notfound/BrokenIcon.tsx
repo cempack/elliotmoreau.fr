@@ -19,7 +19,7 @@ const C = {
   ink950: "#0a0c0b",
   ink900: "#101311",
   ink600: "#2b322d",
-  night: "#1d1a45",
+  night: "#1b2622",
   signal: "#b0cc86",
   ember: "#e0bd6e",
   flare: "#e2786b",

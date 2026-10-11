@@ -217,7 +217,7 @@
   --os-glass-rblur: 4px;
 }
 html[data-sky="day"] .app-nf-alert .os-glass {
-  --os-glass-tint: rgba(6, 14, 30, 0.82);
+  --os-glass-tint: rgba(8, 13, 11, 0.82);
 }
 .app-nf-alert-glass {
   position: absolute;

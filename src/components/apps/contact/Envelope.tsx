@@ -41,7 +41,7 @@ const P = {
   vShade: "rgba(10, 12, 11, 0.2)",
   flapOut: "#ece8e0",
   flapEdge: "#b8b4ac",
-  liner: "#1d1a45",
+  liner: "#1b2622",
   stripe: "#5a4bc4",
   ink: "#3f4842",
   lime: "#b0cc86",

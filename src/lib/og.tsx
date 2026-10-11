@@ -31,10 +31,10 @@ const C = {
   signal: "#b0cc86",
   signalDeep: "#86a35c",
   ion: "#89b4a8",
-  ionLight: "#cdf6ff",
-  ionDeep: "#3fb4dc",
+  ionLight: "#d5e6df",
+  ionDeep: "#5f8f84",
   lilac: "#aea3c8",
-  lilacDeep: "#7a68e6",
+  lilacDeep: "#6f8f84",
   ember: "#e0bd6e",
   emberDeep: "#e8893d",
   emberLight: "#ffe2b8",
@@ -221,8 +221,8 @@ function Moon({ x, y, cell = 6 }: { x: number; y: number; cell?: number }) {
 
 /* ─────────────────────────── the wordmark ─────────────────────────── */
 
-const SOLID_FAR = "#0C0D22";
-const SOLID_NEAR = "#1F2050";
+const SOLID_FAR = "#0B100E";
+const SOLID_NEAR = "#1D2B27";
 const TOP_FACE = "#FBF9F4";
 
 /** The pixel wordmark as rects: band inks, voxel relief and lit lips,

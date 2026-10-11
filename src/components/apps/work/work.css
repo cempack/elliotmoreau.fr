@@ -728,8 +728,8 @@
   /* a faint glow of the repo's language colour from above */
   background: radial-gradient(
     120% 95% at 50% 0%,
-    color-mix(in oklab, var(--lang, #6a7bd6) 42%, #141936) 0%,
-    color-mix(in oklab, var(--lang, #6a7bd6) 10%, #0c0f1d) 58%,
+    color-mix(in oklab, var(--lang, #7f9f94) 42%, #141936) 0%,
+    color-mix(in oklab, var(--lang, #7f9f94) 10%, #0c0f1d) 58%,
     #080a14 100%
   );
   box-shadow:

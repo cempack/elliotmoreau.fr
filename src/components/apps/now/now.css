@@ -1213,10 +1213,10 @@ li:first-child .app-now-artist-rank {
   display: block;
 }
 .app-now-pulse-base {
-  fill: rgba(145, 150, 166, 0.5);
+  fill: rgba(143, 152, 143, 0.5);
 }
 .app-now-pulse-ticks {
-  fill: rgba(145, 150, 166, 0.45);
+  fill: rgba(143, 152, 143, 0.45);
 }
 .app-now-pulse-ev {
   opacity: 0.8;
