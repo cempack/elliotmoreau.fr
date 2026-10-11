@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { animate, useMotionValue, useTransform, type Transition } from "motion/react";
-import { project, rubberband, spring } from "@/lib/motion";
+import { project, rubberband, spring, springFrom } from "@/lib/motion";
 import { lenisRef } from "@/lib/lenisRef";
 import { pushSample, releaseVelocity, swallowNextClick, type Sample } from "./gesture";
 
@@ -13,7 +13,7 @@ export type Settle = "push" | "pop" | "stay";
 /** a press this close to the left edge always means "back" */
 const EDGE = 28;
 /** iOS-like push/pop: critically damped, a touch slower than default */
-const PUSH: Transition = { type: "spring", visualDuration: 0.42, bounce: 0 };
+const PUSH: Transition = springFrom(0.42);
 /** how far the list sits to the left while the reader covers it */
 const PARALLAX = 0.3;
 /** "off to the right" before the stack has been measured */

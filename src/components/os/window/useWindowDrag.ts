@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { animate, useMotionValue } from "motion/react";
-import { project, rubberband, spring } from "@/lib/motion";
+import { project, rubberband, spring, springFrom } from "@/lib/motion";
 
 type Sample = { t: number; x: number; y: number };
 type Grab = {
@@ -112,7 +112,7 @@ export function useWindowDrag({
     }
     // the grab point is the transform origin: steer it into the icon
     const to = target();
-    const t = { type: "spring", visualDuration: 0.42, bounce: 0 } as const;
+    const t = springFrom(0.42);
     animate(x, x.get() + (to.x - px), { ...t, velocity: vx });
     animate(y, y.get() + (to.y - py), { ...t, velocity: vy });
     animate(scale, 0.12, t);

@@ -39,16 +39,43 @@ const COLLAPSED_KEY = "em-pip-collapsed";
  * chevron; until the user picks, it is the full card on the Desktop and the
  * pill over app windows and on phones (it would cover their footers).
  * Hidden when there's no track. Reads useSpotifyStatus(seed from
- * useSiteData().spotify). Publishes html[data-pip-corner] and
- * --os-pip-bottom so the notification banners can stack clear of it.
+ * useSiteData().spotify).
+ *
+ * Publishes where it RESTS (not where a fling has it mid-flight) on <html>,
+ * so apps can reserve room without reading .os-pip internals:
+ * - --os-pip-x / -y / -w / -h: its resting rect, px (0 when hidden);
+ * - --os-pip-room-right / --os-pip-room-bottom: how much of that viewport
+ *   edge it takes, including a 12px gap (0 when it sits on the other side
+ *   or is hidden);
+ * - data-os-pip="tl|tr|bl|br|hidden", data-os-pip-size="full|pill".
+ * Updated on placement, resize, corner change, collapse/expand and size
+ * changes. (Legacy, still read by a few apps: html[data-pip-corner] and
+ * --os-pip-bottom.)
  */
 export function MiniPlayer() {
   const hydrated = useHydrated();
   const { spotify } = useSiteData();
   const { status, track, playing } = useSpotifyStatus(spotify);
+  const shown = hydrated && Boolean(track);
+  useEffect(() => {
+    if (hydrated && !shown) publishHidden();
+  }, [hydrated, shown]);
   // client-only: its corner lives in localStorage
-  if (!hydrated || !track) return null;
+  if (!shown || !track) return null;
   return <Pip track={track} playing={playing} live={Boolean(status?.now)} />;
+}
+
+const PIP_VARS = ["x", "y", "w", "h", "room-right", "room-bottom"] as const;
+const ROOM_GAP = 12;
+
+/** Contract (B): nothing to keep clear of. */
+function publishHidden() {
+  const root = document.documentElement;
+  for (const k of PIP_VARS) root.style.setProperty(`--os-pip-${k}`, "0px");
+  root.dataset.osPip = "hidden";
+  delete root.dataset.osPipSize;
+  delete root.dataset.pipCorner;
+  root.style.removeProperty("--os-pip-bottom");
 }
 
 type Grab = {
@@ -152,24 +179,37 @@ function Pip({ track, playing, live }: { track: TrackInfo; playing: boolean; liv
     };
   }, []);
 
-  /** Where it is coming to rest, for the notification banners (Toasts). */
+  /** The resting rect it last published (contract B). */
+  const rest = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
+
+  /** Where it is coming to rest, for the apps and the notification banners. */
   const publish = useCallback(
     (c: Corner) => {
       const el = rootRef.current;
       if (!el) return;
+      const to = targetFor(c);
+      const w = el.offsetWidth;
+      const h = el.offsetHeight;
       const root = document.documentElement;
+      const vw = root.clientWidth;
+      const vh = root.clientHeight;
+      const px = (n: number) => `${Math.max(0, Math.round(n))}px`;
+      rest.current = { x: to.x, y: to.y, w, h };
+      root.style.setProperty("--os-pip-x", px(to.x));
+      root.style.setProperty("--os-pip-y", px(to.y));
+      root.style.setProperty("--os-pip-w", px(w));
+      root.style.setProperty("--os-pip-h", px(h));
+      root.style.setProperty("--os-pip-room-right", c[1] === "r" ? px(vw - to.x + ROOM_GAP) : "0px");
+      root.style.setProperty("--os-pip-room-bottom", c[0] === "b" ? px(vh - to.y + ROOM_GAP) : "0px");
+      root.dataset.osPip = c;
+      root.dataset.osPipSize = el.hasAttribute("data-collapsed") ? "pill" : "full";
+      // legacy
       root.dataset.pipCorner = c;
-      root.style.setProperty("--os-pip-bottom", `${Math.round(targetFor(c).y + el.offsetHeight)}px`);
+      root.style.setProperty("--os-pip-bottom", px(to.y + h));
     },
     [targetFor]
   );
-  useEffect(
-    () => () => {
-      delete document.documentElement.dataset.pipCorner;
-      document.documentElement.style.removeProperty("--os-pip-bottom");
-    },
-    []
-  );
+  useEffect(() => publishHidden, []);
 
   // seat it in its remembered corner, and keep it there on resize
   useLayoutEffect(() => {
@@ -212,6 +252,35 @@ function Pip({ track, playing, live }: { track: TrackInfo; playing: boolean; liv
     animate(x, to.x, spring.default);
     animate(y, to.y, spring.default);
   }, [collapsed, reduced, targetFor, publish, x, y]);
+
+  // its size can change on its own (live ↔ last played, a long title on a
+  // pill): re-seat it so the corner-side edges stay pinned, and republish
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => {
+      const was = rest.current;
+      if (grab.current || !was) return;
+      const to = targetFor(corner.current);
+      if (
+        Math.abs(to.x - was.x) < 0.5 &&
+        Math.abs(to.y - was.y) < 0.5 &&
+        el.offsetWidth === was.w &&
+        el.offsetHeight === was.h
+      )
+        return;
+      publish(corner.current);
+      if (reduced) {
+        x.jump(to.x);
+        y.jump(to.y);
+      } else {
+        animate(x, to.x, spring.default);
+        animate(y, to.y, spring.default);
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [targetFor, publish, reduced, x, y]);
 
   // progress: interpolate locally between polls, in whole pixel cells
   const sync = useRef({ ms: track.progressMs, at: 0 });
@@ -426,7 +495,7 @@ function Pip({ track, playing, live }: { track: TrackInfo; playing: boolean; liv
             className="os-pip-pill"
             onClick={toggle}
             aria-expanded={false}
-            aria-label={`${p.expand}: ${track.title}, ${track.artist}`}
+            aria-label={`${p.expand}${t.shell.colon}${track.title}, ${track.artist}`}
           >
             <Art track={track} round />
             <m.span layoutId="os-pip-eq" className="os-pip-eq" transition={spring.default}>

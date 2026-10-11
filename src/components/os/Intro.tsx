@@ -15,6 +15,7 @@ import { EmMark } from "./intro/Mark";
 import { Padlock, SkyGlyph } from "./intro/pixels";
 import { playStartupChord } from "./intro/chime";
 import { restartOS } from "./menubar/util";
+import { springFrom } from "@/lib/motion";
 
 /**
  * CONTRACT (owner: boot/terminal agent)
@@ -251,7 +252,7 @@ function LockScreen({
         className="os-intro-lock-ui"
         initial={unlocking ? { opacity: 1, y: 0 } : false}
         animate={unlocking ? { opacity: 0, y: -48 } : { opacity: 1, y: 0 }}
-        transition={{ type: "spring", visualDuration: 0.4, bounce: 0, delay: unlocking ? 0.05 : 0 }}
+        transition={{ ...springFrom(0.4), delay: unlocking ? 0.05 : 0 }}
       >
         <span className="os-intro-lockmark">
           <Padlock open={unlocking} />
@@ -325,7 +326,7 @@ function Shimmer({ text }: { text: string }) {
 
 /* ───────────────────────── unlock ───────────────────────── */
 
-const LIFT = { type: "spring", visualDuration: 0.5, bounce: 0 } as const;
+const LIFT = springFrom(0.5);
 
 /**
  * The exit: a pointer-transparent copy of the last intro frame. From the

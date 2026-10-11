@@ -6,7 +6,7 @@ import { useI18n } from "@/i18n/client";
 import { usePathname } from "next/navigation";
 import { useReduced } from "@/hooks/env";
 import { lenisRef } from "@/lib/lenisRef";
-import { clamp, project, rubberband, spring } from "@/lib/motion";
+import { clamp, project, rubberband, spring, springFrom } from "@/lib/motion";
 import { PixelGlyph } from "@/components/glyphs";
 import { appForPath } from "../apps";
 import { G_CLOSE, G_MIN, G_UNZOOM, G_ZOOM } from "../window/glyphs";
@@ -227,12 +227,12 @@ export function DesktopWindow({
           ...hidden,
           // going home: hold the glass while it shrinks, fade as it lands
           transition: {
-            scale: { type: "spring", visualDuration: 0.36, bounce: 0 },
+            scale: springFrom(0.36),
             opacity: { duration: 0.22, ease: [0.64, 0, 0.78, 0], delay: 0.08 },
           },
         }}
         transition={{
-          scale: { type: "spring", visualDuration: 0.42, bounce: 0 },
+          scale: springFrom(0.42),
           opacity: { duration: 0.18, ease: [0.22, 1, 0.36, 1] },
         }}
       >

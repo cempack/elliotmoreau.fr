@@ -7,7 +7,7 @@ import { useI18n } from "@/i18n/client";
 import { useHydrated } from "@/hooks/env";
 import { timeAgo } from "@/lib/format";
 import { PLACES } from "@/lib/places";
-import { spring } from "@/lib/motion";
+import { spring, springFrom } from "@/lib/motion";
 import { useSound } from "@/lib/sound";
 import { PixelGlyph, type Cells } from "@/components/glyphs";
 import { useSiteData } from "@/components/os/SiteData";
@@ -152,7 +152,7 @@ export function HelloWindow({
           // the window's centre (minus its live offset) is where scale acts
           const cx = r.left + r.width / 2 - x.get();
           const cy = r.top + r.height / 2 - y.get();
-          const t = { type: "spring", visualDuration: 0.42, bounce: 0 } as const;
+          const t = springFrom(0.42);
           animate(x, to.x - cx, t);
           animate(y, to.y - cy, t);
           animate(scale, 0.06, t).then(() => {

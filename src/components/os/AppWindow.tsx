@@ -161,6 +161,9 @@ export function AppWindow({
       <m.section
         ref={winRef}
         layout
+        // only zoom resizes the window on a spring: content changes (a
+        // filter, a sheet, a growing list) just reflow
+        layoutDependency={zoomed}
         transition={{ layout: spring.default }}
         aria-labelledby={titleId}
         data-app={app}
@@ -175,6 +178,7 @@ export function AppWindow({
         <m.div
           ref={barRef}
           layout="position"
+          layoutDependency={zoomed}
           className="os-win-bar"
           data-cursor-hide=""
           {...drag.handlers}
@@ -243,7 +247,7 @@ export function AppWindow({
           </Link>
         </m.div>
 
-        <m.div layout="position" className="os-win-body" data-has-side={sidebar ? "" : undefined}>
+        <m.div layout="position" layoutDependency={zoomed} className="os-win-body" data-has-side={sidebar ? "" : undefined}>
           {sidebar && (
             <aside className="os-win-side" aria-label={w.sections} data-lenis-prevent>
               {sidebar}

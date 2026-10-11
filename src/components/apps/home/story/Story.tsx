@@ -12,6 +12,7 @@ import { WorkDeck } from "./Deck";
 import { WritingChapter } from "./Writing";
 import { Finale } from "./Finale";
 import { restoreScrollMode } from "./PowerOff";
+import { readPip } from "../../pip";
 
 /**
  * CONTRACT (owner: home-story builder)
@@ -109,9 +110,9 @@ function useRevealFocus(rootRef: React.RefObject<HTMLDivElement | null>) {
       const r = el.getBoundingClientRect();
       // the mini player floats over a corner: a control in its column
       // clears it too (WCAG 2.4.11, focus not obscured)
-      const pip = document.querySelector(".os-pip")?.getBoundingClientRect();
-      if (pip && pip.width && r.right > pip.left - 8 && r.left < pip.right + 8) {
-        if (pip.top + pip.height / 2 > window.innerHeight / 2) bottom = Math.min(bottom, pip.top - 14);
+      const pip = readPip();
+      if (pip && r.right > pip.left - 8 && r.left < pip.right + 8) {
+        if (pip.corner[0] === "b") bottom = Math.min(bottom, pip.top - 14);
         else top = Math.max(top, pip.bottom + 14);
       }
       let dy = 0;

@@ -4,6 +4,7 @@
  * the date. Cell maps are strings, rendered as crisp SVG rects, SSR-safe.
  */
 import { m } from "motion/react";
+import { springFrom } from "@/lib/motion";
 
 type Map = string[];
 
@@ -53,7 +54,7 @@ export function Padlock({ cell = 3, open = false }: { cell?: number; open?: bool
         className="os-intro-padlock-shackle"
         initial={{ y: 0 }}
         animate={{ y: open ? -2 * cell : 0 }}
-        transition={{ type: "spring", visualDuration: 0.2, bounce: 0.3 }}
+        transition={springFrom(0.2, 0.3)}
       >
         <Pixels map={SHACKLE} cell={cell} />
       </m.span>

@@ -499,34 +499,6 @@ html.has-cursor:has(dialog[open]) :is(a, button, [role="option"], [role="button"
   }
 }
 
-/* segmented control */
-.em-seg {
-  display: inline-flex;
-  padding: 3px;
-  border-radius: 999px;
-  background: var(--seg-bg, rgba(255, 255, 255, 0.06));
-  border: 1px solid var(--ui-border);
-}
-.em-seg-btn {
-  position: relative;
-  min-width: 36px;
-  padding: 5px 10px;
-  border-radius: 999px;
-  font: 600 12px/1 var(--ui-font);
-  letter-spacing: 0.02em;
-  color: var(--ui-muted);
-  transition: color 0.2s;
-}
-.em-seg-btn[aria-pressed="true"] {
-  color: var(--ui-accent-ink);
-}
-.em-seg-thumb {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: var(--ui-accent);
-}
-
 /* intro overlay */
 .em-intro {
   position: fixed;

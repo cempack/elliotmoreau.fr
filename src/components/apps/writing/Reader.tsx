@@ -6,7 +6,7 @@ import type { GhostPost } from "@/lib/ghost";
 import { useI18n } from "@/i18n/client";
 import { useHydrated } from "@/hooks/env";
 import { timeAgo } from "@/lib/format";
-import { spring } from "@/lib/motion";
+import { spring, springFrom } from "@/lib/motion";
 import { useSound } from "@/lib/sound";
 import { useToast } from "@/components/Toasts";
 import { PixelGlyph } from "@/components/glyphs";
@@ -21,7 +21,7 @@ import { RSS_URL, dateLong, fmt, primaryTag } from "./util";
 
 /* the outgoing copy steps aside fast; the incoming title rises word by
    word out of its own line box, the rest settles in after it */
-const RISE = { type: "spring", visualDuration: 0.42, bounce: 0 } as const;
+const RISE = springFrom(0.42);
 const copyV: Variants = {
   hidden: {},
   shown: { transition: { staggerChildren: 0.018 } },

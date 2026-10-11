@@ -2,8 +2,11 @@
 
 import { Fragment, useRef } from "react";
 import { m, useInView, useScroll, useTransform, type MotionValue } from "motion/react";
+import { springFrom } from "@/lib/motion";
 
 type Tag = "h1" | "h2" | "h3" | "p" | "span" | "div";
+
+const RISE = springFrom(0.7);
 
 /**
  * Display type that assembles piece by piece. Each word is a no-wrap mask,
@@ -60,7 +63,7 @@ export function SplitText({
                   className={`em-split-piece ${pieceClassName}`}
                   initial={{ y: "125%" }}
                   animate={inView ? { y: "0%" } : { y: "125%" }}
-                  transition={{ type: "spring", visualDuration: 0.7, bounce: 0, delay: delay + i * stagger }}
+                  transition={{ ...RISE, delay: delay + i * stagger }}
                 >
                   {piece}
                 </m.span>

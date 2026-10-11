@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { AnimatePresence, m } from "motion/react";
 import { PixelPlanet } from "@/components/PixelPlanet";
 import { useReduced } from "@/hooks/env";
+import { springFrom } from "@/lib/motion";
 import type { Cells } from "@/components/glyphs";
 import { useOnScreen, useTabHidden } from "./lib";
 
@@ -172,6 +173,9 @@ export function Art({ image, seed, className = "" }: { image: string; seed: stri
  * (just a cross-fade under reduced motion). Fixed-width tabular digits so
  * nothing around it moves.
  */
+/** a digit rolls on the house curve, a touch slower than default */
+const ROLL = springFrom(0.42);
+
 export function RollText({ text, className = "" }: { text: string; className?: string }) {
   const reduced = useReduced();
   return (
@@ -185,7 +189,7 @@ export function RollText({ text, className = "" }: { text: string; className?: s
               initial={reduced ? { opacity: 0 } : { y: "-70%", opacity: 0 }}
               animate={{ y: "0%", opacity: 1 }}
               exit={reduced ? { opacity: 0 } : { y: "70%", opacity: 0 }}
-              transition={reduced ? { duration: 0.15 } : { type: "spring", visualDuration: 0.42, bounce: 0 }}
+              transition={reduced ? { duration: 0.15 } : ROLL}
             >
               {ch}
             </m.span>

@@ -60,14 +60,27 @@ const STAR_RARE = ["#ffb86b", "#ff5f7e", "#ffd9a3"].map(hex);
 const NEBULAE = ["#2c2a66", "#1d3358", "#3d2460"].map(hex);
 
 type Family = { base: RGB; band: RGB; rim: RGB; moon: boolean };
+/** Moons are the rare one (~12%): a grid of repos should read as a sky of
+ * coloured worlds, with the odd grey moon among them. */
 const FAMILIES: { f: Family; w: number }[] = [
-  { f: { base: hex("#d6d1e4"), band: hex("#aaa3c8"), rim: hex("#f5f2ec"), moon: true }, w: 0.22 },
+  { f: { base: hex("#d6d1e4"), band: hex("#aaa3c8"), rim: hex("#f5f2ec"), moon: true }, w: 0.12 },
   { f: { base: hex("#b3a4ff"), band: hex("#7d6cdc"), rim: hex("#ece8ff"), moon: false }, w: 0.2 },
   { f: { base: hex("#8be9ff"), band: hex("#4aa9cf"), rim: hex("#e2fbff"), moon: false }, w: 0.2 },
-  { f: { base: hex("#ffb86b"), band: hex("#d98a48"), rim: hex("#ffe7c8"), moon: false }, w: 0.13 },
-  { f: { base: hex("#b8ec6a"), band: hex("#82b83c"), rim: hex("#efffd2"), moon: false }, w: 0.13 },
-  { f: { base: hex("#ff8aa0"), band: hex("#d9566f"), rim: hex("#ffdde4"), moon: false }, w: 0.12 },
+  { f: { base: hex("#ffb86b"), band: hex("#d98a48"), rim: hex("#ffe7c8"), moon: false }, w: 0.16 },
+  { f: { base: hex("#b8ec6a"), band: hex("#82b83c"), rim: hex("#efffd2"), moon: false }, w: 0.16 },
+  { f: { base: hex("#ff8aa0"), band: hex("#d9566f"), rim: hex("#ffdde4"), moon: false }, w: 0.16 },
 ];
+
+/** The family comes from its own stream, so it doesn't hinge on how many
+ * stars came before it (the sample repos: rose, lime, lilac, lilac, ember, ion). */
+function familyFor(seed: string): Family {
+  let pick = mulberry32(seed32(`orb:${seed}`))();
+  for (const e of FAMILIES) {
+    pick -= e.w;
+    if (pick < 0) return e.f;
+  }
+  return FAMILIES[1].f;
+}
 
 export function paintPlanet(seed: string, ctx: CanvasRenderingContext2D) {
   const rng = mulberry32(seed32(seed));
@@ -140,15 +153,8 @@ export function paintPlanet(seed: string, ctx: CanvasRenderingContext2D) {
   }
 
   // --- planet ---
-  let pick = rng();
-  let fam = FAMILIES[0].f;
-  for (const e of FAMILIES) {
-    pick -= e.w;
-    if (pick < 0) {
-      fam = e.f;
-      break;
-    }
-  }
+  rng(); // the old family draw: keeps the rest of each planet as it was
+  const fam = familyFor(seed);
   const cx = 25 + rng() * 14;
   const cy = 25 + rng() * 14;
   const r = 13 + rng() * 6;

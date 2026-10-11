@@ -9,8 +9,6 @@
   --app-atlas-stage-h: calc(100svh - var(--menubar-h) - var(--os-win-gap) - var(--os-win-dock-room) - var(--os-win-bar-h));
   /* the peek strip: grabber, the stamp with its perforations and shadow */
   --app-atlas-peek: 138px;
-  /* the mini player's pill, until the shell publishes its height */
-  --app-atlas-pip-h: 3.25rem;
   /* where the sheet rests above the stage's bottom edge; MapSheet raises
      it above a mini player resting under it (--app-atlas-pip-clear) */
   --app-atlas-sheet-base: 12px;
@@ -127,14 +125,12 @@
   }
 }
 @media (min-width: 1200px) {
-  html[data-pip-corner="bl"] .app-atlas-panel--places {
-    /* end above the pill (the list scrolls): its top, less the panel's */
+  html[data-os-pip="bl"] .app-atlas-panel--places {
+    /* end above the mini player (the list scrolls): its resting top
+       (contract B), less the panel's */
     max-height: min(
       100%,
-      calc(
-        var(--os-pip-bottom, 100vh) - var(--app-atlas-pip-h) - 0.75rem - var(--menubar-h) - var(--os-win-gap) -
-          var(--os-win-bar-h) - 1rem
-      )
+      calc(var(--os-pip-y, 100vh) - 0.75rem - var(--menubar-h) - var(--os-win-gap) - var(--os-win-bar-h) - 1rem)
     );
   }
 }

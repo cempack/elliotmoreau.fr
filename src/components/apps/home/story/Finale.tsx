@@ -12,7 +12,7 @@ import { useToast } from "@/components/Toasts";
 import { PressAnchor, PressButton } from "@/components/ui/Pressable";
 import { useFinePointer, useIsMac, useReduced } from "@/hooks/env";
 import { SOCIALS } from "@/lib/places";
-import { spring } from "@/lib/motion";
+import { spring, springFrom } from "@/lib/motion";
 import { useSound } from "@/lib/sound";
 import { PowerGlyph, PowerOff, reboot } from "./PowerOff";
 import { fill } from "./util";
@@ -283,7 +283,7 @@ const WeightLine = memo(function WeightLine({ text }: { text: string }) {
                       className="app-story-wl-ch"
                       initial={{ y: "110%" }}
                       animate={inView ? { y: "0%" } : { y: "110%" }}
-                      transition={{ type: "spring", visualDuration: 0.8, bounce: 0, delay: i * 0.028 }}
+                      transition={{ ...springFrom(0.8), delay: i * 0.028 }}
                     >
                       {ch}
                     </m.span>

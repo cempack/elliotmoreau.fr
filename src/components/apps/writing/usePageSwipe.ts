@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { animate, useMotionValue, useTransform } from "motion/react";
-import { project, rubberband, spring } from "@/lib/motion";
+import { project, rubberband, spring, springFrom } from "@/lib/motion";
 import { pushSample, releaseVelocity, swallowNextClick, type Sample } from "./gesture";
 
 /** 1 = the older post (next in the list), -1 = the newer one */
@@ -113,7 +113,7 @@ export function usePageSwipe({
     }
     const w = width.get() || measure();
     // out with the gesture…
-    animate(x, -dir * w * 0.45, { type: "spring", visualDuration: 0.24, bounce: 0, velocity: v });
+    animate(x, -dir * w * 0.45, { ...springFrom(0.24), velocity: v });
     animate(fade, 0, { duration: 0.12, ease: [0.4, 0, 1, 1] }).then(() => {
       if (my !== s.token) return;
       // …and the next page in from the other side

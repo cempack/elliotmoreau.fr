@@ -8,6 +8,7 @@ import { nearest, project, rubberband, spring } from "@/lib/motion";
 import { useReduced } from "@/hooks/env";
 import { Glass } from "@/components/os/Glass";
 import type { Place } from "@/lib/places";
+import { PIP_ATTRS, readPip } from "../pip";
 
 export type Detent = "peek" | "half" | "full";
 
@@ -40,23 +41,14 @@ function offsetIn(el: HTMLElement, root: HTMLElement) {
     clear of a mini player in a bottom corner it would otherwise sit under
     (0: none, it is up top, or it is beside the sheet). Glass never stacks
     on glass: the sheet rests above the pill, as a sheet rests above the
-    mini player in Music. Reads what the shell publishes
-    (html[data-pip-corner], --os-pip-bottom) and, until it publishes the
-    pill's box too, the pill and its safe area. */
+    mini player in Music. Reads the resting rect the shell publishes on
+    <html> (contract B: data-os-pip, --os-pip-x/y/w/h). */
 function pipClearance(stage: HTMLElement, clip: HTMLElement) {
-  const root = document.documentElement;
-  const corner = root.dataset.pipCorner;
-  if (corner !== "bl" && corner !== "br") return 0;
-  const pip = document.querySelector<HTMLElement>(".os-pip");
-  const bottom = parseFloat(getComputedStyle(root).getPropertyValue("--os-pip-bottom"));
-  if (!pip || !bottom) return 0;
-  const w = pip.offsetWidth;
-  const safe = document.querySelector<HTMLElement>(".os-pip-safe")?.getBoundingClientRect();
-  const left = corner === "bl" ? (safe?.left ?? 0) : Math.max(safe?.left ?? 0, (safe?.right ?? window.innerWidth) - w);
+  const pip = readPip();
+  if (!pip || pip.corner[0] !== "b") return 0;
   const c = clip.getBoundingClientRect();
-  if (left >= c.right - 1 || left + w <= c.left + 1) return 0;
-  const top = bottom - pip.offsetHeight;
-  return Math.max(0, Math.round(stage.getBoundingClientRect().bottom - top + 10));
+  if (pip.left >= c.right - 1 || pip.right <= c.left + 1) return 0;
+  return Math.max(0, Math.round(stage.getBoundingClientRect().bottom - pip.top + 10));
 }
 
 /** the half detent ends this far under its anchor (the fade takes most) */
@@ -228,7 +220,6 @@ export function MapSheet({
     if (!sheet || !cardEl) return;
     const clip = sheet.parentElement as HTMLElement;
     const stage = clip.parentElement as HTMLElement;
-    let pipEl: HTMLElement | null = null;
     let clear = -1;
     const measure = () => {
       // first where it rests: above a mini player in a bottom corner
@@ -237,12 +228,6 @@ export function MapSheet({
         clear = c;
         if (c) stage.style.setProperty("--app-atlas-pip-clear", `${c}px`);
         else stage.style.removeProperty("--app-atlas-pip-clear");
-      }
-      const pip = document.querySelector<HTMLElement>(".os-pip");
-      if (pip !== pipEl) {
-        if (pipEl) ro.unobserve(pipEl);
-        pipEl = pip;
-        if (pip) ro.observe(pip);
       }
       const H = sheet.offsetHeight;
       const css = getComputedStyle(sheet);
@@ -303,9 +288,10 @@ export function MapSheet({
     measure();
     ro.observe(sheet);
     ro.observe(cardEl);
-    // the mini player moved corners, mounted or changed size
+    // the mini player moved corners, mounted, hid or changed size (it
+    // republishes its vars on <html> each time)
     const mo = new MutationObserver(measure);
-    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-pip-corner", "style"] });
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: PIP_ATTRS });
     return () => {
       ro.disconnect();
       mo.disconnect();

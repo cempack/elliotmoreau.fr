@@ -3,8 +3,9 @@ import type { ActivityInfo, RepoInfo } from "./github";
 import type { SpotifyStatus } from "./spotify";
 
 /**
- * Sample data for local work and the /lab prototypes, used only when a live
- * source is unreachable (no tokens in dev). Never served in production.
+ * Sample data for local work and preview builds, used only when a live
+ * source is unreachable (no tokens in dev). Never served in production
+ * (see getSiteData in ./data.ts; EM_NO_FIXTURES=1 shows the empty states).
  */
 
 const daysAgo = (d: number) => new Date(Date.now() - d * 86_400_000).toISOString();
@@ -46,7 +47,7 @@ export const FIXTURE_POSTS: GhostPost[] = [
 export const FIXTURE_REPOS: RepoInfo[] = [
   {
     name: "elliotmoreau.fr",
-    description: "This website. Next.js, pixel art, a globe and too many springs.",
+    description: "emOS, this website: a personal OS made of glass and pixels, and too many springs.",
     url: "https://github.com/cempack/elliotmoreau.fr",
     homepage: "https://elliotmoreau.fr",
     language: "TypeScript",

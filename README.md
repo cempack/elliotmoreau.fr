@@ -56,23 +56,31 @@ The refresh-token flow runs entirely server-side (`src/lib/spotify.ts`).
 
 ```
 src/
-  app/[lang]/          one static build per locale (en, fr)
-    layout.tsx         <html lang>, fonts, providers, OS shell, pre-paint script
-    page.tsx           Desktop  ·  work/ writing/ atlas/ now/ contact/  ·  not-found
-    opengraph-image    generated share cards (+ per app), icon / apple-icon
+  app/[lang]/            one static build per locale (en, fr), ISR every 5 min
+    layout.tsx           <html lang>, fonts, providers, OS shell, pre-paint script, base metadata
+    page.tsx             Desktop (+ Person JSON-LD)  ·  work/ writing/ atlas/ now/ contact/
+    opengraph-image.tsx  localized share cards (one per app), icon / icon1 / icon2 / apple-icon
+    not-found.tsx        the 404 app, for notFound() inside a locale
+  app/global-not-found.tsx  the 404 for every unmatched address (own <html>, same shell)
   app/sitemap.ts robots.ts manifest.ts
-  proxy.ts             EN unprefixed (rewrite to /en), FR at /fr, saved choice
-  i18n/                config, server getDict, client I18nProvider, dict/<area>.ts
-  components/os/       the shell: Wallpaper, Glass, MenuBar (+ panels), Dock,
-                       AppWindow (+ view transitions), MiniPlayer, Terminal,
-                       Intro (boot/lock), Spotlight commands, sky (Paris time)
-  components/apps/     one folder per app (home = Desktop + scroll story)
-  components/ui/       primitives: CommandPalette, Sheet, SplitText, Marquee,
-                       Cursor, Pressable, IntroGate
-  lib/motion.ts        house springs (physics-defined so gesture velocity is
-                       handed off), project() momentum, rubberband()
-  lib/data.ts          server data for every app (Ghost, GitHub, Spotify)
-  content/now.ts       hand-written /now content — edit me
+  app/api/               newsletter (Ghost Admin), spotify/status (live now playing)
+  proxy.ts               EN unprefixed (rewrite to /en), FR at /fr, saved choice
+  i18n/                  config, server getDict + appMetadata, client I18nProvider,
+                         dict/<area>.ts (meta.ts = titles, descriptions, share cards)
+  components/os/         the shell: Wallpaper, Glass, MenuBar (+ panels), Dock,
+                         AppWindow (+ view transitions), MiniPlayer, Terminal,
+                         Intro (boot/lock), Spotlight commands, sky (Paris time)
+  components/apps/       one folder per app (home = Desktop + scroll story, notfound)
+  components/ui/         primitives: CommandPalette, Sheet, SplitText, Marquee,
+                         Cursor, Pressable, IntroGate
+  components/            pixel bits: PixelLabel, PixelPlanet, PixelWordmark, glyphs
+  lib/motion.ts          house springs (physics-defined so gesture velocity is
+                         handed off), project() momentum, rubberband()
+  lib/data.ts            server data for every app (Ghost, GitHub, Spotify),
+                         sample fallbacks in lib/fixtures.ts
+  lib/og.tsx             share cards + app icons (ImageResponse; fonts in assets/og)
+  lib/ttfx.ts pixelword.ts   the pixel wordmark: glyphs, bands, living field
+  content/now.ts         hand-written /now content — edit me
 ```
 
 ## Design system — Nocturne
@@ -94,6 +102,7 @@ motion swaps all of it for short cross-fades and instant snaps.
 ## Edit me
 
 - `src/content/now.ts` — what you're building / reading / your setup.
-- `src/i18n/dict/*.ts` — every visible string, EN + FR.
+- `src/i18n/dict/*.ts` — every visible string, EN + FR (`meta.ts` holds the
+  page titles and descriptions used by search results and share cards).
 - `src/lib/places.ts` — places for the Atlas, socials, email.
 - `public/pgp.asc` — PGP key served on the Mail app.

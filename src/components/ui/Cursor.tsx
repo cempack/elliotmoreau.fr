@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { m, useMotionValue, useSpring } from "motion/react";
+import { springFrom } from "@/lib/motion";
 
 type Variant = "ring" | "glass" | "block";
 
 const RING_SPRING = { stiffness: 520, damping: 46, mass: 0.6 };
+const CURSOR_MORPH = springFrom(0.25);
 
 /**
  * Contextual cursor for fine pointers only. The dot tracks the pointer 1:1
@@ -100,7 +102,7 @@ export function Cursor({ variant = "ring" }: { variant?: Variant }) {
         data-hover={hovering || undefined}
         style={{ x: rx, y: ry }}
         animate={{ width: size, height: size, scale }}
-        transition={{ type: "spring", visualDuration: 0.25, bounce: 0 }}
+        transition={CURSOR_MORPH}
       >
         {label && <span className="em-cursor-label">{label}</span>}
       </m.div>

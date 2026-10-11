@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { animate, frame, m, useMotionValue, useTransform } from "motion/react";
 import type { RepoInfo } from "@/lib/github";
 import { useI18n } from "@/i18n/client";
-import { project, rubberband, spring } from "@/lib/motion";
+import { project, rubberband, spring, springFrom } from "@/lib/motion";
 import { useSound } from "@/lib/sound";
 import { lenisRef } from "@/lib/lenisRef";
 import { timeAgo } from "@/lib/format";
@@ -23,7 +23,7 @@ type Sample = { t: number; x: number; y: number };
 type Velocity = { x: number; y: number };
 
 /** the zoom out of (and back into) an icon: critically damped, a touch slower than default */
-const ZOOM = { type: "spring", visualDuration: 0.42, bounce: 0 } as const;
+const ZOOM = springFrom(0.42);
 const FADE = { duration: 0.15, ease: "linear" } as const;
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;

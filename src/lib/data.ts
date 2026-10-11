@@ -15,9 +15,6 @@ export type SiteData = {
   sources: Record<"posts" | "spotify" | "repos" | "activity", Source>;
 };
 
-/** @deprecated lab-era name */
-export type HomeData = SiteData;
-
 // sample data stands in for unreachable sources everywhere except production
 const fixturesAllowed = () =>
   process.env.VERCEL_ENV !== "production" && process.env.EM_NO_FIXTURES !== "1";
@@ -53,6 +50,3 @@ export const getSiteData = cache(async (): Promise<SiteData> => {
     sources: { posts: ps, spotify: ss, repos: rs, activity: as },
   };
 });
-
-/** @deprecated lab-era alias */
-export const getHomeData = (_opts?: { allowFixtures?: boolean }) => getSiteData();

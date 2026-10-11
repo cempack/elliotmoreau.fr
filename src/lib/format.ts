@@ -1,7 +1,7 @@
-import type { Lang } from "./i18n";
+import type { Locale } from "@/i18n/config";
 
 /** "pushed … ago" in both languages, from an ISO timestamp. */
-export function timeAgo(iso: string, lang: Lang): string {
+export function timeAgo(iso: string, lang: Locale): string {
   const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
   if (s < 60) return lang === "fr" ? "à l'instant" : "just now";
   const m = Math.floor(s / 60);

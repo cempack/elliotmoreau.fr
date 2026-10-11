@@ -111,19 +111,30 @@
 .os-win[data-grabbed] .os-win-bar {
   cursor: grabbing;
 }
+/* stuck: a heavy frost. The blur does render inside the window (nothing
+   up its ancestry is a backdrop root), but even a ~22px blur leaves
+   display type legible, so the tint does most of the work: what slides
+   underneath reads as coloured light, never as words */
 .os-win-bar::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: linear-gradient(180deg, rgba(13, 15, 24, 0.88), rgba(13, 15, 24, 0.76));
-  backdrop-filter: blur(12px) blur(12px) saturate(1.7);
+  background: linear-gradient(180deg, rgba(12, 14, 22, 0.95), rgba(12, 14, 22, 0.9));
+  backdrop-filter: blur(14px) blur(14px) blur(10px) saturate(1.6);
   box-shadow: inset 0 -1px 0 var(--hairline);
   opacity: 0;
   transition: opacity 0.22s var(--ease-out-quint);
 }
 .os-win-bar[data-stuck]::before {
   opacity: 1;
+}
+/* phones: mobile Chromium can sample a sticky element's backdrop at a stale
+   scroll offset (rows show through unblurred), so lean on the tint */
+@media (max-width: 767px) {
+  .os-win-bar::before {
+    background: linear-gradient(180deg, rgba(12, 14, 22, 0.97), rgba(12, 14, 22, 0.94));
+  }
 }
 .os-win-bar::after {
   content: "";
@@ -404,6 +415,10 @@
   font-family: var(--font-mono);
   font-size: 0.75rem;
 }
+/* on the tinted thumb label-3 drops to ~3.9:1: lift it */
+.os-win-nav-item[data-active] .os-win-nav-count {
+  color: var(--color-label-2);
+}
 @media (max-width: 1023px) {
   .os-win-nav-item {
     width: auto;
@@ -447,15 +462,25 @@
     opacity: 1;
     scale: 1.4;
   }
+  /* 44px targets: the strip's 36px pills reach out into the gaps around
+     them (the strip pads its top so the scroller doesn't clip the reach) */
   .os-win-nav-item::before {
     content: "";
     position: absolute;
-    inset: -0.3125rem 0;
+    inset: -0.25rem -0.1875rem;
+  }
+}
+@media (pointer: coarse) and (max-width: 1023px) {
+  .os-win-side {
+    padding-top: 0.25rem;
   }
 }
 @media (pointer: coarse) and (min-width: 1024px) {
   .os-win-nav-item {
     min-height: 2.75rem;
+  }
+  .os-win-nav-item::before {
+    inset: 0;
   }
 }
 

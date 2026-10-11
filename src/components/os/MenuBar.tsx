@@ -78,7 +78,7 @@ function Bar() {
 
   // the bar gains material as content scrolls beneath it
   const { scrollY } = useScroll();
-  const thick = useTransform(scrollY, [0, 220], [0, 1], { clamp: true });
+  const thick = useTransform(scrollY, [0, 140], [0, 1], { clamp: true });
 
   useEffect(() => {
     const onOpen = (e: Event) => {
@@ -93,7 +93,7 @@ function Bar() {
   }, [show]);
 
   const musicLabel = music.track
-    ? `${music.playing ? s.player.nowPlaying : s.player.lastPlayed}: ${music.track.title}, ${music.track.artist}`
+    ? `${music.playing ? s.player.nowPlaying : s.player.lastPlayed}${s.colon}${music.track.title}, ${music.track.artist}`
     : s.player.nothing;
 
   return (

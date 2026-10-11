@@ -240,7 +240,7 @@ function Calendar({ now }: { now: Date }) {
                       data-today={isToday || undefined}
                       data-weekend={i >= 5 || undefined}
                       aria-current={isToday ? "date" : undefined}
-                      aria-label={marks ? `${label}: ${marks}` : undefined}
+                      aria-label={marks ? `${label}${t.shell.colon}${marks}` : undefined}
                       title={marks || undefined}
                     >
                       {d}

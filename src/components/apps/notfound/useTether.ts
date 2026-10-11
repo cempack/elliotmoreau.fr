@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { animate, useMotionValue, useSpring, useTransform } from "motion/react";
-import { project, rubberband, spring } from "@/lib/motion";
+import { project, rubberband, spring, springFrom } from "@/lib/motion";
 import { bounce, visibleIcon } from "@/components/os/dock/launch";
 
 /**
@@ -26,14 +26,13 @@ import { bounce, visibleIcon } from "@/components/os/dock/launch";
  */
 
 /*
- * Physical springs (stiffness/damping), not visualDuration/bounce: motion
- * drops the initial velocity of time-defined springs, so a velocity
- * handoff needs these. They're the exact equivalents of the house presets
- * (default 0.35s critically damped, flick 0.4s bounce 0.18, fly 0.42s).
+ * Physics springs via springFrom (house presets are built with it):
+ * time-defined springs drop a velocity handoff in motion 12.
+ * Default 0.35s critically damped, flick 0.4s bounce 0.18, fly 0.42s.
  */
-const SETTLE = { type: "spring", stiffness: 223.8, damping: 29.92, mass: 1 } as const;
-const FLICK = { type: "spring", stiffness: 171.35, damping: 21.47, mass: 1 } as const;
-const FLY = { type: "spring", stiffness: 155.4, damping: 24.93, mass: 1 } as const;
+const SETTLE = spring.default;
+const FLICK = spring.flick;
+const FLY = springFrom(0.42);
 
 /** a hard sideways fling must not carry the alert off-screen */
 const MAX_SETTLE_V = 2400;

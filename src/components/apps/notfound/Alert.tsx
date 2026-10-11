@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef } from "react";
 import { animate, m, useMotionValue, useTransform, type MotionValue } from "motion/react";
 import { useI18n } from "@/i18n/client";
 import { Glass } from "@/components/os/Glass";
+import { spring } from "@/lib/motion";
 import { PressAnchor, PressButton, PressLink } from "@/components/ui/Pressable";
 import { BrokenIcon } from "./BrokenIcon";
 import { DragHint } from "./DragHint";
@@ -22,8 +23,8 @@ import type { useTether } from "./useTether";
  * copy, the sheet resizes on a spring instead of jumping.
  */
 
-/** Same response as spring.default, as a physical spring (interruptible, velocity-aware). */
-const RESIZE = { type: "spring", stiffness: 223.8, damping: 29.92, mass: 1 } as const;
+/** The house default (a physics spring: interruptible, velocity-aware). */
+const RESIZE = spring.default;
 
 /** A plain left click (not one that opens a new tab). */
 const plainClick = (e: React.MouseEvent) =>

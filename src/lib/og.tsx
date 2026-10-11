@@ -697,16 +697,20 @@ const host = SITE_URL.replace(/^https?:\/\//, "");
     ("d'Elliot" → "d’Elliot"): the cards and their alt text are set type. */
 const curly = (text: string) => text.replace(/(\p{L})'(?=\p{L})/gu, "$1’");
 
+/** For the set type on the cards: one- and two-letter words ("à", "La",
+    "Et", "by") stay with the word after them, so no line ends on one. */
+const bind = (text: string) => text.replace(/(?<=^|[\s«(])(\p{L}{1,2}) /gu, "$1\u00a0");
+
 /** The home card: the wordmark is the hero, the meta description beneath. */
 export async function homeCard(lang: Locale) {
   const t = getDict(lang).meta;
   const fonts = await loadFonts();
-  const tagline = curly(t.description);
+  const tagline = bind(curly(t.description));
   const cell = 14;
   return new ImageResponse(
     (
       <div style={{ position: "relative", display: "flex", width: W, height: H, backgroundImage: SKY }}>
-        <Scenery seed={7} quiet={[{ x: 60, y: 100, w: 760, h: 410 }]} />
+        <Scenery seed={7} quiet={[{ x: 60, y: 36, w: 1080, h: 56 }, { x: 60, y: 100, w: 760, h: 410 }]} />
         <Moon x={968} y={118} />
         <TopBar
           left={
@@ -755,14 +759,14 @@ export async function appCard(lang: Locale, app: OgApp) {
   const d = getDict(lang);
   const fonts = await loadFonts();
   const name = d.meta.pages[app];
-  const description = curly(d.meta.pageDescriptions[app]);
+  const description = bind(curly(d.meta.pageDescriptions[app]));
   const path = APP_PATH[app];
   const tile = 216;
   const nameSize = name.length > 9 ? 96 : 116;
   return new ImageResponse(
     (
       <div style={{ position: "relative", display: "flex", width: W, height: H, backgroundImage: SKY }}>
-        <Scenery seed={11 + path.length} quiet={[{ x: 60, y: 150, w: 1080, h: 330 }]} />
+        <Scenery seed={11 + path.length} quiet={[{ x: 60, y: 36, w: 1080, h: 56 }, { x: 60, y: 150, w: 1080, h: 330 }]} />
         <TopBar
           left={<Wordmark lines={["Elliot Moreau"]} cell={4} inline />}
           right={host + localePath(lang, path)}
