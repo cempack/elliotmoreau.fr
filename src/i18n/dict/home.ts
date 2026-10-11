@@ -27,16 +27,19 @@ const en = {
     clock: {
       title: "Toulouse",
       phase: { dawn: "Dawn", day: "Day", dusk: "Dusk", night: "Night" },
-      /** the phase that comes next and when it starts, Toulouse time */
-      next: { dawn: "Dawn at {time}", day: "Day at {time}", dusk: "Dusk at {time}", night: "Night at {time}" },
+      /** the next change of light, Toulouse time */
+      events: { sunrise: "Sunrise {time}", sunset: "Sunset {time}", night: "Nightfall {time}" },
+      /** the visitor's own time, when it differs */
+      you: "you {time}",
+      /** the sky pinned in Control Center */
+      pinnedLine: "Sky pinned: {phase}",
       aria: "Toulouse time {time}, {phase}. {next}.",
       ariaYou: "Your time {time}, {offset} from Toulouse.",
-      /** the sky pinned in Control Center: the phase line says so */
-      pinned: "pinned",
-      /** …and the second line keeps the real phase in Toulouse */
-      real: "Toulouse: {phase}",
-      ariaPinned: "Toulouse time {time}. The sky is pinned to {pinned}; in Toulouse it is {phase}.",
       open: "Open {app}.",
+      /** the sundial is a slider over today's sun */
+      slider: "Sun over Toulouse",
+      valueText: "{time}, {phase} in Toulouse",
+      hint: "Drag the shadow, or use the arrow keys, to move the sun across today. Page keys jump to sunrise, noon, sunset and nightfall; Home comes back to now.",
     },
     post: {
       title: "Latest post",
@@ -91,13 +94,15 @@ const fr: typeof en = {
     clock: {
       title: "Toulouse",
       phase: { dawn: "Aube", day: "Jour", dusk: "Crépuscule", night: "Nuit" },
-      next: { dawn: "Aube à {time}", day: "Jour à {time}", dusk: "Crépuscule à {time}", night: "Nuit à {time}" },
+      events: { sunrise: "Lever {time}", sunset: "Coucher {time}", night: "Nuit à {time}" },
+      you: "chez vous {time}",
+      pinnedLine: "Ciel épinglé : {phase}",
       aria: "Heure de Toulouse {time}, {phase}. {next}.",
       ariaYou: "Chez vous {time}, {offset} par rapport à Toulouse.",
-      pinned: "épinglé",
-      real: "Toulouse : {phase}",
-      ariaPinned: "Heure de Toulouse {time}. Le ciel est épinglé sur {pinned} ; à Toulouse, c’est {phase}.",
       open: "Ouvrir {app}.",
+      slider: "Soleil sur Toulouse",
+      valueText: "{time}, {phase} à Toulouse",
+      hint: "Faites glisser l’ombre, ou utilisez les flèches, pour déplacer le soleil sur la journée. Les touches Page sautent au lever, à midi, au coucher et à la nuit ; Début revient à maintenant.",
     },
     post: {
       title: "Dernier article",

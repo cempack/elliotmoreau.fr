@@ -19,7 +19,6 @@
   --app-home-hello-w: 440px;
   --app-home-widget: 148px;
   /* the sky dial: 25 cells of 3 px */
-  --app-home-dial: 75px;
   /* tertiary text; promoted to secondary under the bright skies */
   --app-home-l3: var(--color-label-3);
   position: relative;
@@ -129,91 +128,112 @@ html[data-sky="dusk"] .app-home-scene {
   letter-spacing: 0.01em;
 }
 
-/* the sky clock */
+/* the sundial: the plaster dial on top, Toulouse time under it */
 .app-home-widget--clock {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 10px;
+  padding: 8px;
 }
-.app-home-clock-face {
+.app-home-widget .app-home-sundial {
   position: relative;
-  width: var(--app-home-dial);
-  height: var(--app-home-dial);
+  z-index: 4; /* over the tile's link: the dial is its own control */
+  flex: none;
+  width: calc(60 * var(--app-home-sundial-cell, 2px));
+  aspect-ratio: 60 / 34;
+  border-radius: 2px;
+  box-shadow: 0 6px 14px -8px rgba(0, 0, 0, 0.75);
+  cursor: grab;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
 }
-.app-home-dial {
+.app-home-sundial[data-held] {
+  cursor: grabbing;
+}
+.app-home-sundial svg {
   display: block;
   width: 100%;
   height: 100%;
 }
-.app-home-dial-you {
-  filter: drop-shadow(0 0 1px rgba(137, 180, 168, 0.9));
+.app-home-sundial:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 3px;
 }
-.app-home-clock-center {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding-top: calc(var(--app-home-dial) * 0.2);
+/* at night the plaster sits in the dark with the rest of the city */
+html[data-sky="night"] .app-home-sundial svg {
+  filter: brightness(0.7);
 }
 .app-home-clock-time {
+  margin-top: 6px;
   font-family: var(--font-mono);
-  font-size: calc(var(--app-home-dial) * 0.18);
+  font-size: 1.25rem;
   font-weight: 600;
   line-height: 1;
   letter-spacing: -0.03em;
+  transition: color 0.2s var(--ease-out-quint);
 }
-.app-home-clock-phase-line {
+/* someone is holding the sun: the readout is that hour, not now */
+.app-home-clock-time[data-scrub] {
+  color: var(--color-ember);
+}
+.app-home-clock-line {
   display: flex;
   align-items: baseline;
-  gap: 5px;
-}
-.app-home-clock-city {
-  color: var(--app-home-l3);
+  gap: 6px;
+  margin-top: 5px;
   font-size: 0.75rem;
-  font-weight: 500;
-  line-height: 1.1;
-}
-.app-home-clock-phase {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  margin-top: 7px;
-  text-align: center;
+  line-height: 1.15;
+  white-space: nowrap;
 }
 .app-home-clock-phase-name {
-  font-size: 0.8125rem;
   font-weight: 600;
-  line-height: 1.1;
-}
-.app-home-clock-phase-name[data-phase="night"] {
-  color: #a9bacb;
-}
-.app-home-clock-phase-name[data-phase="dawn"] {
-  color: #ecc999;
-}
-.app-home-clock-phase-name[data-phase="day"] {
-  color: var(--color-signal);
-}
-.app-home-clock-phase-name[data-phase="dusk"] {
-  color: #eba584;
 }
 .app-home-clock-next {
   color: var(--color-label-2);
+}
+.app-home-clock-extra {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
+  color: var(--color-ion);
   font-size: 0.75rem;
-  line-height: 1.2;
+  line-height: 1.1;
   white-space: nowrap;
 }
-/* the legend for the ion tick on the dial: "■ you" over "−6 h", tucked
-   in the corner the ring leaves free */
 .app-home-clock-pin {
   flex: none;
-  align-self: center;
   color: var(--color-label-2);
+}
+
+/* the wallpaper's sun as a handle: under everything on the desk */
+.app-home-sun-handle {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: grab;
+  touch-action: none;
+}
+.app-home-sun-handle[data-held] {
+  cursor: grabbing;
+}
+/* today's path while the sun is held: dots every quarter hour, now notched */
+.app-home-sun-track {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 0;
+  pointer-events: none;
+  fill: rgba(235, 233, 225, 0.5);
+}
+.app-home-sun-track-now,
+.app-home-sun-track-ring {
+  fill: var(--color-label);
 }
 
 /* latest post */
@@ -741,7 +761,6 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
     --app-home-grid-r: 30px;
     --app-home-hello-w: 480px;
     --app-home-widget: 168px;
-    --app-home-dial: 100px;
   }
 }
 
@@ -811,7 +830,6 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
 /* ── phones: an iOS home screen that fits above the tab bar ── */
 @media (max-width: 767px), (pointer: coarse) and (max-height: 520px) {
   .app-home-scene {
-    --app-home-dial: 75px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -959,14 +977,7 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
     height: 128px;
   }
   .app-home-widget--clock {
-    --app-home-dial: 60px;
-    flex-direction: row;
-    gap: 12px;
-  }
-  .app-home-widget--clock .app-home-clock-phase {
-    align-items: flex-start;
-    margin-top: 0;
-    text-align: left;
+    --app-home-sundial-cell: 1.5px;
   }
   .app-home-post-title {
     -webkit-line-clamp: 2;

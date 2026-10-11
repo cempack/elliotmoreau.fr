@@ -6,7 +6,9 @@ import { useFinePointer, useReduced } from "@/hooks/env";
 import { useSound } from "@/lib/sound";
 import { DesktopIcons } from "./DesktopIcons";
 import { HelloWindow, type HelloHandle } from "./HelloWindow";
-import { ClockWidget, LatestPostWidget, PushWidget } from "./Widgets";
+import { ClockWidget } from "./Sundial";
+import { SunHandle } from "./SunHandle";
+import { LatestPostWidget, PushWidget } from "./Widgets";
 import { type DesktopIconId } from "./icons";
 import { desktopMemory } from "./store";
 import { INTERACTIVE, intersects, type Rect } from "./physics";
@@ -212,6 +214,9 @@ export function DesktopScene() {
       }}
     >
       <h1 className="sr-only">{t.home.name}</h1>
+
+      {/* the wallpaper's sun, held with a mouse or trackpad (the sundial is the handle on touch) */}
+      {fine && <SunHandle />}
 
       <div ref={helloSlotRef} className="app-home-hello-slot">
         <HelloWindow ref={helloRef} closed={helloClosed} onClose={closeHello} reduced={reduced} />
