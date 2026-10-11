@@ -5,6 +5,9 @@ const en = {
   /* sidebar */
   folders: "Folders",
   foldersLabel: "Filter posts by topic",
+  archive: "Archive",
+  monthInitials: ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"],
+  readingTotal: "{n} min of reading in all",
   all: "All posts",
   /* list */
   list: "Posts",
@@ -68,6 +71,9 @@ const en = {
 const fr: typeof en = {
   folders: "Dossiers",
   foldersLabel: "Filtrer les articles par sujet",
+  archive: "Archives",
+  monthInitials: ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"],
+  readingTotal: "{n} min de lecture en tout",
   all: "Tous les articles",
   list: "Articles",
   countOne: "1 article",

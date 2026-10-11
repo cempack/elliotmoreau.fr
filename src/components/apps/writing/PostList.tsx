@@ -4,6 +4,7 @@ import { useId, useMemo } from "react";
 import { m } from "motion/react";
 import type { GhostPost } from "@/lib/ghost";
 import type { Source } from "@/lib/data";
+import { PlateThumb } from "./PlateThumb";
 import { useI18n } from "@/i18n/client";
 import { spring } from "@/lib/motion";
 import { byYear, countLabel, dateLong, dateShort, fmt } from "./util";
@@ -56,6 +57,9 @@ export function PostList({ posts, selected, title, source, compact, hrefFor, onP
         </span>
         <span className="app-writing-row-title">{p.title}</span>
         {p.excerpt && <span className="app-writing-row-excerpt">{p.excerpt}</span>}
+      </span>
+      <span className="app-writing-row-art" aria-hidden>
+        <PlateThumb seed={p.slug} className="app-writing-row-plate" />
       </span>
     </>
   );

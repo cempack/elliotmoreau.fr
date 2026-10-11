@@ -224,7 +224,7 @@ export function Reader({ post, posts, epoch, animatePlate, reduced, compact, fol
             <m.div className="app-writing-byline" variants={fv}>
               <span className="app-writing-author">
                 <span className="app-writing-avatar" aria-hidden>
-                  <PixelLabel text="EM" cell={2} />
+                  <PixelLabel text="EM" cell={2} className="app-writing-avatar-em" />
                 </span>
                 <span className="app-writing-author-text">
                   <span className="app-writing-author-name">{w.author}</span>

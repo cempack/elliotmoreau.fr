@@ -49,6 +49,8 @@ export type PlateLayers = {
   layers: Uint8ClampedArray[];
   /** rows of dithered fade at the bottom */
   fade: number;
+  /** where the sun (or moon) sits, in cells */
+  sun: { x: number; y: number };
 };
 
 function seed32(seed: string) {
@@ -259,7 +261,7 @@ export function paintPlateLayers(seed: string, W: number, H: number): PlateLayer
     }
   }
 
-  return { W, H, sky, layers: [planetL, farL, midL, nearL], fade: Math.max(6, Math.round(H * 0.22)) };
+  return { W, H, sky, layers: [planetL, farL, midL, nearL], fade: Math.max(6, Math.round(H * 0.22)), sun: { x: cx, y: cy } };
 }
 
 /** Whole-cell offsets of each layer for a shift (symmetric rounding). */
