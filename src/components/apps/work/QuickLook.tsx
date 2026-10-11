@@ -128,7 +128,7 @@ export function QuickLook({
   const cy = useMotionValue(0);
   const px = useMotionValue(0);
   const py = useMotionValue(0);
-  const pw = useMotionValue(192);
+  const pw = useMotionValue(176);
   const ix = useMotionValue(0);
   const iy = useMotionValue(0);
   const iw = useMotionValue(128);
@@ -221,7 +221,7 @@ export function QuickLook({
     const o = offsetIn(slot, panel);
     px.set(o.x + slot.offsetWidth / 2 - w / 2);
     py.set(o.y + slot.offsetHeight / 2 - h / 2);
-    pw.set(slot.offsetWidth || 192);
+    pw.set(slot.offsetWidth || 176);
   };
 
   /** the planet travels between `o` and the panel; `o`'s own planet hides */

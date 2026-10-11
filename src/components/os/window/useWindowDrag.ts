@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { animate, useMotionValue } from "motion/react";
 import { project, rubberband, spring, springFrom } from "@/lib/motion";
+import { menubarBottom } from "./dock";
 
 type Sample = { t: number; x: number; y: number };
 type Grab = {
@@ -62,7 +63,6 @@ const scaleFor = (y: number, vh: number) => (y > 0 ? 1 - 0.18 * Math.min(1, y / 
  */
 export function useWindowDrag({
   winRef,
-  barRef,
   reduced,
   onGrab,
   onThrow,
@@ -161,8 +161,8 @@ export function useWindowDrag({
       originY.jump((e.clientY - wr.top) / wr.height);
     }
     const vw = window.innerWidth;
-    const bar = barRef.current;
-    const stickTop = bar ? parseFloat(getComputedStyle(bar).top) || 0 : 0;
+    // free travel ends just under the menu bar (the bar's real edge, top inset included)
+    const ceiling = menubarBottom();
     const restTop = wr.top - y.get();
     grab.current = {
       pid: e.pointerId,
@@ -174,7 +174,7 @@ export function useWindowDrag({
       moved: false,
       samples: [{ t: e.timeStamp, x: e.clientX, y: e.clientY }],
       playX: Math.max(0, Math.min(wr.left, vw - wr.right) - 8),
-      playTop: Math.max(0, restTop - stickTop - 6),
+      playTop: Math.max(0, restTop - ceiling - 6),
     };
     win.dataset.grabbed = "";
     onGrab();

@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { animate, m, useMotionValue, type AnimationPlaybackControls } from "motion/react";
 import { clamp, project, rubberband, spring, springFrom } from "@/lib/motion";
 import { bounce, visibleIcon } from "@/components/os/dock/launch";
+import { menubarBottom } from "@/components/os/window/dock";
 import { useI18n } from "@/i18n/client";
 import { useSound } from "@/lib/sound";
 import { PixelGlyph } from "@/components/glyphs";
@@ -109,13 +110,8 @@ function dockTarget(): Target {
 }
 
 /** The menu bar's height in px (`--menubar-h`, in rem). */
-function ceiling() {
-  const root = getComputedStyle(document.documentElement);
-  const v = root.getPropertyValue("--menubar-h").trim();
-  const n = parseFloat(v);
-  if (!n) return 44;
-  return v.endsWith("rem") ? n * (parseFloat(root.fontSize) || 16) : n;
-}
+/** the menu bar's real bottom edge (top inset included): the held envelope rubber-bands below it */
+const ceiling = () => menubarBottom();
 
 /**
  * px/s over the last ~100ms of samples (from the oldest sample inside that

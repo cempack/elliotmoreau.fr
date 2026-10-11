@@ -621,8 +621,10 @@
 .app-writing-chips-row {
   display: flex;
   gap: 0.375rem;
-  margin: 0;
-  padding: 0.125rem 1.25rem 0.25rem;
+  /* a sideways scroller clips in y too: room for the chips' focus ring
+     (5px), given back by the margins so nothing moves */
+  margin: -0.25rem 0 -0.125rem;
+  padding: 0.375rem 1.25rem;
   overflow-x: auto;
   list-style: none;
   overscroll-behavior-x: contain;

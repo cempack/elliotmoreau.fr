@@ -9,6 +9,7 @@ import { lenisRef } from "@/lib/lenisRef";
 import { clamp, project, rubberband, spring, springFrom } from "@/lib/motion";
 import { appForPath } from "../apps";
 import { WinIcon } from "../window/WinIcon";
+import { menubarBottom } from "../window/dock";
 // the traffic lights are the app windows' own (one OS, one set of lights)
 import "../window.css";
 import { useTerminal, useTerminalWindow, type WinRect } from "../Terminal";
@@ -25,7 +26,6 @@ import { cwdLabel } from "./commands";
  * and swipes down to dismiss.
  */
 
-const MENUBAR = 44;
 const EDGE = 10;
 /** room kept for the dock under a resting window */
 const DOCK_ROOM = 100;
@@ -47,8 +47,8 @@ function dockPoint() {
  */
 function defaultRect(): WinRect {
   const w = Math.min(720, vw() - 48);
-  const h = Math.min(468, Math.max(280, vh() - MENUBAR - DOCK_ROOM - 40));
-  const top = MENUBAR + 14;
+  const h = Math.min(468, Math.max(280, vh() - menubarBottom() - DOCK_ROOM - 40));
+  const top = menubarBottom() + 14;
   const bottom = vh() - DOCK_ROOM - 12 - h;
   return {
     w,
@@ -59,21 +59,21 @@ function defaultRect(): WinRect {
 }
 
 function zoomRect(): WinRect {
-  return { x: 16, y: MENUBAR + 12, w: vw() - 32, h: Math.max(280, vh() - MENUBAR - 12 - DOCK_ROOM) };
+  return { x: 16, y: menubarBottom() + 12, w: vw() - 32, h: Math.max(280, vh() - menubarBottom() - 12 - DOCK_ROOM) };
 }
 
 function bounds(w: number, h: number) {
   return {
     minX: EDGE,
     maxX: Math.max(EDGE, vw() - w - EDGE),
-    minY: MENUBAR + 6,
-    maxY: Math.max(MENUBAR + 6, vh() - h - EDGE),
+    minY: menubarBottom() + 6,
+    maxY: Math.max(menubarBottom() + 6, vh() - h - EDGE),
   };
 }
 
 function fit(r: WinRect): WinRect {
   const w = Math.min(r.w, vw() - 2 * EDGE);
-  const h = Math.min(r.h, vh() - MENUBAR - 6 - EDGE);
+  const h = Math.min(r.h, vh() - menubarBottom() - 6 - EDGE);
   const b = bounds(w, h);
   return { w, h, x: clamp(r.x, b.minX, b.maxX), y: clamp(r.y, b.minY, b.maxY) };
 }

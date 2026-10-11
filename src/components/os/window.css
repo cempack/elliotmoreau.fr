@@ -268,6 +268,9 @@
      too, and iOS lets a finger pan any overflow sideways */
   overflow: hidden auto;
   overscroll-behavior: contain;
+  /* focus scrolls an element in with room for its ring (2px + 3px offset),
+     not flush against the clip under the title bar */
+  scroll-padding-block: 0.5rem;
 }
 
 @media (min-width: 1024px) {
@@ -294,7 +297,8 @@
   .os-win-side {
     display: flex;
     flex: none;
-    padding: 0.125rem 1rem 0.875rem;
+    /* a scroller clips in y too: 6px above the pills holds their focus ring */
+    padding: 0.375rem 1rem 0.625rem;
     overflow: auto hidden;
     overscroll-behavior-x: contain;
     scrollbar-width: none;
@@ -437,7 +441,14 @@
 }
 @media (pointer: coarse) and (max-width: 1023px) {
   .os-win-side {
-    padding-top: 0.25rem;
+    padding-bottom: 0.75rem;
+  }
+}
+/* touch on desk-sized windows: the 44px controls get the bar they need
+   (8px clear above and below), not a 52px bar they touch both edges of */
+@media (pointer: coarse) and (min-width: 768px) {
+  .os-win {
+    --os-win-bar-h: 3.75rem;
   }
 }
 @media (pointer: coarse) and (min-width: 1024px) {
@@ -462,10 +473,15 @@
     height: calc(100svh - var(--menubar-bottom) - var(--os-win-gap) - var(--dock-h));
     box-shadow: 0 -10px 40px -10px rgba(0, 0, 0, 0.6);
   }
-  /* a sheet: only its top edge is lit */
+  /* a sheet: its top edge lit, its sides a quieter line (on the rim, above
+     the sticky title bar's frost, so the rounded corners never end in nothing) */
   .os-win-rim {
-    border-width: 2px 0 0;
-    border-color: rgba(196, 206, 194, 0.3);
+    border-width: 2px 1px 0;
+    border-color: rgba(196, 206, 194, 0.3) rgba(196, 206, 194, 0.18) transparent;
+  }
+  .os-win-glass::after {
+    border-left-width: 0;
+    border-right-width: 0;
   }
   .os-win-main {
     padding-bottom: 1.25rem;
@@ -495,6 +511,21 @@
   }
   .os-win-x {
     display: grid;
+  }
+}
+
+/* short screens (phones on their side): the window fits the room it has,
+   never taller (a min-height would scroll the page and tuck its top under
+   the menu bar) */
+@media (max-height: 500px) {
+  .os-win {
+    min-height: 0;
+  }
+}
+@media (min-width: 768px) and (max-height: 500px) {
+  .os-win {
+    --os-win-gap: 0.5rem;
+    --os-win-dock-room: calc(var(--dock-h) + 0.5rem + env(safe-area-inset-bottom));
   }
 }
 

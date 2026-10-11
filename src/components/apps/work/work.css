@@ -64,8 +64,10 @@
       inset 0 0 0 1px var(--hairline),
       0 12px 24px -16px rgba(0, 0, 0, 0.7);
   }
+  /* the search gives way first, so the sort never runs past the card on 320px screens */
   .app-work-tb--inline .app-work-search {
     flex: 1 1 auto;
+    min-width: 0;
   }
 }
 
@@ -1436,8 +1438,9 @@ button.app-work-col:hover,
 }
 .app-work-qlb-planet {
   position: relative;
-  width: 12rem;
-  height: 12rem;
+  /* 12px clear of the 200px band, top and bottom */
+  width: 11rem;
+  height: 11rem;
   border-radius: var(--radius-card);
   box-shadow: 0 0 0 1px rgba(196, 206, 194, 0.16);
   pointer-events: none;

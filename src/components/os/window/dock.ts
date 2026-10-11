@@ -52,8 +52,8 @@ export function takeKeyboardClose() {
   return app;
 }
 
-/** Bottom edge of the menu bar in viewport px. */
-function menubarBottom() {
+/** Bottom edge of the menu bar in viewport px (its height plus any top inset). */
+export function menubarBottom() {
   const bar = document.querySelector<HTMLElement>("[data-os-menubar], .os-menubar");
   if (bar) {
     const r = bar.getBoundingClientRect();

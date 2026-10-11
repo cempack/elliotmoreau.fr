@@ -614,3 +614,36 @@ html[data-sky="day"] .app-nf-alert .os-glass {
     line-height: 1.4;
   }
 }
+
+/* phones on their side: the alert over the LED panel, as on wide screens,
+   everything sized to the short height so it clears the menu bar and the dock */
+@media (max-height: 500px) {
+  .app-nf {
+    --nf-cell: calc((100svh - var(--menubar-bottom)) / 15);
+    --nf-foot: calc(var(--dock-h) + 0.5rem);
+    grid-template-rows: none;
+    align-content: center;
+    row-gap: 0;
+    padding-top: calc(var(--menubar-bottom) + 0.5rem);
+  }
+  .app-nf-backdrop,
+  .app-nf-center {
+    grid-area: 1 / 1;
+  }
+  .app-nf-backdrop {
+    margin-block: 0;
+  }
+  .app-nf-alert-body {
+    padding: 0.875rem 1rem;
+  }
+  .app-nf-grip {
+    zoom: 0.6;
+    margin-bottom: 0.625rem;
+  }
+  .app-nf-zsh {
+    display: none;
+  }
+  .app-nf-actions {
+    margin-top: 0.75rem;
+  }
+}

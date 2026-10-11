@@ -117,17 +117,22 @@ export function Reader({ post, posts, epoch, animatePlate, reduced, compact, fol
     if (!compact || !bar || !edge) return;
     const observe = () => {
       ioRef.current?.disconnect();
+      // the bar sticks inside the window's scroller, so that is the root: its
+      // line is the bar's bottom edge there (the viewport's would be off by the
+      // menu bar and the title bar, and never fire)
+      const root = bar.closest<HTMLElement>(".os-win-main");
       const line = Math.round((parseFloat(getComputedStyle(bar).top) || 0) + bar.offsetHeight);
       const io = new IntersectionObserver(
         (entries) => {
           for (const en of entries) {
-            const past = !en.isIntersecting && en.boundingClientRect.top < line;
+            const edgeTop = en.rootBounds ? en.rootBounds.top : line;
+            const past = !en.isIntersecting && en.boundingClientRect.top < edgeTop;
             const key = en.target === edge ? "stuck" : "titled";
             if (past) bar.dataset[key] = "";
             else delete bar.dataset[key];
           }
         },
-        { rootMargin: `${-line}px 0px 0px 0px`, threshold: 0 }
+        { root, rootMargin: `${-line}px 0px 0px 0px`, threshold: 0 }
       );
       io.observe(edge);
       if (titleEl.current) io.observe(titleEl.current);
