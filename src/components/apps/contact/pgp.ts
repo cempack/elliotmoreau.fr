@@ -137,19 +137,31 @@ export const ART_H = 9;
 
 export function drunkenBishop(bytes: Uint8Array) {
   const grid = new Array<number>(ART_W * ART_H).fill(0);
+  /** which 4-digit fingerprint groups (2 bytes each) walked over each cell */
+  const by = Array.from({ length: ART_W * ART_H }, () => new Set<number>());
   let x = (ART_W - 1) / 2;
   let y = (ART_H - 1) / 2;
   const start = { x, y };
-  for (const byte of bytes) {
+  bytes.forEach((byte, k) => {
     let b = byte;
     for (let s = 0; s < 4; s++) {
       x = Math.max(0, Math.min(ART_W - 1, x + (b & 1 ? 1 : -1)));
       y = Math.max(0, Math.min(ART_H - 1, y + (b & 2 ? 1 : -1)));
       grid[y * ART_W + x]++;
+      by[y * ART_W + x].add(k >> 1);
       b >>= 2;
     }
-  }
-  return { grid, start, end: { x, y } };
+  });
+  return { grid, by, start, end: { x, y } };
+}
+
+/** hex digits only: spaces, case and a 0x prefix don't matter */
+export const normalizeFp = (s: string) => s.replace(/^\s*0x/i, "").replace(/[^0-9a-f]/gi, "").toUpperCase();
+
+export function hexBytes(h: string) {
+  const out = new Uint8Array(h.length >> 1);
+  for (let i = 0; i < out.length; i++) out[i] = parseInt(h.slice(i * 2, i * 2 + 2), 16);
+  return out;
 }
 
 let cache: Promise<KeyInfo> | null = null;

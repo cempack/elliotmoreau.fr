@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { m } from "motion/react";
 import { useI18n } from "@/i18n/client";
 import { useReduced } from "@/hooks/env";
@@ -11,41 +11,17 @@ import { PixelGlyph } from "@/components/glyphs";
 import { CopyButton } from "./Copy";
 import { G_CHEVRON, G_DOWN, G_RETRY, G_TERM } from "./glyphs";
 import { fill } from "./mail";
-import { ART_H, ART_W, drunkenBishop, groups, loadKey, type KeyInfo } from "./pgp";
+import { groups, loadKey, type KeyInfo } from "./pgp";
+import { CheckFingerprint, Seal, groupMatches } from "./Seal";
 
 const KEY_FILE = "elliot-moreau.asc";
-
-/** visit count → colour, cool to warm; start and end stand out */
-const HEAT = ["", "#3f4842", "#6f8f84", "#aea3c8", "#89b4a8", "#ebe9e1"];
-
-/** The fingerprint drawn as a 17 × 9 pixel board (the drunken bishop). */
-function VisualFingerprint({ info }: { info: KeyInfo }) {
-  const { grid, start, end } = useMemo(() => drunkenBishop(info.bytes), [info.bytes]);
-  return (
-    <svg
-      viewBox={`-1 -1 ${ART_W + 2} ${ART_H + 2}`}
-      shapeRendering="crispEdges"
-      className="app-contact-art-svg"
-      aria-hidden
-      focusable="false"
-    >
-      {grid.map((n, i) => {
-        const x = i % ART_W;
-        const y = Math.floor(i / ART_W);
-        if (!n) return <rect key={i} x={x + 0.4} y={y + 0.4} width={0.2} height={0.2} fill="#3f4842" />;
-        return <rect key={i} x={x + 0.06} y={y + 0.06} width={0.88} height={0.88} fill={HEAT[Math.min(n, 5)]} />;
-      })}
-      <rect x={start.x} y={start.y} width={1} height={1} fill="#b0cc86" />
-      <rect x={end.x} y={end.y} width={1} height={1} fill="#e0bd6e" />
-    </svg>
-  );
-}
 
 /**
  * PGP key: /pgp.asc read and described in the browser (fingerprint,
  * key ID, user ID, creation date, algorithm, all parsed from the file),
- * its visual fingerprint, copy and download, the armored block revealed
- * on a spring, and a one-line import for terminal people.
+ * its wax seal (see Seal) and a way to check a fingerprint against it,
+ * copy and download, the armored block revealed on a spring, and a
+ * one-line import for terminal people.
  */
 export function KeyView({ active }: { active: boolean }) {
   const { t, lang } = useI18n();
@@ -57,6 +33,9 @@ export function KeyView({ active }: { active: boolean }) {
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [open, setOpen] = useState(false);
+  /** groups lit by a tap on the wax, and the fingerprint being checked */
+  const [lit, setLit] = useState<Set<number> | null>(null);
+  const [check, setCheck] = useState("");
 
   useEffect(() => {
     if (!active || info) return;
@@ -76,8 +55,6 @@ export function KeyView({ active }: { active: boolean }) {
         info.created
       )
     : "";
-  const fp = info ? groups(info.fingerprint) : [];
-  const half = Math.ceil(fp.length / 2);
   const lines = info ? info.armored.split("\n") : [];
 
   return (
@@ -116,41 +93,25 @@ export function KeyView({ active }: { active: boolean }) {
         ) : (
           <>
             <div className="app-contact-key-top">
-              <figure className="app-contact-art">
-                <div className="app-contact-art-board">
-                  {info ? <VisualFingerprint info={info} /> : <span className="app-contact-art-empty" />}
-                  <span className="app-contact-art-tag app-contact-art-tag--top" aria-hidden>
-                    {info ? `${info.algorithm.toUpperCase()} ${info.version === 6 ? "V6" : "V4"}` : "…"}
-                  </span>
-                  <span className="app-contact-art-tag app-contact-art-tag--bottom" aria-hidden>
-                    {info?.version === 6 ? "SHA256" : "SHA1"}
-                  </span>
-                </div>
-                <figcaption className="app-contact-art-cap">
-                  <span className="app-contact-art-cap-title">{c.visualFp}</span>
-                  <span>{c.visualFpNote}</span>
-                </figcaption>
-              </figure>
+              {info ? (
+                <Seal info={info} reduced={reduced} labels={{ press: c.pressSeal, seal: c.sealLabel }} onLit={setLit} />
+              ) : (
+                <div className="app-contact-seal app-contact-seal--empty" aria-hidden />
+              )}
 
               <div className="app-contact-key-facts">
                 <h3 id={`${uid}-fp`} className="app-contact-label">
                   {c.fingerprint}
                 </h3>
                 {info ? (
-                  <p className="app-contact-fp">
-                    <span>{fp.slice(0, half).join(" ")}</span>
-                    <span>
-                      {fp.slice(half).map((g, i) => (
-                        <span key={i} data-id={(info.version !== 6 && i >= fp.length - half - 4) || undefined}>
-                          {i ? " " : ""}
-                          {g}
-                        </span>
-                      ))}
-                    </span>
-                  </p>
+                  <FingerprintGroups info={info} lit={lit} check={check} />
                 ) : (
                   <p className="app-contact-fp app-contact-fp--loading">{c.keyLoading}</p>
                 )}
+                <p className="app-contact-seal-hint">{c.sealHint}</p>
+                <p className="sr-only" aria-live="polite">
+                  {lit && info ? fill(c.sealLit, { groups: [...lit].map((i) => groups(info.fingerprint)[i]).join(" ") }) : ""}
+                </p>
                 <dl className="app-contact-dl">
                   <div>
                     <dt>{c.keyId}</dt>
@@ -169,6 +130,14 @@ export function KeyView({ active }: { active: boolean }) {
                     <dd>{info ? info.algorithm : "…"}</dd>
                   </div>
                 </dl>
+                {info && (
+                  <CheckFingerprint
+                    info={info}
+                    value={check}
+                    onChange={setCheck}
+                    labels={{ label: c.checkLabel, placeholder: c.checkPlaceholder, same: c.checkSame, diff: c.checkDiff, note: c.checkNote }}
+                  />
+                )}
               </div>
             </div>
 
@@ -253,5 +222,31 @@ export function KeyView({ active }: { active: boolean }) {
         </div>
       </div>
     </div>
+  );
+}
+
+/** The fingerprint in groups of four: lit by a tap on the wax, moss as a pasted one matches. */
+function FingerprintGroups({ info, lit, check }: { info: KeyInfo; lit: Set<number> | null; check: string }) {
+  const fp = groups(info.fingerprint);
+  const half = Math.ceil(fp.length / 2);
+  const match = groupMatches(info.fingerprint, check);
+  const span = (g: string, i: number) => (
+    <span
+      key={i}
+      className="app-contact-fp-g"
+      data-id={(info.version !== 6 && i >= fp.length - 4) || undefined}
+      data-lit={lit?.has(i) || undefined}
+      data-match={match[i] ?? undefined}
+    >
+      {g}
+    </span>
+  );
+  // real spaces between groups, so a copied fingerprint reads as one
+  const line = (from: number, to: number) => fp.slice(from, to).flatMap((g, k) => (k ? [" ", span(g, from + k)] : [span(g, from + k)]));
+  return (
+    <p className="app-contact-fp">
+      <span>{line(0, half)}</span>
+      <span>{line(half, fp.length)}</span>
+    </p>
   );
 }
