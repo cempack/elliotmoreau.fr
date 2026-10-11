@@ -563,3 +563,16 @@ html[data-intro="done"] .em-intro {
   border-radius: 14%;
   box-shadow: 0 0 0 1px rgba(196, 206, 194, 0.14);
 }
+.em-repo-caret {
+  animation: em-repo-caret 1.06s steps(1, end) infinite;
+}
+@keyframes em-repo-caret {
+  50% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .em-repo-caret {
+    animation: none;
+  }
+}

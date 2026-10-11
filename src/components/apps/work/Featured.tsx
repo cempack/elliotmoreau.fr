@@ -63,7 +63,7 @@ export function Featured({
       >
         <DitherStage tone="ion" />
         <m.span className="app-work-hero-orbit" style={lean ? { x, y } : undefined} data-hero-origin>
-          <RepoArt name={repo.name} language={repo.language} className="app-work-hero-planet" />
+          <RepoArt name={repo.name} language={repo.language} caret className="app-work-hero-planet" />
         </m.span>
       </button>
 

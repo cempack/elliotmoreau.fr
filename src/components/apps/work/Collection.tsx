@@ -8,6 +8,7 @@ import { spring } from "@/lib/motion";
 import { timeAgo } from "@/lib/format";
 import { scrollByY, scrollerBottom, scrollerTop } from "@/lib/scroller";
 import { RepoArt } from "./RepoArt";
+import { useNow } from "@/components/os/menubar/util";
 import { GLYPH_STAR, PixelGlyph } from "@/components/glyphs";
 import { G_CHEVRON } from "./glyphs";
 import { Marked } from "./Parts";
@@ -316,8 +317,27 @@ function Item({
         {compact(repo.stars, lang)}
       </m.span>
       <m.span layout="position" transition={{ layout: lt }} className="app-work-date tabular">
+        {hydrated && repo.pushedAt && <Freshness pushedAt={repo.pushedAt} />}
         {hydrated && repo.pushedAt ? timeAgo(repo.pushedAt, lang) : " "}
       </m.span>
     </m.li>
+  );
+}
+
+/** Five cells lit by how recently a repo was pushed: today, this week,
+    this month, this quarter, older. After hydration only (clock). */
+function Freshness({ pushedAt }: { pushedAt: string }) {
+  const now = useNow("minute");
+  if (!now) return null;
+  const days = (now.getTime() - Date.parse(pushedAt)) / 86_400_000;
+  const level = days < 1 ? 5 : days < 7 ? 4 : days < 31 ? 3 : days < 92 ? 2 : 1;
+  return (
+    <span className="app-work-fresh" data-level={level} aria-hidden>
+      <i />
+      <i />
+      <i />
+      <i />
+      <i />
+    </span>
   );
 }

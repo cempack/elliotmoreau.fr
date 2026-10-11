@@ -1692,3 +1692,184 @@ button.app-work-col:hover,
     outline: 2px solid Highlight;
   }
 }
+
+/* ───────────────────────────── overview ─────────────────────────────
+   The projects at a glance: four figures, the language bar, the push line. */
+.app-work-ov {
+  display: grid;
+  gap: 1px;
+  margin: 1.25rem 0 0;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  background: var(--hairline);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+}
+.app-work-ov > * {
+  background: rgba(10, 13, 11, 0.6);
+}
+.app-work-ov-figs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+}
+.app-work-ov-fig {
+  display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  row-gap: 0.25rem;
+  min-width: 0;
+  padding: 0.75rem 1rem 0.8125rem;
+}
+.app-work-ov-fig + .app-work-ov-fig {
+  box-shadow: inset 1px 0 0 var(--hairline);
+}
+.app-work-ov-k {
+  color: var(--color-label-3);
+  font: 500 0.75rem/1.2 var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.app-work-ov-v {
+  margin: 0;
+  color: var(--color-label);
+  font: 500 1.375rem/1.1 var(--font-mono);
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+}
+.app-work-ov-sub {
+  overflow: hidden;
+  color: var(--color-label-3);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.app-work-ov-row {
+  display: grid;
+  grid-template-columns: 9.5rem minmax(0, 1fr);
+  align-items: center;
+  column-gap: 1rem;
+  row-gap: 0.625rem;
+  padding: 0.875rem 1rem;
+}
+/* the language bar: square cells, like the boot's */
+.app-work-ov-bar {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+}
+.app-work-ov-bar i {
+  flex: 1;
+}
+.app-work-ov-legend {
+  grid-column: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+}
+.app-work-ov-lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  height: 1.75rem;
+  color: var(--color-label-2);
+  font: 500 0.8125rem/1 var(--font-mono);
+  transition: color 0.15s;
+}
+.app-work-ov-lang:hover {
+  color: var(--color-label);
+}
+.app-work-ov-n {
+  color: var(--color-label-3);
+}
+/* the push line: a log axis, a blip per repo in its language's colour */
+.app-work-ov-line {
+  position: relative;
+  height: 2.75rem;
+  margin: 0 0.5rem 0 0.25rem;
+}
+.app-work-ov-axis {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0.875rem;
+  height: 1px;
+  background: repeating-linear-gradient(90deg, var(--color-ink-500) 0 4px, transparent 4px 7px);
+}
+.app-work-ov-tick {
+  position: absolute;
+  top: 0.625rem;
+  width: 1px;
+  height: 0.5rem;
+  background: var(--color-ink-500);
+}
+.app-work-ov-tick > span {
+  position: absolute;
+  top: 0.875rem;
+  left: 50%;
+  translate: -50% 0;
+  color: var(--color-label-3);
+  font: 500 0.6875rem/1 var(--font-mono);
+  white-space: nowrap;
+}
+.app-work-ov-tick--now {
+  background: var(--color-flare);
+}
+.app-work-ov-tick--now > span {
+  translate: -100% 0;
+  color: var(--color-flare);
+}
+.app-work-ov-blip {
+  position: absolute;
+  top: 0.25rem;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  background: var(--c);
+  box-shadow:
+    0 6px 0 var(--c),
+    0 12px 0 color-mix(in oklab, var(--c) 45%, transparent);
+  transition: translate 0.2s var(--ease-out-quint);
+}
+.app-work-ov-blip:hover {
+  translate: 0 -2px;
+}
+@container app-work (max-width: 52rem) {
+  .app-work-ov-figs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .app-work-ov-fig:nth-child(3) {
+    box-shadow: inset 0 1px 0 var(--hairline);
+  }
+  .app-work-ov-fig:nth-child(4) {
+    box-shadow:
+      inset 1px 0 0 var(--hairline),
+      inset 0 1px 0 var(--hairline);
+  }
+  .app-work-ov-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .app-work-ov-legend {
+    grid-column: 1;
+  }
+}
+
+/* freshness: five cells, lit by how recently the repo was pushed */
+.app-work-fresh {
+  display: inline-flex;
+  gap: 1px;
+  margin-right: 0.4375rem;
+  vertical-align: -1px;
+}
+.app-work-fresh i {
+  width: 3px;
+  height: 8px;
+  background: var(--color-ink-600);
+}
+.app-work-fresh[data-level="1"] i:nth-child(-n + 1),
+.app-work-fresh[data-level="2"] i:nth-child(-n + 2),
+.app-work-fresh[data-level="3"] i:nth-child(-n + 3),
+.app-work-fresh[data-level="4"] i:nth-child(-n + 4),
+.app-work-fresh[data-level="5"] i:nth-child(-n + 5) {
+  background: var(--color-signal);
+}

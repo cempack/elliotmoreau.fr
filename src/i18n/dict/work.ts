@@ -3,6 +3,21 @@
 // Templates use {placeholders}; plurals come as `…One` / `…Other` pairs
 // (French uses the singular for 0 and 1).
 const en = {
+  overview: {
+    label: "Overview",
+    repos: "Repos",
+    reposSub: "public on GitHub",
+    stars: "Stars",
+    forksSub: "{n} forks",
+    langs: "Languages",
+    langsSub: "mostly {lang}",
+    push: "Last push",
+    languages: "Languages",
+    filterLang: "Show {lang} projects",
+    activity: "Last push, per repo",
+    ticks: { year: "1 yr", half: "6 mo", month: "1 mo", week: "1 wk", day: "1 d", now: "now" },
+    pushedAgo: "{name}, pushed {ago}",
+  },
   side: {
     favorites: "Favorites",
     favoritesNav: "Smart folders",
@@ -112,6 +127,21 @@ const en = {
 };
 
 const fr: typeof en = {
+  overview: {
+    label: "Vue d’ensemble",
+    repos: "Dépôts",
+    reposSub: "publics sur GitHub",
+    stars: "Étoiles",
+    forksSub: "{n} forks",
+    langs: "Langages",
+    langsSub: "surtout {lang}",
+    push: "Dernier push",
+    languages: "Langages",
+    filterLang: "Voir les projets en {lang}",
+    activity: "Dernier push, par dépôt",
+    ticks: { year: "1 an", half: "6 mois", month: "1 mois", week: "1 sem.", day: "1 j", now: "auj." },
+    pushedAgo: "{name}, push {ago}",
+  },
   side: {
     favorites: "Favoris",
     favoritesNav: "Dossiers intelligents",

@@ -9,6 +9,7 @@ import { useI18n } from "@/i18n/client";
 import { spring } from "@/lib/motion";
 import { Collection } from "./Collection";
 import { Featured } from "./Featured";
+import { Overview } from "./Overview";
 import { EmptyState, StatusBar } from "./Parts";
 import { QuickLook, QuickLookSheetBody } from "./QuickLook";
 import { Sidebar } from "./Sidebar";
@@ -133,6 +134,10 @@ function WorkContent() {
               </m.div>
             )}
           </AnimatePresence>
+
+          {w.showHero && (
+            <Overview repos={w.repos} hydrated={w.hydrated} onLang={(lang) => w.setFilter({ kind: "lang", value: lang })} />
+          )}
 
           {visible.length > 0 && (
             <m.div layout="position" transition={{ layout: spring.default }} className="app-work-head">

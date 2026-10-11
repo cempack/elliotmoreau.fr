@@ -50,9 +50,21 @@ const TONE = ["var(--color-label-3)", "", "var(--color-signal)", "var(--color-em
  * cells. Seeded by the name (the same repo always looks the same), keyed
  * in its language colour, with a line-number gutter. Sized by className.
  */
-export function RepoArt({ name, language, className = "" }: { name: string; language?: string | null; className?: string }) {
+export function RepoArt({
+  name,
+  language,
+  caret = false,
+  className = "",
+}: {
+  name: string;
+  language?: string | null;
+  /** a blinking cursor after the last token, as if the file were open */
+  caret?: boolean;
+  className?: string;
+}) {
   const accent = langColor(language ?? "");
   const toks = tokens(name);
+  const last = toks[toks.length - 1];
   return (
     <svg viewBox={`0 0 ${W} ${W}`} shapeRendering="crispEdges" aria-hidden focusable="false" className={`em-repo ${className}`}>
       <rect x={0} y={0} width={W} height={W} fill="var(--color-ink-900)" />
@@ -65,6 +77,9 @@ export function RepoArt({ name, language, className = "" }: { name: string; lang
       {toks.map((t, i) => (
         <rect key={i} x={t.x} y={t.y} width={t.w} height={1} fill={t.tone === 1 ? accent : TONE[t.tone]} />
       ))}
+      {caret && last && (
+        <rect className="em-repo-caret" x={Math.min(W - 2, last.x + last.w + 1)} y={last.y - 0.5} width={0.75} height={2} fill="var(--color-label)" />
+      )}
     </svg>
   );
 }
