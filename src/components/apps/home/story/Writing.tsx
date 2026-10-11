@@ -72,10 +72,12 @@ function findSpot(rows: HTMLElement[], i: number, px: number, w: number, h: numb
   const pip = readPip();
   if (pip) soft.push([box(pip), 4]);
   const vw = window.innerWidth;
-  const top = parseFloat(getComputedStyle(row).scrollMarginTop) || 56;
+  // within its own chapter, between the menu bar and the Dock
+  const top = Math.max(parseFloat(getComputedStyle(row).scrollMarginTop) || 56, head?.getBoundingClientRect().top ?? 0);
   const gap = 12;
   const mid = (R.t + R.b) / 2;
   const ownRight = titles[i].length ? Math.max(...titles[i].map((b) => b.r)) : R.l;
+  const ownMeta = rows[i].querySelector(".app-story-wr-meta")?.getBoundingClientRect();
 
   const scoreAt = (x: number, y: number, fit: number) => {
     const P = { l: x, t: y, r: x + w * fit, b: y + h * fit };
@@ -83,11 +85,15 @@ function findSpot(rows: HTMLElement[], i: number, px: number, w: number, h: numb
     if (hard.some((o) => overlap(P, o) > 0)) return null;
     let score = 0;
     for (const [o, k] of soft) score += overlap(P, o) * k;
-    return score + (1 - fit) * 9000 + Math.abs(x - (px - 56)) * 3 + Math.abs((P.t + P.b) / 2 - mid) * 2;
+    // it belongs to its row: any spot touching it beats every spot that
+    // drifts away from it, however much smaller it has to be
+    const drift = Math.max(0, P.t - R.b - gap, R.t - gap - P.b);
+    if (drift > 1) score += 1e6 + drift * 40;
+    return score + (1 - fit) * 9000 + Math.abs(x - (px - 56)) * 2 + Math.abs((P.t + P.b) / 2 - mid) * 0.5;
   };
 
   let best: Spot | null = null;
-  for (const fit of [1, 0.88, 0.76, 0.64]) {
+  for (const fit of [1, 0.88, 0.76, 0.64, 0.56]) {
     const W = w * fit;
     const H = h * fit;
     const below = R.b + gap;
@@ -96,6 +102,8 @@ function findSpot(rows: HTMLElement[], i: number, px: number, w: number, h: numb
     for (const x0 of xs) {
       const x = Math.round(Math.min(Math.max(16, x0), vw - W - 16));
       const ys = [below, above, mid - H / 2];
+      // or off the row's own tag and reading time, beside it
+      if (ownMeta && ownMeta.left < x + W && ownMeta.right > x) ys.push(ownMeta.bottom + gap, ownMeta.top - gap - H);
       // just clear of every word standing in this column
       for (const o of hard) if (o.l < x + W && o.r > x) ys.push(o.b + gap, o.t - gap - H);
       for (const y0 of ys) {
