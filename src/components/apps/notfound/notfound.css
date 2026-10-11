@@ -189,8 +189,9 @@
   position: relative;
   width: min(22.5rem, calc(100vw - 2rem));
   border-radius: var(--radius-window);
+  /* a Hyprland window: the 2px rim, then the drop */
   box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 0 0 2px rgba(196, 206, 194, 0.32),
     0 30px 70px -26px rgba(0, 0, 0, 0.78);
   touch-action: none;
   user-select: none;
@@ -213,7 +214,7 @@
    after the refraction, so the pixel grid behind bends crisply instead
    of smearing, and a deeper tint for the text */
 .app-nf-alert .os-glass {
-  --os-glass-tint: rgba(11, 12, 21, 0.72);
+  --os-glass-tint: rgba(12, 15, 13, 0.86);
   --os-glass-rblur: 4px;
 }
 html[data-sky="day"] .app-nf-alert .os-glass {

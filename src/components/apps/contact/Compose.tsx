@@ -3,6 +3,7 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { m } from "motion/react";
 import { useI18n } from "@/i18n/client";
+import { useParisTime } from "@/hooks/useParisTime";
 import { useIsMac, useMedia, useReduced } from "@/hooks/env";
 import { useSound } from "@/lib/sound";
 import { spring } from "@/lib/motion";
@@ -298,6 +299,7 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
           }}
           onLand={land}
         />
+        <Delivery />
       </div>
 
       {!done ? (
@@ -546,5 +548,43 @@ function NothingOpened({ email }: { email: string }) {
       </span>
       {after}
     </p>
+  );
+}
+
+/**
+ * Beside the sheet on wide windows, under the envelope: what happens to
+ * the letter once it is sent, as a short spec list (the time in Paris is
+ * live; the key links to its mailbox).
+ */
+function Delivery() {
+  const { t } = useI18n();
+  const c = t.contact;
+  const { time } = useParisTime();
+  return (
+    <section className="app-contact-delivery" aria-label={c.delivery}>
+      <p className="app-contact-delivery-k">{c.delivery}</p>
+      <dl>
+        <div>
+          <dt>{c.kParis}</dt>
+          <dd className="tabular">{time ?? "--:--"}</dd>
+        </div>
+        <div>
+          <dt>{c.kReplies}</dt>
+          <dd>{c.vReplies}</dd>
+        </div>
+        <div>
+          <dt>{c.kLangs}</dt>
+          <dd>{c.vLangs}</dd>
+        </div>
+        <div>
+          <dt>{c.kPrivate}</dt>
+          <dd>
+            <a href="#pgp" className="app-contact-delivery-link">
+              {c.vPrivate}
+            </a>
+          </dd>
+        </div>
+      </dl>
+    </section>
   );
 }
