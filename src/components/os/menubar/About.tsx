@@ -1,8 +1,7 @@
 "use client";
 
 import { useI18n } from "@/i18n/client";
-import { Monogram } from "@/components/Monogram";
-import { ArrowUpRight, GithubIcon, RestartIcon, RssIcon } from "./glyphs";
+import { ArrowUpRight, EmosMark, GithubIcon, RestartIcon, RssIcon } from "./glyphs";
 import { BLOG_RSS, FIRST_COMMIT, SITE_REPO, restartOS, useNow } from "./util";
 import { lockOS } from "../Intro";
 
@@ -58,7 +57,7 @@ export function AboutPanel() {
     <div className="os-menubar-about">
       <div className="os-menubar-about-hero">
         <div className="os-menubar-about-art">
-          <Monogram text="emOS" className="os-menubar-about-planet" />
+          <EmosMark size={112} className="os-menubar-about-mark" />
         </div>
         <div className="os-menubar-about-id">
           <p className="os-menubar-kicker">{a.kicker}</p>

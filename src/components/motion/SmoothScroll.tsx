@@ -8,13 +8,14 @@ import "lenis/dist/lenis.css";
 
 /**
  * Inertial wheel scrolling, tuned tight (lerp 0.1) so it tracks the input
- * instead of trailing it. Touch stays native. Ticked inside Motion's frame
- * loop, so scroll, springs and scroll-linked values share one frame.
- * Off entirely under reduced motion.
+ * instead of trailing it. Ticked inside Motion's frame loop, so scroll,
+ * springs and scroll-linked values share one frame. Off entirely under
+ * reduced motion and on touch screens (native scrolling is already
+ * inertial there, and the loop would cost a frame callback forever).
  */
 export function SmoothScroll() {
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce), (hover: none), (pointer: coarse)").matches) return;
     const lenis = new Lenis({
       lerp: 0.1,
       smoothWheel: true,

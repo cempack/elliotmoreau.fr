@@ -6,7 +6,6 @@ import type { GhostPost } from "@/lib/ghost";
 import type { Source } from "@/lib/data";
 import { useI18n } from "@/i18n/client";
 import { spring } from "@/lib/motion";
-import { Monogram } from "@/components/Monogram";
 import { byYear, countLabel, dateLong, dateShort, fmt } from "./util";
 
 type Props = {
@@ -57,9 +56,6 @@ export function PostList({ posts, selected, title, source, compact, hrefFor, onP
         </span>
         <span className="app-writing-row-title">{p.title}</span>
         {p.excerpt && <span className="app-writing-row-excerpt">{p.excerpt}</span>}
-      </span>
-      <span className="app-writing-row-art" aria-hidden>
-        <Monogram text={p.slug} className="app-writing-row-planet" />
       </span>
     </>
   );

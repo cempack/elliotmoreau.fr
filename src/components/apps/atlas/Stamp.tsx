@@ -2,6 +2,7 @@
 
 import { useId } from "react";
 import { Monogram } from "@/components/Monogram";
+import { GLYPH_PIN } from "@/components/glyphs";
 import { PixelLabel } from "@/components/PixelLabel";
 import type { Locale } from "@/i18n/config";
 import type { Place } from "@/lib/places";
@@ -55,7 +56,7 @@ export function Stamp({
           <span className="app-atlas-stamp-art">
             {size === "lg" ? (
               <>
-                <Monogram text={place.id} className="app-atlas-stamp-planet" />
+                <Monogram text={place.id} glyph={GLYPH_PIN} className="app-atlas-stamp-planet" />
                 <span className="app-atlas-stamp-iso">
                   <PixelLabel text={isoOf(place)} cell={2} />
                 </span>

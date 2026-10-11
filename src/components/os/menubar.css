@@ -1466,3 +1466,15 @@ html:active-view-transition .os-menubar {
     color: var(--color-label);
   }
 }
+
+/* About: the emOS mark where the machine's picture goes (fastfetch's logo) */
+.os-menubar-about-mark {
+  display: block;
+  color: var(--color-signal);
+}
+@media (max-width: 767px) {
+  .os-menubar-about-mark {
+    width: 84px;
+    height: 84px;
+  }
+}

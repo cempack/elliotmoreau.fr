@@ -1,6 +1,5 @@
 "use client";
 
-import { Monogram } from "@/components/Monogram";
 import { PixelLabel } from "@/components/PixelLabel";
 import { useI18n } from "@/i18n/client";
 import type { RepoInfo } from "@/lib/github";
@@ -39,7 +38,6 @@ export function Setup({ repos }: { repos: RepoInfo[] }) {
   return (
     <div className="app-now-fetch">
       <div className="app-now-fetch-logo" aria-hidden>
-        <Monogram text="dos-moos" className="app-now-fetch-planet" />
         <PixelLabel text="DOS MOOS" cell={2} className="app-now-fetch-mark" />
       </div>
       <div className="app-now-fetch-info">
