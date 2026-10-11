@@ -20,7 +20,7 @@ const en = {
   /* compose */
   composeEyebrow: "New message",
   composeTitle: "Say hello.",
-  composeLead: "Write your message here. Send opens it in your mail app.",
+  composeLead: "Send opens your mail app with everything filled in.",
   composeLabel: "New message to Elliot",
   to: "To",
   me: "Elliot Moreau",
@@ -43,9 +43,7 @@ const en = {
   bodyHi: "Anything goes: a theme you liked, a place I should visit, a song…",
   send: "Send",
   sendLabel: "Send: opens your mail app with this message",
-  honest: "Send opens your mail app with all of this filled in. Nothing is sent from this page.",
   draftSaved: "Draft saved",
-  opensMail: "Opens in your mail app",
   words: "{n} words",
   wordOne: "{n} word",
   untitled: "untitled",
@@ -59,7 +57,7 @@ const en = {
 
   /* the envelope (signature) */
   envelopeLabel: "Your letter, in miniature",
-  throwHint: "Or throw the envelope into the Dock",
+  throwHint: "Or drop the envelope on the Dock",
   holdHint: "Hold, then flick down",
   dropHint: "Let go to send",
   writeFirst: "Write something first",
@@ -144,7 +142,7 @@ const fr: typeof en = {
 
   composeEyebrow: "Nouveau message",
   composeTitle: "Écrivez-moi.",
-  composeLead: "Écrivez votre message ici. Envoyer l’ouvre dans votre messagerie.",
+  composeLead: "Envoyer ouvre votre messagerie, avec tout déjà rempli.",
   composeLabel: "Nouveau message pour Elliot",
   to: "À",
   me: "Elliot Moreau",
@@ -167,9 +165,7 @@ const fr: typeof en = {
   bodyHi: "Tout est permis : un thème qui vous a plu, un endroit à visiter, une chanson…",
   send: "Envoyer",
   sendLabel: "Envoyer : ouvre votre messagerie avec ce message",
-  honest: "« Envoyer » ouvre votre messagerie avec tout ceci déjà rempli. Rien n’est envoyé depuis cette page.",
   draftSaved: "Brouillon enregistré",
-  opensMail: "S’ouvre dans votre messagerie",
   words: "{n} mots",
   wordOne: "{n} mot",
   untitled: "sans-titre",
@@ -183,7 +179,7 @@ const fr: typeof en = {
   toastTitle: "Mail",
 
   envelopeLabel: "Votre lettre, en miniature",
-  throwHint: "Ou lancez l’enveloppe dans le Dock",
+  throwHint: "Ou déposez l’enveloppe sur le Dock",
   holdHint: "Maintenez, puis lancez",
   dropHint: "Lâchez pour envoyer",
   writeFirst: "Écrivez d’abord un mot",

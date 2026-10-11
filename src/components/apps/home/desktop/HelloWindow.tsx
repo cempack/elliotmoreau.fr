@@ -368,12 +368,7 @@ function StatusChips({ label, lang }: { label: string; lang: "en" | "fr" }) {
           <PixelGlyph cells={G_PLANE} size={11} className="app-home-chip-plane" />
           <span className="app-home-chip-v">{fill(h.places, { n: BEEN })}</span>
           {NEXT && (
-            <span className="app-home-chip-k">
-              <span className="app-home-chip-arrow" aria-hidden>
-                →
-              </span>{" "}
-              {NEXT.name[lang]}
-            </span>
+            <span className="app-home-chip-k">{fill(h.next, { place: NEXT.name[lang] })}</span>
           )}
         </Link>
       </li>

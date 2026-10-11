@@ -16,8 +16,9 @@ const en = {
     close: "Close the README",
     minimize: "Minimize the README",
     status: "Live status",
-    /** the places chip: "6 places → Japan" */
-    places: "{n} places",
+    /** the places chip: "6 places visited", "next: Japan" */
+    places: "{n} places visited",
+    next: "next: {place}",
     openAtlas: "{n} places visited. Open Atlas.",
     openAtlasNext: "{n} places visited, {next} next. Open Atlas.",
   },
@@ -82,7 +83,8 @@ const fr: typeof en = {
     close: "Fermer le LISEZ-MOI",
     minimize: "Réduire le LISEZ-MOI",
     status: "En direct",
-    places: "{n} lieux",
+    places: "{n} lieux visités",
+    next: "prochain : {place}",
     openAtlas: "{n} lieux visités. Ouvrir Atlas.",
     openAtlasNext: "{n} lieux visités, prochain : {next}. Ouvrir Atlas.",
   },

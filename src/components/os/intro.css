@@ -346,7 +346,11 @@
   border-radius: 12px;
   background: var(--color-ink-800);
   box-shadow: inset 0 0 0 2px rgba(196, 206, 194, 0.3);
-  color: var(--color-signal);
+}
+.os-lock-logo {
+  display: block;
+  width: 40px;
+  height: auto;
 }
 .os-lock-name {
   margin-top: 12px;
@@ -519,71 +523,4 @@
   }
 }
 
-/* the matrix: every cell is an unlit LED; glyph cells carry a lime light
-   (::before) that ignites, with a one-frame white flash (::after) */
-.os-intro-mark {
-  --c: 15px;
-  --g: 3px;
-  display: grid;
-  gap: var(--g);
-}
-.os-intro-mark-cell {
-  position: relative;
-  width: var(--c);
-  height: var(--c);
-  border-radius: max(1px, calc(var(--c) * 0.12));
-  background: #121513;
-}
-.os-intro-mark-cell.is-void {
-  background: transparent;
-}
-.os-intro-mark-cell.is-on::before,
-.os-intro-mark-cell.is-on::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-}
-.os-intro-mark-cell.is-on::before {
-  background: var(--color-signal);
-  box-shadow: 0 0 calc(var(--c) * 1.1) rgba(176, 204, 134, 0.28);
-}
-.os-intro-mark-cell.is-glint::before {
-  background: #e3eed2;
-}
-.os-intro-mark-cell.is-on::after {
-  background: #fff;
-  opacity: 0;
-}
-.os-intro-mark.is-boot .os-intro-mark-cell {
-  animation: os-intro-fade 260ms ease-out both;
-}
-.os-intro-mark.is-boot .os-intro-mark-cell.is-on::before {
-  animation: os-intro-ignite 210ms steps(3, end) var(--d) both;
-}
-.os-intro-mark.is-boot .os-intro-mark-cell.is-on::after {
-  animation: os-intro-flash 240ms ease-out var(--d) forwards;
-}
-@keyframes os-intro-ignite {
-  0% {
-    opacity: 0;
-    transform: scale(0.35);
-  }
-  60% {
-    opacity: 1;
-    transform: scale(1.18);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-@keyframes os-intro-flash {
-  0% {
-    opacity: 0.9;
-  }
-  100% {
-    opacity: 0;
-  }
-}
 

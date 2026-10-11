@@ -158,7 +158,7 @@ export function KeyView({ active }: { active: boolean }) {
                   </div>
                   <div>
                     <dt>{c.keyUser}</dt>
-                    <dd>{info ? info.userIds[0] ?? "—" : "…"}</dd>
+                    <dd>{info ? info.userIds[0] ?? "-" : "…"}</dd>
                   </div>
                   <div>
                     <dt>{c.keyCreated}</dt>

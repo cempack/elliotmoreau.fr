@@ -1,7 +1,7 @@
 "use client";
 
-import { PixelLabel } from "@/components/PixelLabel";
 import { useI18n } from "@/i18n/client";
+import { EmosLogo } from "@/components/os/EmosLogo";
 import type { RepoInfo } from "@/lib/github";
 import { NOW, loc } from "@/content/now";
 
@@ -21,7 +21,7 @@ export function SetupMeta() {
 }
 
 /**
- * The "uses" sheet as fastfetch would print it: a pixel logo, user@host,
+ * The "uses" sheet as fastfetch would print it: the emos logo, user@host,
  * the hand-written rows from content (unconfirmed ones stay hidden), one
  * live row (languages, from GitHub) and the palette.
  */
@@ -38,7 +38,7 @@ export function Setup({ repos }: { repos: RepoInfo[] }) {
   return (
     <div className="app-now-fetch">
       <div className="app-now-fetch-logo" aria-hidden>
-        <PixelLabel text="DOS MOOS" cell={2} className="app-now-fetch-mark" />
+        <EmosLogo className="app-now-fetch-emos" />
       </div>
       <div className="app-now-fetch-info">
         <p className="app-now-fetch-prompt" aria-hidden>

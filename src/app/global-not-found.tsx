@@ -49,7 +49,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = getDict(await requestLang());
   return {
     metadataBase: new URL(SITE_URL),
-    title: `${t.meta.pages.notFound} — ${t.meta.siteName}`,
+    title: `${t.meta.pages.notFound} · ${t.meta.siteName}`,
     description: t.notfound.body,
     applicationName: t.meta.siteName,
   };

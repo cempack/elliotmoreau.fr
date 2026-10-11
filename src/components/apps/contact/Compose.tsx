@@ -13,7 +13,7 @@ import { EmosMark } from "@/components/os/menubar/glyphs";
 import { CopyButton } from "./Copy";
 import { MAX_LINES, TEXT_CELLS } from "./Envelope";
 import { Stage, type StageHandle } from "./Stage";
-import { G_INFO, G_OPEN, G_SEND } from "./glyphs";
+import { G_OPEN, G_SEND } from "./glyphs";
 import { MAILTO_SAFE, draftFile, fill, launchMail, letterLines, mailtoHref, plural, slug, wordCount } from "./mail";
 import { useDraft } from "./useDraft";
 
@@ -75,7 +75,6 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
   const sendRef = useRef<HTMLButtonElement>(null);
   const footRef = useRef<HTMLDivElement>(null);
   const footEndRef = useRef<HTMLSpanElement>(null);
-  const honestRef = useRef<HTMLParagraphElement>(null);
   const subjectRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const resultRef = useRef<HTMLHeadingElement>(null);
@@ -142,10 +141,8 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
       const r = ta.getBoundingClientRect();
       // where it sits with the window scrolled to the top
       const top = scrollerTop() + contentTop(ta);
-      // the sheet, and the honest note when it sits under the sheet (it moves beside it on wide windows)
-      const fb = form.getBoundingClientRect().bottom;
-      const hn = honestRef.current?.getBoundingClientRect();
-      const below = (hn && hn.top >= fb - 1 ? hn.bottom : fb) - r.bottom;
+      // what the sheet keeps below the textarea (its footer)
+      const below = form.getBoundingClientRect().bottom - r.bottom;
       const pin = parseFloat(getComputedStyle(foot).bottom) || 0;
       // (2px short of the line, so the footer reads as resting, not pinned)
       const room = Math.floor(scrollerBottom() - pin - top - below) - 2;
@@ -301,11 +298,6 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
           }}
           onLand={land}
         />
-        {/* under the sheet on narrow windows; beside it, under the envelope, on wide ones */}
-        <p ref={honestRef} className="app-contact-honest">
-          <PixelGlyph cells={G_INFO} size={14} />
-          <span>{c.honest}</span>
-        </p>
       </div>
 
       {!done ? (
@@ -445,11 +437,6 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
             <p className="app-contact-status">
               {busy ? (
                 <span className="app-contact-status-busy">{c.flying}</span>
-              ) : empty ? (
-                <span className="app-contact-status-opens">
-                  <PixelGlyph cells={G_INFO} size={14} />
-                  <span>{c.opensMail}</span>
-                </span>
               ) : (
                 <>
                   <span className="tabular">{wordsLabel}</span>

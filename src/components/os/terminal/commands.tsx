@@ -9,7 +9,7 @@ import { LANG_COLORS, LANG_FALLBACK } from "@/lib/langColors";
 import { PLACES, SOCIALS, fmtCoords } from "@/lib/places";
 import { APPS, type AppDef, type AppId } from "../apps";
 import { parisHour, phaseForHour, type SkyMode, type SkyPhase } from "../sky";
-import { EmMark } from "../intro/Mark";
+import { EmosLogo } from "../EmosLogo";
 import { Cmd, Ext, Swatch, fill, nodes } from "./ui";
 
 /**
@@ -329,7 +329,7 @@ function neofetch(ctx: RunCtx) {
   return (
     <div className="os-term-fetch">
       <div className="os-term-fetch-art">
-        <EmMark cell={7} gap={1} />
+        <EmosLogo className="os-term-fetch-logo" />
       </div>
       <div className="os-term-fetch-info">
         <p className="os-term-fetch-user">
@@ -384,7 +384,7 @@ function catFile(file: string, ctx: RunCtx): Output {
           <p className="os-term-strong">{repo.name}</p>
           {repo.description && <p>{repo.description}</p>}
           <p className="os-term-dim">
-            ★ {repo.stars} · {repo.language || "—"} · <Ext href={repo.url}>{repo.url.replace(/^https?:\/\//, "")}</Ext>
+            ★ {repo.stars} · {repo.language || "-"} · <Ext href={repo.url}>{repo.url.replace(/^https?:\/\//, "")}</Ext>
           </p>
         </div>
       );
@@ -550,7 +550,7 @@ const COMMANDS: Command[] = [
                 </Ext>
                 <span className="os-term-lang">
                   {r.language && <Swatch color={LANG_COLORS[r.language] ?? LANG_FALLBACK} size={8} />}
-                  {r.language || "—"}
+                  {r.language || "-"}
                 </span>
                 {r.description && <span className="os-term-desc">{r.description}</span>}
               </li>

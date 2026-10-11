@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: LayoutProps<"/[lang]">): Prom
   const t = getDict(lang).meta;
   return {
     metadataBase: new URL(SITE_URL),
-    title: { default: t.title, template: `%s — ${t.siteName}` },
+    title: { default: t.title, template: `%s · ${t.siteName}` },
     description: t.description,
     applicationName: t.siteName,
     authors: [{ name: "Elliot Moreau", url: SITE_URL }],

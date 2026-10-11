@@ -7,7 +7,7 @@
 const en = {
   /** h1. `{path}` is the address that failed, set in its own span */
   title: "The application “{path}” can’t be opened.",
-  body: "There’s no app at this address. It may have moved, been renamed, or never existed. Everything else in emOS is right where you left it.",
+  body: "Nothing lives at this address.",
   /** when the address looks like a typo of a real app */
   bodySuggest: "There’s no app at this address. Did you mean {app}?",
   /** when it looks like an old post slug (the blog moved to its own address) */
@@ -42,7 +42,7 @@ const en = {
 
 const fr: typeof en = {
   title: "L’application « {path} » ne peut pas être ouverte.",
-  body: "Aucune app à cette adresse. Elle a peut-être déménagé, changé de nom, ou n’a jamais existé. Tout le reste d’emOS est là où vous l’avez laissé.",
+  body: "Rien à cette adresse.",
   bodySuggest: "Aucune app à cette adresse. Vouliez‑vous dire {app} ?",
   bodyPost: "Les articles ont déménagé sur le blog. Vouliez‑vous dire « {name} » ?",
   bodyRepo: "On dirait l’un des dépôts d’Elliot. Vouliez‑vous dire {name} ?",

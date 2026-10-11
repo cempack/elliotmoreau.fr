@@ -107,7 +107,7 @@ html:has(.os-term-win:focus-within) .os-win .os-win-lights:not(:hover) .os-win-l
   pointer-events: none;
 }
 .os-term-title-sep {
-  margin: 0 0.4ch;
+  color: var(--color-label-3);
 }
 /* a lime block cursor as the window glyph */
 .os-term-title-glyph {
@@ -479,8 +479,10 @@ html:has(.os-term-win:focus-within) .os-win .os-win-lights:not(:hover) .os-win-l
   flex: none;
   padding-top: 6px;
 }
-.os-term-fetch-art .os-intro-mark-cell {
-  background: rgba(255, 255, 255, 0.035);
+.os-term-fetch-logo {
+  display: block;
+  width: 84px;
+  height: auto;
 }
 .os-term-fetch-info {
   min-width: 0;

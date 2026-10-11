@@ -189,7 +189,6 @@
   color: var(--color-signal);
 }
 .os-menubar-mark svg {
-  filter: drop-shadow(0 0 10px rgba(176, 204, 134, 0.28));
   transition: transform 0.35s var(--ease-spring);
 }
 .os-menubar-mark[aria-expanded="true"] svg {

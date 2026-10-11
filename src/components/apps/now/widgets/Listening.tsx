@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Monogram } from "@/components/Monogram";
-import { PixelGlyph, GLYPH_NOTE } from "@/components/glyphs";
+import { PixelGlyph } from "@/components/glyphs";
 import { useHydrated } from "@/hooks/env";
 import { useI18n } from "@/i18n/client";
 import { timeAgo } from "@/lib/format";
 import { SOCIALS } from "@/lib/places";
 import type { SpotifyStatus, TrackInfo } from "@/lib/spotify";
 import { Art, G_ARROW, LiveDot, PixelCava } from "../bits";
+import { PixelCover, Vinyl } from "../Cover";
 import { fill, fmtMs, useOnScreen, useTrackProgress } from "../lib";
 
 export type Listen = { status: SpotifyStatus | null; track: TrackInfo | null; playing: boolean };
@@ -66,7 +66,7 @@ function Progress({ progress, duration, label }: { progress: number | null; dura
         <span className="app-now-progress-fill" style={{ clipPath: `inset(0 calc(100% - ${lit * SEG}px) 0 0)` }} />
       </span>
       <span className="app-now-progress-times tabular" aria-hidden>
-        <span>{progress != null ? fmtMs(progress) : "–:––"}</span>
+        <span>{progress != null ? fmtMs(progress) : "-:--"}</span>
         <span>{fmtMs(duration)}</span>
       </span>
     </div>
@@ -74,11 +74,12 @@ function Progress({ progress, duration, label }: { progress: number | null; dura
 }
 
 /**
- * Now playing as the hero of the widget (art or a seeded pixel planet, a
- * pixel cava, live progress), then the top artists, ranked. Ranks only:
+ * Now playing as the hero of the widget (the art, or a seeded pixel sleeve,
+ * with the record sliding out of it while it plays; a pixel cava; live
+ * progress), then the top artists, ranked. Ranks only:
  * Spotify gives an order, not play counts, so there are no bars. When
  * Spotify has nothing at all, the tile holds a quiet still life instead:
- * the planet where the art goes, the eq lying flat.
+ * a sleeve with the record tucked in, the eq lying flat.
  */
 export function Listening({ status, track, playing }: Listen) {
   const { t } = useI18n();
@@ -100,6 +101,7 @@ export function Listening({ status, track, playing }: Listen) {
             aria-label={fill(l.open, { title: track.title })}
            
           >
+            <Vinyl seed={`${track.title} · ${track.artist}`} playing={playing} />
             <Art image={track.image} seed={`${track.title} · ${track.artist}`} />
           </a>
           <div className="app-now-listen-info">
@@ -122,8 +124,9 @@ export function Listening({ status, track, playing }: Listen) {
       ) : (
         <div className="app-now-listen-now app-now-listen-now--quiet">
           <span className="app-now-listen-art" aria-hidden>
+            <Vinyl seed="silence" playing={false} />
             <span className="app-now-art app-now-art--quiet">
-              <Monogram text="silence" glyph={GLYPH_NOTE} className="app-now-art-planet" />
+              <PixelCover seed="silence" className="app-now-art-cover" />
             </span>
           </span>
           <div className="app-now-listen-info">
@@ -146,7 +149,7 @@ export function Listening({ status, track, playing }: Listen) {
               const body = (
                 <>
                   <span className="app-now-artist-face">
-                    <Art image={a.image} seed={`artist · ${a.name}`} className="app-now-art--round" />
+                    <Art image={a.image} seed={`artist · ${a.name}`} n={12} className="app-now-art--round" />
                     {/* the <ol> carries the rank for assistive tech */}
                     <span className="app-now-artist-rank tabular" aria-hidden>
                       {i + 1}

@@ -42,12 +42,12 @@ const P = {
   flapOut: "#ece8e0",
   flapEdge: "#b8b4ac",
   liner: "#1b2622",
-  stripe: "#5a4bc4",
+  stripe: "#89b4a8",
   ink: "#3f4842",
   lime: "#b0cc86",
   limeDeep: "#86a35c",
-  limeLight: "#e9ffc2",
-  subject: "#7fbf14",
+  limeLight: "#d7e4bf",
+  subject: "#86a35c",
 } as const;
 
 type Run = { x: number; y: number; w: number; fill: string };

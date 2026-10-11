@@ -11,7 +11,7 @@ export default function manifest(): MetadataRoute.Manifest {
   const t = getDict("en").meta;
   return {
     id: "/",
-    name: `emOS — ${t.siteName}`,
+    name: `emOS · ${t.siteName}`,
     short_name: "emOS",
     description: t.description,
     lang: "en",

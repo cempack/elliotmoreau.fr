@@ -1119,6 +1119,12 @@
       visibility 0s 0.2s;
   }
 }
+/* with the sheet, the stage is exactly one window tall and the sheet does
+   its own scrolling: the window must not scroll the stage away (the
+   sheet's off-screen travel would otherwise count as scrollable room) */
+.os-win-main:has(> .app-atlas > .app-atlas-stage[data-layout="sheet"]) {
+  overflow: clip;
+}
 @media (max-width: 767px) {
   .app-atlas {
     --app-atlas-sheet-base: calc(var(--dock-h) + 8px);

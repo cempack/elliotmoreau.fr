@@ -2,12 +2,11 @@
 
 import { useRef } from "react";
 import { AnimatePresence, m } from "motion/react";
-import { Monogram } from "@/components/Monogram";
-import { GLYPH_NOTE } from "@/components/glyphs";
 import { useReduced } from "@/hooks/env";
 import { springFrom } from "@/lib/motion";
 import type { Cells } from "@/components/glyphs";
 import { useOnScreen, useTabHidden } from "./lib";
+import { PixelCover } from "./Cover";
 
 /* 7×7 pixel glyphs for the widget headers */
 export const G_NOTE: Cells = [
@@ -154,8 +153,8 @@ export function PixelCava({
   );
 }
 
-/** Album art, or a seeded pixel planet when there is none. */
-export function Art({ image, seed, className = "" }: { image: string; seed: string; className?: string }) {
+/** Album art, or a seeded pixel sleeve when there is none. */
+export function Art({ image, seed, n = 24, className = "" }: { image: string; seed: string; n?: number; className?: string }) {
   return (
     <span className={`app-now-art ${className}`}>
       {image ? (
@@ -163,7 +162,7 @@ export function Art({ image, seed, className = "" }: { image: string; seed: stri
         // eslint-disable-next-line @next/next/no-img-element
         <img src={image} alt="" draggable={false} loading="lazy" decoding="async" />
       ) : (
-        <Monogram text={seed} glyph={GLYPH_NOTE} className="app-now-art-planet" />
+        <PixelCover seed={seed} n={n} className="app-now-art-cover" />
       )}
     </span>
   );

@@ -11,7 +11,7 @@ import { useSpotifyStatus } from "@/hooks/useSpotifyStatus";
 import { timeAgo } from "@/lib/format";
 import { useSound } from "@/lib/sound";
 import { GLYPH_NOTE, PixelGlyph } from "@/components/glyphs";
-import { PixelLabel } from "@/components/PixelLabel";
+import { EmosLogo } from "./EmosLogo";
 import { G_COMMIT, G_PEN } from "@/components/apps/home/desktop/icons";
 import { useSiteData } from "./SiteData";
 import { Wordmark } from "./intro/Wordmark";
@@ -329,7 +329,7 @@ function LockScreen({ phase, onUnlock }: { phase: Phase; onUnlock: (gesture: boo
 
         <div className="os-lock-auth" data-checking={checking || undefined}>
           <span className="os-lock-avatar" aria-hidden>
-            <PixelLabel text="EM" cell={3} />
+            <EmosLogo className="os-lock-logo" />
           </span>
           <p className="os-lock-name">{s.name}</p>
           <div className="os-lock-field">

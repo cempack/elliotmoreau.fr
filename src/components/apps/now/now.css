@@ -624,13 +624,60 @@ a.app-now-tok:hover {
   min-width: 0;
 }
 .app-now-listen-art {
+  position: relative;
+  isolation: isolate;
   flex: none;
-  width: clamp(6.5rem, 36cqi, 13rem);
+  align-self: flex-start;
+  width: clamp(7.5rem, 41cqi, 15rem);
   border-radius: 14px;
   transition: transform 0.35s var(--ease-out-quint);
 }
 .app-now-listen-art:active {
   transform: scale(0.97);
+}
+.app-now-listen-art > .app-now-art {
+  width: 86%;
+}
+/* the record: tucked behind the sleeve, out while it plays */
+.app-now-vinyl {
+  position: absolute;
+  top: 4%;
+  left: 8%;
+  z-index: -1;
+  width: 78%;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.55));
+  translate: 7% 0;
+  transition: translate 0.7s var(--ease-out-quint);
+}
+.app-now-vinyl[data-out] {
+  translate: 25% 0;
+}
+.app-now-vinyl-disc,
+.app-now-vinyl-label {
+  display: block;
+  image-rendering: pixelated;
+}
+.app-now-vinyl-disc {
+  width: 100%;
+  height: 100%;
+}
+.app-now-vinyl-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 41.6%;
+  height: 41.6%;
+  translate: -50% -50%;
+}
+.app-now-vinyl[data-spin] .app-now-vinyl-label {
+  animation: app-now-spin 1.8s steps(12) infinite;
+}
+@keyframes app-now-spin {
+  to {
+    rotate: 1turn;
+  }
 }
 .app-now-art {
   position: relative;
@@ -644,13 +691,13 @@ a.app-now-tok:hover {
     inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 .app-now-art img,
-.app-now-art-planet {
+.app-now-art-cover {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-.app-now-art-planet {
+.app-now-art-cover {
   image-rendering: pixelated;
 }
 .app-now-art--round {
@@ -661,7 +708,7 @@ a.app-now-tok:hover {
 .app-now-art--quiet {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
-.app-now-art--quiet .app-now-art-planet {
+.app-now-art--quiet .app-now-art-cover {
   opacity: 0.8;
 }
 .app-now-listen-now--quiet .app-now-cava-col::before {
@@ -690,7 +737,7 @@ a.app-now-tok:hover {
   margin-block: auto;
 }
 .app-now-listen[data-solo] .app-now-listen-art {
-  width: clamp(6.5rem, 42cqi, 15rem);
+  width: clamp(7.5rem, 47cqi, 17rem);
 }
 .app-now-listen-info {
   display: flex;
@@ -1381,15 +1428,10 @@ li:first-child .app-now-artist-rank {
   width: clamp(6.5rem, 26cqi, 9.5rem);
   padding-top: 0.25rem;
 }
-.app-now-fetch-planet {
+.app-now-fetch-emos {
   display: block;
   width: 100%;
   height: auto;
-  aspect-ratio: 1;
-  image-rendering: pixelated;
-}
-.app-now-fetch-mark {
-  color: var(--color-lilac);
 }
 .app-now-fetch-info {
   display: flex;
@@ -1608,15 +1650,48 @@ a.app-now-book:hover .app-now-spine {
   line-height: 1.35;
 }
 .app-now-post {
-  display: block;
-  padding: 0.75rem;
-  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-card);
   background: rgba(255, 255, 255, 0.04);
   box-shadow: inset 0 0 0 1px var(--hairline);
   transition: background 0.2s;
 }
 .app-now-post:hover {
   background: rgba(255, 255, 255, 0.07);
+}
+/* the post's sky, as its reader opens on it */
+.app-now-post-plate {
+  position: relative;
+  display: block;
+  flex: none;
+  aspect-ratio: 96 / 36;
+  background: var(--color-ink-900);
+}
+.app-now-post-plate::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, transparent 55%, rgba(16, 19, 17, 0.55)),
+    repeating-linear-gradient(180deg, transparent 0 2px, rgba(10, 12, 11, 0.14) 2px 3px);
+  box-shadow: inset 0 -1px 0 var(--hairline);
+}
+.app-now-post-plate-px {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  filter: saturate(0.9);
+  transition: filter 0.25s;
+}
+.app-now-post:hover .app-now-post-plate-px {
+  filter: none;
+}
+.app-now-post-text {
+  display: block;
+  padding: 0.75rem 0.875rem 0.875rem;
 }
 .app-now-post-title {
   display: block;
@@ -1642,6 +1717,119 @@ a.app-now-book:hover .app-now-spine {
   color: var(--color-label-3);
   font-family: var(--font-mono);
   font-size: 0.75rem;
+}
+.app-now-write-side {
+  display: flex;
+  flex-direction: column;
+  gap: 1.125rem;
+  min-width: 0;
+}
+/* twelve months, oldest first: up to three cells a month, lit per post */
+.app-now-cadence-row {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 3px;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.app-now-cadence-row li {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.3125rem;
+  min-width: 0;
+}
+.app-now-cadence-cells {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.app-now-cadence-cells i {
+  display: block;
+  height: 7px;
+  border-radius: 1px;
+  background: var(--color-ink-700);
+}
+.app-now-cadence-cells i[data-on] {
+  background: var(--color-ion);
+}
+.app-now-cadence-row li:last-child .app-now-cadence-cells i[data-on] {
+  background: var(--color-label);
+}
+.app-now-cadence-m {
+  color: var(--color-label-3);
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  line-height: 1;
+  text-align: center;
+}
+.app-now-cadence-row li:last-child .app-now-cadence-m {
+  color: var(--color-label);
+}
+.app-now-earlier-list {
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.app-now-earlier-row {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0.625rem;
+  padding: 0.4375rem 0;
+  border-top: 1px solid var(--hairline);
+}
+.app-now-earlier-list li:first-child .app-now-earlier-row {
+  border-top: 0;
+}
+.app-now-earlier-date {
+  color: var(--color-label-3);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+.app-now-earlier-title {
+  overflow: hidden;
+  color: var(--color-label-2);
+  font-size: var(--text-footnote);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+.app-now-earlier-row:hover .app-now-earlier-title {
+  color: var(--color-label);
+}
+/* a wide tile: the post on the left, its cadence and the ones before on the right */
+@container app-now-w (min-width: 480px) {
+  .app-now-write {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: 0.75rem 1.5rem;
+  }
+  .app-now-write-drafts {
+    grid-column: 1 / -1;
+  }
+  .app-now-write-latest {
+    grid-column: 1;
+    grid-row: span 2;
+    min-height: 0;
+  }
+  .app-now-write-side {
+    grid-column: 2;
+  }
+  .app-now-write > .app-now-more {
+    grid-column: 2;
+    align-self: end;
+  }
+}
+/* a narrow tile in the grid: the post and its cadence; the list would not fit */
+@container app-now (min-width: 620px) {
+  @container app-now-w (max-width: 479px) {
+    .app-now-earlier {
+      display: none;
+    }
+  }
 }
 .app-now-more {
   display: inline-flex;
@@ -1714,7 +1902,7 @@ a.app-now-book:hover .app-now-spine {
   }
 }
 /* tablet: Setup spans the full width; like real fastfetch output, the
-   logo takes the room (a big pixel planet) instead of an empty right half */
+   logo takes the room instead of an empty right half */
 @container app-now (min-width: 620px) and (max-width: 999px) {
   .app-now-fetch {
     gap: 2.5rem;
@@ -1804,7 +1992,7 @@ a.app-now-book:hover .app-now-spine {
     width: auto;
     gap: 1rem;
   }
-  .app-now-fetch-planet {
+  .app-now-fetch-emos {
     width: 4.5rem;
   }
 }

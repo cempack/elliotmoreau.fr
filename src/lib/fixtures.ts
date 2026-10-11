@@ -59,7 +59,7 @@ export const FIXTURE_REPOS: RepoInfo[] = [
   },
   {
     name: "omarchy-dos-moos-theme",
-    description: "A calm, mossy theme for Omarchy — Hyprland, Waybar, terminal and editor.",
+    description: "A calm, mossy theme for Omarchy: Hyprland, Waybar, terminal and editor.",
     url: "https://github.com/cempack/omarchy-dos-moos-theme",
     homepage: "",
     language: "Shell",

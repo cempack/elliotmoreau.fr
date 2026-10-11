@@ -86,9 +86,6 @@
     padding: 0.5rem;
     border-radius: 999px;
     background: var(--color-signal);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.5),
-      0 8px 20px -8px color-mix(in oklab, var(--color-signal) 80%, transparent);
     transition: scale 0.2s var(--ease-spring);
   }
   .app-contact-sendtool:active:not(:disabled) > svg {
@@ -130,7 +127,6 @@
   width: 6px;
   height: 6px;
   background: var(--color-signal);
-  box-shadow: 0 0 8px color-mix(in oklab, var(--color-signal) 70%, transparent);
 }
 @media (min-width: 1024px) {
   .app-contact-side {
@@ -334,14 +330,11 @@
 }
 .app-contact-btn--primary {
   background: var(--color-signal);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
-    0 10px 26px -12px color-mix(in oklab, var(--color-signal) 75%, transparent);
+  box-shadow: none;
   color: var(--color-ink-950);
 }
 .app-contact-btn--primary:hover {
-  background: color-mix(in oklab, var(--color-signal) 86%, white);
+  background: color-mix(in oklab, var(--color-signal) 88%, var(--color-label));
 }
 .app-contact-btn--ghost {
   background: transparent;
@@ -424,7 +417,6 @@
     "head stage"
     "lead lead"
     "card card"
-    "honest honest"
     "reply reply";
   column-gap: 0.75rem;
   align-items: start;
@@ -439,15 +431,12 @@
 .app-contact-intro > .app-contact-lead {
   grid-area: lead;
 }
-/* narrow: the stage column's two parts (envelope, honest note) take their own grid areas */
+/* narrow: the envelope takes its own grid area beside the title */
 .app-contact-stagecol {
   display: contents;
 }
 .app-contact-stagecol > .app-contact-stage {
   grid-area: stage;
-}
-.app-contact-stagecol > .app-contact-honest {
-  grid-area: honest;
 }
 .app-contact-compose > .app-contact-card {
   grid-area: card;
@@ -461,7 +450,6 @@
     grid-template-areas:
       "intro stage"
       "card card"
-      "honest honest"
       "reply reply";
     column-gap: 2rem;
   }
@@ -484,20 +472,13 @@
   .app-contact-intro {
     align-self: start;
   }
-  /* wide: one sticky column, the envelope and under it the honest note, beside the sheet */
+  /* wide: the envelope in a sticky column of its own, beside the sheet */
   .app-contact-stagecol {
     display: block;
     grid-area: stage;
     position: sticky;
     top: calc(var(--os-win-sticky-top) + 1rem);
     padding-top: 0.5rem;
-  }
-  .app-contact-stagecol > .app-contact-honest {
-    width: 16.5rem;
-    max-width: 100%;
-    margin: 1.75rem auto 0;
-    padding: 1.125rem 0 0;
-    border-top: 1px solid var(--hairline);
   }
 }
 /* keyboard focus and scrollIntoView keep fields clear of the title bar and the Dock */
@@ -774,16 +755,6 @@
 .app-contact-status-busy {
   color: var(--color-signal);
 }
-.app-contact-status-opens {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--color-label-2);
-}
-.app-contact-status-opens svg {
-  flex: none;
-  color: var(--color-label-3);
-}
 .app-contact-status-saved {
   color: var(--color-label-3);
 }
@@ -791,21 +762,6 @@
   flex: none;
   height: 2.75rem;
   padding: 0 1.125rem 0 1.0625rem;
-}
-.app-contact-honest {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  max-width: 38rem;
-  margin-top: 1rem;
-  padding-left: 0.25rem;
-  color: var(--color-label-3);
-  font-size: var(--text-footnote);
-  line-height: var(--text-footnote--line-height);
-}
-.app-contact-honest svg {
-  flex: none;
-  margin-top: 0.125rem;
 }
 
 /* phones and narrow windows: the To chip drops the name, chips wrap under the label */
@@ -1204,7 +1160,7 @@
   padding: 0.4375rem 0.8125rem;
   border-radius: 999px;
   background: var(--color-signal);
-  box-shadow: 0 10px 26px -10px color-mix(in oklab, var(--color-signal) 80%, transparent);
+  box-shadow: 0 8px 20px -10px rgba(10, 12, 11, 0.6);
   color: var(--color-ink-950);
   font-size: var(--text-footnote);
   font-weight: 600;

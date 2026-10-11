@@ -622,14 +622,11 @@
 }
 .app-work-btn--primary {
   background: var(--color-signal);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
-    0 10px 26px -12px color-mix(in oklab, var(--color-signal) 75%, transparent);
+  box-shadow: none;
   color: var(--color-ink-950);
 }
 .app-work-btn--primary:hover {
-  background: color-mix(in oklab, var(--color-signal) 86%, white);
+  background: color-mix(in oklab, var(--color-signal) 88%, var(--color-label));
 }
 .app-work-btn--ghost {
   background: transparent;
@@ -725,19 +722,12 @@
 .app-work-plate {
   display: block;
   overflow: hidden;
-  /* a faint glow of the repo's language colour from above */
-  background: radial-gradient(
-    120% 95% at 50% 0%,
-    color-mix(in oklab, var(--lang, #7f9f94) 42%, #141936) 0%,
-    color-mix(in oklab, var(--lang, #7f9f94) 10%, #0c0f1d) 58%,
-    #080a14 100%
-  );
-  box-shadow:
-    inset 0 0 0 1px color-mix(in oklab, var(--lang, #ffffff) 16%, rgba(255, 255, 255, 0.05)),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 10px 22px -12px rgba(0, 0, 0, 0.75);
+  border-radius: var(--radius-card);
+  background: var(--color-ink-900);
+  /* a hairline frame, warmed by the repo's language colour */
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--lang, #c4cec2) 28%, rgba(196, 206, 194, 0.12));
   transition:
-    translate 0.4s var(--ease-out-quint),
+    translate 0.25s var(--ease-out-quint),
     box-shadow 0.2s var(--ease-out-quint);
 }
 .app-work-planet {
@@ -852,7 +842,6 @@ button.app-work-col:hover,
       width: 8rem;
       height: 8rem;
       margin-bottom: 0.25rem;
-      border-radius: 30px;
     }
     & .app-work-name {
       grid-area: name;
@@ -887,18 +876,8 @@ button.app-work-col:hover,
     & .app-work-hl {
       display: none;
     }
-    & .app-work-item:hover .app-work-plate {
-      translate: 0 -3px;
-      box-shadow:
-        inset 0 0 0 1px rgba(255, 255, 255, 0.12),
-        inset 0 1px 0 rgba(255, 255, 255, 0.12),
-        0 16px 28px -14px rgba(0, 0, 0, 0.8);
-    }
     & .app-work-item[data-selected] .app-work-plate {
-      box-shadow:
-        0 0 0 2px var(--app-work-accent),
-        0 0 0 6px color-mix(in oklab, var(--app-work-accent) 20%, transparent),
-        0 16px 30px -14px color-mix(in oklab, var(--app-work-accent) 40%, transparent);
+      box-shadow: inset 0 0 0 2px var(--app-work-accent);
     }
     & .app-work-item[data-selected] .app-work-name {
       background: var(--app-work-accent);
@@ -963,7 +942,7 @@ button.app-work-col:hover,
       grid-area: plate;
       width: 2rem;
       height: 2rem;
-      border-radius: 9px;
+      border-radius: 6px;
     }
     & .app-work-name {
       grid-area: name;
@@ -1042,7 +1021,7 @@ button.app-work-col:hover,
       grid-area: plate;
       width: 2.75rem;
       height: 2.75rem;
-      border-radius: 12px;
+      border-radius: 8px;
     }
     & .app-work-name {
       grid-area: name;
@@ -1103,7 +1082,6 @@ button.app-work-col:hover,
       width: 5.5rem;
       height: 5.5rem;
       margin-bottom: 0.125rem;
-      border-radius: 22px;
     }
     & .app-work-name {
       grid-area: name;
@@ -1132,13 +1110,21 @@ button.app-work-col:hover,
       display: none;
     }
     & .app-work-item[data-selected] .app-work-plate {
-      box-shadow:
-        0 0 0 2px var(--app-work-accent),
-        0 0 0 5px color-mix(in oklab, var(--app-work-accent) 20%, transparent);
+      box-shadow: inset 0 0 0 2px var(--app-work-accent);
     }
     & .app-work-item:active .app-work-plate {
       scale: 0.96;
     }
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .app-work-coll:is([data-view="icons"], [data-view="auto"]) .app-work-item:hover .app-work-plate {
+    translate: 0 -2px;
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--lang, #c4cec2) 50%, rgba(196, 206, 194, 0.2));
+  }
+  .app-work-coll:is([data-view="icons"], [data-view="auto"]) .app-work-item[data-selected]:hover .app-work-plate {
+    box-shadow: inset 0 0 0 2px var(--app-work-accent);
   }
 }
 

@@ -747,20 +747,6 @@
   align-items: center;
   gap: 0.75rem;
 }
-.app-writing-avatar {
-  display: grid;
-  flex: none;
-  width: 2.5rem;
-  height: 2.5rem;
-  place-items: center;
-  border-radius: var(--radius-control);
-  background: color-mix(in oklab, var(--os-win-accent) 14%, var(--color-ink-800));
-  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--os-win-accent) 34%, transparent);
-  color: var(--os-win-accent);
-}
-.app-writing-avatar-em {
-  display: block;
-}
 .app-writing-author-text {
   display: flex;
   min-width: 0;
@@ -794,13 +780,10 @@
   letter-spacing: -0.01em;
   white-space: nowrap;
   background: var(--color-signal);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    0 10px 28px -12px color-mix(in oklab, var(--color-signal) 75%, transparent);
   transition: background-color 0.2s;
 }
 .app-writing-cta:hover {
-  background: #d6ff86;
+  background: color-mix(in oklab, var(--color-signal) 88%, var(--color-label));
 }
 .app-writing-cta-arrow {
   display: inline-block;

@@ -502,18 +502,14 @@ html[data-sky="day"] .app-nf-alert .os-glass {
 }
 .app-nf-btn--primary {
   background: var(--color-signal);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    inset 0 -1px 0 rgba(10, 12, 11, 0.18),
-    0 8px 20px -10px rgba(176, 204, 134, 0.55);
   color: var(--color-ink-950);
 }
 .app-nf-btn--primary:hover {
-  background: #d4ff80;
+  background: color-mix(in oklab, var(--color-signal) 88%, var(--color-label));
 }
 /* Return pressed it (NotFoundApp): the press shows, as on macOS */
 .app-nf-btn--primary[data-key-press] {
-  background: #b4ec4e;
+  background: var(--color-signal-deep);
   scale: 0.97;
   transition:
     background-color 0.06s linear,

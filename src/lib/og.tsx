@@ -865,7 +865,7 @@ export function tileIcon(size: number, letter = 0.6) {
           display: "flex",
           width: size,
           height: size,
-          backgroundImage: `linear-gradient(180deg, #d3ff7c 0%, ${C.signal} 48%, #b9f24c 100%)`,
+          backgroundImage: `linear-gradient(180deg, #c6dba4 0%, ${C.signal} 48%, ${C.signalDeep} 100%)`,
         }}
       >
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} shapeRendering="crispEdges">

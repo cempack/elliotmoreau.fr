@@ -10,7 +10,6 @@ import { spring, springFrom } from "@/lib/motion";
 import { useSound } from "@/lib/sound";
 import { useToast } from "@/components/Toasts";
 import { PixelGlyph } from "@/components/glyphs";
-import { PixelLabel } from "@/components/PixelLabel";
 import { PressAnchor, PressButton } from "@/components/ui/Pressable";
 import { Plate } from "./Plate";
 import { SubscribeForm } from "./SubscribeForm";
@@ -223,9 +222,6 @@ export function Reader({ post, posts, epoch, animatePlate, reduced, compact, fol
 
             <m.div className="app-writing-byline" variants={fv}>
               <span className="app-writing-author">
-                <span className="app-writing-avatar" aria-hidden>
-                  <PixelLabel text="EM" cell={2} className="app-writing-avatar-em" />
-                </span>
                 <span className="app-writing-author-text">
                   <span className="app-writing-author-name">{w.author}</span>
                   <span className="app-writing-author-sub">

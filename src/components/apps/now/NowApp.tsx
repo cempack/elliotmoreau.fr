@@ -22,8 +22,13 @@ import { Setup, SetupMeta } from "./widgets/Setup";
 import { Reading } from "./widgets/Reading";
 import { Writing } from "./widgets/Writing";
 
-/** default arrangement: it packs the 4-column grid with no holes */
-const DEFAULT_ORDER = ["listening", "here", "building", "pulse", "setup", "reading", "writing"] as const;
+/** the reading tile only exists once there is something on the nightstand */
+const HAS_READING = NOW.reading.length > 0 || NOW.learning.length > 0;
+/** default arrangement: it packs the 4-column grid with no holes (without
+    the reading tile, Writing widens to fill its row) */
+const DEFAULT_ORDER: readonly string[] = HAS_READING
+  ? ["listening", "here", "building", "pulse", "setup", "reading", "writing"]
+  : ["listening", "here", "building", "pulse", "setup", "writing"];
 
 /** "2026-10-10" → a long date in the page language (UTC: no off-by-one). */
 function longDate(iso: string, lang: "en" | "fr") {
@@ -126,17 +131,21 @@ export function NowApp({ data }: { data: SiteData }) {
       meta: <SetupMeta />,
       children: <Setup repos={data.repos} />,
     },
-    {
-      id: "reading",
-      size: "T",
-      label: n.widgets.reading,
-      accent: "var(--color-ember)",
-      glyph: G_BOOK,
-      children: <Reading />,
-    },
+    ...(HAS_READING
+      ? [
+          {
+            id: "reading",
+            size: "T",
+            label: n.widgets.reading,
+            accent: "var(--color-ember)",
+            glyph: G_BOOK,
+            children: <Reading />,
+          } satisfies BoardWidget,
+        ]
+      : []),
     {
       id: "writing",
-      size: "T",
+      size: HAS_READING ? "T" : "L",
       label: n.widgets.writing,
       accent: "var(--color-ion)",
       glyph: G_PEN,

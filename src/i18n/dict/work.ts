@@ -72,7 +72,7 @@ const en = {
     updated: "Updated {ago}",
   },
   item: {
-    noLanguage: "—",
+    noLanguage: "-",
     starsOne: "{n} star",
     starsOther: "{n} stars",
     listbox: "Projects",
@@ -195,7 +195,7 @@ const fr: typeof en = {
     updated: "Mis à jour {ago}",
   },
   item: {
-    noLanguage: "—",
+    noLanguage: "-",
     starsOne: "{n} étoile",
     starsOther: "{n} étoiles",
     listbox: "Projets",

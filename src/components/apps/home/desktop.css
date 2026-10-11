@@ -627,9 +627,6 @@ html[data-sky="dusk"] .app-home-scene {
   flex: none;
   color: var(--color-ion);
 }
-.app-home-chip-arrow {
-  color: var(--color-label-3);
-}
 
 /* ───────────────────────────── icons ───────────────────────────── */
 .app-home-icons {

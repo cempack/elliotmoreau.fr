@@ -289,7 +289,7 @@ export function DesktopWindow({
               </div>
               <p className="os-term-title">
                 <span className="os-term-title-glyph" aria-hidden />
-                elliot@emos <span className="os-term-title-sep">—</span> {cwd} <span className="os-term-title-sep">—</span> zsh
+                elliot@emos<span className="os-term-title-sep">:</span>{cwd}
               </p>
             </div>
             {children}

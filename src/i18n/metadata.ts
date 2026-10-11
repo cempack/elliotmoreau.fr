@@ -25,10 +25,10 @@ export async function appMetadata(params: Promise<{ lang: string }>, key: PageKe
       type: "website",
       siteName: t.siteName,
       locale: lang === "fr" ? "fr_FR" : "en_US",
-      title: `${title} — ${t.siteName}`,
+      title: `${title} · ${t.siteName}`,
       description,
       url: localePath(lang, path),
     },
-    twitter: { card: "summary_large_image", title: `${title} — ${t.siteName}`, description },
+    twitter: { card: "summary_large_image", title: `${title} · ${t.siteName}`, description },
   };
 }

@@ -113,6 +113,10 @@ const en = {
     all: "All writing",
     none: "Nothing published yet.",
     blog: "Visit the blog",
+    cadence: "Last 12 months",
+    month: "{month}: {n} posts",
+    monthOne: "{month}: 1 post",
+    earlier: "Earlier",
   },
 
   footer: {
@@ -230,6 +234,10 @@ const fr: typeof en = {
     all: "Tous les textes",
     none: "Rien de publié pour l’instant.",
     blog: "Voir le blog",
+    cadence: "Les 12 derniers mois",
+    month: "{month} : {n} articles",
+    monthOne: "{month} : 1 article",
+    earlier: "Avant",
   },
 
   footer: {

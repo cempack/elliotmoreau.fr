@@ -46,8 +46,8 @@ export function Overview({ repos, hydrated, onLang }: { repos: RepoInfo[]; hydra
   const figures = [
     { k: o.repos, v: String(repos.length), sub: o.reposSub },
     { k: o.stars, v: compact(stars, lang), sub: fmt(o.forksSub, { n: forks }) },
-    { k: o.langs, v: String(langs.length), sub: langs[0] ? fmt(o.langsSub, { lang: langs[0][0] }) : "—" },
-    { k: o.push, v: hydrated && latest?.pushedAt ? timeAgo(latest.pushedAt, lang) : "—", sub: latest?.name ?? "—" },
+    { k: o.langs, v: String(langs.length), sub: langs[0] ? fmt(o.langsSub, { lang: langs[0][0] }) : "-" },
+    { k: o.push, v: hydrated && latest?.pushedAt ? timeAgo(latest.pushedAt, lang) : "-", sub: latest?.name ?? "-" },
   ];
 
   const clock = useNow("minute");
