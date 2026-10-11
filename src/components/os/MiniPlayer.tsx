@@ -3,10 +3,12 @@
 import "./miniplayer.css";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { animate, m, useMotionValue } from "motion/react";
+import { usePathname } from "next/navigation";
 import { useI18n } from "@/i18n/client";
+import { stripLocale } from "@/i18n/config";
 import { useSound } from "@/lib/sound";
 import { project, rubberband, spring } from "@/lib/motion";
-import { useHydrated, useReduced } from "@/hooks/env";
+import { useHydrated, useMedia, useReduced } from "@/hooks/env";
 import { useSpotifyStatus } from "@/hooks/useSpotifyStatus";
 import { PixelPlanet } from "@/components/PixelPlanet";
 import { PixelGlyph } from "@/components/glyphs";
@@ -34,8 +36,11 @@ const COLLAPSED_KEY = "em-pip-collapsed";
  * four safe corners (clear of menu bar and dock) with a spring carrying
  * the release velocity (spring.flick only after a real throw); rubber-band
  * past the viewport. Remembers its corner. Collapses to a pill on tap of a
- * chevron; hidden when there's no track. Reads useSpotifyStatus(seed from
- * useSiteData().spotify).
+ * chevron; until the user picks, it is the full card on the Desktop and the
+ * pill over app windows and on phones (it would cover their footers).
+ * Hidden when there's no track. Reads useSpotifyStatus(seed from
+ * useSiteData().spotify). Publishes html[data-pip-corner] and
+ * --os-pip-bottom so the notification banners can stack clear of it.
  */
 export function MiniPlayer() {
   const hydrated = useHydrated();
@@ -74,13 +79,13 @@ function readCorner(): Corner {
   } catch {}
   return "br";
 }
-function readCollapsed() {
+/** The user's own choice, or null while they haven't made one. */
+function readCollapsed(): boolean | null {
   try {
     const v = localStorage.getItem(COLLAPSED_KEY);
     if (v === "1" || v === "0") return v === "1";
   } catch {}
-  // phones start as the pill: the content is the point there
-  return window.matchMedia("(max-width: 767px)").matches;
+  return null;
 }
 const save = (k: string, v: string) => {
   try {
@@ -113,7 +118,11 @@ function Pip({ track, playing, live }: { track: TrackInfo; playing: boolean; liv
   const p = t.windowing.player;
   const { blip } = useSound();
   const reduced = useReduced();
-  const [collapsed, setCollapsed] = useState(readCollapsed);
+  const phone = useMedia("(max-width: 767px)");
+  const atDesktop = stripLocale(usePathname()) === "/";
+  const [chosen, setChosen] = useState(readCollapsed);
+  // the content is the point on a phone and inside an app window: the pill
+  const collapsed = chosen ?? (phone || !atDesktop);
   const [placed, setPlaced] = useState(false);
   const [announce, setAnnounce] = useState("");
   const hintId = useId();
@@ -143,6 +152,25 @@ function Pip({ track, playing, live }: { track: TrackInfo; playing: boolean; liv
     };
   }, []);
 
+  /** Where it is coming to rest, for the notification banners (Toasts). */
+  const publish = useCallback(
+    (c: Corner) => {
+      const el = rootRef.current;
+      if (!el) return;
+      const root = document.documentElement;
+      root.dataset.pipCorner = c;
+      root.style.setProperty("--os-pip-bottom", `${Math.round(targetFor(c).y + el.offsetHeight)}px`);
+    },
+    [targetFor]
+  );
+  useEffect(
+    () => () => {
+      delete document.documentElement.dataset.pipCorner;
+      document.documentElement.style.removeProperty("--os-pip-bottom");
+    },
+    []
+  );
+
   // seat it in its remembered corner, and keep it there on resize
   useLayoutEffect(() => {
     corner.current = readCorner();
@@ -151,6 +179,7 @@ function Pip({ track, playing, live }: { track: TrackInfo; playing: boolean; liv
       const to = targetFor(corner.current);
       x.jump(to.x);
       y.jump(to.y);
+      publish(corner.current);
     };
     place();
     // grow in from its corner (scale, never opacity: that would blank the glass)
@@ -164,7 +193,7 @@ function Pip({ track, playing, live }: { track: TrackInfo; playing: boolean; liv
     queueMicrotask(() => setPlaced(true));
     window.addEventListener("resize", place);
     return () => window.removeEventListener("resize", place);
-  }, [targetFor, x, y, s, originX, originY]);
+  }, [targetFor, publish, x, y, s, originX, originY]);
 
   // collapse/expand: the card resizes on a layout spring; the same spring
   // carries it to its corner, so the corner-side edges stay pinned
@@ -174,6 +203,7 @@ function Pip({ track, playing, live }: { track: TrackInfo; playing: boolean; liv
       return;
     }
     const to = targetFor(corner.current);
+    publish(corner.current);
     if (reduced) {
       x.jump(to.x);
       y.jump(to.y);
@@ -181,7 +211,7 @@ function Pip({ track, playing, live }: { track: TrackInfo; playing: boolean; liv
     }
     animate(x, to.x, spring.default);
     animate(y, to.y, spring.default);
-  }, [collapsed, reduced, targetFor, x, y]);
+  }, [collapsed, reduced, targetFor, publish, x, y]);
 
   // progress: interpolate locally between polls, in whole pixel cells
   const sync = useRef({ ms: track.progressMs, at: 0 });
@@ -195,17 +225,24 @@ function Pip({ track, playing, live }: { track: TrackInfo; playing: boolean; liv
   useEffect(() => {
     if (!live || collapsed) return;
     const dur = track.durationMs;
-    let raf = 0;
+    let timer = 0;
     let lastSec = -1;
     let lastLit = -1;
+    let W = trackRef.current?.clientWidth ?? 0;
+    const ro = new ResizeObserver(() => {
+      W = trackRef.current?.clientWidth ?? 0;
+      lastLit = -1;
+    });
+    if (trackRef.current) ro.observe(trackRef.current);
+    // sleeps until the next visible change: the next second on the clock or
+    // the next 4px cell of the bar, whichever comes first
     const tick = () => {
       const { ms: base, at } = sync.current;
       const ms = Math.min(dur, base + (playing ? performance.now() - at : 0));
       const bar = trackRef.current;
       const fill = fillRef.current;
       const inner = fillInnerRef.current;
-      if (bar && fill && inner && dur > 0) {
-        const W = bar.clientWidth;
+      if (bar && fill && inner && dur > 0 && W > 0) {
         const lit = Math.round(((ms / dur) * W) / 4) * 4;
         if (lit !== lastLit) {
           lastLit = lit;
@@ -220,16 +257,24 @@ function Pip({ track, playing, live }: { track: TrackInfo; playing: boolean; liv
         bar?.setAttribute("aria-valuenow", String(sec));
         bar?.setAttribute("aria-valuetext", `${fmt(ms)} / ${fmt(dur)}`);
       }
-      if (playing && ms < dur) raf = requestAnimationFrame(tick);
+      if (playing && ms < dur) {
+        const cell = W > 0 ? (dur * 4) / W : 1000;
+        const wait = Math.min(1000 - (ms % 1000), cell - ((ms + cell / 2) % cell));
+        timer = window.setTimeout(tick, Math.max(16, Math.ceil(wait) + 4));
+      }
     };
     tick();
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      window.clearTimeout(timer);
+      ro.disconnect();
+    };
   }, [track, playing, live, collapsed]);
 
   const snapTo = (c: Corner, vx: number, vy: number, viaKey = false) => {
     const changed = c !== corner.current;
     corner.current = c;
     save(CORNER_KEY, c);
+    publish(c);
     const to = targetFor(c);
     if (reduced) {
       x.jump(to.x);
@@ -338,7 +383,7 @@ function Pip({ track, playing, live }: { track: TrackInfo; playing: boolean; liv
 
   const toggle = () => {
     const next = !collapsed;
-    setCollapsed(next);
+    setChosen(next);
     save(COLLAPSED_KEY, next ? "1" : "0");
     blip("toggle");
   };
@@ -356,10 +401,11 @@ function Pip({ track, playing, live }: { track: TrackInfo; playing: boolean; liv
         aria-label={p.region}
         aria-describedby={hintId}
         className="os-pip"
+        data-cursor-hide=""
         data-collapsed={collapsed || undefined}
         data-placed={placed || undefined}
         style={{ x, y, scale: s, originX, originY }}
-        animate={{ borderRadius: collapsed ? 26 : 20 }}
+        animate={{ borderRadius: collapsed ? 26 : 22 }}
         transition={{ layout: spring.default, borderRadius: spring.default }}
         onPointerDown={onPointerDown}
         onKeyDown={onKeyDown}

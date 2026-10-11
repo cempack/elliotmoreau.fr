@@ -14,7 +14,7 @@ import { APPS, type AppId } from "./apps";
 import { AppIcon } from "./icons";
 import { Glass } from "./Glass";
 import { useWindowDrag } from "./window/useWindowDrag";
-import { dockIconCenter, setEnterOrigin, setExitOrigin } from "./window/dock";
+import { dockIconCenter, markKeyboardClose, setEnterOrigin, setExitOrigin } from "./window/dock";
 import { getZoomPref, setZoomPref } from "./window/zoomPref";
 import { G_CLOSE, G_MIN, G_UNZOOM, G_ZOOM } from "./window/glyphs";
 
@@ -141,6 +141,12 @@ export function AppWindow({
     };
   }, []);
 
+  // keyboard activation (detail 0) hands focus to the Dock icon afterwards
+  const onCloseClick = (e: React.MouseEvent) => {
+    blip("close");
+    if (e.detail === 0) markKeyboardClose(app);
+  };
+
   const toggleZoom = () => {
     const next = !zoomed;
     setZoomPref(next);
@@ -170,6 +176,7 @@ export function AppWindow({
           ref={barRef}
           layout="position"
           className="os-win-bar"
+          data-cursor-hide=""
           {...drag.handlers}
           onDoubleClick={(e) => {
             if ((e.target as Element).closest("a,button,input")) return;
@@ -181,7 +188,7 @@ export function AppWindow({
             <Link
               href={home}
               transitionTypes={["app-close"]}
-              onClick={() => blip("close")}
+              onClick={onCloseClick}
               aria-label={w.close}
               className="os-win-light os-win-light--close"
             >
@@ -190,7 +197,7 @@ export function AppWindow({
             <Link
               href={home}
               transitionTypes={["app-close"]}
-              onClick={() => blip("close")}
+              onClick={onCloseClick}
               aria-label={w.minimize}
               className="os-win-light os-win-light--min"
             >
@@ -226,7 +233,7 @@ export function AppWindow({
           <Link
             href={home}
             transitionTypes={["app-close"]}
-            onClick={() => blip("close")}
+            onClick={onCloseClick}
             aria-label={w.close}
             className="os-win-x"
           >

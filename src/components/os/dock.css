@@ -18,7 +18,6 @@
   /* the gap under the shelf and a little side slack belong to the hover
      zone, so skimming the screen edge doesn't drop the magnification */
   padding: 0 12px 8px;
-  view-transition-name: os-dock;
   transition: transform 0.5s var(--ease-out-quint);
 }
 
@@ -43,6 +42,12 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
+}
+/* the shelf holds only icons: clear glass, so the lake shows through and
+   its rim visibly bends it (frosted where refraction isn't available) */
+.os-dock-glass {
+  --os-glass-tint: rgb(18 21 34 / 0.32);
+  --os-glass-rblur: 0.75px;
 }
 /* during a view transition the dock is captured on its own and its
    backdrop goes blank: swap in a solid twin of the glass for those
@@ -177,7 +182,7 @@ html:active-view-transition .os-dock-solid {
   color: var(--color-label);
   white-space: nowrap;
   background: rgb(20 23 35 / 0.66);
-  backdrop-filter: blur(18px) saturate(1.7);
+  backdrop-filter: blur(10px) blur(8px) saturate(1.7);
   box-shadow:
     inset 0 1px 0 var(--glass-rim),
     inset 0 0 0 1px var(--hairline),
@@ -214,27 +219,36 @@ html:active-view-transition .os-dock-solid {
 
 /* ── phone tab bar ────────────────────────────────────────────────── */
 
+/* a floating Liquid Glass capsule, like the desktop shelf (and iOS 26):
+   content scrolls under and around it. --dock-h (globals.css) is its
+   height plus the gap under it. */
 .os-tabbar {
   display: none;
   position: fixed;
   z-index: 50;
-  inset-inline: 0;
-  bottom: 0;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-  view-transition-name: os-tabbar;
+  left: max(10px, env(safe-area-inset-left));
+  right: max(10px, env(safe-area-inset-right));
+  bottom: var(--os-tabbar-gap);
+  border-radius: 30px;
+  box-shadow:
+    0 18px 40px -16px rgb(0 0 0 / 0.7),
+    0 2px 8px -3px rgb(0 0 0 / 0.45);
   transition: transform 0.45s var(--ease-out-quint);
 }
+/* content scrolls right under the bar: a denser material than the shelf */
 .os-tabbar-glass {
   position: absolute;
   inset: 0;
-  border-radius: 0;
+  border-radius: inherit;
+  --os-glass-tint: rgb(13 15 25 / 0.62);
+  --os-glass-frost: blur(12px) blur(12px);
 }
 .os-tabbar-list {
   position: relative;
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   height: 60px;
-  padding: 5px 4px;
+  padding: 5px;
 }
 .os-tabbar-item {
   display: flex;
@@ -248,23 +262,24 @@ html:active-view-transition .os-dock-solid {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  border-radius: 16px;
+  gap: 1px;
+  border-radius: 999px;
   outline-offset: -2px;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
   user-select: none;
 }
-/* the current tab sits under a soft glass lens that slides between tabs */
+/* the current tab sits under a soft glass lens that slides between tabs,
+   concentric with the capsule */
 .os-tabbar-lens {
   position: absolute;
-  inset: 0 2px;
-  border-radius: 16px;
-  background: rgb(255 255 255 / 0.08);
+  inset: 0;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.1);
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.14),
-    inset 0 0 0 1px rgb(255 255 255 / 0.05);
+    inset 0 1px 0 rgb(255 255 255 / 0.16),
+    inset 0 0 0 1px rgb(255 255 255 / 0.06);
 }
 .os-tabbar-icon,
 .os-tabbar-label {
@@ -290,7 +305,7 @@ html:active-view-transition .os-dock-solid {
   white-space: nowrap;
   font: 500 12px/14px var(--font-sans);
   letter-spacing: 0.004em;
-  color: var(--color-label-3);
+  color: var(--color-label-2);
   transition: color 0.2s ease-out;
 }
 .os-tabbar-link[aria-current="page"] .os-tabbar-label {
@@ -376,22 +391,39 @@ html:active-view-transition .os-dock-solid {
         ):focus
     )
     .os-tabbar {
-    transform: translateY(calc(100% + 8px));
+    transform: translateY(calc(100% + 8px + var(--os-tabbar-gap)));
   }
 }
 
 /* a sheet covers the bottom of the screen: step aside under it */
-html:has(.em-sheet-root) .os-dock,
-html:has(.em-sheet-root) .os-tabbar {
+html:has(.em-sheet-root) .os-dock {
   transform: translateY(calc(100% + 24px));
+}
+html:has(.em-sheet-root) .os-tabbar {
+  transform: translateY(calc(100% + 24px + var(--os-tabbar-gap, 0px)));
 }
 
 /* ── view transitions: persistent chrome holds still ─────────────── */
 
+/* Named only while a transition runs: an element with a
+   view-transition-name is a backdrop root, so a permanent name would
+   leave the glass inside it nothing to blur. While named, each bar is
+   captured on its own above the windows and updates live; the dock swaps
+   in its solid twin, the tab bar's frost moves onto its group. */
+html:active-view-transition .os-dock {
+  view-transition-name: os-dock;
+}
+html:active-view-transition .os-tabbar {
+  view-transition-name: os-tabbar;
+}
 ::view-transition-group(os-dock),
 ::view-transition-group(os-tabbar) {
   z-index: 50;
   animation: none;
+}
+::view-transition-group(os-tabbar) {
+  border-radius: 30px;
+  backdrop-filter: blur(12px) blur(12px) saturate(1.8);
 }
 ::view-transition-new(os-dock),
 ::view-transition-new(os-tabbar) {
@@ -399,8 +431,7 @@ html:has(.em-sheet-root) .os-tabbar {
 }
 ::view-transition-old(os-dock),
 ::view-transition-old(os-tabbar) {
-  animation: none;
-  opacity: 0;
+  display: none;
 }
 
 /* ── preferences ──────────────────────────────────────────────────── */
@@ -424,6 +455,9 @@ html:has(.em-sheet-root) .os-tabbar {
 @media (prefers-reduced-transparency: reduce) {
   .os-dock-tip {
     background: rgb(20 23 35 / 0.97);
+    backdrop-filter: none;
+  }
+  ::view-transition-group(os-tabbar) {
     backdrop-filter: none;
   }
 }

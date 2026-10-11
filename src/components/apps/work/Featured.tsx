@@ -80,7 +80,9 @@ export function Featured({
         <h2 id="app-work-hero-title" className="app-work-hero-title">
           {repo.name}
         </h2>
-        <p className="app-work-hero-desc">{repo.description}</p>
+        <p className="app-work-hero-desc" lang={lang === "en" ? undefined : "en"}>
+          {repo.description}
+        </p>
 
         <ul className="app-work-hero-facts" role="list">
           <li>

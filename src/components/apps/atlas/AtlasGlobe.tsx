@@ -199,8 +199,10 @@ export function AtlasGlobe({
     let cRim = new Uint8Array(0);
     let sun = sunVector();
     let sunAt = performance.now();
+    let rasterKey = "";
 
     const buildRaster = () => {
+      rasterKey = "";
       bn = Math.ceil((2 * R) / CELL) + 2;
       buf = document.createElement("canvas");
       buf.width = bn;
@@ -250,12 +252,21 @@ export function AtlasGlobe({
         sun = sunVector();
         sunAt = now;
       }
+      const flick = Math.floor(t * 1.6);
+      // the raster only changes with the camera, the lights' flicker step
+      // and the sun: while flights run over a still planet, reuse it
+      const key = `${cam.lat}|${cam.lon}|${amb ? flick : -1}|${sunAt}|${bn}`;
+      const size = bn * CELL;
+      if (key === rasterKey) {
+        ctx.drawImage(buf, Math.round(cx - size / 2), Math.round(cy - size / 2), size, size);
+        return;
+      }
+      rasterKey = key;
       const cl = Math.cos(-cam.lon);
       const sl = Math.sin(-cam.lon);
       const ct = Math.cos(cam.lat);
       const st = Math.sin(cam.lat);
       const [s0, s1, s2] = sun;
-      const flick = Math.floor(t * 1.6);
       for (let k = 0; k < cIdx.length; k++) {
         const e = cE[k];
         const y2 = cY[k];
@@ -301,7 +312,6 @@ export function AtlasGlobe({
         px[cIdx[k]] = PAL[ink][cRim[k]];
       }
       bctx.putImageData(img, 0, 0);
-      const size = bn * CELL;
       ctx.drawImage(buf, Math.round(cx - size / 2), Math.round(cy - size / 2), size, size);
     };
 
@@ -478,6 +488,12 @@ export function AtlasGlobe({
     }
 
     function paint() {
+      // re-assert the context state every frame: a lost-and-restored 2D
+      // context (GPU reset, memory pressure) comes back with an identity
+      // transform and smoothing on, which would paint a blurry half-size
+      // planet into one corner
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.imageSmoothingEnabled = false;
       ctx.clearRect(0, 0, W, H);
       if (!R) return;
       const amb = ambientOn();
@@ -795,6 +811,9 @@ export function AtlasGlobe({
       wake();
     };
     mqReduced.addEventListener("change", onReduced);
+    // a restored context is blank: paint it again
+    const onRestored = () => wake();
+    cvs.addEventListener("contextrestored", onRestored);
 
     buildArcs();
     layout();
@@ -810,6 +829,7 @@ export function AtlasGlobe({
       io.disconnect();
       document.removeEventListener("visibilitychange", onVis);
       mqReduced.removeEventListener("change", onReduced);
+      cvs.removeEventListener("contextrestored", onRestored);
       cvs.removeEventListener("pointerdown", onDown);
       cvs.removeEventListener("pointermove", onMove);
       cvs.removeEventListener("pointerup", onUp);

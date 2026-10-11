@@ -18,8 +18,18 @@ import { INTERACTIVE, intersects, type Rect } from "./physics";
    (8 CSS px cells up to 150 × 80), so a fixed box keeps the letters at a
    whole-cell scale with square cells, and a transform scales the result
    to the screen: s = 3 on desktop, s = 2 on phones. FIT is the wordmark's
-   own footprint inside the box, which is what has to fit. */
-const BOX = { desk: { w: 1040, h: 448, fitW: 1040, fitH: 380 }, phone: { w: 700, h: 296, fitW: 700, fitH: 250 } };
+   own footprint inside the box, which is what has to fit: on desktop the
+   two lines are 2 × 7 × 3 + 3 = 45 rows of 8 px (360) by 126 columns plus
+   the extrusion. */
+const BOX = { desk: { w: 1040, h: 448, fitW: 1040, fitH: 360 }, phone: { w: 700, h: 296, fitW: 700, fitH: 250 } };
+/* HeroNameFx's drift tilts the stage up to ~10° each way in perspective:
+   the corner nearest the eye grows ~20 box px past the word's footprint.
+   The word gets that much air inside its band, and the band's soft edge
+   (FADE, matching the CSS mask) on top. */
+const DRIFT = 20;
+const FADE = 8;
+/** Clearance between the band and the glass around it (menu bar, desk). */
+const AIR = 8;
 
 type Marquee = {
   pid: number;
@@ -46,6 +56,7 @@ export function DesktopScene() {
   const heroRef = useRef<HTMLDivElement>(null);
   const widgetsRef = useRef<HTMLDivElement>(null);
   const helloSlotRef = useRef<HTMLDivElement>(null);
+  const deskRef = useRef<HTMLDivElement>(null);
   const marqueeRef = useRef<HTMLDivElement>(null);
   const helloRef = useRef<HelloHandle>(null);
   const mq = useRef<Marquee | null>(null);
@@ -60,7 +71,12 @@ export function DesktopScene() {
     });
   }, []);
 
-  /* ── the wordmark's scale: as big as the stage allows ── */
+  /* ── the wordmark's band and scale ──
+     The live field is a canvas that redraws every frame, so it never sits
+     under glass (a backdrop filter over it would re-render every frame
+     too): on desktop the hero is confined to a band from just under the
+     menu bar to just above the desk, with soft edges, and scaled as big as
+     that band allows with room for the drift. */
   useLayoutEffect(() => {
     const scene = sceneRef.current;
     const stage = stageRef.current;
@@ -76,6 +92,8 @@ export function DesktopScene() {
       const sw = stage.clientWidth;
       let k: number;
       let shift = 0;
+      let bandT = 0;
+      let bandB = 0;
       if (phone) {
         k = sw / b.fitW;
       } else {
@@ -96,16 +114,38 @@ export function DesktopScene() {
         const symmetric = sw - 2 * rail >= 0.62 * b.fitW;
         const availW = symmetric ? sw - 2 * rail : sw - rail;
         shift = symmetric ? 0 : -rail / 2;
-        k = Math.min(availW / b.fitW, stage.clientHeight / b.fitH);
+        // the band, in scene px (layout offsets: transforms don't count)
+        const root = getComputedStyle(document.documentElement);
+        const rem = parseFloat(root.fontSize) || 16;
+        const menubar = (parseFloat(root.getPropertyValue("--menubar-h")) || 2.75) * rem;
+        const stageTop = stage.offsetTop;
+        const stageBottom = stageTop + stage.offsetHeight;
+        // the highest glass on the desk (hello.txt or a widget)
+        let deskTop = Infinity;
+        const desk = deskRef.current;
+        if (desk) {
+          for (const el of [helloSlotRef.current, widgetsRef.current]) {
+            if (el?.offsetParent && el.offsetHeight) deskTop = Math.min(deskTop, desk.offsetTop + el.offsetTop);
+          }
+        }
+        if (!Number.isFinite(deskTop)) deskTop = stageBottom + AIR;
+        const top0 = Math.min(stageTop, menubar + AIR);
+        const bottom0 = Math.max(stageBottom, deskTop - AIR);
+        bandT = top0 - stageTop;
+        bandB = stageBottom - bottom0;
+        k = Math.min(availW / b.fitW, (bottom0 - top0 - FADE) / (b.fitH + 2 * DRIFT));
       }
       k = Math.max(0.3, Math.min(k, phone ? 1 : 1.32));
       scene.style.setProperty("--app-home-k", k.toFixed(4));
       scene.style.setProperty("--app-home-hero-x", `${Math.round(shift)}px`);
+      scene.style.setProperty("--app-home-band-t", `${Math.round(bandT)}px`);
+      scene.style.setProperty("--app-home-band-b", `${Math.round(bandB)}px`);
     };
     fit();
     const ro = new ResizeObserver(fit);
     ro.observe(stage);
     ro.observe(scene);
+    if (deskRef.current) ro.observe(deskRef.current);
     return () => ro.disconnect();
   }, []);
 
@@ -195,8 +235,26 @@ export function DesktopScene() {
       blip("open");
       requestAnimationFrame(() => helloRef.current?.focus());
     } else {
-      win.nudge();
       win.focus();
+      // phones: hello.txt is the Notes widget at the top of the home
+      // screen, usually scrolled away by the time you reach the icons;
+      // bring it back into view first, then nod once it has arrived
+      const phone = !window.matchMedia("(min-width: 768px)").matches;
+      const el = phone ? sceneRef.current?.querySelector<HTMLElement>(".app-home-hello") : null;
+      const r = el?.getBoundingClientRect();
+      const root = getComputedStyle(document.documentElement);
+      const top = (parseFloat(root.getPropertyValue("--menubar-h")) || 2.75) * (parseFloat(root.fontSize) || 16);
+      if (el && r && (r.top < top || r.bottom > window.innerHeight * 0.85)) {
+        const y = Math.max(0, window.scrollY + r.top - top - 12);
+        const lenis = lenisRef.current;
+        if (lenis) lenis.scrollTo(y, { immediate: reduced, onComplete: () => helloRef.current?.nudge() });
+        else {
+          window.scrollTo({ top: y, behavior: "auto" });
+          win.nudge();
+        }
+      } else {
+        win.nudge();
+      }
     }
   };
 
@@ -306,7 +364,7 @@ export function DesktopScene() {
         </m.div>
       </div>
 
-      <m.div className="app-home-desk" style={reduced ? undefined : { y: deskY }}>
+      <m.div ref={deskRef} className="app-home-desk" style={reduced ? undefined : { y: deskY }}>
         {/* hello.txt first in reading order; the grid puts the widgets on its left */}
         <div ref={helloSlotRef} className="app-home-hello-slot">
           <HelloWindow ref={helloRef} closed={helloClosed} onClose={closeHello} reduced={reduced} />
@@ -329,6 +387,10 @@ export function DesktopScene() {
       />
 
       <div ref={marqueeRef} className="app-home-marquee" aria-hidden />
+      {/* a sweep or ⌘A selects several icons at once: say how many */}
+      <p className="sr-only" aria-live="polite">
+        {selected.size > 1 ? t.home.icons.selected.replace("{n}", String(selected.size)) : ""}
+      </p>
 
       <m.button
         type="button"

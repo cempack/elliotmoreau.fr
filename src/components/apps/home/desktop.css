@@ -17,6 +17,8 @@
   --app-home-widget: 168px;
   --app-home-k: 0.92;
   --app-home-hero-x: 0px;
+  /* tertiary text; promoted to secondary under the bright skies */
+  --app-home-l3: var(--color-label-3);
   position: relative;
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
@@ -29,15 +31,51 @@
   cursor: grabbing;
 }
 
+/* Daylight: the sky behind the desk turns pale (snow peaks, the horizon,
+   the sun), so the desk's glass deepens with the light and tertiary text
+   steps up to secondary. Every run on hello.txt and the widgets keeps
+   ≥ 4.5:1 against the brightest tenth of what is behind it. The tint is
+   the material's own knob (Glass.tsx: --os-glass-tint); reduced
+   transparency and more contrast replace the pane outright and win. */
+html[data-sky="day"] .app-home-scene,
+html[data-sky="dawn"] .app-home-scene,
+html[data-sky="dusk"] .app-home-scene {
+  --app-home-l3: var(--color-label-2);
+}
+html[data-sky="day"] .app-home-hello-glass {
+  --os-glass-tint: rgba(8, 18, 36, 0.7);
+}
+html[data-sky="dawn"] .app-home-hello-glass,
+html[data-sky="dusk"] .app-home-hello-glass {
+  --os-glass-tint: rgba(20, 14, 34, 0.64);
+}
+html[data-sky="day"] .app-home-widget-glass {
+  --os-glass-tint: rgba(8, 18, 36, 0.66);
+}
+html[data-sky="dawn"] .app-home-widget-glass,
+html[data-sky="dusk"] .app-home-widget-glass {
+  --os-glass-tint: rgba(20, 14, 34, 0.58);
+}
+
 /* ── the wordmark ── */
 .app-home-stage {
   position: relative;
   min-height: 200px;
 }
+/* the band the live wordmark lives in: from just under the menu bar to
+   just above the desk (DesktopScene measures it; negative insets reach
+   past the stage). Its soft edges keep the canvas off the glass around it
+   (no backdrop filter re-rendering over a redrawing canvas) without a
+   hard line through the field. */
 .app-home-hero-wrap {
   position: absolute;
-  inset: 0;
+  inset: var(--app-home-band-t, 0px) 0 var(--app-home-band-b, 0px);
   transform-origin: 50% 30%;
+}
+@media (min-width: 768px) {
+  .app-home-hero-wrap {
+    mask-image: linear-gradient(to bottom, transparent, #000 8px, #000 calc(100% - 8px), transparent);
+  }
 }
 .app-home-hero {
   position: absolute;
@@ -45,8 +83,16 @@
   top: 50%;
   width: 1040px;
   height: 448px;
-  translate: calc(-50% + var(--app-home-hero-x)) -50%;
+  /* HeroNameFx stamps the two lines on rows 5–49 of its 56: optically
+     that is 4 box px high, so the word (not the box) is what centres */
+  translate: calc(-50% + var(--app-home-hero-x)) calc(-50% + 4px * var(--app-home-k));
   scale: var(--app-home-k);
+}
+/* the live field is a 1×-DPR canvas that is always resampled (stage
+   scale, the drift's perspective): nearest-neighbour keeps every cell a
+   hard pixel against the smooth glass instead of a soft bilinear blur */
+.app-home-hero canvas {
+  image-rendering: pixelated;
 }
 
 /* ── the desk: widgets · hello.txt · (air) ── */
@@ -120,7 +166,7 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  color: var(--color-label-3);
+  color: var(--app-home-l3);
   font-size: 0.75rem;
   font-weight: 500;
   line-height: 1;
@@ -169,7 +215,7 @@
   gap: 5px;
 }
 .app-home-clock-city {
-  color: var(--color-label-3);
+  color: var(--app-home-l3);
   font-size: 0.75rem;
   font-weight: 500;
   line-height: 1.1;
@@ -267,7 +313,7 @@
   justify-content: space-between;
   gap: 8px;
   margin-top: auto;
-  color: var(--color-label-3);
+  color: var(--app-home-l3);
   font-size: 0.75rem;
   line-height: 1;
 }
@@ -335,7 +381,7 @@
 }
 .app-home-music-state {
   margin-top: auto;
-  color: var(--color-label-3);
+  color: var(--app-home-l3);
   font-size: 0.75rem;
   line-height: 1.2;
 }
@@ -494,7 +540,7 @@
 }
 .app-home-hello-path {
   margin-left: auto;
-  color: var(--color-label-3);
+  color: var(--app-home-l3);
   font-family: var(--font-mono);
   font-size: 0.75rem;
   line-height: 1;
@@ -627,7 +673,9 @@
 }
 .app-home-chip-k {
   flex: none;
-  color: var(--color-label-3);
+  /* secondary, not tertiary: the chip's own fill already lifts the
+     backdrop; weight and colour (paper white, 500) mark the value */
+  color: var(--color-label-2);
 }
 .app-home-chip-v {
   min-width: 0;
@@ -657,7 +705,7 @@
 }
 .app-home-chip-ext {
   flex: none;
-  color: var(--color-label-3);
+  color: var(--app-home-l3);
 }
 
 /* ───────────────────────────── icons ───────────────────────────── */
@@ -745,7 +793,7 @@
 html[data-sky="day"] .app-home-icon:not([data-selected]) .app-home-icon-label,
 html[data-sky="dawn"] .app-home-icon:not([data-selected]) .app-home-icon-label,
 html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
-  background: rgba(5, 6, 10, 0.34);
+  background: rgba(5, 6, 10, 0.52);
 }
 .app-home-icon[data-selected] .app-home-icon-label {
   background: var(--color-signal);
@@ -957,7 +1005,6 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   }
   .app-home-hello {
     width: 100%;
-    transform: none !important;
   }
   .app-home-hello-lights,
   .app-home-hello-path {
@@ -975,7 +1022,7 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   .app-home-hello-file {
     position: static;
     translate: none;
-    color: var(--color-label-3);
+    color: var(--app-home-l3);
     font-size: 0.75rem;
     font-weight: 500;
   }

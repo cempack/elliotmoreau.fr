@@ -7,7 +7,11 @@ import { usePathname } from "next/navigation";
 import { useReduced } from "@/hooks/env";
 import { lenisRef } from "@/lib/lenisRef";
 import { clamp, project, rubberband, spring } from "@/lib/motion";
+import { PixelGlyph } from "@/components/glyphs";
 import { appForPath } from "../apps";
+import { G_CLOSE, G_MIN, G_UNZOOM, G_ZOOM } from "../window/glyphs";
+// the traffic lights are the app windows' own (one OS, one set of lights)
+import "../window.css";
 import { useTerminal, useTerminalWindow, type WinRect } from "../Terminal";
 import { cwdLabel } from "./commands";
 
@@ -235,6 +239,7 @@ export function DesktopWindow({
         <div className={`os-term-shake ${shaking ? "is-shaking" : ""}`}>
           <m.div
             className={`os-term os-term-win ${dragging ? "is-dragging" : ""}`}
+            data-cursor-hide=""
             role="dialog"
             tabIndex={-1}
             aria-label={t.system.term.dialog}
@@ -257,27 +262,31 @@ export function DesktopWindow({
                 if (!(e.target as HTMLElement).closest("button")) toggleZoom();
               }}
             >
-              <div className="os-term-lights">
-                <button type="button" className="os-term-light is-close" aria-label={t.system.term.close} onClick={close}>
-                  <svg viewBox="0 0 8 8" aria-hidden>
-                    <path d="M1.5 1.5l5 5M6.5 1.5l-5 5" />
-                  </svg>
-                </button>
-                <button type="button" className="os-term-light is-min" aria-label={t.system.term.minimize} onClick={close}>
-                  <svg viewBox="0 0 8 8" aria-hidden>
-                    <path d="M1.2 4h5.6" />
-                  </svg>
+              <div className="os-win-lights os-term-lights">
+                <button
+                  type="button"
+                  className="os-win-light os-win-light--close"
+                  aria-label={t.system.term.close}
+                  onClick={close}
+                >
+                  <PixelGlyph cells={G_CLOSE} size={7} />
                 </button>
                 <button
                   type="button"
-                  className="os-term-light is-zoom"
+                  className="os-win-light os-win-light--min"
+                  aria-label={t.system.term.minimize}
+                  onClick={close}
+                >
+                  <PixelGlyph cells={G_MIN} size={7} />
+                </button>
+                <button
+                  type="button"
+                  className="os-win-light os-win-light--zoom"
                   aria-label={t.system.term.zoom}
                   aria-pressed={zoomed}
                   onClick={toggleZoom}
                 >
-                  <svg viewBox="0 0 8 8" aria-hidden>
-                    <path d="M4 1.2v5.6M1.2 4h5.6" />
-                  </svg>
+                  <PixelGlyph cells={zoomed ? G_UNZOOM : G_ZOOM} size={7} />
                 </button>
               </div>
               <p className="os-term-title">
@@ -337,6 +346,7 @@ export function MobileSheet({ shaking, children }: { shaking: boolean; children:
         ref={sheet}
         tabIndex={-1}
         className={`os-term os-term-sheet ${shaking ? "is-shaking" : ""}`}
+        data-cursor-hide=""
         role="dialog"
         aria-label={t.system.term.dialog}
         initial={reduced ? { opacity: 0 } : { y: "100%" }}
@@ -366,9 +376,7 @@ export function MobileSheet({ shaking, children }: { shaking: boolean; children:
             {t.system.term.title}
           </p>
           <button type="button" className="os-term-done" aria-label={t.system.term.close} onClick={close}>
-            <svg viewBox="0 0 12 12" aria-hidden>
-              <path d="M2.5 2.5l7 7M9.5 2.5l-7 7" />
-            </svg>
+            <PixelGlyph cells={G_CLOSE} size={14} />
           </button>
         </div>
         {children}

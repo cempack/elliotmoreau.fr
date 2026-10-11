@@ -47,7 +47,7 @@ export const NOW = {
   /** One or two sentences under the headline. */
   intro: {
     en: "A snapshot of what has my attention at this point in my life. The live bits update themselves; the rest I write by hand, now and then.",
-    fr: "Un instantané de ce qui occupe mon attention en ce moment. Les éléments en direct se mettent à jour tout seuls ; le reste, je l’écris à la main, de temps en temps.",
+    fr: "Un instantané de ce qui occupe mon attention ces temps-ci. Les éléments en direct se mettent à jour tout seuls ; le reste, je l’écris à la main, de temps en temps.",
   } satisfies L10n,
 
   /** The current focus: the one thing most of my time goes into. */
@@ -61,7 +61,7 @@ export const NOW = {
     } satisfies L10n,
     body: {
       en: "Glass windows over a pixel night, a real terminal, and far too many springs. You’re clicking around in it right now.",
-      fr: "Des fenêtres en verre sur une nuit en pixels, un vrai terminal et beaucoup trop de ressorts. Vous êtes en train de cliquer dedans.",
+      fr: "Des fenêtres en verre sur une nuit en pixels, un vrai terminal et bien trop de ressorts. Vous cliquez dedans.",
     } satisfies L10n,
     url: "https://github.com/cempack/elliotmoreau.fr",
   },

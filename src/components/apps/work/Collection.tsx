@@ -10,27 +10,28 @@ import { lenisRef } from "@/lib/lenisRef";
 import { PixelPlanet } from "@/components/PixelPlanet";
 import { GLYPH_STAR, PixelGlyph } from "@/components/glyphs";
 import { G_CHEVRON } from "./glyphs";
-import { type SortKey, type ViewMode, compact, fmt, highlight, itemId, langColor, normalize } from "./model";
+import { Marked } from "./Parts";
+import { type SortKey, type ViewMode, compact, fmt, itemId, langColor, normalize } from "./model";
 
 type View = "icons" | "list";
 
-/** Scroll an item into the band between the sticky chrome and the Dock. */
-export function revealItem(el: HTMLElement | null) {
+/**
+ * Scroll an item into the band between the sticky chrome and the Dock. The
+ * band comes from the item's own scroll-margin (work.css), so it follows
+ * the window's sticky offset and the Dock height without measuring them.
+ */
+export function revealItem(el: HTMLElement | null, immediate = false) {
   if (!el) return;
   const r = el.getBoundingClientRect();
-  let top = 0;
-  document.querySelectorAll<HTMLElement>(".os-win-bar, [data-work-sticky]").forEach((s) => {
-    const b = s.getBoundingClientRect();
-    if (b.height && b.top < window.innerHeight / 3) top = Math.max(top, b.bottom);
-  });
-  const topSafe = top + 12;
-  const bottomSafe = window.innerHeight - (window.innerWidth < 768 ? 96 : 116);
+  const cs = getComputedStyle(el);
+  const topSafe = parseFloat(cs.scrollMarginTop) || 0;
+  const bottomSafe = window.innerHeight - (parseFloat(cs.scrollMarginBottom) || 0);
   let delta = 0;
   if (r.top < topSafe) delta = r.top - topSafe;
   else if (r.bottom > bottomSafe) delta = Math.min(r.bottom - bottomSafe, r.top - topSafe);
   if (Math.abs(delta) < 1) return;
   const lenis = lenisRef.current;
-  if (lenis) lenis.scrollTo(window.scrollY + delta, { duration: 0.45 });
+  if (lenis) lenis.scrollTo(window.scrollY + delta, immediate ? { immediate: true, force: true } : { duration: 0.45 });
   else window.scrollBy({ top: delta, behavior: "auto" });
 }
 
@@ -155,7 +156,7 @@ export function Collection({
   const tabbable = selected && names.includes(selected) ? selected : names[0];
 
   return (
-    <div className="app-work-coll" data-view={view}>
+    <div className="app-work-coll" data-view={view} data-stagger={stagger || undefined}>
       {effView === "list" && <ListHeader sort={sort} onSort={onSort} />}
       <ul
         role="listbox"
@@ -261,7 +262,8 @@ function Item({
   // the grid ↔ list morph ripples through the items; filtering doesn't
   const lt = { ...spring.default, delay: stagger ? Math.min(index * 0.014, 0.2) : 0 };
   const radius = view ? (view === "icons" ? (phone ? 22 : 30) : phone ? 12 : 9) : undefined;
-  const runs = highlight(repo.name, terms);
+  // the plate glows faintly in the repo's language colour
+  const plateStyle = { "--lang": langColor(repo.language), borderRadius: radius } as React.CSSProperties;
 
   return (
     <m.li
@@ -274,6 +276,7 @@ function Item({
       data-work-item={repo.name}
       data-selected={selected || undefined}
       className="app-work-item"
+      style={{ "--i": Math.min(index, 14) } as React.CSSProperties}
       initial={{ opacity: 0, scale: 0.94 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.94 }}
@@ -287,26 +290,24 @@ function Item({
         layout
         transition={{ layout: lt }}
         className="app-work-plate"
-        style={radius != null ? { borderRadius: radius } : undefined}
+        style={plateStyle}
         data-ql-origin
       >
         <PixelPlanet seed={repo.name} className="app-work-planet" />
       </m.span>
       <m.span layout="position" transition={{ layout: lt }} className="app-work-name">
         <span className="app-work-name-text">
-          {runs.map((r, k) =>
-            r.hit ? (
-              <mark key={k} className="app-work-mark">
-                {r.text}
-              </mark>
-            ) : (
-              r.text
-            )
-          )}
+          <Marked text={repo.name} terms={terms} />
         </span>
       </m.span>
-      <m.span layout="position" transition={{ layout: lt }} className="app-work-desc" id={`${id}-d`}>
-        {repo.description}
+      <m.span
+        layout="position"
+        transition={{ layout: lt }}
+        className="app-work-desc"
+        id={`${id}-d`}
+        lang={lang === "en" ? undefined : "en"}
+      >
+        <Marked text={repo.description} terms={terms} />
       </m.span>
       <m.span layout="position" transition={{ layout: lt }} className="app-work-lang">
         {repo.language && <span className="app-work-dot" style={{ background: langColor(repo.language) }} aria-hidden />}

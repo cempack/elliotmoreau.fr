@@ -46,6 +46,8 @@ export type SheetMetrics = {
  * spring takes over with that velocity. At full the content scrolls; pull
  * down from its top and the sheet takes the gesture back. Tap or arrow
  * keys on the grabber step through detents; Esc collapses from full.
+ * `beside` (landscape tablets): it floats next to the globe, covers
+ * nothing, and so rests fully open like an iPad sidebar.
  * Reduced motion: it snaps.
  */
 export function MapSheet({
@@ -53,6 +55,7 @@ export function MapSheet({
   metrics,
   place,
   globeRef,
+  beside = false,
   onDetent,
   head,
   card,
@@ -62,6 +65,8 @@ export function MapSheet({
   metrics: SheetMetrics;
   place: Place;
   globeRef: React.RefObject<HTMLElement | null>;
+  /** the sheet sits beside the globe instead of over its lower part */
+  beside?: boolean;
   onDetent: (d: Detent) => void;
   /** measured to size the half detent: the card */
   head?: React.ReactNode;
@@ -75,9 +80,14 @@ export function MapSheet({
   const sheetRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
-  const [detent, setDetentState] = useState<Detent>("peek");
-  const detentRef = useRef<Detent>("peek");
+  // where it rests by default, and where a new place opens it
+  const rest: Detent = beside ? "full" : "peek";
+  const open: Detent = beside ? "full" : "half";
+  const [detent, setDetentState] = useState<Detent>(rest);
+  const detentRef = useRef<Detent>(rest);
   const entered = useRef(false);
+  /** the reader moved the sheet themselves: stop choosing for them */
+  const touched = useRef(false);
   const grab = useRef<{ id: number; sx: number; sy: number; y0: number; on: boolean; samples: Sample[] } | null>(null);
   const dragged = useRef(false);
 
@@ -96,11 +106,11 @@ export function MapSheet({
   );
 
   const goTo = useCallback(
-    (d: Detent, v = 0) => {
+    (d: Detent, v = 0, silent = false) => {
       const changed = d !== detentRef.current;
       setDetent(d);
       if (d !== "full") scrollRef.current?.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
-      if (changed) blip("tick");
+      if (changed && !silent) blip("tick");
       if (reduced) {
         y.jump(yFor(d));
         return;
@@ -121,6 +131,7 @@ export function MapSheet({
         if ((dir > 0 && to <= cur) || (dir < 0 && to >= cur)) to = ahead[0] ?? to;
       }
       const d: Detent = to === 0 ? "full" : to === metrics.halfY.get() ? "half" : "peek";
+      touched.current = true;
       goTo(d, v);
     },
     [goTo, metrics, y]
@@ -175,9 +186,16 @@ export function MapSheet({
   useEffect(() => {
     if (shownPlace.current === place.id) return;
     shownPlace.current = place.id;
-    if (detentRef.current !== "half") goTo("half");
+    if (detentRef.current !== open) goTo(open);
     else scrollRef.current?.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
-  }, [place.id, goTo, reduced]);
+  }, [place.id, goTo, open, reduced]);
+
+  // the layout changed under it (a tablet rotated): rest where the new
+  // layout rests, unless the reader has already placed it
+  useEffect(() => {
+    if (!entered.current || touched.current || detentRef.current === rest) return;
+    goTo(rest, 0, true);
+  }, [rest, goTo]);
 
   // Esc collapses from full
   useEffect(() => {
@@ -276,15 +294,20 @@ export function MapSheet({
     release(reduced ? 0 : velocity(g.samples, e.timeStamp));
   };
 
-  const cycle = () => goTo(detent === "peek" ? "half" : detent === "half" ? "full" : "peek");
+  const cycle = () => {
+    touched.current = true;
+    goTo(detent === "peek" ? "half" : detent === "half" ? "full" : "peek");
+  };
   const onGrabKey = (e: React.KeyboardEvent) => {
     const order: Detent[] = ["peek", "half", "full"];
     const i = order.indexOf(detent);
     if (e.key === "ArrowUp" && i < 2) {
       e.preventDefault();
+      touched.current = true;
       goTo(order[i + 1]);
     } else if (e.key === "ArrowDown" && i > 0) {
       e.preventDefault();
+      touched.current = true;
       goTo(order[i - 1]);
     }
   };

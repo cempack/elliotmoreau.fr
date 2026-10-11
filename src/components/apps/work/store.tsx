@@ -4,7 +4,6 @@ import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef,
 import type { RepoInfo } from "@/lib/github";
 import type { SiteData, Source } from "@/lib/data";
 import { useHydrated, useMedia } from "@/hooks/env";
-import { lenisRef } from "@/lib/lenisRef";
 import { useSound } from "@/lib/sound";
 import { revealItem } from "./Collection";
 import {
@@ -21,7 +20,8 @@ import {
   sortRepos,
 } from "./model";
 
-export type QL = { name: string; mode: "panel" | "sheet"; from: "item" | "hero" };
+/** `id` changes with every open, so a new Quick Look never inherits a closing one */
+export type QL = { id: number; name: string; mode: "panel" | "sheet"; from: "item" | "hero" };
 
 type Work = {
   repos: RepoInfo[];
@@ -93,6 +93,7 @@ export function WorkProvider({ data, children }: { data: SiteData; children: Rea
   const [ql, setQl] = useState<QL | null>(null);
   const [stagger, setStagger] = useState(false);
   const staggerTimer = useRef(0);
+  const qlSeq = useRef(0);
   const afterSheetRef = useRef<(() => void) | null>(null);
 
   // CSS owns the layout until the user picks one (no SSR flash on phones)
@@ -129,6 +130,8 @@ export function WorkProvider({ data, children }: { data: SiteData; children: Rea
       if (!find && !slash) return;
       const input = visibleSearch();
       if (!input || input.disabled) return;
+      // a second ⌘F in the field is a request for the browser's own find
+      if (find && document.activeElement === input) return;
       e.preventDefault();
       e.stopPropagation();
       input.focus({ preventScroll: true });
@@ -167,7 +170,8 @@ export function WorkProvider({ data, children }: { data: SiteData; children: Rea
   const openQL = (name: string, from: QL["from"] = "item") => {
     const mode = window.matchMedia("(max-width: 767px)").matches ? "sheet" : "panel";
     setSelected(name);
-    setQl({ name, mode, from });
+    qlSeq.current += 1;
+    setQl({ id: qlSeq.current, name, mode, from });
   };
 
   const getOrigin = () => {
@@ -187,13 +191,7 @@ export function WorkProvider({ data, children }: { data: SiteData; children: Rea
     setSelected(next.name);
     setQl({ ...ql, name: next.name, from: "item" });
     // keep the icon it will fold back into on screen behind the panel
-    const el = document.getElementById(itemId(next.name))?.querySelector("[data-ql-origin]");
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    if (r.top >= 120 && r.bottom <= window.innerHeight - 130) return;
-    const to = window.scrollY + r.top - window.innerHeight / 2 + r.height / 2;
-    if (lenisRef.current) lenisRef.current.scrollTo(to, { immediate: true, force: true });
-    else window.scrollTo({ top: to, behavior: "auto" });
+    revealItem(document.getElementById(itemId(next.name)), true);
   };
 
   const applyTag = (tag: string) => {

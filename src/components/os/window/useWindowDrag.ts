@@ -117,7 +117,10 @@ export function useWindowDrag({
     animate(y, y.get() + (to.y - py), { ...t, velocity: vy });
     animate(scale, 0.12, t);
     // fade only at the very end: opacity on an ancestor blanks the glass
-    animate(opacity, 0, { duration: 0.2, delay: 0.16, ease: [0.4, 0, 1, 1] }).then(onClose);
+    animate(opacity, 0, { duration: 0.2, delay: 0.16, ease: [0.4, 0, 1, 1] });
+    // head home while it lands, not after: the Desktop is (pre)fetched and
+    // rendering by the time the window reaches its icon
+    window.setTimeout(onClose, 200);
   };
 
   const end = (e: React.PointerEvent<HTMLElement>, cancelled: boolean) => {

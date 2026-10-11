@@ -117,7 +117,7 @@
   inset: 0;
   z-index: -1;
   background: linear-gradient(180deg, rgba(13, 15, 24, 0.88), rgba(13, 15, 24, 0.76));
-  backdrop-filter: blur(22px) saturate(1.7);
+  backdrop-filter: blur(12px) blur(12px) saturate(1.7);
   box-shadow: inset 0 -1px 0 var(--hairline);
   opacity: 0;
   transition: opacity 0.22s var(--ease-out-quint);
@@ -229,6 +229,7 @@
   white-space: nowrap;
 }
 .os-win-sub--path {
+  color: var(--color-label-2);
   font-family: var(--font-mono);
   font-size: 0.75rem;
   letter-spacing: 0;
@@ -481,7 +482,8 @@
     );
   }
   .os-win-main {
-    padding-bottom: calc(var(--dock-h) + env(safe-area-inset-bottom) + 1rem);
+    /* --dock-h already holds the home indicator's inset */
+    padding-bottom: calc(var(--dock-h) + 1rem);
   }
   .os-win-bar {
     gap: 0.75rem;
@@ -565,7 +567,7 @@
 ::view-transition-group(.app-out) {
   border-radius: var(--radius-window);
   background: rgba(10, 11, 18, 0.18);
-  backdrop-filter: blur(40px) saturate(1.9);
+  backdrop-filter: blur(12px) blur(12px) blur(10px) saturate(1.9);
   box-shadow:
     0 60px 120px -50px rgba(0, 0, 0, 0.8),
     0 24px 48px -28px rgba(0, 0, 0, 0.6);
@@ -599,21 +601,24 @@
   animation: none;
 }
 
-/* app-open: out of the Dock on a critically damped spring curve, opacity
-   in early; app-close: the same path back, fading out late */
+/* app-open: out of the Dock icon itself, from roughly icon size, on a
+   critically damped spring curve; opaque within ~100ms so the first frames
+   read as something leaving the icon, not a ghost mid-screen. app-close:
+   the same path back into the icon, fading only as it lands. (Snapshots
+   are rasterized at full size, so the small end of the path stays sharp.) */
 ::view-transition-group(.app-open) {
   animation:
     560ms
       linear(0, 0.014 2%, 0.051 4%, 0.103 6%, 0.163 8%, 0.228 10%, 0.327 13%, 0.422 16%, 0.537 20%, 0.636 24%, 0.717 28%, 0.796 33%, 0.855 38%, 0.905 44%, 0.939 50%, 0.964 57%, 0.98 65%, 0.991 75%, 0.996 87%, 1)
       both os-vt-grow,
-    200ms cubic-bezier(0.2, 0, 0, 1) both os-vt-in;
+    110ms cubic-bezier(0.2, 0, 0, 1) both os-vt-in;
 }
 ::view-transition-group(.app-close) {
   animation:
     480ms
       linear(0, 0.014 2%, 0.051 4%, 0.103 6%, 0.163 8%, 0.228 10%, 0.327 13%, 0.422 16%, 0.537 20%, 0.636 24%, 0.717 28%, 0.796 33%, 0.855 38%, 0.905 44%, 0.939 50%, 0.964 57%, 0.98 65%, 0.991 75%, 0.996 87%, 1)
       both os-vt-shrink,
-    220ms cubic-bezier(0.4, 0, 1, 1) 150ms both os-vt-out;
+    170ms cubic-bezier(0.4, 0, 1, 1) 280ms both os-vt-out;
 }
 ::view-transition-group(.app-leave) {
   transform-origin: 50% 50%;
@@ -646,32 +651,21 @@
   animation: 260ms cubic-bezier(0.33, 0, 0.67, 1) both os-vt-in;
 }
 
-/* persistent chrome, when given a view-transition-name: stays put, above
-   the windows, and updates live */
-::view-transition-group(os-menubar),
-::view-transition-group(os-dock) {
-  z-index: 50;
-  animation: none;
-}
-::view-transition-old(os-menubar),
-::view-transition-old(os-dock) {
-  display: none;
-}
-::view-transition-new(os-menubar),
-::view-transition-new(os-dock) {
-  animation: none;
-}
+/* the menu bar, dock and mini player hold still above the windows while
+   pages transition: see menubar.css, dock.css and miniplayer.css */
 
+/* scale s about the icon; translate (1 − s) × the group's own offset undoes
+   what the scale does to its positioning transform */
 @keyframes os-vt-grow {
   from {
-    scale: 0.6;
-    translate: calc(0.4 * var(--os-vt-in-gx)) calc(0.4 * var(--os-vt-in-gy) + 1.75rem);
+    scale: 0.07;
+    translate: calc(0.93 * var(--os-vt-in-gx)) calc(0.93 * var(--os-vt-in-gy));
   }
 }
 @keyframes os-vt-shrink {
   to {
-    scale: 0.6;
-    translate: calc(0.4 * var(--os-vt-out-gx)) calc(0.4 * var(--os-vt-out-gy) + 1.75rem);
+    scale: 0.07;
+    translate: calc(0.93 * var(--os-vt-out-gx)) calc(0.93 * var(--os-vt-out-gy));
   }
 }
 @keyframes os-vt-recede {

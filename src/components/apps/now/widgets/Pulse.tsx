@@ -187,6 +187,21 @@ export function Pulse({ repos, posts, activity }: { repos: RepoInfo[]; posts: Gh
   const rows = cell === 2 ? 40 : 30;
   const events = eventsFrom(repos, posts, activity);
   const data = now && cols > 40 ? plot(events, now.getTime(), cols, rows, p.ticks) : null;
+  // axis labels that fit, placed from "now" leftward: none may touch the
+  // "now" label (right-aligned on its column) or its right-hand neighbour
+  // (mono 12px ≈ 7.2px a character)
+  const ticks: Plot["ticks"] = [];
+  if (data) {
+    const ch = 7.2;
+    let edge = (data.nowCol + 0.5) * cell - p.now.length * ch;
+    for (const tk of [...data.ticks].sort((a, b) => b.col - a.col)) {
+      const c = (tk.col + 0.5) * cell;
+      const half = (tk.label.length * ch) / 2;
+      if (c + half > edge - 12 || c - half < 0) continue;
+      ticks.push(tk);
+      edge = c - half;
+    }
+  }
   const latest = data?.marks[data.marks.length - 1]?.ev ?? null;
   const shown = (focus && events.find((e) => e.id === focus)) || latest;
   const label = (ev: Ev) => fill(ev.kind === "post" ? p.published : p.pushTo, { name: ev.name });
@@ -228,7 +243,7 @@ export function Pulse({ repos, posts, activity }: { repos: RepoInfo[]; posts: Gh
           >
             {/* time ticks along the bottom */}
             <g className="app-now-pulse-ticks">
-              {data.ticks.map((tk) => (
+              {ticks.map((tk) => (
                 <rect key={tk.label} x={tk.col} y={data.rows - 2} width={1} height={2} />
               ))}
               <rect x={data.nowCol} y={data.rows - 2} width={1} height={2} />
@@ -299,7 +314,7 @@ export function Pulse({ repos, posts, activity }: { repos: RepoInfo[]; posts: Gh
       </div>
 
       <div className="app-now-pulse-axis" aria-hidden style={{ height: 16 }}>
-        {data?.ticks.map((tk) => (
+        {ticks.map((tk) => (
           <span key={tk.label} style={{ left: (tk.col + 0.5) * cell }}>
             {tk.label}
           </span>

@@ -13,7 +13,13 @@ type Point = { x: number; y: number };
 export function dockIconCenter(app: AppId, href: string): Point {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  let el = document.querySelector<HTMLElement>(`[data-dock-app="${app}"]`);
+  // the visible Dock / tab bar slot, aimed at its icon (not the label)
+  let el: HTMLElement | null = null;
+  for (const slot of document.querySelectorAll<HTMLElement>(`[data-dock-launch="${app}"]`)) {
+    if (!slot.getClientRects().length) continue;
+    el = slot.querySelector<HTMLElement>("[data-dock-icon], [data-dock-bounce]") ?? slot;
+    break;
+  }
   if (!el) {
     // any visible link to the app in the bottom band of the screen
     for (const a of document.querySelectorAll<HTMLElement>(`a[href="${href}"]`)) {
@@ -29,6 +35,21 @@ export function dockIconCenter(app: AppId, href: string): Point {
     if (r.width > 0) return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
   }
   return { x: vw / 2, y: vh - 40 };
+}
+
+/**
+ * A window closed from the keyboard hands focus to its Dock icon once the
+ * Desktop has committed (macOS returns focus to the Dock), instead of
+ * dropping it on <body>. AppWindow marks it, the Dock takes it.
+ */
+let keyboardClose: AppId | null = null;
+export function markKeyboardClose(app: AppId) {
+  keyboardClose = app;
+}
+export function takeKeyboardClose() {
+  const app = keyboardClose;
+  keyboardClose = null;
+  return app;
 }
 
 /** Bottom edge of the menu bar in viewport px. */

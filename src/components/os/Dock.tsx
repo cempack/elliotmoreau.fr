@@ -6,7 +6,8 @@ import { usePathname } from "next/navigation";
 import { appForPath } from "./apps";
 import { DesktopDock } from "./dock/DesktopDock";
 import { MobileTabBar } from "./dock/MobileTabBar";
-import { useAppShortcuts } from "./dock/launch";
+import { useAppShortcuts, visibleIcon } from "./dock/launch";
+import { takeKeyboardClose } from "./window/dock";
 
 export { DOCK_ICON, DOCK_MAX } from "./dock/useMagnification";
 
@@ -21,23 +22,44 @@ export { DOCK_ICON, DOCK_MAX } from "./dock/useMagnification";
  * Keys 1–6 open apps when no input is focused.
  *
  * Height: `var(--dock-h)` is the space the dock occupies at the bottom of
- * the viewport (76px desktop; 60px + safe area on phones). Pad with it.
+ * the viewport (76px desktop; the floating 60px tab bar capsule plus the
+ * gap under it on phones, home indicator included). Pad with it.
  * Launch origin: `--os-launch-x/y` on <html> (viewport px) hold the centre
  * of the icon an app was last launched from; every icon carries
  * `[data-dock-launch="<app id>"]` for measuring.
- * View transitions: the dock is `view-transition-name: os-dock` (phone:
- * `os-tabbar`) and holds still while pages transition beneath it.
+ * View transitions: while a transition runs (only then: a name would make
+ * it a backdrop root and drop its glass) the dock is `os-dock` (phone:
+ * `os-tabbar`) and holds still above the pages transitioning beneath it.
  */
 export function Dock() {
-  const active = appForPath(usePathname());
+  const pathname = usePathname();
+  const active = appForPath(pathname);
   useAppShortcuts(active.id);
   useRiseAfterIntro();
+  useFocusAfterKeyboardClose(pathname);
   return (
     <>
       <DesktopDock />
       <MobileTabBar />
     </>
   );
+}
+
+/**
+ * A window closed from the keyboard: once the Desktop is in, focus lands
+ * on that app's Dock icon (as on macOS), not on <body>.
+ */
+function useFocusAfterKeyboardClose(pathname: string) {
+  useEffect(() => {
+    const app = takeKeyboardClose();
+    if (!app) return;
+    const raf = requestAnimationFrame(() => {
+      const at = document.activeElement;
+      if (at && at !== document.body) return;
+      visibleIcon(app)?.querySelector<HTMLElement>("a, button")?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [pathname]);
 }
 
 /**

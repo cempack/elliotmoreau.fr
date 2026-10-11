@@ -5,7 +5,6 @@ import { AnimatePresence, m, useInView } from "motion/react";
 import { useI18n } from "@/i18n/client";
 import { Glass } from "@/components/os/Glass";
 import { scrollToTop } from "@/components/os/dock/launch";
-import { restartOS } from "@/components/os/menubar/util";
 import { EmosMark } from "@/components/os/menubar/glyphs";
 import { GLYPH_CHAT, GLYPH_CODE, GLYPH_PLAY, GLYPH_X, PixelGlyph, type Cells } from "@/components/glyphs";
 import { PixelLabel } from "@/components/PixelLabel";
@@ -15,6 +14,7 @@ import { useFinePointer, useReduced } from "@/hooks/env";
 import { SOCIALS } from "@/lib/places";
 import { spring } from "@/lib/motion";
 import { useSound } from "@/lib/sound";
+import { PowerOff, reboot } from "./PowerOff";
 import { fill } from "./util";
 
 const LINKS: { label: string; href: string; glyph: Cells; handle: string; me?: boolean }[] = [
@@ -28,7 +28,8 @@ const LINKS: { label: string; href: string; glyph: Cells; handle: string; me?: b
  * Chapter 6, "Shut down": the closing line in giant type (it assembles
  * letter by letter, then on a mouse each letter's weight leans toward the
  * pointer), the address on glass with a copy that confirms, the socials,
- * and the system footer: Restart replays the boot, the arrow goes home.
+ * and the system footer: Shut down powers emOS off like a CRT (PowerOff),
+ * Restart replays the boot, the arrow goes home.
  * The veil lifts a little here, so the story ends on the pixel landscape
  * it started from.
  */
@@ -38,6 +39,7 @@ export function Finale() {
   const { notify } = useToast();
   const { blip } = useSound();
   const [copied, setCopied] = useState(false);
+  const [off, setOff] = useState(false);
   const timer = useRef(0);
 
   useEffect(() => () => window.clearTimeout(timer.current), []);
@@ -111,13 +113,37 @@ export function Finale() {
           {s.made}
         </span>
         <span className="app-story-foot-actions">
-          <button type="button" className="app-story-foot-btn" onClick={restartOS} aria-label={s.restartLabel}>
+          <button
+            type="button"
+            className="app-story-foot-btn"
+            aria-label={s.shutDownLabel}
+            aria-haspopup="dialog"
+            onClick={() => {
+              blip("close");
+              setOff(true);
+            }}
+          >
             <svg width="12" height="12" viewBox="0 0 7 7" shapeRendering="crispEdges" fill="currentColor" aria-hidden>
               <rect x="3" y="0" width="1" height="3" />
               <rect x="1" y="1" width="1" height="1" />
               <rect x="5" y="1" width="1" height="1" />
               <rect x="0" y="2" width="1" height="3" />
               <rect x="6" y="2" width="1" height="3" />
+              <rect x="1" y="5" width="1" height="1" />
+              <rect x="5" y="5" width="1" height="1" />
+              <rect x="2" y="6" width="3" height="1" />
+            </svg>
+            {s.shutDown}
+          </button>
+          <button type="button" className="app-story-foot-btn" onClick={reboot} aria-label={s.restartLabel}>
+            <svg width="12" height="12" viewBox="0 0 7 7" shapeRendering="crispEdges" fill="currentColor" aria-hidden>
+              <rect x="2" y="0" width="3" height="1" />
+              <rect x="6" y="0" width="1" height="3" />
+              <rect x="1" y="1" width="1" height="1" />
+              <rect x="5" y="1" width="1" height="1" />
+              <rect x="4" y="2" width="3" height="1" />
+              <rect x="0" y="2" width="1" height="3" />
+              <rect x="6" y="4" width="1" height="1" />
               <rect x="1" y="5" width="1" height="1" />
               <rect x="5" y="5" width="1" height="1" />
               <rect x="2" y="6" width="3" height="1" />
@@ -136,6 +162,7 @@ export function Finale() {
           </button>
         </span>
       </footer>
+      {off && <PowerOff onDone={() => setOff(false)} />}
     </section>
   );
 }

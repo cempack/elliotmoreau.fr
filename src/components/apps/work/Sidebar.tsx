@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useMedia } from "@/hooks/env";
 import type { RepoInfo } from "@/lib/github";
 import type { Source } from "@/lib/data";
 import { useI18n } from "@/i18n/client";
@@ -11,6 +12,15 @@ import { G_ALL, G_ARROW, G_CLOCK, G_HASH } from "./glyphs";
 import { type Filter, fmt, langColor, languagesOf, recentNames, sameFilter, tagsOf } from "./model";
 
 const TAGS_SHOWN = 8;
+
+/** The nearest ancestor that scrolls vertically on its own (not the page). */
+function scrollParent(el: HTMLElement | null) {
+  for (let p = el?.parentElement; p && p !== document.body; p = p.parentElement) {
+    const oy = getComputedStyle(p).overflowY;
+    if (oy === "auto" || oy === "scroll") return p;
+  }
+  return null;
+}
 
 /**
  * Finder's source list: smart folders (All, Starred, Recent), then every
@@ -31,6 +41,8 @@ export function Sidebar({
   const { t } = useI18n();
   const s = t.work.side;
   const [allTags, setAllTags] = useState(false);
+  // the compact chip strip scrolls sideways, so it carries every tag
+  const compact = useMedia("(max-width: 1023px)");
 
   const langs = useMemo(() => languagesOf(repos), [repos]);
   const tags = useMemo(() => tagsOf(repos), [repos]);
@@ -39,14 +51,14 @@ export function Sidebar({
 
   // the active tag always stays visible, even past the fold
   const shownTags = useMemo(() => {
-    if (allTags) return tags;
+    if (allTags || compact) return tags;
     const head = tags.slice(0, TAGS_SHOWN);
     if (filter.kind === "tag" && !head.some(([v]) => v === filter.value)) {
       const hit = tags.find(([v]) => v === filter.value);
       if (hit) head.push(hit);
     }
     return head;
-  }, [tags, allTags, filter]);
+  }, [tags, allTags, compact, filter]);
   const hidden = tags.length - TAGS_SHOWN;
 
   const is = (f: Filter) => sameFilter(filter, f);
@@ -57,9 +69,9 @@ export function Sidebar({
   const rootRef = useRef<HTMLDivElement>(null);
   const key = `${filter.kind}:${"value" in filter ? filter.value : ""}`;
   useEffect(() => {
-    const box = rootRef.current?.closest<HTMLElement>(".os-win-side");
-    const item = rootRef.current?.querySelector<HTMLElement>(".os-win-nav-item[data-active]");
-    if (!box || !item || getComputedStyle(box).overflowY !== "auto") return;
+    const box = scrollParent(rootRef.current);
+    const item = rootRef.current?.querySelector<HTMLElement>("[aria-pressed='true'], [aria-current]");
+    if (!box || !item || box.scrollHeight <= box.clientHeight + 1) return;
     const b = box.getBoundingClientRect();
     const r = item.getBoundingClientRect();
     if (r.top >= b.top + 8 && r.bottom <= b.bottom - 8) return;

@@ -8,9 +8,10 @@ import { BEEN, NEXT, distanceKm } from "./geo";
 import { useKm } from "./fmt";
 
 /**
- * Been (home first, marked) and Next, as one keyboard path: ↑/↓ move the
- * selection (and the globe with it), Home/End jump to the ends. The active
- * row carries a thumb that springs between rows.
+ * Been (home first, marked) and Next, as one keyboard path: a single tab
+ * stop (the selected row, roving tabindex), then ↑/↓ move the selection
+ * (and the globe with it), Home/End jump to the ends. The active row
+ * carries a thumb that springs between rows.
  */
 export function PlacesList({
   selectedId,
@@ -50,6 +51,7 @@ export function PlacesList({
           type="button"
           data-place={p.id}
           aria-pressed={active}
+          tabIndex={active ? 0 : -1}
           data-active={active || undefined}
           className="app-atlas-row"
           onClick={() => onSelect(p.id)}

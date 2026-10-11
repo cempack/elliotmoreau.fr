@@ -22,7 +22,7 @@
   z-index: 60;
   width: min(21.25rem, calc(100vw - 1.5rem));
   overflow: hidden;
-  border-radius: 20px;
+  border-radius: var(--radius-window);
   color: var(--color-label);
   box-shadow:
     0 0 0 0.5px rgba(255, 255, 255, 0.07),
@@ -336,7 +336,7 @@
   .os-pip-safe {
     top: calc(var(--menubar-h) + 4.875rem);
     right: calc(0.75rem + env(safe-area-inset-right));
-    bottom: calc(var(--dock-h) + 0.75rem + env(safe-area-inset-bottom));
+    bottom: calc(var(--dock-h) + 0.75rem);
     left: calc(0.75rem + env(safe-area-inset-left));
   }
 }
@@ -354,7 +354,7 @@
 :root:active-view-transition .os-pip {
   view-transition-name: os-pip;
   background: var(--glass-tint-thick);
-  backdrop-filter: blur(40px) saturate(1.9);
+  backdrop-filter: blur(12px) blur(12px) blur(10px) saturate(1.9);
 }
 :root:active-view-transition .os-pip-glass {
   visibility: hidden;

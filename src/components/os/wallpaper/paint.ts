@@ -1046,12 +1046,19 @@ function vignettePass(s: Scene) {
   const topBand = H * 0.14;
   const botBand = H * 0.2;
   const side = new Float32Array(W);
-  for (let x = 0; x < W; x++) side[x] = Math.pow(Math.abs(x / W - 0.5) * 2, 3) * 0.12;
+  // the floor eases off in the middle, where the dock floats: its glass
+  // needs the pines and the lake's light under it to have something to bend
+  const floor = new Float32Array(W);
+  for (let x = 0; x < W; x++) {
+    const e = Math.abs(x / W - 0.5) * 2;
+    side[x] = Math.pow(e, 3) * 0.12;
+    floor[x] = 0.4 + 0.6 * smoothstep(0.15, 0.7, e);
+  }
   for (let y = 0; y < H; y++) {
     const vt = y < topBand ? Math.pow(1 - y / topBand, 1.6) * 0.32 : 0;
     const vb = y > H - botBand ? Math.pow((y - (H - botBand)) / botBand, 1.5) * 0.42 : 0;
     for (let x = 0; x < W; x++) {
-      const v = Math.min(0.6, vt + vb + side[x]);
+      const v = Math.min(0.6, vt + vb * floor[x] + side[x]);
       if (v > 0.01) tint(s, x, y, vig, q8(v, x, y, 8));
     }
   }

@@ -39,7 +39,7 @@ export function OSShell({ data, children }: { data: SiteData; children: React.Re
             <SmoothScroll />
             <Wallpaper />
             <MenuBar />
-            <div className="relative z-10 flex min-h-svh flex-col">{children}</div>
+            <div className="relative z-10 flex min-h-svh flex-col overflow-x-clip">{children}</div>
             <Dock />
             <MiniPlayer />
             <Terminal />

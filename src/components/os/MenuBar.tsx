@@ -17,14 +17,14 @@ import { MusicPanel, MusicTrigger } from "./menubar/Music";
 import { ControlCenterPanel } from "./menubar/ControlCenter";
 import { ClockTrigger, NotificationPanel } from "./menubar/Notifications";
 import { ControlIcon, EmosMark, SearchIcon } from "./menubar/glyphs";
-import { fill, restartOS } from "./menubar/util";
+import { fill } from "./menubar/util";
 import "./menubar.css";
 
 /**
  * emOS menu bar. A fixed glass strip (height var(--menubar-h)) that starts
  * nearly clear over the wallpaper and gains material as the page scrolls
- * under it. Left: the emOS mark (About this site), the current app, and
- * Restart. Right: a live status strip: now playing, Control Center,
+ * under it. Left: the emOS mark (About this site, which holds Restart) and
+ * the current app. Right: a live status strip: now playing, Control Center,
  * Spotlight and the Paris clock (Notification Center). Every panel grows
  * out of its trigger, only one is open at a time, and Spotlight commands
  * can open them too (window event "em:menubar" with a PanelId detail).
@@ -84,8 +84,9 @@ function Bar() {
     const onOpen = (e: Event) => {
       const id = (e as CustomEvent<PanelId>).detail;
       const cfg = PANELS[id];
-      // Spotlight is still leaving: open once its dialog hands focus back
-      if (cfg) window.setTimeout(() => show(id, cfg.width, cfg.align), 280);
+      // Spotlight runs its commands once its dialog has closed and handed
+      // focus back, so the panel can take focus straight away
+      if (cfg) show(id, cfg.width, cfg.align);
     };
     window.addEventListener("em:menubar", onOpen);
     return () => window.removeEventListener("em:menubar", onOpen);
@@ -96,7 +97,9 @@ function Bar() {
     : s.player.nothing;
 
   return (
-    <header className="os-menubar" data-open={menu.open ?? undefined}>
+    // the bar's controls carry their own hover pills: the glass cursor
+    // steps back to a dot here instead of blurring the labels
+    <header className="os-menubar" data-open={menu.open ?? undefined} data-cursor-hide="">
       <div className="os-menubar-bg" aria-hidden />
       <m.div className="os-menubar-tint" style={{ opacity: thick }} aria-hidden />
       <m.div className="os-menubar-edge" style={{ opacity: thick }} aria-hidden />
@@ -114,9 +117,6 @@ function Bar() {
           <AboutPanel />
         </MenuItem>
         <AppName id={app.id} label={s.apps[app.label]} />
-        <button type="button" className="os-menubar-btn os-menubar-text os-menubar-hide-sm" onClick={restartOS}>
-          <span>{s.menu.restart}</span>
-        </button>
       </div>
 
       <div className="os-menubar-side os-menubar-right">

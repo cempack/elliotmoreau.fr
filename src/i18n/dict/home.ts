@@ -36,7 +36,6 @@ const en = {
       phase: { dawn: "Dawn", day: "Day", dusk: "Dusk", night: "Night" },
       /** the phase that comes next and when it starts, Paris time */
       next: { dawn: "Dawn at {time}", day: "Day at {time}", dusk: "Dusk at {time}", night: "Night at {time}" },
-      you: "you {offset}",
       aria: "Paris time {time}, {phase}. {next}.",
       ariaYou: "Your time {time}, {offset} from Paris.",
       open: "Open Now",
@@ -61,7 +60,8 @@ const en = {
     readme: "README",
     hint: "Double-click or press Enter to open. Drag to rearrange.",
     hintTouch: "Tap to open.",
-    selected: "{n} selected",
+    /** announced when a sweep or ⌘A selects more than one icon */
+    selected: "{n} icons selected",
   },
   scroll: {
     label: "Scroll",
@@ -89,7 +89,7 @@ const fr: typeof en = {
     nowPlaying: "En écoute",
     lastPlayed: "Dernière écoute",
     paris: "{time} à Paris",
-    pushed: "push {ago}",
+    pushed: "pushé {ago}",
     openSpotify: "{title} par {artist}, ouvrir dans Spotify",
     openRepo: "{repo} sur GitHub",
   },
@@ -99,7 +99,6 @@ const fr: typeof en = {
       title: "Paris",
       phase: { dawn: "Aube", day: "Jour", dusk: "Crépuscule", night: "Nuit" },
       next: { dawn: "Aube à {time}", day: "Jour à {time}", dusk: "Crépuscule à {time}", night: "Nuit à {time}" },
-      you: "chez vous {offset}",
       aria: "Heure de Paris {time}, {phase}. {next}.",
       ariaYou: "Chez vous {time}, {offset} par rapport à Paris.",
       open: "Ouvrir Now",
@@ -124,7 +123,7 @@ const fr: typeof en = {
     readme: "LISEZ-MOI",
     hint: "Double-cliquez ou appuyez sur Entrée pour ouvrir. Faites glisser pour ranger.",
     hintTouch: "Touchez pour ouvrir.",
-    selected: "{n} sélectionné(s)",
+    selected: "{n} icônes sélectionnées",
   },
   scroll: {
     label: "Défiler",

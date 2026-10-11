@@ -219,6 +219,7 @@ export function Postcards({
                   data-active={active || undefined}
                   data-tone={p.home ? "home" : p.status}
                   aria-pressed={active}
+                  aria-label={`${a.postcards.show}: ${name}`}
                   data-cursor={a.postcards.show}
                   onClick={() => onPick(p.id)}
                   onFocus={() => reveal(i)}

@@ -23,6 +23,10 @@ import { MapSheet, type Detent } from "./MapSheet";
 /** Layout switch: floating panels around the globe from here up, the
     Maps-style sheet below. Must match the breakpoint in atlas.css. */
 const WIDE = "(min-width: 1200px)";
+/** Below WIDE: landscape tablets float the sheet beside the globe (an
+    iPad Maps sidebar); phones and portrait tablets put it under the globe.
+    Must match atlas.css. */
+const BESIDE = "(min-width: 768px) and (min-aspect-ratio: 5/4)";
 
 /**
  * Atlas (Maps). A throwable pixel globe fills the window; choosing a place
@@ -41,6 +45,7 @@ export function AtlasApp({ data }: { data: SiteData }) {
   // server and hydration render the wide layout; CSS hides its panels on
   // small screens until the sheet mounts
   const wide = useMedia(WIDE, true);
+  const beside = useMedia(BESIDE, false);
   const [selectedId, setSelectedId] = useState(HOME.id);
   const [recenter, setRecenter] = useState(0);
   const [detent, setDetent] = useState<Detent>("peek");
@@ -135,7 +140,16 @@ export function AtlasApp({ data }: { data: SiteData }) {
   return (
     <AppWindow app="atlas" toolbar={toolbar}>
       <div className="app-atlas">
-        <section ref={stageRef} className="app-atlas-stage" aria-label={a.placesLabel}>
+        <section ref={stageRef} className="app-atlas-stage">
+          {/* source order is the reading order (list, globe, card); the
+              grid places them */}
+          {wide && (
+            <Glass thickness="regular" refract={false} className="app-atlas-panel app-atlas-panel--places">
+              <div className="app-atlas-panel-scroll" data-lenis-prevent>
+                <PlacesList selectedId={selectedId} onSelect={select} thumbId="app-atlas-thumb-desk" />
+              </div>
+            </Glass>
+          )}
           <m.div
             ref={globeRef}
             className="app-atlas-globe-slot"
@@ -145,7 +159,7 @@ export function AtlasApp({ data }: { data: SiteData }) {
               places={PLACES}
               selectedId={selectedId}
               onSelect={select}
-              ambient={wide || detent === "peek"}
+              ambient={wide || beside || detent === "peek"}
               recenter={recenter}
               margin={wide ? 30 : 18}
               label={a.globe}
@@ -156,11 +170,6 @@ export function AtlasApp({ data }: { data: SiteData }) {
 
           {wide ? (
             <>
-              <Glass as="aside" thickness="regular" refract={false} className="app-atlas-panel app-atlas-panel--places" aria-label={a.placesLabel}>
-                <div className="app-atlas-panel-scroll" data-lenis-prevent>
-                  <PlacesList selectedId={selectedId} onSelect={select} thumbId="app-atlas-thumb-desk" />
-                </div>
-              </Glass>
               <Glass as="aside" thickness="thick" refract={false} className="app-atlas-panel app-atlas-panel--card" aria-label={a.card.label}>
                 <PlaceCard place={place} onSelect={select} titleId={cardTitle} />
               </Glass>
@@ -174,6 +183,7 @@ export function AtlasApp({ data }: { data: SiteData }) {
               metrics={sheetMetrics}
               place={place}
               globeRef={globeRef}
+              beside={beside}
               onDetent={setDetent}
               card={<PlaceCard place={place} onSelect={select} compact titleId={cardTitle} />}
             >

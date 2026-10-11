@@ -115,6 +115,7 @@ export function PlaceCard({
   const km = distanceKm(HOME, place);
   const heading = bearingDeg(HOME, place);
   const name = place.name[lang];
+  const region = a.regions[place.region.en] ?? capitalize(place.region[lang]);
   const i = ORDERED.findIndex((p) => p.id === place.id);
   const prev = ORDERED[(i - 1 + ORDERED.length) % ORDERED.length];
   const next = ORDERED[(i + 1) % ORDERED.length];
@@ -138,17 +139,24 @@ export function PlaceCard({
         transition: { ...spring.gentle, delay: 0.12 },
       };
 
+  const coords = (
+    <button type="button" className="app-atlas-coords" onClick={copy} aria-label={`${a.card.copy}: ${fmtCoords(place.lat, place.lon)}`}>
+      <span className="tabular">{fmtCoords(place.lat, place.lon)}</span>
+      <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden className="app-atlas-coords-icon">
+        <path d="M4 1.5h5.5a1 1 0 0 1 1 1V8M2.5 4h5a1 1 0 0 1 1 1v5.5a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" fill="none" stroke="currentColor" strokeWidth="1.2" />
+      </svg>
+    </button>
+  );
+
   return (
     <article className="app-atlas-card" data-compact={compact || undefined} aria-labelledby={titleId}>
+      {/* compact (the sheet): the peek row keeps to the status chip, so
+          the floating mini player (bottom right) never covers it; region
+          and coordinates move down into the facts */}
       <div className="app-atlas-card-meta">
-          <StatusChip place={place} />
-          <p className="app-atlas-card-region">{capitalize(place.region[lang])}</p>
-          <button type="button" className="app-atlas-coords" onClick={copy} aria-label={`${a.card.copy}: ${fmtCoords(place.lat, place.lon)}`}>
-            <span className="tabular">{fmtCoords(place.lat, place.lon)}</span>
-            <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden className="app-atlas-coords-icon">
-              <path d="M4 1.5h5.5a1 1 0 0 1 1 1V8M2.5 4h5a1 1 0 0 1 1 1v5.5a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" fill="none" stroke="currentColor" strokeWidth="1.2" />
-            </svg>
-          </button>
+        <StatusChip place={place} />
+        <p className="app-atlas-card-region">{region}</p>
+        {!compact && coords}
       </div>
       <div className="app-atlas-card-stamp">
           <AnimatePresence mode="popLayout" initial={false}>
@@ -213,12 +221,24 @@ export function PlaceCard({
                 </div>
               </>
             )}
+            {compact && (
+              <>
+                <div className="app-atlas-fact app-atlas-fact--sub">
+                  <dt>{a.card.region}</dt>
+                  <dd className="app-atlas-fact-text">{region}</dd>
+                </div>
+                <div className="app-atlas-fact app-atlas-fact--sub">
+                  <dt>{a.card.coords}</dt>
+                  <dd>{coords}</dd>
+                </div>
+              </>
+            )}
           </dl>
           <p className="app-atlas-note">{isHome ? `${a.notes[place.id] ?? ""} ${a.card.homeLine}` : a.notes[place.id]}</p>
         </m.div>
       </AnimatePresence>
 
-      <nav className="app-atlas-card-nav" aria-label={a.placesLabel}>
+      <nav className="app-atlas-card-nav" aria-label={a.card.steps}>
         <button type="button" className="app-atlas-step" onClick={() => onSelect(prev.id)} aria-label={`${a.card.prev}: ${prev.name[lang]}`}>
           <PixelGlyph cells={G_CHEVRON} size={9} className="app-atlas-step-prev" />
           <span>{prev.name[lang]}</span>

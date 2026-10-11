@@ -14,6 +14,7 @@ import { fmtCoords } from "@/lib/places";
 import { EmMark } from "./intro/Mark";
 import { Padlock, SkyGlyph } from "./intro/pixels";
 import { playStartupChord } from "./intro/chime";
+import { restartOS } from "./menubar/util";
 
 /**
  * CONTRACT (owner: boot/terminal agent)
@@ -68,14 +69,12 @@ function sequenceStart() {
   return (started = nav?.responseEnd ?? performance.now());
 }
 
-/** Restart emOS: forget this session's intro and reload into the boot. */
-export function rebootOS() {
-  try {
-    sessionStorage.removeItem("em-intro");
-  } catch {}
-  delete document.documentElement.dataset.intro;
-  window.location.reload();
-}
+/**
+ * Restart emOS: forget this session's intro, power the display down and
+ * reload into the boot. One path for the About panel, Spotlight, the
+ * Terminal's `reboot` and the Desktop (menubar/util).
+ */
+export const rebootOS = restartOS;
 
 type ExitFrom = "boot" | "lock";
 /** The lock screen's clock and date, frozen at the moment of unlock. */

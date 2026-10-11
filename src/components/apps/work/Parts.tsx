@@ -6,7 +6,25 @@ import { SOCIALS } from "@/lib/places";
 import { PixelGlyph } from "@/components/glyphs";
 import { PressAnchor, PressButton } from "@/components/ui/Pressable";
 import { ART_FOLDER, ART_OFFLINE, ART_SEARCH, G_ARROW, PixelArt } from "./glyphs";
-import { fmt, plural } from "./model";
+import { fmt, highlight, plural } from "./model";
+
+/** `text` with the parts that match the search terms marked. */
+export function Marked({ text, terms }: { text: string; terms: string[] }) {
+  if (!terms.length) return <>{text}</>;
+  return (
+    <>
+      {highlight(text, terms).map((r, k) =>
+        r.hit ? (
+          <mark key={k} className="app-work-mark">
+            {r.text}
+          </mark>
+        ) : (
+          r.text
+        )
+      )}
+    </>
+  );
+}
 
 const INK = {
   a: "var(--color-label-3)",
@@ -73,25 +91,41 @@ type EmptyKind = "search" | "folder" | "offline";
 export function EmptyState({
   kind,
   query = "",
-  canWiden = false,
+  folder = "",
+  wider = 0,
   onClear,
   onWiden,
   onShowAll,
 }: {
   kind: EmptyKind;
   query?: string;
-  /** the search has hits outside the current folder */
-  canWiden?: boolean;
+  /** the current folder's display name (search in a folder) */
+  folder?: string;
+  /** how many hits the search has outside the current folder */
+  wider?: number;
   onClear?: () => void;
   onWiden?: () => void;
   onShowAll?: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const e = t.work.empty;
   const shown = query.trim().length > 32 ? query.trim().slice(0, 31) + "…" : query.trim();
+  const canWiden = kind === "search" && wider > 0 && !!folder;
   const art = kind === "search" ? ART_SEARCH : kind === "folder" ? ART_FOLDER : ART_OFFLINE;
-  const title = kind === "search" ? fmt(e.searchTitle, { q: shown }) : kind === "folder" ? e.folderTitle : e.offlineTitle;
-  const body = kind === "search" ? e.searchBody : kind === "folder" ? e.folderBody : e.offlineBody;
+  const title = canWiden
+    ? fmt(e.notInFolderTitle, { folder })
+    : kind === "search"
+      ? fmt(e.searchTitle, { q: shown })
+      : kind === "folder"
+        ? e.folderTitle
+        : e.offlineTitle;
+  const body = canWiden
+    ? plural(lang, wider, e.notInFolderOne, e.notInFolderOther)
+    : kind === "search"
+      ? e.searchBody
+      : kind === "folder"
+        ? e.folderBody
+        : e.offlineBody;
 
   return (
     <div className="app-work-empty" role={kind === "offline" ? undefined : "status"}>
@@ -99,7 +133,7 @@ export function EmptyState({
       <h2 className="app-work-empty-title">{title}</h2>
       <p className="app-work-empty-body">{body}</p>
       <div className="app-work-empty-actions">
-        {kind === "search" && canWiden && (
+        {canWiden && (
           <PressButton className="app-work-btn app-work-btn--primary" onClick={onWiden}>
             {e.searchAll}
           </PressButton>

@@ -85,6 +85,16 @@ function WorkContent() {
   const { filter, terms, query, visible } = w;
 
   const short = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
+  const folder =
+    filter.kind === "starred"
+      ? t.work.side.starred
+      : filter.kind === "recent"
+        ? t.work.side.recent
+        : filter.kind === "lang"
+          ? filter.value
+          : filter.kind === "tag"
+            ? `#${filter.value}`
+            : "";
   const heading = terms.length
     ? fmt(h.results, { q: short(query.trim(), 28) })
     : filter.kind === "all"
@@ -124,12 +134,14 @@ function WorkContent() {
             )}
           </AnimatePresence>
 
-          <m.div layout="position" transition={{ layout: spring.default }} className="app-work-head">
-            <h2 className="app-work-head-title">{heading}</h2>
-            <span className="app-work-head-count tabular" aria-hidden>
-              {visible.length}
-            </span>
-          </m.div>
+          {visible.length > 0 && (
+            <m.div layout="position" transition={{ layout: spring.default }} className="app-work-head">
+              <h2 className="app-work-head-title">{heading}</h2>
+              <span className="app-work-head-count tabular" aria-hidden>
+                {visible.length}
+              </span>
+            </m.div>
+          )}
 
           {visible.length > 0 ? (
             <Collection
@@ -150,7 +162,8 @@ function WorkContent() {
             <EmptyState
               kind="search"
               query={query}
-              canWiden={w.widerHits > 0}
+              folder={folder}
+              wider={w.widerHits}
               onClear={() => {
                 w.setQuery("");
                 visibleSearch()?.focus();
@@ -167,7 +180,9 @@ function WorkContent() {
 
       {w.ql?.mode === "panel" && w.qlRepo && (
         <QuickLook
+          key={w.ql.id}
           repo={w.qlRepo}
+          terms={terms}
           hydrated={w.hydrated}
           getOrigin={w.getOrigin}
           onStep={w.stepQL}
@@ -184,6 +199,7 @@ function WorkContent() {
         {w.qlRepo && (
           <QuickLookSheetBody
             repo={w.qlRepo}
+            terms={terms}
             hydrated={w.hydrated}
             onTag={(tag, dismiss) => {
               w.afterSheet(() => w.applyTag(tag));

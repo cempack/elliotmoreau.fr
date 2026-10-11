@@ -211,7 +211,7 @@
     radial-gradient(120% 60% at 50% 34%, rgba(5, 6, 10, 0) 0%, rgba(5, 6, 10, 0.28) 100%),
     linear-gradient(180deg, rgba(5, 6, 10, 0.5) 0%, rgba(5, 6, 10, 0.12) 46%, rgba(5, 6, 10, 0.62) 100%),
     var(--os-intro-sky);
-  backdrop-filter: blur(34px) saturate(1.6);
+  backdrop-filter: blur(12px) blur(12px) blur(10px) saturate(1.6);
 }
 html[data-sky="dawn"] .os-intro-veil {
   --os-intro-sky: linear-gradient(

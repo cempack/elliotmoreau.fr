@@ -114,7 +114,7 @@ export function WritingChapter() {
                 rel="noreferrer"
                 className="app-story-wr-row"
                 data-on={hover === i || undefined}
-                data-cursor={s.readOn}
+                data-cursor={s.cursor}
                 onPointerEnter={(e) => {
                   if (e.pointerType !== "mouse") return;
                   setHover(i);

@@ -51,7 +51,7 @@
 }
 .os-menubar-bg {
   background: linear-gradient(rgba(10, 11, 18, 0.34), rgba(10, 11, 18, 0.2));
-  backdrop-filter: blur(20px) saturate(1.8);
+  backdrop-filter: blur(10px) blur(10px) saturate(1.8);
 }
 .os-menubar-tint {
   background: rgba(9, 10, 16, 0.5);
@@ -262,6 +262,11 @@
   .os-menubar-app {
     padding-left: 2px;
   }
+  /* a window sheet carries its own large title: the bar becomes a status
+     bar (mark, status icons, clock) instead of repeating it */
+  html:has(.os-win) .os-menubar-app {
+    visibility: hidden;
+  }
 }
 
 /* pixel equalizer: 4 columns of blocks on a pitch, jumping a whole block
@@ -344,6 +349,32 @@
   .os-menubar-eq[data-playing] i:nth-child(2)::before { transform: translateY(0); }
   .os-menubar-eq[data-playing] i:nth-child(3)::before { transform: translateY(var(--p)); }
   .os-menubar-eq[data-playing] i:nth-child(4)::before { transform: translateY(calc(var(--p) * 2)); }
+}
+
+/* ───────── page transitions ─────────
+   Named only while a transition runs (a permanent name would make the bar
+   a backdrop root and drop its frost): captured on its own above the
+   windows, live, so the app name slides instead of cross-fading. Its own
+   blur sees nothing while it is captured, so the group carries the frost
+   over the page snapshots underneath. */
+html:active-view-transition .os-menubar {
+  view-transition-name: os-menubar;
+}
+::view-transition-group(os-menubar) {
+  z-index: 50;
+  animation: none;
+  backdrop-filter: blur(10px) blur(10px) saturate(1.8);
+}
+::view-transition-old(os-menubar) {
+  display: none;
+}
+::view-transition-new(os-menubar) {
+  animation: none;
+}
+@media (prefers-reduced-transparency: reduce) {
+  ::view-transition-group(os-menubar) {
+    backdrop-filter: none;
+  }
 }
 
 /* ───────── panels ───────── */
@@ -1234,12 +1265,13 @@
 .os-toast-stack {
   position: fixed;
   top: calc(var(--menubar-h) + env(safe-area-inset-top) + 10px);
-  right: max(12px, env(safe-area-inset-right));
+  /* the same right edge as the mini player's corner */
+  right: calc(1rem + env(safe-area-inset-right));
   z-index: 80;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  width: min(356px, calc(100vw - 24px));
+  width: min(21.25rem, calc(100vw - 24px));
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1345,6 +1377,18 @@
     top: calc(var(--menubar-h) + env(safe-area-inset-top) + 6px);
     right: 8px;
     width: calc(100vw - 16px);
+  }
+}
+/* the mini player owns its top corner: banners stack just below it (the
+   player publishes its corner and resting bottom edge on <html>) */
+@media (min-width: 768px) {
+  html[data-pip-corner="tr"] .os-toast-stack {
+    top: calc(var(--os-pip-bottom, 0px) + 10px);
+  }
+}
+@media (max-width: 767px) {
+  html:is([data-pip-corner="tr"], [data-pip-corner="tl"]) .os-toast-stack {
+    top: calc(var(--os-pip-bottom, 0px) + 8px);
   }
 }
 

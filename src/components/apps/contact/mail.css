@@ -1,0 +1,1258 @@
+/* ─────────────────────────── emOS · Mail (contact) ───────────────────────────
+   A compose sheet beside the envelope it will travel in; two more
+   mailboxes (Elsewhere, PGP key) in the same window. Calm panels on the
+   window's glass (never glass on glass), mono for system text, one lime
+   action per view. */
+
+/* ── window chrome bits (subtitle path, toolbar) ── */
+.app-contact-path {
+  color: var(--color-label-2);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0;
+}
+.app-contact-tool {
+  display: inline-flex;
+  height: 2rem;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.875rem 0 0.75rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  color: var(--color-label-2);
+  font-size: var(--text-footnote);
+  font-weight: 500;
+  white-space: nowrap;
+  transition:
+    background-color 0.2s var(--ease-out-quint),
+    color 0.2s;
+}
+.app-contact-tool:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-label);
+}
+.app-contact-tool[data-copied] {
+  color: var(--color-signal);
+}
+@media (max-width: 767px) {
+  .app-contact-path {
+    display: none;
+  }
+  .app-contact-tool {
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .app-contact-tool > svg {
+    box-sizing: content-box;
+    padding: 0.5625rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 0 0 1px var(--hairline);
+  }
+  .app-contact-tool-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* ── sidebar ── */
+.app-contact-side-label {
+  padding: 0.375rem 0.625rem 0.5rem;
+  color: var(--color-label-3);
+  font-size: var(--text-footnote);
+  font-weight: 600;
+}
+.app-contact-nav-short {
+  display: none;
+}
+.app-contact-reply {
+  display: grid;
+  gap: 0.5rem;
+  color: var(--color-label-3);
+  font-size: var(--text-footnote);
+  line-height: var(--text-footnote--line-height);
+}
+.app-contact-reply-time {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.125rem;
+  color: var(--color-label);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+.app-contact-reply-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--color-signal);
+  box-shadow: 0 0 8px color-mix(in oklab, var(--color-signal) 70%, transparent);
+}
+@media (min-width: 1024px) {
+  .app-contact-side {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100svh - var(--os-win-sticky-top) - var(--os-win-dock-room) - 2.25rem);
+  }
+  .app-contact-side > .app-contact-reply {
+    margin-top: auto;
+    padding: 1rem 1rem 1.0625rem;
+    border-radius: var(--radius-card);
+    background: rgba(255, 255, 255, 0.035);
+    box-shadow: inset 0 0 0 1px var(--hairline);
+  }
+  .app-contact-reply--inline {
+    display: none;
+  }
+}
+@media (max-width: 1023px) {
+  .app-contact-nav-long {
+    display: none;
+  }
+  .app-contact-nav-short {
+    display: inline;
+  }
+}
+
+/* ── views ── */
+.app-contact-views {
+  container: app-contact / inline-size;
+  padding: 2.5rem clamp(1.25rem, 3.6vw, 3.25rem) 3.5rem;
+}
+.app-contact-views[data-anim] > .app-contact-view:not([hidden]) {
+  animation: app-contact-view-in 0.34s var(--ease-out-quint) both;
+}
+@keyframes app-contact-view-in {
+  from {
+    opacity: 0;
+    translate: 0 10px;
+  }
+}
+@media (max-width: 767px) {
+  .app-contact-views {
+    padding: 1.375rem 1rem 2rem;
+  }
+}
+
+/* ── shared type ── */
+.app-contact-head {
+  max-width: 40rem;
+}
+.app-contact-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-bottom: 1rem;
+  color: var(--color-label-2);
+  font: 500 0.75rem/1.2 var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.app-contact-eyebrow::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  background: var(--color-signal);
+}
+.app-contact-eyebrow-dim {
+  margin-left: -0.375rem;
+  color: var(--color-label-3);
+}
+.app-contact-eyebrow--signal {
+  color: var(--color-signal);
+}
+.app-contact-title {
+  font-size: var(--text-title-1);
+  font-weight: 650;
+  line-height: var(--text-title-1--line-height);
+  letter-spacing: var(--text-title-1--letter-spacing);
+}
+.app-contact-lead {
+  max-width: 36rem;
+  margin-top: 1rem;
+  color: var(--color-label-2);
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  letter-spacing: var(--text-body--letter-spacing);
+}
+.app-contact-label {
+  color: var(--color-label-3);
+  font: 500 0.75rem/1.3 var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.app-contact-mono {
+  font-family: var(--font-mono);
+}
+
+/* ── panels, buttons ── */
+.app-contact-card {
+  position: relative;
+  margin-top: 2rem;
+  border-radius: var(--radius-card);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.022) 9rem);
+  box-shadow:
+    inset 0 0 0 1px var(--hairline),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 34px 70px -46px rgba(0, 0, 0, 0.75);
+}
+.app-contact-btn {
+  display: inline-flex;
+  height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0 1.0625rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow:
+    inset 0 0 0 1px var(--hairline),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  color: var(--color-label);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  transition:
+    background-color 0.2s var(--ease-out-quint),
+    scale 0.22s var(--ease-spring);
+}
+.app-contact-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+.app-contact-btn:active:not(:disabled) {
+  scale: 0.97;
+  transition-duration: 0.08s;
+}
+.app-contact-btn:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+.app-contact-btn--primary {
+  background: var(--color-signal);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+    0 10px 26px -12px color-mix(in oklab, var(--color-signal) 75%, transparent);
+  color: var(--color-ink-950);
+}
+.app-contact-btn--primary:hover {
+  background: color-mix(in oklab, var(--color-signal) 86%, white);
+}
+.app-contact-btn--ghost {
+  background: transparent;
+}
+.app-contact-btn--ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.app-contact-btn--small {
+  height: 2.25rem;
+  padding: 0 0.875rem;
+  font-size: var(--text-footnote);
+}
+.app-contact-btn[data-copied] {
+  color: var(--color-signal);
+}
+.app-contact-btn--primary[data-copied] {
+  color: var(--color-ink-950);
+}
+.app-contact-iconbtn {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.045);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  color: var(--color-label-2);
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+.app-contact-iconbtn::before {
+  content: "";
+  position: absolute;
+  inset: -0.375rem;
+}
+.app-contact-iconbtn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--color-label);
+}
+.app-contact-iconbtn[data-copied] {
+  color: var(--color-signal);
+}
+.app-contact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.app-contact-kbd {
+  margin-right: -0.375rem;
+  padding: 0.1875rem 0.4375rem;
+  border-radius: 999px;
+  background: rgba(5, 6, 10, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(5, 6, 10, 0.12);
+  color: var(--color-ink-800);
+  font: 600 0.75rem/1 var(--font-mono);
+}
+@media (pointer: coarse) {
+  .app-contact-btn {
+    height: 2.75rem;
+  }
+  .app-contact-iconbtn::before {
+    inset: -0.375rem;
+  }
+  .app-contact-kbd {
+    display: none;
+  }
+}
+
+/* ── compose ── */
+.app-contact-compose {
+  display: grid;
+  gap: 1rem;
+}
+@container app-contact (min-width: 760px) {
+  .app-contact-compose {
+    grid-template-columns: minmax(0, 1fr) clamp(16.5rem, 31%, 20rem);
+    align-items: start;
+    gap: clamp(2rem, 4.5cqi, 4rem);
+  }
+  .app-contact-stagecol {
+    position: sticky;
+    top: calc(var(--os-win-sticky-top) + 1rem);
+    padding-top: 0.5rem;
+  }
+}
+.app-contact-row {
+  display: flex;
+  min-height: 3.5rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem 0.5rem 1.25rem;
+  border-bottom: 1px solid var(--hairline);
+  transition: box-shadow 0.2s;
+}
+.app-contact-row-label {
+  flex: none;
+  width: 4.5rem;
+  color: var(--color-label-3);
+  font-size: var(--text-callout);
+  transition: color 0.2s;
+}
+.app-contact-row:focus-within {
+  box-shadow: inset 2px 0 0 var(--color-signal);
+}
+.app-contact-row:focus-within .app-contact-row-label {
+  color: var(--color-signal);
+}
+.app-contact-to {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 0.375rem;
+}
+.app-contact-to-chip {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.5rem;
+  height: 2rem;
+  padding: 0 0.75rem 0 0.25rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-signal) 9%, rgba(255, 255, 255, 0.04));
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-signal) 24%, transparent);
+}
+.app-contact-avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  background: var(--color-ink-950);
+  color: var(--color-signal);
+}
+.app-contact-to-name {
+  flex: none;
+  color: var(--color-label);
+  font-size: var(--text-callout);
+  font-weight: 600;
+}
+.app-contact-to-addr {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-label-2);
+  font: 500 0.8125rem/1 var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app-contact-input,
+.app-contact-textarea {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-label);
+  font: inherit;
+  font-size: var(--text-body);
+  letter-spacing: var(--text-body--letter-spacing);
+  caret-color: var(--color-signal);
+}
+.app-contact-input {
+  flex: 1;
+  height: 2.5rem;
+  font-weight: 500;
+}
+.app-contact-input::placeholder,
+.app-contact-textarea::placeholder {
+  color: var(--color-label-3);
+  opacity: 1;
+}
+.app-contact-input:focus-visible,
+.app-contact-textarea:focus-visible {
+  outline: none;
+}
+.app-contact-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.875rem 1.25rem 1rem calc(1.25rem + 4.5rem + 0.75rem);
+  border-bottom: 1px solid var(--hairline);
+}
+.app-contact-chip {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  height: 2rem;
+  align-items: center;
+  padding: 0 0.875rem;
+  border-radius: 999px;
+  color: var(--color-label-2);
+  font-size: var(--text-footnote);
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.app-contact-chip::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  border-radius: inherit;
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  transition: background-color 0.2s;
+}
+.app-contact-chip:hover {
+  color: var(--color-label);
+}
+.app-contact-chip:hover::after {
+  background: rgba(255, 255, 255, 0.09);
+}
+.app-contact-chip[aria-pressed="true"] {
+  color: var(--color-ink-950);
+  font-weight: 600;
+}
+.app-contact-chip-thumb {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--color-signal);
+}
+.app-contact-body {
+  transition: box-shadow 0.2s;
+}
+.app-contact-body:focus-within {
+  box-shadow: inset 2px 0 0 var(--color-signal);
+}
+.app-contact-textarea {
+  display: block;
+  min-height: 15rem;
+  padding: 1.125rem 1.25rem 1.25rem;
+  line-height: 1.6;
+  resize: none;
+  field-sizing: content;
+}
+.app-contact-long {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0 1.25rem 0.75rem;
+  padding: 0.75rem 0.75rem 0.75rem 1rem;
+  border-radius: var(--radius-control);
+  background: color-mix(in oklab, var(--color-ember) 9%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-ember) 26%, transparent);
+  color: var(--color-label-2);
+  font-size: var(--text-footnote);
+}
+.app-contact-long p {
+  flex: 1 1 18rem;
+}
+.app-contact-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0.75rem 0.75rem 1.25rem;
+  border-top: 1px solid var(--hairline);
+}
+.app-contact-status {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-label-3);
+  font: 500 0.75rem/1.3 var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app-contact-status-busy {
+  color: var(--color-signal);
+}
+.app-contact-send {
+  flex: none;
+  height: 2.75rem;
+  padding: 0 1.125rem 0 1.0625rem;
+}
+.app-contact-honest {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  max-width: 38rem;
+  margin-top: 1rem;
+  padding-left: 0.25rem;
+  color: var(--color-label-3);
+  font-size: var(--text-footnote);
+  line-height: var(--text-footnote--line-height);
+}
+.app-contact-honest svg {
+  flex: none;
+  margin-top: 0.1875rem;
+}
+
+/* phones and narrow windows: the To chip drops the name, chips wrap under the label */
+@container app-contact (max-width: 520px) {
+  .app-contact-row {
+    padding-left: 1rem;
+  }
+  .app-contact-row-label {
+    width: 3.75rem;
+  }
+  .app-contact-to-name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .app-contact-to-chip {
+    padding-left: 0.25rem;
+  }
+  .app-contact-chips {
+    flex-wrap: nowrap;
+    padding: 0.75rem 1rem 0.875rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    scroll-padding-inline: 1rem;
+  }
+  .app-contact-chips::-webkit-scrollbar {
+    display: none;
+  }
+  .app-contact-chip {
+    flex: none;
+  }
+  .app-contact-textarea {
+    min-height: 12rem;
+    padding: 1rem;
+  }
+  .app-contact-foot {
+    padding-left: 1rem;
+  }
+  .app-contact-long {
+    margin-inline: 1rem;
+  }
+}
+@media (pointer: coarse) {
+  .app-contact-chip {
+    height: 2.5rem;
+    padding: 0 1rem;
+  }
+  .app-contact-chip::before {
+    content: "";
+    position: absolute;
+    inset: -0.1875rem 0;
+  }
+}
+
+/* result (after Send) */
+.app-contact-result {
+  padding: 1.75rem 1.75rem 1.5rem;
+}
+.app-contact-result .app-contact-eyebrow {
+  margin-bottom: 0.875rem;
+}
+.app-contact-result-title {
+  font-size: var(--text-title-2);
+  font-weight: 650;
+  line-height: var(--text-title-2--line-height);
+  letter-spacing: var(--text-title-2--letter-spacing);
+}
+.app-contact-result-title:focus {
+  outline: none;
+}
+.app-contact-result-body {
+  max-width: 32rem;
+  margin-top: 0.75rem;
+  color: var(--color-label-2);
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+}
+.app-contact-result-summary {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 0.375rem;
+  margin: 1.25rem 0 1.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-control);
+  background: rgba(5, 6, 10, 0.32);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  color: var(--color-label-3);
+  font: 500 0.8125rem/1.3 var(--font-mono);
+}
+.app-contact-result-subject {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-label);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app-contact-result-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
+  margin-top: 1.25rem;
+  color: var(--color-label-3);
+  font-size: var(--text-footnote);
+}
+
+/* ── the stage and the envelope ── */
+.app-contact-stage {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 1.125rem;
+  padding: 1.75rem 0 0.5rem;
+}
+.app-contact-stage-floor {
+  position: absolute;
+  inset: -8% -10% 12%;
+  z-index: -1;
+  background:
+    radial-gradient(closest-side, color-mix(in oklab, var(--color-signal) 11%, transparent), transparent 72%),
+    radial-gradient(40% 9% at 50% 82%, rgba(0, 0, 0, 0.42), transparent 100%);
+  pointer-events: none;
+  transition: opacity 0.4s var(--ease-out-quint);
+}
+.app-contact-stage[data-gone] .app-contact-stage-floor {
+  opacity: 0.35;
+}
+.app-contact-slot {
+  position: relative;
+  width: 16.5rem;
+  aspect-ratio: 33 / 30;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.app-contact-slot[data-throwable] {
+  cursor: grab;
+  touch-action: none;
+}
+.app-contact-stage[data-held] .app-contact-slot {
+  cursor: grabbing;
+}
+.app-contact-slot-env {
+  position: absolute;
+  inset: 0;
+  transition: scale 0.25s var(--ease-spring);
+}
+.app-contact-slot[data-throwable]:hover .app-contact-slot-env {
+  scale: 1.025;
+}
+.app-contact-stage[data-held] .app-contact-slot-env {
+  scale: 1.045;
+  transition-duration: 0.12s;
+}
+.app-contact-env {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+/* where it was: an empty, pixel-dashed place on the stage */
+.app-contact-socket {
+  position: absolute;
+  inset: 30% 3% 3% 0;
+  border-radius: 4px;
+  background:
+    linear-gradient(90deg, rgba(245, 242, 236, 0.18) 50%, transparent 0) top / 16px 2px repeat-x,
+    linear-gradient(90deg, rgba(245, 242, 236, 0.18) 50%, transparent 0) bottom / 16px 2px repeat-x,
+    linear-gradient(0deg, rgba(245, 242, 236, 0.18) 50%, transparent 0) left / 2px 16px repeat-y,
+    linear-gradient(0deg, rgba(245, 242, 236, 0.18) 50%, transparent 0) right / 2px 16px repeat-y;
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+.app-contact-stage[data-carry] .app-contact-socket,
+.app-contact-stage[data-gone] .app-contact-socket {
+  opacity: 1;
+}
+.app-contact-stage-hint {
+  display: flex;
+  min-height: 1.25rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: var(--color-label-3);
+  font: 500 0.75rem/1.3 var(--font-mono);
+  text-align: center;
+}
+.app-contact-stage-hint svg {
+  flex: none;
+  color: var(--color-signal);
+}
+.app-contact-stage-out {
+  color: var(--color-signal);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.app-contact-reply--inline {
+  max-width: 22rem;
+  margin: 1.75rem auto 0;
+  text-align: center;
+}
+@container app-contact (max-width: 759px) {
+  .app-contact-stagecol {
+    order: 2;
+  }
+  .app-contact-stage {
+    padding-top: 1.25rem;
+  }
+  .app-contact-slot {
+    width: 12.375rem;
+  }
+}
+
+/* in the air (portaled to <body>, above the Dock) */
+.app-contact-air {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  pointer-events: none;
+}
+.app-contact-flyer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 50% 50%;
+  filter: drop-shadow(0 22px 26px rgba(0, 0, 0, 0.5));
+  will-change: transform;
+}
+.app-contact-target {
+  position: absolute;
+  animation: app-contact-target-in 0.28s var(--ease-out-quint) both;
+}
+.app-contact-target::before {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border-radius: 16px;
+  box-shadow:
+    0 0 0 2px color-mix(in oklab, var(--color-signal) 55%, transparent),
+    0 0 26px 2px color-mix(in oklab, var(--color-signal) 22%, transparent);
+  scale: 1;
+  transition:
+    scale 0.3s var(--ease-spring),
+    box-shadow 0.25s;
+}
+.app-contact-target[data-armed]::before {
+  scale: 1.14;
+  box-shadow:
+    0 0 0 2px var(--color-signal),
+    0 0 0 7px color-mix(in oklab, var(--color-signal) 16%, transparent),
+    0 0 40px 6px color-mix(in oklab, var(--color-signal) 40%, transparent);
+}
+.app-contact-target-pill {
+  position: absolute;
+  bottom: calc(100% + 1.125rem);
+  left: 50%;
+  padding: 0.4375rem 0.8125rem;
+  border-radius: 999px;
+  background: var(--color-signal);
+  box-shadow: 0 10px 26px -10px color-mix(in oklab, var(--color-signal) 80%, transparent);
+  color: var(--color-ink-950);
+  font-size: var(--text-footnote);
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  translate: -50% 6px;
+  scale: 0.92;
+  transition:
+    opacity 0.18s,
+    translate 0.3s var(--ease-spring),
+    scale 0.3s var(--ease-spring);
+}
+.app-contact-target[data-armed] .app-contact-target-pill {
+  opacity: 1;
+  translate: -50% 0;
+  scale: 1;
+}
+.app-contact-burst {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+.app-contact-burst i {
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  width: 6px;
+  height: 6px;
+  background: var(--color-signal);
+  animation: app-contact-burst 0.6s var(--ease-out-quint) both;
+}
+.app-contact-burst i:nth-child(even) {
+  width: 4px;
+  height: 4px;
+  background: var(--color-label);
+}
+@keyframes app-contact-burst {
+  0% {
+    opacity: 0;
+    translate: 0 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    translate: var(--dx) var(--dy);
+  }
+}
+@keyframes app-contact-target-in {
+  from {
+    opacity: 0;
+    scale: 0.85;
+  }
+}
+
+/* ── elsewhere ── */
+.app-contact-nets {
+  margin: 2.25rem 0 0;
+  padding: 0;
+  border-top: 1px solid var(--hairline);
+  list-style: none;
+}
+.app-contact-net-li {
+  border-bottom: 1px solid var(--hairline);
+}
+.app-contact-net {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, 15rem) auto;
+  align-items: center;
+  gap: 0.75rem 1.5rem;
+  padding: 1.375rem 0.875rem;
+}
+.app-contact-net::before {
+  content: "";
+  position: absolute;
+  inset: 0.25rem -0.25rem;
+  z-index: -1;
+  border-radius: var(--radius-card);
+  background: color-mix(in oklab, var(--app-contact-net) 7%, rgba(255, 255, 255, 0.025));
+  opacity: 0;
+  transition: opacity 0.25s var(--ease-out-quint);
+}
+.app-contact-net:hover::before,
+.app-contact-net:focus-visible::before {
+  opacity: 1;
+}
+.app-contact-net:focus-visible {
+  outline-offset: -2px;
+  border-radius: var(--radius-card);
+}
+.app-contact-net-tile {
+  display: grid;
+  place-items: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 14px;
+  background: color-mix(in oklab, var(--app-contact-net) 13%, rgba(5, 6, 10, 0.4));
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--app-contact-net) 30%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: var(--app-contact-net);
+  transition: scale 0.3s var(--ease-spring);
+}
+.app-contact-net:hover .app-contact-net-tile {
+  scale: 1.06;
+}
+.app-contact-net-main {
+  display: grid;
+  min-width: 0;
+  gap: 0.375rem;
+}
+.app-contact-net-name {
+  font-size: var(--text-title-2);
+  font-weight: 650;
+  line-height: var(--text-title-2--line-height);
+  letter-spacing: var(--text-title-2--letter-spacing);
+}
+.app-contact-net-meta {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.875rem;
+  font: 500 0.8125rem/1.35 var(--font-mono);
+}
+.app-contact-net-handle {
+  color: var(--color-label-2);
+  overflow-wrap: anywhere;
+}
+.app-contact-net-live {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.4375rem;
+  color: var(--color-ion);
+}
+.app-contact-net-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  background: var(--color-signal);
+}
+.app-contact-net-note {
+  color: var(--color-label-3);
+  font-size: var(--text-callout);
+  line-height: var(--text-callout--line-height);
+}
+.app-contact-net-go {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  color: var(--color-label-3);
+  transition:
+    background-color 0.25s,
+    color 0.25s,
+    translate 0.3s var(--ease-spring);
+}
+.app-contact-net:hover .app-contact-net-go {
+  background: var(--color-signal);
+  box-shadow: none;
+  color: var(--color-ink-950);
+  translate: 2px -2px;
+}
+@container app-contact (max-width: 640px) {
+  .app-contact-net {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.25rem 1rem;
+    padding: 1.125rem 0.25rem;
+  }
+  .app-contact-net-tile {
+    grid-row: span 2;
+    align-self: start;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 12px;
+  }
+  .app-contact-net-name {
+    font-size: var(--text-title-3);
+    line-height: var(--text-title-3--line-height);
+    letter-spacing: var(--text-title-3--letter-spacing);
+  }
+  .app-contact-net-note {
+    grid-column: 2;
+    grid-row: 2;
+    font-size: var(--text-footnote);
+  }
+  .app-contact-net-go {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+}
+
+/* ── pgp key ── */
+.app-contact-key {
+  padding: 1.75rem;
+}
+.app-contact-key-top {
+  display: grid;
+  gap: 1.75rem;
+}
+@container app-contact (min-width: 700px) {
+  .app-contact-key-top {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 2.5rem;
+  }
+}
+.app-contact-art {
+  display: grid;
+  align-content: start;
+  gap: 0.875rem;
+  max-width: 15.5rem;
+}
+.app-contact-art-board {
+  position: relative;
+  width: 15.5rem;
+  aspect-ratio: 19 / 11;
+  border-radius: 10px;
+  background: rgba(5, 6, 10, 0.55);
+  box-shadow:
+    inset 0 0 0 1px var(--hairline),
+    inset 0 0 30px rgba(122, 104, 230, 0.12);
+}
+.app-contact-art-svg,
+.app-contact-art-empty {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.app-contact-art-tag {
+  position: absolute;
+  color: var(--color-label-3);
+  font: 500 0.75rem/1 var(--font-mono);
+  letter-spacing: 0.06em;
+}
+.app-contact-art-tag--top {
+  top: -0.4375rem;
+  left: 0.75rem;
+  padding: 0 0.375rem;
+  background: var(--color-ink-900);
+}
+.app-contact-art-tag--bottom {
+  right: 0.75rem;
+  bottom: -0.4375rem;
+  padding: 0 0.375rem;
+  background: var(--color-ink-900);
+}
+.app-contact-art-cap {
+  display: grid;
+  gap: 0.25rem;
+  color: var(--color-label-3);
+  font-size: var(--text-caption);
+  line-height: 1.45;
+}
+.app-contact-art-cap-title {
+  color: var(--color-label-2);
+  font-size: var(--text-footnote);
+  font-weight: 600;
+}
+.app-contact-key-facts {
+  min-width: 0;
+}
+.app-contact-fp {
+  display: grid;
+  margin: 0.75rem 0 1.5rem;
+  color: var(--color-label-2);
+  font: 500 clamp(1rem, 3.9cqi, 1.75rem) / 1.3 var(--font-mono);
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.app-contact-fp [data-id] {
+  color: var(--color-label);
+}
+.app-contact-fp--loading {
+  color: var(--color-label-3);
+  font-size: var(--text-callout);
+}
+.app-contact-dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 1.5rem;
+  margin: 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--hairline);
+}
+.app-contact-dl dt {
+  margin-bottom: 0.3125rem;
+  color: var(--color-label-3);
+  font: 500 0.75rem/1.3 var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.app-contact-dl dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--color-label);
+  font-size: var(--text-callout);
+}
+.app-contact-key-actions {
+  margin-top: 1.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--hairline);
+}
+.app-contact-chev {
+  display: grid;
+  transition: rotate 0.3s var(--ease-spring);
+}
+[data-open] > .app-contact-chev {
+  rotate: 180deg;
+}
+.app-contact-armor-wrap {
+  overflow: hidden;
+}
+.app-contact-armor {
+  margin-top: 1.25rem;
+  border-radius: var(--radius-control);
+  background: rgba(5, 6, 10, 0.5);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+}
+.app-contact-armor-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.625rem 1rem;
+  border-bottom: 1px solid var(--hairline);
+  color: var(--color-label-3);
+  font: 500 0.75rem/1.3 var(--font-mono);
+}
+.app-contact-armor-pre {
+  max-height: 18rem;
+  margin: 0;
+  padding: 0.75rem 1rem 0.875rem 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  color: var(--color-label-2);
+  font: 500 0.8125rem/1.6 var(--font-mono);
+  counter-reset: app-contact-line;
+}
+.app-contact-armor-pre:focus-visible {
+  outline-offset: -2px;
+}
+.app-contact-armor-line {
+  counter-increment: app-contact-line;
+}
+.app-contact-armor-line::before {
+  content: counter(app-contact-line);
+  display: inline-block;
+  width: 3.25rem;
+  padding-right: 1rem;
+  color: var(--color-ink-500);
+  text-align: right;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.app-contact-key-error {
+  display: grid;
+  gap: 1rem;
+  color: var(--color-label-2);
+}
+.app-contact-import {
+  max-width: 44rem;
+  margin-top: 2rem;
+}
+.app-contact-cmd {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  padding: 0.375rem 0.375rem 0.375rem 1rem;
+  border-radius: var(--radius-control);
+  background: rgba(5, 6, 10, 0.45);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+}
+.app-contact-cmd-prompt {
+  display: grid;
+  flex: none;
+  color: var(--color-signal);
+}
+.app-contact-cmd-text {
+  min-width: 0;
+  flex: 1;
+  overflow-x: auto;
+  color: var(--color-label);
+  font: 500 0.8125rem/2.25rem var(--font-mono);
+  white-space: nowrap;
+  scrollbar-width: none;
+}
+.app-contact-cmd-text::-webkit-scrollbar {
+  display: none;
+}
+@container app-contact (max-width: 520px) {
+  .app-contact-key {
+    padding: 1.25rem;
+  }
+  .app-contact-dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .app-contact-key-actions .app-contact-btn--primary {
+    flex: 1 1 100%;
+  }
+}
+
+/* ── preferences ── */
+@media (prefers-reduced-motion: reduce) {
+  .app-contact-views[data-anim] > .app-contact-view:not([hidden]) {
+    animation: app-contact-fade 0.15s linear both;
+  }
+  .app-contact-slot-env,
+  .app-contact-net-tile,
+  .app-contact-net-go,
+  .app-contact-btn,
+  .app-contact-chev {
+    transition: none;
+  }
+  .app-contact-slot[data-throwable]:hover .app-contact-slot-env,
+  .app-contact-net:hover .app-contact-net-tile {
+    scale: none;
+  }
+  .app-contact-net:hover .app-contact-net-go {
+    translate: none;
+  }
+}
+@keyframes app-contact-fade {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-contrast: more) {
+  .app-contact-card,
+  .app-contact-side > .app-contact-reply {
+    background: var(--color-ink-800);
+    box-shadow: inset 0 0 0 1px var(--hairline);
+  }
+  .app-contact-chip::after,
+  .app-contact-to-chip {
+    box-shadow: inset 0 0 0 1px var(--hairline);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .app-contact-card {
+    background: var(--color-ink-800);
+  }
+}

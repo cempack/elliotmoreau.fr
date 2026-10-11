@@ -12,7 +12,11 @@ const RING_SPRING = { stiffness: 520, damping: 46, mass: 0.6 };
  * (no lag on the thing you aim with); the ring follows on a critically
  * damped spring and morphs into a label over `[data-cursor="Label"]`.
  * Native cursor stays on touch, under reduced motion and forced colors.
- * Elements under `[data-cursor-hide]` get the dot only (no ring).
+ * Over an unlabelled control the ring stops frosting what's under it (a
+ * hairline, iPadOS-style: the control's own hover state carries it), so
+ * it never blurs the label you're about to click. Elements under
+ * `[data-cursor-hide]` (the OS chrome, which has its own hover pills) get
+ * the dot only.
  */
 export function Cursor({ variant = "ring" }: { variant?: Variant }) {
   const [enabled, setEnabled] = useState(false);
@@ -93,13 +97,14 @@ export function Cursor({ variant = "ring" }: { variant?: Variant }) {
     >
       <m.div
         className="em-cursor-ring"
+        data-hover={hovering || undefined}
         style={{ x: rx, y: ry }}
         animate={{ width: size, height: size, scale }}
         transition={{ type: "spring", visualDuration: 0.25, bounce: 0 }}
       >
         {label && <span className="em-cursor-label">{label}</span>}
       </m.div>
-      <div ref={dotRef} className="em-cursor-dot" data-active={hovering || undefined} />
+      <div ref={dotRef} className="em-cursor-dot" data-active={(hovering && !suppressed) || undefined} />
     </div>
   );
 }

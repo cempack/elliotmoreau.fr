@@ -5,6 +5,7 @@ import { AnimatePresence, animate, m, useMotionValue, type Variants } from "moti
 import { project, rubberband, spring } from "@/lib/motion";
 import { useSound } from "@/lib/sound";
 import { useFlick } from "./flick";
+import { claimSurface, useSurfaceYield } from "../surface";
 
 /**
  * Menu bar panels. One context owns which panel is open (only ever one),
@@ -85,7 +86,10 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
   const openAt = useCallback((id: PanelId, el: HTMLElement, width: number, align: Align, sound: boolean) => {
     setExit("settle");
     setState({ id, anchor: measure(el, width, align) });
-    if (sound) blip("open");
+    if (sound) {
+      blip("open");
+      claimSurface("menu");
+    }
   }, [blip]);
 
   const close = useCallback<MenuCtx["close"]>(
@@ -131,6 +135,9 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
     if (el) triggers.current.set(id, el);
     else triggers.current.delete(id);
   }, []);
+
+  // the Terminal or Spotlight opening takes over: get out of the way
+  useSurfaceYield("menu", () => close());
 
   const openId = state?.id ?? null;
   useEffect(() => {

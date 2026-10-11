@@ -8,7 +8,7 @@ import { useI18n } from "@/i18n/client";
 import { useReduced } from "@/hooks/env";
 import { spring } from "@/lib/motion";
 import { usePalette } from "@/components/ui/CommandPalette";
-import { Sheet } from "@/components/ui/Sheet";
+import { Sheet, useSheetDismiss } from "@/components/ui/Sheet";
 import { APPS, appForPath, type AppId } from "../apps";
 import { AppIcon, type IconId } from "../icons";
 import { Glass } from "../Glass";
@@ -51,13 +51,8 @@ function Chevron() {
   );
 }
 
-/** Ask the Sheet to leave along its own path (it dismisses on Escape). */
-function dismissSheet() {
-  window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
-}
-
 /**
- * The phone dock (<768px): an iOS-style tab bar, full-width glass over
+ * The phone dock (<768px): a floating Liquid Glass tab bar capsule over
  * the home indicator. Five apps get a tab, with labels and a lens that
  * slides to the current one; More opens a flingable sheet with Now,
  * Terminal and Search.
@@ -65,14 +60,11 @@ function dismissSheet() {
 export function MobileTabBar() {
   const { t, path } = useI18n();
   const active = appForPath(usePathname());
-  const term = useTerminal();
-  const palette = usePalette();
   const reduced = useReduced();
   const [more, setMore] = useState(false);
   const after = useRef<(() => void) | null>(null);
 
   const inMore = !PRIMARY.includes(active.id);
-  const now = APPS.find((a) => a.id === "now")!;
 
   const launch = (e: React.MouseEvent<HTMLElement>, on: boolean) => {
     if (!isPlainClick(e)) return;
@@ -84,12 +76,6 @@ export function MobileTabBar() {
     const tab = e.currentTarget;
     markLaunch(tab.querySelector("[data-dock-bounce]"));
     bounce(tab.querySelector("[data-dock-bounce]"), 7);
-  };
-
-  /** close the sheet, then run `fn` once it has left */
-  const thenClose = (fn: () => void) => {
-    after.current = fn;
-    dismissSheet();
   };
 
   return (
@@ -144,62 +130,87 @@ export function MobileTabBar() {
           fn?.();
         }}
       >
-        <h2 className="os-more-title">{t.dock.moreTitle}</h2>
-        <ul className="os-more-list">
-          <li data-dock-launch="now">
-            <Link
-              href={path(now.path)}
-              transitionTypes={["app-open"]}
-              className="os-more-row"
-              aria-current={active.id === "now" ? "page" : undefined}
-              onClick={(e) => {
-                if (!isPlainClick(e)) return;
-                if (active.id === "now") {
-                  e.preventDefault();
-                  thenClose(scrollToTop);
-                  return;
-                }
-                markLaunch(e.currentTarget.querySelector("[data-dock-bounce]"));
-                dismissSheet();
-              }}
-            >
-              <span data-dock-bounce>
-                <AppIcon app="now" size={44} />
-              </span>
-              <span className="os-more-text">
-                <span className="os-more-name">{t.shell.apps.now}</span>
-                <span className="os-more-hint">{t.dock.nowHint}</span>
-              </span>
-              <Chevron />
-            </Link>
-          </li>
-          <li>
-            <button
-              type="button"
-              className="os-more-row"
-              aria-pressed={term.open}
-              onClick={() => thenClose(() => term.setOpen(true))}
-            >
-              <AppIcon app="terminal" size={44} />
-              <span className="os-more-text">
-                <span className="os-more-name">{t.shell.apps.terminal}</span>
-                <span className="os-more-hint">{t.dock.terminalHint}</span>
-              </span>
-              <Chevron />
-            </button>
-          </li>
-          <li>
-            <button type="button" className="os-more-row" onClick={() => thenClose(palette.open)}>
-              <AppIcon app="spotlight" size={44} />
-              <span className="os-more-text">
-                <span className="os-more-name">{t.dock.search}</span>
-                <span className="os-more-hint">{t.dock.searchHint}</span>
-              </span>
-              <Chevron />
-            </button>
-          </li>
-        </ul>
+        <MoreList active={active.id} afterRef={after} />
       </Sheet>
+    </>
+  );
+}
+
+/**
+ * The More sheet's rows. Lives inside <Sheet> so every row can ask it to
+ * leave along its own path (useSheetDismiss); a follow-up action waits in
+ * `afterRef` and runs once the sheet has gone (the Sheet's onClose).
+ */
+function MoreList({ active, afterRef }: { active: AppId; afterRef: React.RefObject<(() => void) | null> }) {
+  const { t, path } = useI18n();
+  const term = useTerminal();
+  const palette = usePalette();
+  const dismiss = useSheetDismiss();
+  const now = APPS.find((a) => a.id === "now")!;
+
+  /** close the sheet, then run `fn` once it has left */
+  const thenClose = (fn: () => void) => {
+    afterRef.current = fn;
+    dismiss();
+  };
+
+  return (
+    <>
+      <h2 className="os-more-title">{t.dock.moreTitle}</h2>
+      <ul className="os-more-list">
+        <li data-dock-launch="now">
+          <Link
+            href={path(now.path)}
+            transitionTypes={["app-open"]}
+            className="os-more-row"
+            aria-current={active === "now" ? "page" : undefined}
+            onClick={(e) => {
+              if (!isPlainClick(e)) return;
+              if (active === "now") {
+                e.preventDefault();
+                thenClose(scrollToTop);
+                return;
+              }
+              markLaunch(e.currentTarget.querySelector("[data-dock-bounce]"));
+              dismiss();
+            }}
+          >
+            <span data-dock-bounce>
+              <AppIcon app="now" size={44} />
+            </span>
+            <span className="os-more-text">
+              <span className="os-more-name">{t.shell.apps.now}</span>
+              <span className="os-more-hint">{t.dock.nowHint}</span>
+            </span>
+            <Chevron />
+          </Link>
+        </li>
+        <li>
+          <button
+            type="button"
+            className="os-more-row"
+            aria-pressed={term.open}
+            onClick={() => thenClose(() => term.setOpen(true))}
+          >
+            <AppIcon app="terminal" size={44} />
+            <span className="os-more-text">
+              <span className="os-more-name">{t.shell.apps.terminal}</span>
+              <span className="os-more-hint">{t.dock.terminalHint}</span>
+            </span>
+            <Chevron />
+          </button>
+        </li>
+        <li>
+          <button type="button" className="os-more-row" onClick={() => thenClose(palette.open)}>
+            <AppIcon app="spotlight" size={44} />
+            <span className="os-more-text">
+              <span className="os-more-name">{t.dock.search}</span>
+              <span className="os-more-hint">{t.dock.searchHint}</span>
+            </span>
+            <Chevron />
+          </button>
+        </li>
+      </ul>
     </>
   );
 }

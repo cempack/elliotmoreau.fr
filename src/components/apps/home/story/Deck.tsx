@@ -259,7 +259,7 @@ function DeckCard({
         tabIndex={focused ? 0 : -1}
         aria-label={`${repo.name}, ${s.github}`}
         aria-describedby={descId}
-        data-cursor={focused ? s.github : undefined}
+        data-cursor={focused ? s.cursor : undefined}
         onClick={(e) => {
           if (!focused) {
             e.preventDefault();

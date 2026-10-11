@@ -17,6 +17,7 @@ const en = {
   card: {
     label: "Place details",
     coords: "Coordinates",
+    region: "Region",
     copy: "Copy coordinates",
     copied: "Coordinates copied",
     distance: "From home",
@@ -27,6 +28,7 @@ const en = {
     homeLine: "Every route on the globe starts here.",
     prev: "Previous place",
     next: "Next place",
+    steps: "Step through places",
     stampAlt: "Postage stamp for {place}",
   },
   stats: {
@@ -58,6 +60,16 @@ const en = {
     places: "All places",
   },
   km: "km",
+  /** display names for lib/places regions (keyed by the English value) */
+  regions: {
+    europe: "Europe",
+    "north america": "North America",
+    "south america": "South America",
+    atlantic: "Atlantic",
+    asia: "Asia",
+    africa: "Africa",
+    oceania: "Oceania",
+  } as Record<string, string>,
   /** 16-point compass rose, clockwise from north */
   compass: ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"],
   /** one short, sincere line per place id (drafts for Elliot to edit) */
@@ -92,6 +104,7 @@ const fr: typeof en = {
   card: {
     label: "Détails du lieu",
     coords: "Coordonnées",
+    region: "Région",
     copy: "Copier les coordonnées",
     copied: "Coordonnées copiées",
     distance: "Depuis chez moi",
@@ -102,6 +115,7 @@ const fr: typeof en = {
     homeLine: "Toutes les routes du globe partent d'ici.",
     prev: "Lieu précédent",
     next: "Lieu suivant",
+    steps: "Parcourir les lieux",
     stampAlt: "Timbre de {place}",
   },
   stats: {
@@ -133,6 +147,15 @@ const fr: typeof en = {
     places: "Tous les lieux",
   },
   km: "km",
+  regions: {
+    europe: "Europe",
+    "north america": "Amérique du Nord",
+    "south america": "Amérique du Sud",
+    atlantic: "Atlantique",
+    asia: "Asie",
+    africa: "Afrique",
+    oceania: "Océanie",
+  },
   compass: ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSO", "SO", "OSO", "O", "ONO", "NO", "NNO"],
   notes: {
     france: "Le camp de base. Là où le code s'écrit, et où chaque voyage commence et se termine.",
@@ -148,4 +171,5 @@ const fr: typeof en = {
   },
 };
 
-export default { en, fr };
+const atlas = { en, fr };
+export default atlas;

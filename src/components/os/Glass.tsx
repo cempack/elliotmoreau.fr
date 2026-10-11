@@ -80,8 +80,8 @@ export type GlassProps = {
 /** bevel width (px), displacement scale (px), chromatic split per thickness */
 const OPTICS: Record<Thickness, { bevel: number; strength: number; chroma: number }> = {
   thin: { bevel: 12, strength: 30, chroma: 0.05 },
-  regular: { bevel: 22, strength: 58, chroma: 0.07 },
-  thick: { bevel: 30, strength: 76, chroma: 0.08 },
+  regular: { bevel: 24, strength: 92, chroma: 0.08 },
+  thick: { bevel: 32, strength: 92, chroma: 0.08 },
 };
 
 /* ───────────────────────── displacement maps ───────────────────────── */

@@ -12,7 +12,7 @@
        downsampled by the compositor and aliases the dithered wallpaper
        into bands; two small passes stay smooth. */
     --os-glass-frost: blur(10px) blur(10px);
-    --os-glass-rblur: 2.5px;
+    --os-glass-rblur: 1.25px;
     --os-glass-sat: 1.8;
     --os-glass-hi: 0.34;
     --os-glass-shadow: 0 1px 1px rgba(0, 0, 0, 0.18), 0 22px 50px -24px rgba(0, 0, 0, 0.7);
@@ -35,23 +35,25 @@
     --os-glass-shadow: 0 1px 2px rgba(0, 0, 0, 0.22), 0 46px 110px -40px rgba(0, 0, 0, 0.85);
   }
 
-  /* the bright day sky would wash out light text: the glass darkens */
+  /* the bright skies would wash out light text: the glass darkens with
+     the light (tertiary text on thick glass keeps ≥ 4.5:1 over the day
+     horizon, the snow peaks and the sun) */
   html[data-sky="day"] .os-glass {
-    --os-glass-tint: rgba(8, 18, 36, 0.5);
+    --os-glass-tint: rgba(8, 18, 36, 0.56);
   }
   html[data-sky="day"] .os-glass[data-glass="thin"] {
-    --os-glass-tint: rgba(10, 22, 42, 0.44);
+    --os-glass-tint: rgba(10, 22, 42, 0.5);
   }
   html[data-sky="day"] .os-glass[data-glass="thick"] {
-    --os-glass-tint: rgba(6, 14, 30, 0.7);
+    --os-glass-tint: rgba(6, 14, 30, 0.83);
   }
   html[data-sky="dawn"] .os-glass,
   html[data-sky="dusk"] .os-glass {
-    --os-glass-tint: rgba(20, 14, 34, 0.46);
+    --os-glass-tint: rgba(20, 14, 34, 0.5);
   }
   html[data-sky="dawn"] .os-glass[data-glass="thick"],
   html[data-sky="dusk"] .os-glass[data-glass="thick"] {
-    --os-glass-tint: rgba(14, 10, 26, 0.66);
+    --os-glass-tint: rgba(14, 10, 26, 0.76);
   }
 
   .os-glass[data-glass-shadow] {
@@ -84,6 +86,10 @@
   }
   /* real refraction: the displacement first, then a light blur on top */
   .os-glass-pane[data-live] {
+    backdrop-filter: var(--os-glass-filter) blur(var(--os-glass-rblur)) saturate(var(--os-glass-sat));
+  }
+  /* only the night is dark enough to lift what the glass bends */
+  html[data-sky="night"] .os-glass-pane[data-live] {
     backdrop-filter: var(--os-glass-filter) blur(var(--os-glass-rblur)) saturate(var(--os-glass-sat)) brightness(1.04);
   }
 

@@ -46,9 +46,24 @@
   .app-work-tb--bar {
     display: none;
   }
+  /* phones: a floating row that sticks under the title bar, so search is
+     always one tap away (there is no ⌘F on a phone) */
   .app-work-tb--inline {
+    position: sticky;
+    top: calc(var(--os-win-sticky-top) + 0.375rem);
+    z-index: 3;
     display: flex;
-    margin: -0.25rem 0 0.25rem;
+    margin: -0.875rem -0.375rem 0.875rem;
+    padding: 0.375rem;
+    border-radius: 16px;
+    background: rgba(12, 14, 22, 0.8);
+    backdrop-filter: blur(18px) saturate(1.6);
+    box-shadow:
+      inset 0 0 0 1px var(--hairline),
+      0 12px 24px -16px rgba(0, 0, 0, 0.7);
+  }
+  .app-work-tb--inline .app-work-search {
+    flex: 1 1 auto;
   }
 }
 
@@ -261,6 +276,28 @@
   color: var(--app-work-accent);
 }
 
+/* fingers get 44px targets */
+@media (pointer: coarse) {
+  .app-work-search,
+  .app-work-sort-btn {
+    height: 2.75rem;
+  }
+  .app-work-seg-btn {
+    width: 2.75rem;
+    height: 2.5rem;
+  }
+  .app-work-search-clear {
+    position: relative;
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+  .app-work-search-clear::before {
+    content: "";
+    position: absolute;
+    inset: -0.625rem;
+  }
+}
+
 /* ───────────────────────────── sidebar ───────────────────────────── */
 
 .app-work-side {
@@ -471,6 +508,12 @@
 .app-work-hero-facts > li:nth-child(2) > svg {
   color: var(--color-label-3);
 }
+/* relative times in sans: a mono space makes "il y a 3 j" read spelled out */
+.app-work-hero-facts > .app-work-hero-ago {
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
 .app-work-hero-facts > .app-work-hero-topic {
   color: var(--app-work-accent);
   background: color-mix(in oklab, var(--app-work-accent) 8%, transparent);
@@ -648,7 +691,21 @@
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
-  scroll-margin: 7rem 0 8rem;
+  /* the band revealItem keeps the selection in: below the sticky title bar,
+     above the floating status bar and the Dock */
+  scroll-margin-top: calc(var(--os-win-sticky-top, 6rem) + 1rem);
+  scroll-margin-bottom: calc(var(--dock-h) + 2.25rem);
+}
+@media (min-width: 768px) {
+  .app-work-coll[data-view="list"] .app-work-item {
+    scroll-margin-top: calc(var(--os-win-sticky-top, 6rem) + 3.5rem);
+  }
+}
+@media (max-width: 767px) {
+  .app-work-item {
+    scroll-margin-top: calc(var(--os-win-sticky-top, 6rem) + 4.75rem);
+    scroll-margin-bottom: calc(var(--dock-h) + 1rem);
+  }
 }
 .app-work-item > * {
   position: relative;
@@ -666,7 +723,13 @@
 .app-work-plate {
   display: block;
   overflow: hidden;
-  background: radial-gradient(120% 95% at 50% 0%, #1b2142 0%, #0c0f1d 62%, #080a14 100%);
+  /* a faint glow of the repo's language colour from above */
+  background: radial-gradient(
+    120% 95% at 50% 0%,
+    color-mix(in oklab, var(--lang, #6a7bd6) 24%, #141936) 0%,
+    #0c0f1d 62%,
+    #080a14 100%
+  );
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.1),
@@ -927,6 +990,10 @@ button.app-work-col:hover,
       justify-self: end;
       animation: app-work-fade 0.32s var(--ease-out-quint) 0.12s both;
     }
+    /* icons → list: the text arrives once the planets have landed */
+    &[data-stagger] :is(.app-work-desc, .app-work-lang, .app-work-date) {
+      animation-delay: calc(0.26s + var(--i, 0) * 14ms);
+    }
   }
 }
 
@@ -1111,8 +1178,11 @@ button.app-work-col:hover,
 
 /* ───────────────────────────── status bar ───────────────────────────── */
 
+/* the window's foot. The facts sit on the right, clear of the centred
+   Dock on the first screen; keyboard hints take the left. */
 .app-work-status {
   display: flex;
+  flex-direction: row-reverse;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
@@ -1151,10 +1221,13 @@ button.app-work-col:hover,
     display: none;
   }
 }
+/* phones: a quiet centred caption at the end of the list, with room left
+   for the mini player that parks above the tab bar */
 @media (max-width: 767px) {
   .app-work-status {
     justify-content: center;
     margin-top: auto;
+    padding-bottom: 4.5rem;
     border-top: 0;
     background: none;
     text-align: center;
@@ -1166,13 +1239,17 @@ button.app-work-col:hover,
 
 /* ───────────────────────────── Quick Look ─────────────────────────────
    A modal <dialog> in the top layer, full viewport and transparent; the
-   scrim and the panel are drawn inside it so their opacity can follow the
-   gesture. The panel is plain backdrop-filter glass (glass-thick), so
-   fading it is safe. */
+   scrim, the panel, the travelling planet and the key caption are drawn
+   inside it so their opacity can follow the gesture. The panel is plain
+   backdrop-filter glass (glass-thick) over an ink underlay, so fading it
+   is safe and nothing behind it bleeds through as colour. */
 
 .app-work-ql {
+  --app-work-ql-h: min(37.5rem, calc(100svh - 7rem));
   position: fixed;
   inset: 0;
+  /* only matters while folding home, when the dialog is non-modal */
+  z-index: 85;
   display: grid;
   place-items: center;
   width: 100%;
@@ -1193,17 +1270,27 @@ button.app-work-col:hover,
 .app-work-ql::backdrop {
   background: transparent;
 }
+/* folding home: clicks fall through to the page, except on the panel
+   itself, which a hand can still catch */
+.app-work-ql[data-folding] {
+  pointer-events: none;
+}
+.app-work-ql[data-folding] .app-work-ql-panel {
+  pointer-events: auto;
+}
 .app-work-ql-scrim {
   position: absolute;
   inset: 0;
-  background: rgba(5, 6, 10, 0.56);
+  background: rgba(5, 6, 10, 0.58);
 }
 .app-work-ql-panel {
   position: relative;
   width: min(40rem, calc(100vw - 3rem));
-  height: min(37.5rem, calc(100svh - 6rem));
+  height: var(--app-work-ql-h);
   overflow: hidden;
   border-radius: var(--radius-window);
+  /* an ink underlay under the frost: a 640px slab reads thick */
+  background-color: color-mix(in oklab, var(--color-ink-900) 74%, transparent);
   outline: none;
   cursor: grab;
   touch-action: none;
@@ -1257,20 +1344,77 @@ button.app-work-col:hover,
   background: rgba(5, 6, 10, 0.85);
 }
 .app-work-ql-x::before {
+  /* a 44px hit area around the 32px disc */
   content: "";
   position: absolute;
   inset: -0.375rem;
 }
 
+/* the planet, flying between its icon and the panel (never clipped by
+   either); it rides the glass once it lands */
+.app-work-ql-fly {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  pointer-events: none;
+  will-change: transform;
+}
+.app-work-ql-fly-in,
+.app-work-ql-fly .app-work-planet {
+  width: 100%;
+  height: 100%;
+}
+/* the icon (or hero) whose planet is out in Quick Look stands empty */
+[data-ql-away] .app-work-planet,
+[data-ql-away] .app-work-hero-planet {
+  visibility: hidden;
+}
+
+/* keyboard caption under the panel, on the scrim */
+.app-work-ql-hints {
+  position: absolute;
+  top: calc(50% + var(--app-work-ql-h) / 2 + 0.875rem);
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 1.125rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(5, 6, 10, 0.66);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  color: var(--color-label-2);
+  font: 0.75rem/1 var(--font-mono);
+  white-space: nowrap;
+  translate: -50% 0;
+  pointer-events: none;
+}
+.app-work-ql-hints > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+.app-work-ql-hints .app-work-kbd + .app-work-kbd {
+  margin-left: -0.125rem;
+}
+@media (pointer: coarse), (max-height: 680px) {
+  .app-work-ql-hints {
+    display: none;
+  }
+}
+
+/* the body: media on top, the facts in a scroller, the actions pinned */
 .app-work-qlb {
-  display: grid;
-  grid-template-rows: 14.5rem minmax(0, 1fr) auto;
+  display: flex;
+  flex-direction: column;
   height: 100%;
 }
 .app-work-qlb-media {
   position: relative;
   display: grid;
+  flex: none;
   place-items: center;
+  height: 12.5rem;
   overflow: hidden;
   background: #070912;
   box-shadow: inset 0 -1px 0 var(--hairline);
@@ -1289,9 +1433,22 @@ button.app-work-col:hover,
   pointer-events: none;
 }
 .app-work-qlb-body {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 1.375rem 1.75rem 1.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+.app-work-qlb-body[data-more-below] {
+  mask-image: linear-gradient(180deg, #000 calc(100% - 2.5rem), transparent);
+}
+.app-work-qlb-body[data-more-above] {
+  mask-image: linear-gradient(180deg, transparent, #000 2rem);
+}
+.app-work-qlb-body[data-more-above][data-more-below] {
+  mask-image: linear-gradient(180deg, transparent, #000 2rem, #000 calc(100% - 2.5rem), transparent);
 }
 .app-work-qlb-title {
   padding-right: 1rem;
@@ -1302,10 +1459,11 @@ button.app-work-col:hover,
   letter-spacing: var(--text-title-2--letter-spacing);
 }
 .app-work-qlb-desc {
-  margin-top: 0.625rem;
+  margin-top: 0.5rem;
   color: var(--color-label-2);
   font-size: var(--text-body);
   line-height: var(--text-body--line-height);
+  cursor: text;
   user-select: text;
   -webkit-user-select: text;
 }
@@ -1350,6 +1508,11 @@ button.app-work-col:hover,
   align-items: flex-start;
   gap: 0.25rem;
 }
+.app-work-qlb-when > span:first-child {
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.005em;
+}
 .app-work-qlb-when small {
   color: var(--color-label-3);
   font: 400 0.75rem/1 var(--font-mono);
@@ -1373,45 +1536,45 @@ button.app-work-col:hover,
 .app-work-topic:hover {
   background: color-mix(in oklab, var(--color-ion) 20%, transparent);
 }
-.app-work-qlb-actions {
+.app-work-topic .app-work-mark {
+  color: var(--color-label);
+}
+.app-work-qlb-bar {
   display: flex;
+  flex: none;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.5rem;
-  margin-top: 1.375rem;
-}
-.app-work-qlb-foot {
-  display: flex;
-  align-items: center;
-  gap: 1.125rem;
-  padding: 0.6875rem 1.75rem;
+  padding: 0.875rem 1.75rem 1rem;
   border-top: 1px solid var(--hairline);
-  background: rgba(5, 6, 10, 0.22);
-  color: var(--color-label-3);
-  font: 0.75rem/1 var(--font-mono);
-}
-.app-work-qlb-foot > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-}
-.app-work-qlb-foot .app-work-kbd + .app-work-kbd {
-  margin-left: -0.125rem;
-}
-.app-work-qlb-drag {
-  margin-left: auto;
+  background: rgba(5, 6, 10, 0.24);
 }
 @media (pointer: coarse) {
   .app-work-topic {
-    height: 2.25rem;
-  }
-  .app-work-qlb-foot {
-    display: none;
+    height: 2.75rem;
+    padding: 0 0.875rem;
   }
 }
 
-/* phone: the same body inside the shared Sheet */
+/* phone: the same body inside the shared Sheet, which scrolls as a whole */
 .app-work-sheet {
-  --sheet-bg: rgba(14, 16, 26, 0.9);
+  --sheet-bg: rgba(14, 16, 26, 0.92);
+  --ui-border: var(--hairline);
+  color: var(--color-label);
+}
+.app-work-qls {
+  position: relative;
+}
+.app-work-ql-x--sheet {
+  top: 0.75rem;
+  right: 0.5rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  background: rgba(5, 6, 10, 0.55);
+  backdrop-filter: blur(8px);
+}
+.app-work-ql-x--sheet::before {
+  inset: 0;
 }
 .app-work-qlb--sheet {
   display: block;
@@ -1429,15 +1592,21 @@ button.app-work-col:hover,
 }
 .app-work-qlb--sheet .app-work-qlb-body {
   overflow: visible;
-  padding: 1.25rem 0 0.5rem;
+  padding: 1.25rem 0 0;
 }
 .app-work-qlb--sheet .app-work-qlb-title {
+  padding-right: 0;
   font-size: 1.75rem;
 }
 .app-work-qlb--sheet .app-work-qlb-stats {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
-.app-work-qlb--sheet .app-work-qlb-actions > * {
+.app-work-qlb--sheet .app-work-qlb-bar {
+  padding: 1.375rem 0 0.5rem;
+  border-top: 0;
+  background: none;
+}
+.app-work-qlb--sheet .app-work-qlb-bar > * {
   flex: 1 1 auto;
   justify-content: center;
 }
@@ -1460,15 +1629,14 @@ button.app-work-col:hover,
     translate: none;
     scale: none;
   }
-  .app-work-coll .app-work-desc,
-  .app-work-coll .app-work-lang,
-  .app-work-coll .app-work-date,
+  .app-work-coll[data-view] :is(.app-work-desc, .app-work-lang, .app-work-date),
   .app-work-hl {
     animation: none;
   }
 }
 @media (prefers-reduced-transparency: reduce) {
-  .app-work-coll .app-work-cols {
+  .app-work-coll .app-work-cols,
+  .app-work-tb--inline {
     background: var(--color-ink-800);
     backdrop-filter: none;
   }

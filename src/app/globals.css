@@ -95,8 +95,10 @@
 
 @media (max-width: 767px) {
   :root {
-    /* the dock becomes an iOS-style tab bar */
-    --dock-h: calc(60px + env(safe-area-inset-bottom, 0px));
+    /* the dock becomes a floating tab bar capsule: 60px tall, floating
+       over the home indicator. --dock-h is everything it occupies. */
+    --os-tabbar-gap: max(10px, calc(env(safe-area-inset-bottom, 0px) - 8px));
+    --dock-h: calc(60px + var(--os-tabbar-gap));
   }
 }
 
@@ -289,6 +291,13 @@ html.has-cursor:has(dialog[open]) :is(a, button, [role="option"], [role="button"
 }
 .em-cursor--glass .em-cursor-ring:has(.em-cursor-label) {
   background: var(--ui-accent);
+}
+/* over a control: a hairline, never a lens over the label */
+.em-cursor--glass .em-cursor-ring[data-hover]:not(:has(.em-cursor-label)) {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: none;
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 4px 14px -8px rgba(0, 0, 0, 0.5);
 }
 .em-cursor--block .em-cursor-ring {
   border-radius: 2px;

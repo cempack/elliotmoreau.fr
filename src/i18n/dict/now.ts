@@ -126,7 +126,7 @@ const en = {
 };
 
 const fr: typeof en = {
-  kicker: "Ce que je fais en ce moment",
+  kicker: "Ce qui m’occupe",
   live: "En direct",
   where: "Paris, France",
   sentence: {

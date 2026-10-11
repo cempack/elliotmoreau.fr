@@ -123,6 +123,7 @@ function ToastCard({
       layout="position"
       // glass on the animated element itself, so the blur holds while it fades
       className="os-toast glass-thick"
+      data-cursor-hide=""
       initial={{ opacity: 0, x: OFF }}
       animate={{ opacity: 1, x: 0, transition: spring.default }}
       exit={{ opacity: 0, x: OFF, transition: { ...spring.default, opacity: { duration: 0.2, delay: 0.08 } } }}

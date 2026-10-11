@@ -46,7 +46,7 @@
     linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0) 42px),
     radial-gradient(120% 70% at 50% 0%, rgba(198, 255, 94, 0.03), transparent 60%),
     linear-gradient(180deg, rgba(12, 14, 22, 0.74), rgba(5, 6, 10, 0.86) 40%, rgba(5, 6, 10, 0.9));
-  backdrop-filter: blur(44px) saturate(1.9);
+  backdrop-filter: blur(12px) blur(12px) blur(10px) saturate(1.9);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.16),
     inset 0 0 0 1px rgba(255, 255, 255, 0.085);
@@ -72,68 +72,26 @@
 .os-term-win.is-dragging .os-term-titlebar {
   cursor: grabbing;
 }
+/* the lights are the app windows' (.os-win-light in window.css); here
+   they only sit closer to the corner, and grey out with the window */
 .os-term-lights {
   position: relative;
   z-index: 1;
-  display: flex;
-  gap: 2px;
-  margin-left: -4px;
+  margin-left: 4px;
 }
-.os-term-light {
-  display: grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-}
-.os-term-light::before {
-  content: "";
-  grid-area: 1 / 1;
-  width: 12px;
-  height: 12px;
-  border-radius: 999px;
-  background: var(--os-term-light);
-  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.25);
-}
-.os-term-light svg {
-  grid-area: 1 / 1;
-  width: 8px;
-  height: 8px;
-  fill: none;
-  stroke: rgba(5, 6, 10, 0.75);
-  stroke-width: 1.4;
-  stroke-linecap: round;
-  opacity: 0;
-  transition: opacity 0.12s;
-}
-.os-term-lights:hover .os-term-light svg,
-.os-term-light:focus-visible svg {
-  opacity: 1;
-}
-.os-term-light:focus-visible {
-  outline-offset: 0;
-  border-radius: 999px;
-}
-/* key window: a faint lime rim; background window: grey lights, like macOS */
+/* key window: a faint lime rim; background window: grey lights, like
+   macOS. While the Terminal is key, the app window behind it greys too. */
 .os-term-win:focus-within .os-term-glass {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.18),
     inset 0 0 0 1px rgba(198, 255, 94, 0.16);
 }
-.os-term-win:not(:focus-within) .os-term-lights:not(:hover) .os-term-light {
-  --os-term-light: var(--color-ink-500);
-}
-.os-term-light.is-close {
-  --os-term-light: var(--color-flare);
-}
-.os-term-light.is-min {
-  --os-term-light: var(--color-ember);
-}
-.os-term-light.is-zoom {
-  --os-term-light: var(--color-signal);
+.os-term-win:not(:focus-within) .os-win-lights:not(:hover) .os-win-light,
+html:has(.os-term-win:focus-within) .os-win .os-win-lights:not(:hover) .os-win-light {
+  --os-light: var(--color-ink-500);
+  box-shadow:
+    inset 0 0 0 0.5px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 .os-term-title {
   position: absolute;
@@ -681,25 +639,22 @@
   border: 0;
   border-radius: 999px;
   background: transparent;
+  color: var(--color-label-2);
   cursor: pointer;
 }
+/* same chip as the app window sheet's close (.os-win-x) */
 .os-term-done::before {
   content: "";
   grid-area: 1 / 1;
   width: 30px;
   height: 30px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   box-shadow: inset 0 0 0 1px var(--hairline);
 }
 .os-term-done svg {
+  position: relative;
   grid-area: 1 / 1;
-  width: 12px;
-  height: 12px;
-  fill: none;
-  stroke: var(--color-label-2);
-  stroke-width: 1.6;
-  stroke-linecap: round;
 }
 .os-term-sheet .os-term-scroll {
   padding: 12px 16px 12px;

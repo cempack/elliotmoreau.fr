@@ -59,7 +59,10 @@
 @media (min-width: 1200px) {
   .app-atlas-stage {
     display: grid;
-    grid-template-columns: 15.5rem minmax(0, 1fr) 21.75rem;
+    /* the card gives a little back on 1200–1400px screens so the globe
+       (and the stats under it) keep their room; place names never
+       truncate, so the list keeps its width */
+    grid-template-columns: 15.5rem minmax(0, 1fr) clamp(19.5rem, 24vw, 21.75rem);
     grid-template-rows: minmax(0, 1fr) auto;
     grid-template-areas:
       "places globe card"
@@ -79,6 +82,7 @@
     display: flex;
     justify-content: center;
     min-width: 0;
+    container-type: inline-size;
   }
 }
 
@@ -621,10 +625,14 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     inset 0 0 0 1px var(--hairline);
 }
+/* each cell spans three rows of the list (label, value, note) as a
+   subgrid, so values line up even when a label wraps */
 .app-atlas-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  align-content: start;
+  row-gap: 0.25rem;
   min-width: 0;
   padding: 0.75rem 1rem 0.8125rem;
 }
@@ -644,6 +652,7 @@
   display: flex;
   align-items: baseline;
   gap: 0.3125rem;
+  align-self: end;
   margin: 0;
   color: var(--color-label);
   font-family: var(--font-mono);
@@ -665,6 +674,21 @@
   font-size: var(--text-caption);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+/* a narrow globe column: tighter cells, and labels may take two lines
+   rather than run into their neighbours */
+@container (max-width: 31rem) {
+  .app-atlas-stat {
+    padding: 0.625rem 0.75rem 0.6875rem;
+  }
+  .app-atlas-stat-k {
+    letter-spacing: 0.03em;
+    white-space: normal;
+    line-height: 1.25;
+  }
+  .app-atlas-stat-v {
+    font-size: 1.25rem;
+  }
 }
 .app-atlas-stats[data-layout="grid"] .app-atlas-stats-list {
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -974,8 +998,9 @@
     margin-bottom: calc(-1 * (var(--dock-h) + env(safe-area-inset-bottom) + 1rem));
   }
 }
-@media (min-width: 768px) and (max-width: 1199px) {
-  /* tablets: an iPad Maps card on the left, the globe beside it */
+@media (min-width: 768px) and (max-width: 1199px) and (min-aspect-ratio: 5/4) {
+  /* landscape tablets: an iPad Maps sidebar on the left, the globe beside
+     it (BESIDE in AtlasApp.tsx) */
   .app-atlas-globe-slot {
     inset: 0 0 0 calc(min(25rem, 50%) + 1rem);
   }
@@ -1008,7 +1033,15 @@
     0 -14px 44px -16px rgba(0, 0, 0, 0.7);
   will-change: transform;
 }
-@media (min-width: 768px) {
+/* portrait tablets keep the phone layout, with the sheet a readable
+   column in the middle */
+@media (min-width: 640px) {
+  .app-atlas-sheet-clip {
+    right: max(0.5rem, calc((100% - 36rem) / 2));
+    left: max(0.5rem, calc((100% - 36rem) / 2));
+  }
+}
+@media (min-width: 768px) and (min-aspect-ratio: 5/4) {
   .app-atlas-sheet-clip {
     right: auto;
     left: 0.75rem;
@@ -1137,9 +1170,7 @@
   align-self: end;
   margin: 0;
   font-size: 2rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1;
 }
 .app-atlas-card[data-compact] .app-atlas-card-meta {
   flex-direction: row;
@@ -1150,6 +1181,28 @@
 }
 .app-atlas-card[data-compact] .app-atlas-card-region {
   display: none;
+}
+.app-atlas-card[data-compact] .app-atlas-facts {
+  column-gap: 0;
+}
+.app-atlas-card[data-compact] .app-atlas-fact {
+  padding-right: 0.75rem;
+}
+.app-atlas-fact--sub {
+  margin-top: 0.125rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--hairline);
+}
+.app-atlas-fact--sub dd {
+  margin-top: 0.3125rem;
+}
+.app-atlas-fact-text {
+  color: var(--color-label);
+  font-size: var(--text-callout);
+  line-height: 1.6;
+}
+.app-atlas-fact--sub .app-atlas-coords {
+  font-size: 0.8125rem;
 }
 .app-atlas-card[data-compact] .app-atlas-facts {
   margin-top: 1.25rem;

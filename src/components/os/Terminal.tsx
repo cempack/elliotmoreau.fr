@@ -8,6 +8,7 @@ import { useFinePointer, useMedia } from "@/hooks/env";
 import { useSound } from "@/lib/sound";
 import { Session, Welcome, LangHello } from "./terminal/Session";
 import { DesktopWindow, MobileSheet } from "./terminal/Frame";
+import { claimSurface, useSurfaceYield } from "./surface";
 
 /**
  * CONTRACT (owner: boot/terminal agent)
@@ -112,6 +113,7 @@ export function TerminalProvider({ children }: { children: React.ReactNode }) {
         opener.current = a instanceof HTMLElement && a !== document.body ? a : null;
         begin();
         blip("open");
+        claimSurface("terminal");
       } else {
         blip("close");
         // hand focus back to whatever opened us, if focus is still ours
@@ -127,6 +129,12 @@ export function TerminalProvider({ children }: { children: React.ReactNode }) {
   );
 
   const toggle = useCallback(() => setOpen(!openRef.current), [setOpen]);
+
+  // on a phone the Terminal is a sheet: a menu bar panel dropping down
+  // replaces it (on desktop it is a window, and menus open over windows)
+  useSurfaceYield("terminal", (id) => {
+    if (id === "menu" && openRef.current && window.matchMedia("(max-width: 767px)").matches) setOpen(false);
+  });
 
   const clear = useCallback(() => setEntries([]), []);
   const reset = useCallback(() => {

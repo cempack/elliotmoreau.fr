@@ -86,15 +86,27 @@ export function inFilter(repo: RepoInfo, f: Filter, recent: Set<string>) {
   }
 }
 
-/** [value, count] pairs, most frequent first, then alphabetical. */
-function tally(values: string[]) {
-  const m = new Map<string, number>();
-  for (const v of values) if (v) m.set(v, (m.get(v) ?? 0) + 1);
-  return [...m].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+/**
+ * [value, count] pairs: most frequent first, then by the stars of the repos
+ * that carry it (so the owner's core topics lead a field of ones), then
+ * alphabetical.
+ */
+function tally(pairs: [string, number][]) {
+  const m = new Map<string, { n: number; stars: number }>();
+  for (const [v, stars] of pairs) {
+    if (!v) continue;
+    const e = m.get(v) ?? { n: 0, stars: 0 };
+    e.n += 1;
+    e.stars += stars;
+    m.set(v, e);
+  }
+  return [...m]
+    .sort((a, b) => b[1].n - a[1].n || b[1].stars - a[1].stars || a[0].localeCompare(b[0]))
+    .map(([v, e]) => [v, e.n] as [string, number]);
 }
 
-export const languagesOf = (repos: RepoInfo[]) => tally(repos.map((r) => r.language));
-export const tagsOf = (repos: RepoInfo[]) => tally(repos.flatMap((r) => r.topics));
+export const languagesOf = (repos: RepoInfo[]) => tally(repos.map((r) => [r.language, r.stars]));
+export const tagsOf = (repos: RepoInfo[]) => tally(repos.flatMap((r) => r.topics.map((t) => [t, r.stars] as [string, number])));
 
 export function pickFeatured(repos: RepoInfo[]): RepoInfo | null {
   for (const name of PINNED) {

@@ -5,6 +5,7 @@ import { m } from "motion/react";
 import { useSound } from "@/lib/sound";
 import { lenisRef } from "@/lib/lenisRef";
 import { spring } from "@/lib/motion";
+import { claimSurface } from "@/components/os/surface";
 
 export type Command = {
   id: string;
@@ -53,6 +54,9 @@ export function CommandPalette({
   const inputRef = useRef<HTMLInputElement>(null);
   const [visible, setVisible] = useState(false);
   const visibleRef = useRef(false);
+  /** the chosen command, run once the dialog has really closed */
+  const pending = useRef<Command | null>(null);
+  const pendingTimer = useRef(0);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const { blip } = useSound();
@@ -84,6 +88,7 @@ export function CommandPalette({
     setActive(0);
     lenisRef.current?.stop();
     blip("open");
+    claimSurface("palette");
     requestAnimationFrame(() => inputRef.current?.focus());
   }, [blip]);
 
@@ -112,11 +117,29 @@ export function CommandPalette({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, close]);
 
+  /**
+   * The dialog leaves first, then the command runs. A modal <dialog> makes
+   * the rest of the page inert until it closes, and closing restores focus
+   * to whatever had it before: anything the command focuses (the Terminal
+   * prompt, a menu bar panel) has to come after both.
+   */
+  const finish = useCallback(() => {
+    window.clearTimeout(pendingTimer.current);
+    const d = dialogRef.current;
+    if (d?.open && !visibleRef.current) d.close();
+    const c = pending.current;
+    pending.current = null;
+    c?.perform();
+  }, []);
+
   const run = (c: Command) => {
+    pending.current = c;
     close();
-    // let the panel start leaving before the action (navigation) lands
-    window.setTimeout(() => c.perform(), 60);
+    // safety net in case the exit animation never reports back
+    window.clearTimeout(pendingTimer.current);
+    pendingTimer.current = window.setTimeout(finish, 320);
   };
+  useEffect(() => () => window.clearTimeout(pendingTimer.current), []);
 
   const onInputKey = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
@@ -158,10 +181,11 @@ export function CommandPalette({
         <m.div
           className="em-palette-panel"
           initial={false}
-          animate={visible ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: -12, scale: 0.97 }}
-          transition={spring.snappy}
+          animate={visible ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: -8, scale: 0.98 }}
+          // in on a spring, out quickly: a chosen command shouldn't wait
+          transition={visible ? spring.snappy : { duration: 0.14, ease: [0.4, 0, 1, 1] }}
           onAnimationComplete={() => {
-            if (!visibleRef.current && dialogRef.current?.open) dialogRef.current.close();
+            if (!visibleRef.current && dialogRef.current?.open) finish();
           }}
         >
           <div className="em-palette-field">

@@ -1,0 +1,385 @@
+/* ─────────────────────────── emOS · 404 (notfound) ───────────────────────────
+   One Liquid Glass alert over the desktop, sitting on the 0 of a giant
+   voxel "404" so the glass bends the pixels behind it. Calm type, one
+   lime default button, mono for the zsh transcript. */
+
+.app-nf {
+  /* one cell of the 404: 30 cells across (24 of ink + relief padding) */
+  --nf-cell: clamp(16px, 2.35vw, 36px);
+  position: relative;
+  display: grid;
+  flex: 1;
+  min-height: 100svh;
+  padding: calc(var(--menubar-h) + 1.5rem) 1rem calc(var(--dock-h) + 1.5rem);
+  overflow: clip;
+}
+
+.app-nf-backdrop,
+.app-nf-center {
+  display: grid;
+  grid-area: 1 / 1;
+  min-width: 0;
+  place-items: center;
+}
+.app-nf-center {
+  pointer-events: none;
+}
+.app-nf-center > * {
+  pointer-events: auto;
+}
+
+/* ── the giant 404 ── */
+.app-nf-matrix {
+  display: block;
+  width: calc(var(--nf-cell) * 30);
+  max-width: 100%;
+  height: auto;
+  overflow: visible;
+  filter: drop-shadow(0 18px 40px rgba(5, 6, 10, 0.45));
+}
+@media (prefers-reduced-motion: no-preference) {
+  .app-nf-matrix-col {
+    animation: app-nf-ignite 560ms steps(1, end) var(--d) backwards;
+  }
+  .app-nf-matrix-flicker {
+    animation: app-nf-flicker 7.5s steps(1, end) 2.6s infinite;
+  }
+}
+@keyframes app-nf-ignite {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  46% {
+    opacity: 0.25;
+  }
+  62%,
+  100% {
+    opacity: 1;
+  }
+}
+/* a dying LED: mostly on, a stutter, a long dark blink */
+@keyframes app-nf-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  58% {
+    opacity: 0.18;
+  }
+  59% {
+    opacity: 1;
+  }
+  61% {
+    opacity: 0.12;
+  }
+  63% {
+    opacity: 1;
+  }
+  86% {
+    opacity: 0.3;
+  }
+  92% {
+    opacity: 1;
+  }
+}
+
+/* ── the alert ── */
+.app-nf-pop {
+  will-change: transform;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .app-nf-pop {
+    animation: app-nf-pop 620ms var(--ease-spring) 120ms backwards;
+  }
+}
+@keyframes app-nf-pop {
+  from {
+    scale: 0.94;
+  }
+}
+
+.app-nf-alert {
+  --os-glass-rblur: 6px;
+  position: relative;
+  width: min(21.5rem, calc(100vw - 2rem));
+  border-radius: var(--radius-window);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 30px 70px -26px rgba(0, 0, 0, 0.78);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.app-nf-alert[data-dragging] {
+  cursor: grabbing;
+}
+/* the thick glass leans darker here: the brightest bands of the 404 sit
+   right behind the title */
+.app-nf-alert .os-glass {
+  --os-glass-tint: rgba(11, 12, 21, 0.72);
+}
+html[data-sky="day"] .app-nf-alert .os-glass {
+  --os-glass-tint: rgba(6, 14, 30, 0.82);
+}
+.app-nf-alert-glass {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.app-nf-alert-lift {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 56px 120px -34px rgba(0, 0, 0, 0.85);
+  opacity: 0;
+  pointer-events: none;
+}
+.app-nf-alert[data-refused] {
+  box-shadow:
+    0 0 0 2px var(--color-flare),
+    0 30px 70px -26px rgba(0, 0, 0, 0.78);
+}
+
+.app-nf-alert-body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.625rem 1.25rem 1.25rem;
+  text-align: center;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .app-nf-alert-body {
+    animation: app-nf-fade 420ms var(--ease-out-quint) 160ms backwards;
+  }
+}
+@keyframes app-nf-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* broken icon + its fallen pixels */
+.app-nf-icon {
+  position: relative;
+  display: block;
+  flex: none;
+  margin-bottom: 1.5rem;
+}
+.app-nf-icon-tile {
+  display: block;
+  box-shadow:
+    0 1.3px 2px rgba(0, 0, 0, 0.38),
+    0 8px 16px -6px rgba(0, 0, 0, 0.55);
+}
+.app-nf-icon-tile svg {
+  display: block;
+}
+.app-nf-frag {
+  position: absolute;
+  box-shadow: 0 1px 0 rgba(5, 6, 10, 0.5);
+}
+
+.app-nf-title {
+  max-width: 18rem;
+  color: var(--color-label);
+  font-size: var(--text-headline);
+  font-weight: 650;
+  line-height: 1.32;
+  letter-spacing: -0.014em;
+  text-wrap: balance;
+}
+.app-nf-path {
+  overflow-wrap: anywhere;
+}
+.app-nf-text {
+  max-width: 18.5rem;
+  margin-top: 0.5rem;
+  color: var(--color-label-2);
+  font-size: var(--text-footnote);
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+/* zsh transcript */
+.app-nf-zsh {
+  align-self: stretch;
+  margin-top: 1.125rem;
+  padding: 0.625rem 0.75rem 0.6875rem;
+  border-radius: var(--radius-control);
+  background: rgba(5, 6, 10, 0.52);
+  box-shadow:
+    inset 0 0 0 1px var(--hairline),
+    inset 0 1px 3px rgba(0, 0, 0, 0.4);
+  color: var(--color-label-2);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.6;
+  text-align: left;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+.app-nf-zsh-prompt {
+  color: var(--color-signal);
+}
+.app-nf-zsh-cmd {
+  color: var(--color-label);
+}
+.app-nf-zsh-fix {
+  color: var(--color-ion);
+}
+.app-nf-zsh-key {
+  position: relative;
+  padding: 0 0.0625rem;
+  border-radius: 3px;
+  color: var(--color-signal);
+  font: inherit;
+  text-decoration: underline dotted rgba(198, 255, 94, 0.55);
+  text-underline-offset: 3px;
+  cursor: pointer;
+  transition: background-color 0.15s var(--ease-out-quint);
+}
+/* a bigger hit area than the letter itself */
+.app-nf-zsh-key::before {
+  content: "";
+  position: absolute;
+  inset: -6px -2px;
+}
+.app-nf-zsh-key:hover:not(:disabled) {
+  background: rgba(198, 255, 94, 0.18);
+}
+.app-nf-zsh-key:disabled {
+  color: var(--color-label-3);
+  text-decoration: none;
+  cursor: default;
+}
+.app-nf-zsh-key[data-picked] {
+  color: var(--color-signal);
+}
+.app-nf-zsh-key:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 1px;
+}
+.app-nf-zsh-answer {
+  color: var(--color-label);
+}
+.app-nf-zsh-caret {
+  display: inline-block;
+  width: 0.55em;
+  height: 1.15em;
+  margin-left: 0.1em;
+  vertical-align: -0.22em;
+  background: var(--color-label-2);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .app-nf-zsh-caret {
+    animation: app-nf-blink 1.06s steps(1, end) infinite;
+  }
+}
+@keyframes app-nf-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* buttons: macOS alert style, the default one lime and last */
+.app-nf-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  align-self: stretch;
+  margin-top: 1.125rem;
+}
+.app-nf-actions--stack {
+  grid-template-columns: 1fr;
+}
+.app-nf-actions-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+.app-nf-btn {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.75rem;
+  border-radius: var(--radius-control);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow:
+    inset 0 0 0 1px var(--hairline),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  color: var(--color-label);
+  font-size: var(--text-footnote);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.18s var(--ease-out-quint);
+}
+.app-nf-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+.app-nf-btn--primary {
+  background: var(--color-signal);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(5, 6, 10, 0.18),
+    0 8px 20px -10px rgba(198, 255, 94, 0.55);
+  color: var(--color-ink-950);
+}
+.app-nf-btn--primary:hover {
+  background: #d4ff80;
+}
+.app-nf-btn:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 2px;
+}
+.app-nf-btn--primary:focus-visible {
+  outline-color: var(--color-label);
+}
+@media (pointer: coarse) {
+  .app-nf-btn {
+    min-height: 2.75rem;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .app-nf-btn {
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+  }
+  .app-nf-zsh {
+    background: var(--color-ink-950);
+  }
+}
+@media (forced-colors: active) {
+  .app-nf-btn,
+  .app-nf-zsh {
+    border: 1px solid CanvasText;
+  }
+}
+
+/* ── phones: the 404 heads the screen, the alert below it ── */
+@media (max-width: 767px) {
+  .app-nf {
+    --nf-cell: calc((100vw - 2rem) / 30);
+    grid-template-rows: auto auto;
+    align-content: center;
+    row-gap: 0.25rem;
+    padding-top: calc(var(--menubar-h) + 1rem);
+    padding-bottom: calc(var(--dock-h) + 1rem);
+  }
+  .app-nf-backdrop {
+    grid-area: 1 / 1;
+  }
+  .app-nf-center {
+    grid-area: 2 / 1;
+  }
+  .app-nf-alert {
+    width: min(22rem, calc(100vw - 2rem));
+  }
+}
