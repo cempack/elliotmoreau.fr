@@ -58,7 +58,7 @@ export function Featured({
         type="button"
         className="app-work-hero-stage"
         onClick={onQuickLook}
-        aria-label={`${f.quickLook}: ${repo.name}`}
+        aria-label={fmt(f.quickLookOf, { name: repo.name })}
         data-cursor={f.quickLook}
       >
         <DitherStage tone="ion" />

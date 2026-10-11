@@ -141,7 +141,7 @@ const fr: typeof en = {
     prev: "Cartes précédentes",
     next: "Cartes suivantes",
     show: "S’y envoler",
-    map: "Carte en pixels : {place}",
+    map: "Carte en pixels : {place}",
   },
   sheet: {
     label: "Panneau de l’atlas",
@@ -152,7 +152,7 @@ const fr: typeof en = {
     places: "Tous les lieux",
   },
   km: "km",
-  labelled: "{label}\u202F: {value}",
+  labelled: "{label} : {value}",
   regions: {
     europe: "Europe",
     "north america": "Amérique du Nord",
@@ -165,7 +165,7 @@ const fr: typeof en = {
   compass: ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSO", "SO", "OSO", "O", "ONO", "NO", "NNO"],
   notes: {
     france: "Le camp de base. Là où le code s’écrit, et où chaque voyage commence et se termine.",
-    canada: "Des ciels immenses, et une échelle qui redéfinit doucement ce qu’on appelle « loin ».",
+    canada: "Des ciels immenses, et une échelle qui redéfinit doucement ce qu’on appelle « loin ».",
     ireland: "Un vert que les photos ne rendent jamais, et une météo qui change d’avis toutes les heures.",
     "northern-ireland": "Une côte de basalte, les embruns, et un vent qui vous réveille pour de bon.",
     canaries: "Un sol volcanique, la lumière de l’Atlantique, et cette drôle d’impression d’été hors saison.",

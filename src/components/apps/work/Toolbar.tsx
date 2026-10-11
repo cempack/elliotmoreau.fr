@@ -7,7 +7,7 @@ import { spring } from "@/lib/motion";
 import { useSound } from "@/lib/sound";
 import { PixelGlyph } from "@/components/glyphs";
 import { G_ALL, G_CHECK, G_CHEVRON, G_CLOSE, G_LIST, G_SEARCH, G_SORT } from "./glyphs";
-import { SORTS, type SortKey } from "./model";
+import { SORTS, fmt, type SortKey } from "./model";
 
 type View = "icons" | "list";
 
@@ -200,7 +200,7 @@ function SortMenu({ sort, onSort, disabled }: { sort: SortKey; onSort: (s: SortK
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? `${id}-menu` : undefined}
-        aria-label={`${tb.sortBy}: ${label(sort)}`}
+        aria-label={fmt(tb.sortCurrent, { sort: label(sort) })}
         disabled={disabled}
         onPointerDown={(e) => {
           if (e.button !== 0 || e.pointerType !== "mouse") return;
