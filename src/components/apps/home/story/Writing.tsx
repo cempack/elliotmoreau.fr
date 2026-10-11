@@ -14,6 +14,7 @@ import type { GhostPost } from "@/lib/ghost";
 import { ChapterHead } from "./ChapterHead";
 import { Arrow } from "./Deck";
 import { fill, fmtDate } from "./util";
+import { readPip } from "../../pip";
 
 const BLOG_URL = (process.env.NEXT_PUBLIC_BLOG_URL || "https://blog.elliotmoreau.fr").replace(/\/$/, "");
 const FOLLOW = { stiffness: 420, damping: 40, mass: 0.7 };
@@ -22,74 +23,91 @@ type Box = { l: number; t: number; r: number; b: number };
 type Dock = "below" | "above" | "beside";
 type Spot = { x: number; y: number; fit: number; dock: Dock; follow: boolean; score: number };
 
-const box = (r: DOMRect): Box => ({ l: r.left, t: r.top, r: r.right, b: r.bottom });
+const box = (r: { left: number; top: number; right: number; bottom: number }): Box => ({ l: r.left, t: r.top, r: r.right, b: r.bottom });
 const overlap = (a: Box, b: Box) => Math.max(0, Math.min(a.r, b.r) - Math.max(a.l, b.l)) * Math.max(0, Math.min(a.b, b.b) - Math.max(a.t, b.t));
-/** the ink of a title, not its grid cell (titles end where their words do) */
-function inkBox(el: Element | null) {
-  if (!el) return null;
+/** the ink of some words, line by line (titles end where their words do) */
+function lineBoxes(el: Element | null): Box[] {
+  if (!el) return [];
   const range = document.createRange();
   range.selectNodeContents(el);
-  return box(range.getBoundingClientRect());
+  return Array.from(range.getClientRects())
+    .filter((r) => r.width > 0 && r.height > 0)
+    .map(box);
 }
+
+type Found = {
+  best: Spot | null;
+  /** the score of the plate at a given spot, or null where it would cover words */
+  scoreAt: (x: number, y: number, fit: number) => number | null;
+};
 
 /**
  * Where the plate goes for the hovered row: the clear spot nearest the
- * pointer. Candidates: under the row or over it (following the pointer),
- * beside its own title (in the row's empty stretch before the tag), or
- * over/under it but slid right past the neighbouring titles. Each is shrunk
- * a little if that's what it takes to fit between the menu bar and the
- * Dock; the score is what it would cover (a title costs far more than a
- * tag, the row being read most of all), then the shrink, then the
- * distance from the pointer.
+ * pointer. It never covers words that are read: no post title (the
+ * hovered one or its neighbours), nor the chapter's heading and links.
+ * Candidates: under or over the row (following the pointer), beside its
+ * own title in the row's empty stretch, and slid past whatever words
+ * stand in the way, sideways or up and down; each shrunk a little if
+ * that is what it takes to fit between the menu bar and the Dock. Among
+ * the clear ones the score is the small print it would sit on (dates,
+ * tags, the mini player), then the shrink, then the distance from the
+ * pointer and from the row. Null when nothing is clear: it stays hidden.
  */
-function findSpot(rows: HTMLElement[], i: number, px: number, w: number, h: number, floor: number): Spot | null {
+function findSpot(rows: HTMLElement[], i: number, px: number, w: number, h: number, floor: number): Found | null {
   const row = rows[i];
   if (!row) return null;
   const R = box(row.getBoundingClientRect());
-  const titles = rows.map((el) => inkBox(el.querySelector(".app-story-wr-title")));
-  const metas = rows.map((el) => {
-    const m = el.querySelector(".app-story-wr-meta");
-    return m ? box(m.getBoundingClientRect()) : null;
-  });
-  // the chapter's own heading and its links are words to keep clear too
+  const titles = rows.map((el) => lineBoxes(el.querySelector(".app-story-wr-title")));
   const head = row.closest("section");
-  const heading = inkBox(head?.querySelector(".app-story-title") ?? null);
+  const hard: Box[] = [...titles.flat(), ...lineBoxes(head?.querySelector(".app-story-title") ?? null)];
   const aside = head?.querySelector(".app-story-head-aside")?.getBoundingClientRect();
-  const pip = document.querySelector(".os-pip")?.getBoundingClientRect();
+  if (aside && aside.width) hard.push(box(aside));
+  const soft: [Box, number][] = [];
+  rows.forEach((el, j) => {
+    for (const sel of [".app-story-wr-meta", ".app-story-wr-date"]) {
+      const m = el.querySelector(sel);
+      if (m) soft.push([box(m.getBoundingClientRect()), j === i ? 6 : 1]);
+    }
+  });
+  const pip = readPip();
+  if (pip) soft.push([box(pip), 4]);
   const vw = window.innerWidth;
   const top = parseFloat(getComputedStyle(row).scrollMarginTop) || 56;
   const gap = 12;
-  const own = titles[i];
-  const spots: Spot[] = [];
-  const add = (x: number, y: number, fit: number, dock: Dock, follow: boolean) => {
-    const W = w * fit;
-    const H = h * fit;
-    const cx = Math.min(Math.max(16, x), vw - W - 16);
-    if (y < top - 0.5 || y + H > floor + 0.5) return;
-    const P = { l: cx, t: y, r: cx + W, b: y + H };
+  const mid = (R.t + R.b) / 2;
+  const ownRight = titles[i].length ? Math.max(...titles[i].map((b) => b.r)) : R.l;
+
+  const scoreAt = (x: number, y: number, fit: number) => {
+    const P = { l: x, t: y, r: x + w * fit, b: y + h * fit };
+    if (P.t < top - 0.5 || P.b > floor + 0.5 || P.l < 15.5 || P.r > vw - 15.5) return null;
+    if (hard.some((o) => overlap(P, o) > 0)) return null;
     let score = 0;
-    titles.forEach((t, j) => t && (score += overlap(P, t) * (j === i ? 60 : 12)));
-    metas.forEach((m, j) => m && (score += overlap(P, m) * (j === i ? 6 : 1)));
-    if (heading) score += overlap(P, heading) * 12;
-    if (aside && aside.width) score += overlap(P, box(aside)) * 12;
-    if (pip && pip.width) score += overlap(P, box(pip)) * 4;
-    score += (1 - fit) * 9000 + Math.abs(cx - (px - 56)) * 3;
-    spots.push({ x: cx, y, fit, dock, follow, score });
+    for (const [o, k] of soft) score += overlap(P, o) * k;
+    return score + (1 - fit) * 9000 + Math.abs(x - (px - 56)) * 3 + Math.abs((P.t + P.b) / 2 - mid) * 2;
   };
-  // slid right past every title the plate would sit over
-  const past = (y: number, H: number) =>
-    [...titles.filter((_, j) => j !== i), heading].reduce((x, t) => (t && t.b > y && t.t < y + H ? Math.max(x, t.r + 28) : x), 0);
-  for (const fit of [1, 0.88, 0.76]) {
+
+  let best: Spot | null = null;
+  for (const fit of [1, 0.88, 0.76, 0.64]) {
+    const W = w * fit;
     const H = h * fit;
     const below = R.b + gap;
     const above = R.t - gap - H;
-    add(px - 56, below, fit, "below", true);
-    add(px - 56, above, fit, "above", true);
-    add(past(below, H) || px - 56, below, fit, "below", false);
-    add(past(above, H) || px - 56, above, fit, "above", false);
-    if (own) add(own.r + 32, Math.min(Math.max(top, (R.t + R.b) / 2 - H / 2), floor - H), fit, "beside", false);
+    const xs = [px - 56, ownRight + 32, ...hard.map((o) => o.r + 24), vw - W - 16];
+    for (const x0 of xs) {
+      const x = Math.round(Math.min(Math.max(16, x0), vw - W - 16));
+      const ys = [below, above, mid - H / 2];
+      // just clear of every word standing in this column
+      for (const o of hard) if (o.l < x + W && o.r > x) ys.push(o.b + gap, o.t - gap - H);
+      for (const y0 of ys) {
+        const y = Math.round(y0);
+        const score = scoreAt(x, y, fit);
+        if (score === null || (best && score >= best.score)) continue;
+        const dock: Dock = y >= R.b - 1 ? "below" : y + H <= R.t + 1 ? "above" : "beside";
+        best = { x, y, fit, dock, follow: x0 === px - 56 && dock !== "beside", score };
+      }
+    }
   }
-  return spots.reduce<Spot | null>((best, sp) => (!best || sp.score < best.score ? sp : best), null);
+  return { best, scoreAt };
 }
 
 /** Ghost's placeholder art is not a real cover. */
@@ -101,8 +119,7 @@ const realImage = (p: GhostPost) => (p.feature_image && !/static\.ghost\.org/.te
  * mouse, a plate follows the pointer along the row on a spring, swinging
  * a little with its speed. It docks in the clearest spot near the pointer
  * (under the row, over it, beside its title, or slid past the other
- * titles), so it never covers the title being read and keeps off the
- * others where it can. It slides like a film strip between the posts'
+ * titles), and never over a title, the heading or its links. It slides like a film strip between the posts'
  * covers (or their pixel planets) with the excerpt beneath.
  */
 export function WritingChapter() {
@@ -117,6 +134,7 @@ export function WritingChapter() {
   const [last, setLast] = useState(0);
   const [dock, setDock] = useState<Dock>("below");
   const [fit, setFit] = useState(1);
+  const [blocked, setBlocked] = useState(false);
   const listRef = useRef<HTMLOListElement>(null);
   const plateRef = useRef<HTMLDivElement>(null);
   const lastX = useRef(0);
@@ -128,7 +146,7 @@ export function WritingChapter() {
   });
 
   /** the spot picked for the row being read (kept while the pointer stays on it) */
-  const spot = useRef<{ i: number; sp: Spot } | null>(null);
+  const spot = useRef<{ i: number; sp: Spot; dy: number } | null>(null);
 
   /** where the plate goes for row i: the clearest spot near the pointer */
   const place = (i: number, clientX: number, jump: boolean) => {
@@ -138,14 +156,28 @@ export function WritingChapter() {
     // the clear band ends above the Dock (the story's probe measures it)
     const probe = document.querySelector(".app-story-probe");
     const floor = window.innerHeight - (probe ? parseFloat(getComputedStyle(probe).paddingBottom) || 96 : 96);
-    const next = findSpot(rows, i, clientX, plate.offsetWidth, plate.offsetHeight, floor);
-    if (!next) return;
-    // a spot that follows the pointer keeps following it along the row;
-    // the choice only changes for another row, or for a clearly better one
+    const found = findSpot(rows, i, clientX, plate.offsetWidth, plate.offsetHeight, floor);
+    if (!found) return;
+    // a spot that follows the pointer keeps following it along the row
+    // while it stays clear; the choice only changes for another row, or
+    // for a clearly better one
     const prev = spot.current;
-    const keep = prev && prev.i === i && !jump && prev.sp.follow && next.score > prev.sp.score * 0.6 - 2000;
-    const sp = keep ? { ...prev.sp, x: Math.min(Math.max(16, clientX - 56), window.innerWidth - plate.offsetWidth * prev.sp.fit - 16) } : next;
-    spot.current = { i, sp };
+    const rowTop = rows[i].getBoundingClientRect().top;
+    let sp = found.best;
+    if (prev && prev.i === i && !jump && prev.sp.follow) {
+      // the same place relative to the row (the page may have scrolled)
+      const x = Math.round(Math.min(Math.max(16, clientX - 56), window.innerWidth - plate.offsetWidth * prev.sp.fit - 16));
+      const y = Math.round(rowTop + prev.dy);
+      const kept = found.scoreAt(x, y, prev.sp.fit);
+      if (kept !== null && (!sp || sp.score > kept * 0.6 - 2000)) sp = { ...prev.sp, x, y, score: kept };
+    }
+    // nowhere clear (a cramped window): it stays out of the way
+    setBlocked(!sp);
+    if (!sp) {
+      spot.current = null;
+      return;
+    }
+    spot.current = { i, sp, dy: sp.y - rowTop };
     setDock(sp.dock);
     setFit(sp.fit);
     // the spot is the scaled plate's box; the plate scales about the edge
@@ -271,7 +303,7 @@ export function WritingChapter() {
           data-dock={dock}
           style={{ x: px, y: py, rotate: reduced ? 0 : swing }}
           initial={false}
-          animate={hover !== null ? { opacity: 1, scale: fit } : { opacity: 0, scale: 0.86 * fit }}
+          animate={hover !== null && !blocked ? { opacity: 1, scale: fit } : { opacity: 0, scale: 0.86 * fit }}
           transition={spring.default}
         >
           <div className="app-story-wr-plate-win">
