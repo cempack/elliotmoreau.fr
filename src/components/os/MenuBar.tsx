@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, m, useScroll, useTransform } from "motion/react";
 import { useI18n } from "@/i18n/client";
@@ -9,7 +10,7 @@ import { useIsMac } from "@/hooks/env";
 import { useSpotifyStatus } from "@/hooks/useSpotifyStatus";
 import { useParisTime } from "@/hooks/useParisTime";
 import { usePalette } from "@/components/ui/CommandPalette";
-import { appForPath } from "./apps";
+import { APPS, appForPath, type AppDef } from "./apps";
 import { useSiteData } from "./SiteData";
 import { MenuItem, MenuProvider, useMenu, type Align, type PanelId } from "./menubar/Panel";
 import { AboutPanel } from "./menubar/About";
@@ -21,21 +22,21 @@ import { fill } from "./menubar/util";
 import "./menubar.css";
 
 /**
- * emOS menu bar. A fixed glass strip (height var(--menubar-h)) that starts
- * nearly clear over the wallpaper and gains material as the page scrolls
- * under it. Left: the emOS mark (About this site, which holds Restart) and
- * the current app. Right: a live status strip: now playing, Control Center,
- * Spotlight and the Paris clock (Notification Center). Every panel grows
- * out of its trigger, only one is open at a time, and Spotlight commands
- * can open them too (window event "em:menubar" with a PanelId detail).
- * Condensed under 768px, where panels become sheets from the top.
+ * emOS top bar, waybar-style. Left: the emOS mark (About, Restart, Lock)
+ * and the workspaces, one per app, numbered like the dock shortcuts.
+ * Centre: date and Paris time (Notification Center). Right: now playing,
+ * Control Center and Spotlight. Every panel grows out of its trigger,
+ * only one is open at a time, and Spotlight commands can open them too
+ * (window event "em:menubar" with a PanelId detail). Under 768px the
+ * workspaces give way to the app's name (the tab bar switches apps) and
+ * panels become sheets from the top.
  */
 
 const PANELS: Record<PanelId, { width: number; align: Align }> = {
   about: { width: 520, align: "start" },
   music: { width: 328, align: "center" },
   control: { width: 344, align: "end" },
-  notifications: { width: 372, align: "edge" },
+  notifications: { width: 372, align: "center" },
 };
 
 export function MenuBar() {
@@ -62,6 +63,33 @@ function AppName({ id, label }: { id: string; label: string }) {
         </m.span>
       </AnimatePresence>
     </span>
+  );
+}
+
+/** One workspace per app: the active one is a filled block, the others
+    their number (the dock's 1–6 shortcuts). */
+function Workspaces({ current }: { current: AppDef }) {
+  const { t, path } = useI18n();
+  return (
+    <nav className="os-menubar-ws" aria-label={t.shell.menu.workspaces}>
+      {APPS.map((a) => {
+        const on = a.id === current.id;
+        const name = t.shell.apps[a.label];
+        return (
+          <Link
+            key={a.id}
+            href={path(a.path)}
+            transitionTypes={["app-open"]}
+            className="os-menubar-ws-btn"
+            aria-current={on ? "page" : undefined}
+            aria-label={`${a.key} ${name}`}
+            title={name}
+          >
+            {on ? <i className="os-menubar-ws-on" aria-hidden /> : <span aria-hidden>{a.key}</span>}
+          </Link>
+        );
+      })}
+    </nav>
   );
 }
 
@@ -116,7 +144,21 @@ function Bar() {
         >
           <AboutPanel />
         </MenuItem>
+        <Workspaces current={app} />
         <AppName id={app.id} label={s.apps[app.label]} />
+      </div>
+
+      <div className="os-menubar-side os-menubar-center">
+        <MenuItem
+          id="notifications"
+          label={fill(s.menu.clock, { time: time ?? "" })}
+          panelLabel={s.menu.notifications}
+          className="os-menubar-clock"
+          {...PANELS.notifications}
+          trigger={<ClockTrigger time={time} />}
+        >
+          <NotificationPanel music={music} />
+        </MenuItem>
       </div>
 
       <div className="os-menubar-side os-menubar-right">
@@ -161,16 +203,6 @@ function Bar() {
             </kbd>
           </button>
         </div>
-        <MenuItem
-          id="notifications"
-          label={fill(s.menu.clock, { time: time ?? "" })}
-          panelLabel={s.menu.notifications}
-          className="os-menubar-clock"
-          {...PANELS.notifications}
-          trigger={<ClockTrigger time={time} />}
-        >
-          <NotificationPanel music={music} />
-        </MenuItem>
       </div>
     </header>
   );

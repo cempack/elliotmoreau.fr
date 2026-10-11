@@ -95,7 +95,7 @@ const en = {
   setup: {
     caption: "Copied by hand from my machine.",
     langs: "Languages",
-    palette: "Nocturne palette",
+    palette: "Moss palette",
   },
 
   reading: {
@@ -212,7 +212,7 @@ const fr: typeof en = {
   setup: {
     caption: "Recopié à la main depuis ma machine.",
     langs: "Langages",
-    palette: "Palette Nocturne",
+    palette: "Palette Moss",
   },
 
   reading: {

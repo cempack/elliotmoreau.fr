@@ -14,15 +14,15 @@ import { m, useSpring, useTransform, type MotionValue } from "motion/react";
  */
 
 const C = {
-  paper: "#f5f2ec",
-  paper3: "#9196a6",
-  ink950: "#05060a",
-  ink900: "#0a0b12",
-  ink600: "#262a3a",
+  paper: "#ebe9e1",
+  paper3: "#8f988f",
+  ink950: "#0a0c0b",
+  ink900: "#101311",
+  ink600: "#2b322d",
   night: "#1d1a45",
-  signal: "#c6ff5e",
-  ember: "#ffb86b",
-  flare: "#ff5f7e",
+  signal: "#b0cc86",
+  ember: "#e0bd6e",
+  flare: "#e2786b",
 } as const;
 
 const PAL: Record<string, string> = { W: C.paper, F: C.flare, E: C.ember, S: C.signal, n: C.night, g: C.paper3 };

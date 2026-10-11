@@ -45,7 +45,7 @@ import { angleBetween, focusFor, slerp, toVec, worldGrid, type Vec3 } from "./ge
 const LIME: RGB = [198, 255, 94];
 const EMBER: RGB = [255, 184, 107];
 const ION: RGB = [139, 233, 255];
-const PAPER = "#F5F2EC";
+const PAPER = "#EBE9E1";
 
 type RGB = [number, number, number];
 type Arc = { to: Place; pts: Vec3[]; lift: number[]; cols: string[]; want: boolean; delay: number };
@@ -724,7 +724,7 @@ export function AtlasGlobe({
         const upto = focused ? Math.floor(eased * n) : n;
         const stride = a.want ? 2 : 1;
         // an ink casing first, so the route reads over land, sea and lights
-        ctx.fillStyle = "#05060a";
+        ctx.fillStyle = "#0a0c0b";
         for (let k = 0; k <= upto; k += stride) {
           const p = project(a.pts[k], a.lift[k]);
           if (!p.vis) continue;
@@ -777,17 +777,17 @@ export function AtlasGlobe({
         const minor = close && !isSel && !isHover && !place.home;
         ctx.globalAlpha = Math.min(1, 0.35 + p.z) * (minor ? 0.75 : 1);
         if (place.status === "want") {
-          ctx.strokeStyle = isSel ? PAPER : "#8BE9FF";
+          ctx.strokeStyle = isSel ? PAPER : "#89B4A8";
           ctx.lineWidth = 2;
           if (minor) ctx.strokeRect(qx - 3, qy - 3, 6, 6);
           else ctx.strokeRect(qx - 5, qy - 5, 10, 10);
         } else if (minor) {
-          ctx.fillStyle = "#FFB86B";
+          ctx.fillStyle = "#E0BD6E";
           ctx.fillRect(qx - 3, qy - 3, 6, 6);
         } else {
-          ctx.fillStyle = place.home ? "#C6FF5E" : "#FFB86B";
+          ctx.fillStyle = place.home ? "#B0CC86" : "#E0BD6E";
           ctx.fillRect(qx - 4, qy - 4, 8, 8);
-          ctx.fillStyle = "#0A0B12";
+          ctx.fillStyle = "#101311";
           ctx.fillRect(qx - 1, qy - 1, 2, 2);
         }
         if (isSel || isHover) {

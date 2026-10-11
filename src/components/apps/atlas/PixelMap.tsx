@@ -17,10 +17,10 @@ const GRID = hex("#18215a");
 const LAND_LO = hex("#4a50a8");
 const LAND = hex("#5c64c2");
 const LAND_HI = hex("#7880dc");
-const COAST = hex("#b3a4ff");
+const COAST = hex("#aea3c8");
 const SHADOW = hex("#3a3f8e");
-const INK = hex("#05060a");
-const MARK: Record<string, RGB> = { home: hex("#c6ff5e"), been: hex("#ffb86b"), want: hex("#8be9ff") };
+const INK = hex("#0a0c0b");
+const MARK: Record<string, RGB> = { home: hex("#b0cc86"), been: hex("#e0bd6e"), want: hex("#89b4a8") };
 
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 const bayer = (x: number, y: number) => (BAYER[((y & 3) << 2) | (x & 3)] + 0.5) / 16;

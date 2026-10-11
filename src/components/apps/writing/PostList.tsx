@@ -6,7 +6,7 @@ import type { GhostPost } from "@/lib/ghost";
 import type { Source } from "@/lib/data";
 import { useI18n } from "@/i18n/client";
 import { spring } from "@/lib/motion";
-import { PixelPlanet } from "@/components/PixelPlanet";
+import { Monogram } from "@/components/Monogram";
 import { byYear, countLabel, dateLong, dateShort, fmt } from "./util";
 
 type Props = {
@@ -59,7 +59,7 @@ export function PostList({ posts, selected, title, source, compact, hrefFor, onP
         {p.excerpt && <span className="app-writing-row-excerpt">{p.excerpt}</span>}
       </span>
       <span className="app-writing-row-art" aria-hidden>
-        <PixelPlanet seed={p.slug} className="app-writing-row-planet" />
+        <Monogram text={p.slug} className="app-writing-row-planet" />
       </span>
     </>
   );

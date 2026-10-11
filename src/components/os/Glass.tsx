@@ -14,7 +14,7 @@ import "./glass.css";
  *     as="div" | "section" | "aside" | "header" | "nav" | "footer"
  *        | "article" | "span" | "ul" | "li" | "form"   // default "div"
  *     refract={boolean}      // real refraction where supported; default
- *                            //   true for regular/thick, false for thin
+ *                            //   false (the house surface is frosted)
  *     interactive={boolean}  // soft specular sheen that follows a fine
  *                            //   pointer; default false
  *     shadow={boolean}       // the material's own drop shadow; default
@@ -280,7 +280,7 @@ export function Glass({
   const opaque = useMedia("(prefers-reduced-transparency: reduce)");
   const contrast = useMedia("(prefers-contrast: more)");
   const fine = useMedia("(hover: hover) and (pointer: fine)");
-  const wantRefract = refract ?? thickness !== "thin";
+  const wantRefract = refract ?? false;
   const on = wantRefract && chromium && wide && !opaque && !contrast;
   const sheen = interactive && fine && !opaque;
   const optics = OPTICS[thickness];

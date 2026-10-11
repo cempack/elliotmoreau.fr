@@ -7,7 +7,7 @@ import { useI18n } from "@/i18n/client";
 import { spring } from "@/lib/motion";
 import { timeAgo } from "@/lib/format";
 import { lenisRef } from "@/lib/lenisRef";
-import { PixelPlanet } from "@/components/PixelPlanet";
+import { Monogram } from "@/components/Monogram";
 import { GLYPH_STAR, PixelGlyph } from "@/components/glyphs";
 import { G_CHEVRON } from "./glyphs";
 import { Marked } from "./Parts";
@@ -293,7 +293,7 @@ function Item({
         style={plateStyle}
         data-ql-origin
       >
-        <PixelPlanet seed={repo.name} className="app-work-planet" />
+        <Monogram text={repo.name} className="app-work-planet" />
       </m.span>
       <m.span layout="position" transition={{ layout: lt }} className="app-work-name">
         <span className="app-work-name-text">

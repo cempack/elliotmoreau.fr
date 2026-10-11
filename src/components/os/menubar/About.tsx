@@ -1,11 +1,11 @@
 "use client";
 
 import { useI18n } from "@/i18n/client";
-import { PixelPlanet } from "@/components/PixelPlanet";
+import { Monogram } from "@/components/Monogram";
 import { ArrowUpRight, GithubIcon, RestartIcon, RssIcon } from "./glyphs";
 import { BLOG_RSS, FIRST_COMMIT, SITE_REPO, restartOS, useNow } from "./util";
 
-/** fastfetch's colour blocks, in Nocturne. */
+/** fastfetch's colour blocks, in Moss. */
 const SWATCHES = [
   "var(--color-ink-900)",
   "var(--color-ink-600)",
@@ -57,7 +57,7 @@ export function AboutPanel() {
     <div className="os-menubar-about">
       <div className="os-menubar-about-hero">
         <div className="os-menubar-about-art">
-          <PixelPlanet seed="emos-nocturne" className="os-menubar-about-planet" />
+          <Monogram text="emOS" className="os-menubar-about-planet" />
         </div>
         <div className="os-menubar-about-id">
           <p className="os-menubar-kicker">{a.kicker}</p>

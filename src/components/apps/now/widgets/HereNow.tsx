@@ -14,13 +14,13 @@ const PARIS = "Europe/Paris";
 const W = 64;
 
 const SKIES: Record<SkyPhase, string[]> = {
-  night: ["#04050c", "#0b0f2a", "#1d1a45"],
-  dawn: ["#0a0a22", "#2c1c4e", "#8a4a6b", "#f29a6b"],
-  day: ["#071b36", "#0f3e6b", "#2f7fa8", "#9ed8e6"],
-  dusk: ["#08061a", "#2a1048", "#7a2a5e", "#ff8a5b"],
+  night: ["#040607", "#0a1314", "#152626"],
+  dawn: ["#0a1213", "#20302f", "#5e6a62", "#d6b48c"],
+  day: ["#16252a", "#2b4249", "#557379", "#a9bdb9"],
+  dusk: ["#07090c", "#1b2228", "#4b4a4f", "#c98762"],
 };
 const FAR: Record<SkyPhase, string> = { night: "#141737", dawn: "#3a2347", day: "#1d4a6a", dusk: "#36163f" };
-const NEAR = "#0a0b12";
+const NEAR = "#101311";
 
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 
@@ -71,10 +71,10 @@ function paintSky(ctx: CanvasRenderingContext2D, phase: SkyPhase, arc: number, H
       const x = Math.floor(rnd() * W);
       const y = Math.floor(rnd() * (HORIZON - 8));
       const bright = rnd() > 0.7;
-      set(x, y, bright ? hex("#f5f2ec") : hex("#9196a6"));
+      set(x, y, bright ? hex("#ebe9e1") : hex("#8f988f"));
       if (bright && phase === "night" && rnd() > 0.5) {
-        set(x + 1, y, hex("#3a3f55"));
-        set(x - 1, y, hex("#3a3f55"));
+        set(x + 1, y, hex("#3f4842"));
+        set(x - 1, y, hex("#3f4842"));
       }
     }
   }
@@ -87,13 +87,13 @@ function paintSky(ctx: CanvasRenderingContext2D, phase: SkyPhase, arc: number, H
       for (let x = -5; x <= 5; x++) {
         const inDisc = x * x + y * y <= r * r;
         const inBite = (x - 2) * (x - 2) + (y + 1) * (y + 1) <= r * r;
-        if (inDisc && !inBite) set(cx + x, cy + y, hex(x + y < -1 ? "#f5f2ec" : "#c3c5cf"));
+        if (inDisc && !inBite) set(cx + x, cy + y, hex(x + y < -1 ? "#ebe9e1" : "#bcc2ba"));
       }
   } else {
     const r = phase === "day" ? 3.4 : 4.2;
-    const body = hex(phase === "day" ? "#ffe2b8" : "#ffb86b");
-    const rim = hex(phase === "day" ? "#ffb86b" : "#e8893d");
-    const halo = hex(phase === "day" ? "#bfe8f0" : "#ffb86b");
+    const body = hex(phase === "day" ? "#ffe2b8" : "#e0bd6e");
+    const rim = hex(phase === "day" ? "#e0bd6e" : "#e8893d");
+    const halo = hex(phase === "day" ? "#bfe8f0" : "#e0bd6e");
     for (let y = -8; y <= 8; y++)
       for (let x = -8; x <= 8; x++) {
         const dd = x * x + y * y;
@@ -131,10 +131,10 @@ function paintSky(ctx: CanvasRenderingContext2D, phase: SkyPhase, arc: number, H
   const tx = 44;
   const ty = HORIZON + 2 - tower.length;
   tower.forEach((row, y) => [...row].forEach((ch, x) => ch === "#" && set(tx + x, ty + y, near)));
-  if (phase === "night" || phase === "dusk") set(tx + 3, ty, hex("#ff5f7e"));
+  if (phase === "night" || phase === "dusk") set(tx + 3, ty, hex("#e2786b"));
   // windows lit after dark
   if (phase !== "day") {
-    const lit = hex("#ffb86b");
+    const lit = hex("#e0bd6e");
     const n = phase === "night" ? 16 : 8;
     for (let i = 0; i < n; i++) {
       const x = Math.floor(rnd() * W);

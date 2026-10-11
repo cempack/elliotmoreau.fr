@@ -10,13 +10,13 @@ export type TtfxTone = "bone" | "ember" | "glacier" | "sage";
 
 const GLYPHS = [..."アイウエオカキクケコサシスセソ0123456789XYZ<>*+#$%&@?/\\|"];
 
-// Nocturne resting inks for flat labels: bone is the paper-white text
+// Moss resting inks for flat labels: bone is the paper-white text
 // colour, so a settled label hands back to plain text without a shift
 const LOCKED: Record<TtfxTone, string> = {
-  bone: "#F5F2EC",
-  ember: "#FFB86B",
-  glacier: "#8BE9FF",
-  sage: "#C6FF5E",
+  bone: "#EBE9E1",
+  ember: "#E0BD6E",
+  glacier: "#89B4A8",
+  sage: "#B0CC86",
 };
 
 function mulberry32(seed: number) {
@@ -96,44 +96,44 @@ const FIELD = {
   bg: [0, 0, 0, 0] as const, // transparent: the page shows through
   dim: "#2B2E52", // indigo lattice
   mid: "#5F5E9E", // lilac dusk
-  lit: "#F5F2EC", // paper white
-  hover: "#C6FF5E", // signal lime under the light
+  lit: "#EBE9E1", // paper white
+  hover: "#B0CC86", // signal lime under the light
   crest: "#ECFFC8", // white-hot lime
   extrude: "#0C0D22", // far step of the in-canvas 3D solid, receding up-back
   extrudeNear: "#1F2050", // near step: moonlit indigo sides
   extrudeTop: "#FBF9F4", // top-face light on skyline edges
 };
 
-// Nocturne lights: disturbance frontiers wear every accent — flare, ember,
+// Moss lights: disturbance frontiers wear every accent — flare, ember,
 // signal, lilac, ion — over paper white.
 const THEME = {
-  red: "#FF5F7E",
-  green: "#C6FF5E",
-  yellow: "#FFB86B",
-  blue: "#B3A4FF",
-  cyan: "#8BE9FF",
-  bone: "#F5F2EC",
+  red: "#E2786B",
+  green: "#B0CC86",
+  yellow: "#E0BD6E",
+  blue: "#AEA3C8",
+  cyan: "#89B4A8",
+  bone: "#EBE9E1",
 };
 const BRIGHTS = [THEME.red, THEME.yellow, THEME.green, THEME.blue, THEME.cyan, THEME.bone];
 
 // every effect wears its own rest identity: five inks over the shared
-// band counts, all pulled from Nocturne (paper crest, a lit middle, an
+// band counts, all pulled from Moss (paper crest, a lit middle, an
 // indigo foot) — so no two effects ever rest in the same colours.
 // Decrypt is the canonical stack (WORDMARK_BANDS): the entrance hands off
 // from the SSR wordmark without a colour jump.
 type Palette = [string, string, string, string, string];
 const PALETTES: Record<GridEffect, Palette> = {
-  "grid-decrypt": ["#F5F2EC", "#C6FF5E", "#9BEBD3", "#988AF0", "#48478E"],
-  "grid-matrix": ["#F5F2EC", "#C6FF5E", "#8FD11F", "#5F5E9E", "#393B78"],
-  "grid-laser": ["#F5F2EC", "#C3C5CF", "#8BE9FF", "#5F5E9E", "#393B78"],
-  "grid-blackhole": ["#F5F2EC", "#C6FF5E", "#FF5F7E", "#7A6FCC", "#393B78"],
-  "grid-waves": ["#F5F2EC", "#8BE9FF", "#B3A4FF", "#6E66C2", "#393B78"],
-  "grid-beams": ["#F5F2EC", "#ECFFC8", "#C6FF5E", "#5F5E9E", "#393B78"],
-  "grid-rings": ["#F5F2EC", "#B3A4FF", "#C6FF5E", "#6E66C2", "#393B78"],
-  "grid-spotlights": ["#F5F2EC", "#FFB86B", "#C6FF5E", "#5F5E9E", "#393B78"],
-  "grid-fireworks": ["#F5F2EC", "#C6FF5E", "#FFB86B", "#5F5E9E", "#393B78"],
-  "grid-colorshift": ["#F5F2EC", "#C6FF5E", "#8BE9FF", "#B3A4FF", "#393B78"],
-  "grid-prism": ["#F5F2EC", "#F5F2EC", "#FF5F7E", "#8BE9FF", "#393B78"],
+  "grid-decrypt": ["#EBE9E1", "#B0CC86", "#8FC2A8", "#6F8FA0", "#3B4F5A"],
+  "grid-matrix": ["#EBE9E1", "#B0CC86", "#86A35C", "#5F5E9E", "#393B78"],
+  "grid-laser": ["#EBE9E1", "#BCC2BA", "#89B4A8", "#5F5E9E", "#393B78"],
+  "grid-blackhole": ["#EBE9E1", "#B0CC86", "#E2786B", "#7A6FCC", "#393B78"],
+  "grid-waves": ["#EBE9E1", "#89B4A8", "#AEA3C8", "#6E66C2", "#393B78"],
+  "grid-beams": ["#EBE9E1", "#ECFFC8", "#B0CC86", "#5F5E9E", "#393B78"],
+  "grid-rings": ["#EBE9E1", "#AEA3C8", "#B0CC86", "#6E66C2", "#393B78"],
+  "grid-spotlights": ["#EBE9E1", "#E0BD6E", "#B0CC86", "#5F5E9E", "#393B78"],
+  "grid-fireworks": ["#EBE9E1", "#B0CC86", "#E0BD6E", "#5F5E9E", "#393B78"],
+  "grid-colorshift": ["#EBE9E1", "#B0CC86", "#89B4A8", "#AEA3C8", "#393B78"],
+  "grid-prism": ["#EBE9E1", "#EBE9E1", "#E2786B", "#89B4A8", "#393B78"],
 };
 const stopsFrom = (pal: Palette): [number, string][] =>
   WORDMARK_BANDS.map(([n], k) => [n, pal[k]] as [number, string]);

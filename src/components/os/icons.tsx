@@ -17,28 +17,28 @@ import type { AppId } from "./apps";
 
 export type IconId = AppId | "terminal" | "spotlight" | "more";
 
-// Nocturne, plus a few shading tones derived from its accents.
+// Moss, plus a few shading tones derived from its accents.
 const C = {
-  paper: "#f5f2ec",
-  paper2: "#c3c5cf",
-  paper3: "#9196a6",
-  ink950: "#05060a",
-  ink900: "#0a0b12",
-  ink800: "#11131c",
-  ink700: "#1a1d29",
-  ink600: "#262a3a",
-  ink500: "#3a3f55",
-  signal: "#c6ff5e",
-  signalDeep: "#8fd11f",
-  ion: "#8be9ff",
+  paper: "#ebe9e1",
+  paper2: "#bcc2ba",
+  paper3: "#8f988f",
+  ink950: "#0a0c0b",
+  ink900: "#101311",
+  ink800: "#161a17",
+  ink700: "#1f2420",
+  ink600: "#2b322d",
+  ink500: "#3f4842",
+  signal: "#b0cc86",
+  signalDeep: "#86a35c",
+  ion: "#89b4a8",
   ionLight: "#cdf6ff",
   ionDeep: "#3fb4dc",
-  lilac: "#b3a4ff",
+  lilac: "#aea3c8",
   lilacDeep: "#7a68e6",
-  ember: "#ffb86b",
+  ember: "#e0bd6e",
   emberDeep: "#e8893d",
   emberLight: "#ffe2b8",
-  flare: "#ff5f7e",
+  flare: "#e2786b",
   night: "#1d1a45",
 } as const;
 

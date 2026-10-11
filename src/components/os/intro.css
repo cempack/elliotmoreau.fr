@@ -82,7 +82,7 @@
   width: var(--c);
   height: var(--c);
   border-radius: max(1px, calc(var(--c) * 0.12));
-  background: #0d0f16;
+  background: #121513;
 }
 .os-intro-mark-cell.is-void {
   background: transparent;
@@ -96,10 +96,10 @@
 }
 .os-intro-mark-cell.is-on::before {
   background: var(--color-signal);
-  box-shadow: 0 0 calc(var(--c) * 1.1) rgba(198, 255, 94, 0.28);
+  box-shadow: 0 0 calc(var(--c) * 1.1) rgba(176, 204, 134, 0.28);
 }
 .os-intro-mark-cell.is-glint::before {
-  background: #ecffc9;
+  background: #e3eed2;
 }
 .os-intro-mark-cell.is-on::after {
   background: #fff;
@@ -146,7 +146,7 @@
   position: relative;
   width: var(--c);
   height: 4px;
-  background: #14161f;
+  background: #191d1a;
 }
 .os-intro-bar i::before {
   content: "";
@@ -208,8 +208,8 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(120% 60% at 50% 34%, rgba(5, 6, 10, 0) 0%, rgba(5, 6, 10, 0.28) 100%),
-    linear-gradient(180deg, rgba(5, 6, 10, 0.5) 0%, rgba(5, 6, 10, 0.12) 46%, rgba(5, 6, 10, 0.62) 100%),
+    radial-gradient(120% 60% at 50% 34%, rgba(10, 12, 11, 0) 0%, rgba(10, 12, 11, 0.28) 100%),
+    linear-gradient(180deg, rgba(10, 12, 11, 0.5) 0%, rgba(10, 12, 11, 0.12) 46%, rgba(10, 12, 11, 0.62) 100%),
     var(--os-intro-sky);
   backdrop-filter: blur(12px) blur(12px) blur(10px) saturate(1.6);
 }
@@ -337,7 +337,7 @@ html[data-sky]:not([data-sky="night"]) .os-intro-sky-night {
   width: 0.07em;
   height: 0.07em;
   background: var(--color-signal);
-  box-shadow: 0 0 0.12em rgba(198, 255, 94, 0.35);
+  box-shadow: 0 0 0.12em rgba(176, 204, 134, 0.35);
 }
 
 .os-intro-meta {
@@ -389,7 +389,7 @@ html[data-sky]:not([data-sky="night"]) .os-intro-phase--night {
 }
 .os-intro-avatar svg {
   display: block;
-  filter: drop-shadow(0 0 6px rgba(198, 255, 94, 0.3));
+  filter: drop-shadow(0 0 6px rgba(176, 204, 134, 0.3));
 }
 .os-intro-name {
   margin-top: 12px;
@@ -517,7 +517,7 @@ html[data-sky]:not([data-sky="night"]) .os-intro-phase--night {
 .os-intro-settle {
   position: absolute;
   inset: 0;
-  background: rgba(5, 6, 10, 0.5);
+  background: rgba(10, 12, 11, 0.5);
 }
 .os-intro-sheet {
   position: absolute;

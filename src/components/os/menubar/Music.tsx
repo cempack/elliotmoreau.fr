@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useI18n } from "@/i18n/client";
 import { timeAgo } from "@/lib/format";
-import { PixelPlanet } from "@/components/PixelPlanet";
+import { Monogram } from "@/components/Monogram";
+import { GLYPH_NOTE } from "@/components/glyphs";
 import type { SpotifyStatus, TrackInfo } from "@/lib/spotify";
 import { ArrowUpRight, PixelEq } from "./glyphs";
 import { useNow } from "./util";
@@ -24,7 +25,7 @@ export function Cover({ track, className = "" }: { track: TrackInfo | null; clas
   }
   return (
     <span className={`os-menubar-cover os-menubar-cover--pixel ${className}`} aria-hidden>
-      <PixelPlanet seed={track ? track.album || track.title : "silence"} className="os-menubar-cover-planet" />
+      <Monogram text={track ? track.album || track.title : "silence"} glyph={GLYPH_NOTE} className="os-menubar-cover-planet" />
     </span>
   );
 }

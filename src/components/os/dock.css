@@ -46,14 +46,14 @@
 /* the shelf holds only icons: clear glass, so the lake shows through and
    its rim visibly bends it (frosted where refraction isn't available) */
 .os-dock-glass {
-  --os-glass-tint: rgb(18 21 34 / 0.32);
+  --os-glass-tint: rgb(19 23 20 / 0.32);
   --os-glass-rblur: 0.75px;
 }
 /* during a view transition the dock is captured on its own and its
    backdrop goes blank: swap in a solid twin of the glass for those
    frames so it never flashes clear */
 .os-dock-solid {
-  background: rgb(15 17 27 / 0.95);
+  background: rgb(16 19 17 / 0.95);
   box-shadow:
     inset 0 1px 0 var(--glass-rim-strong),
     inset 0 0 0 1px var(--hairline);
@@ -147,8 +147,8 @@ html:active-view-transition .os-dock-solid {
   border-radius: 50%;
   background: var(--color-signal);
   box-shadow:
-    0 0 4px rgb(198 255 94 / 0.9),
-    0 0 10px 1px rgb(198 255 94 / 0.45);
+    0 0 4px rgb(176 204 134 / 0.9),
+    0 0 10px 1px rgb(176 204 134 / 0.45);
   opacity: 0;
   transform: scale(0.2);
   transition:
@@ -181,7 +181,7 @@ html:active-view-transition .os-dock-solid {
   letter-spacing: -0.003em;
   color: var(--color-label);
   white-space: nowrap;
-  background: rgb(20 23 35 / 0.66);
+  background: rgb(21 25 22 / 0.66);
   backdrop-filter: blur(10px) blur(8px) saturate(1.7);
   box-shadow:
     inset 0 1px 0 var(--glass-rim),
@@ -240,7 +240,7 @@ html:active-view-transition .os-dock-solid {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  --os-glass-tint: rgb(13 15 25 / 0.62);
+  --os-glass-tint: rgb(14 17 15 / 0.62);
   --os-glass-frost: blur(12px) blur(12px);
 }
 .os-tabbar-list {
@@ -351,7 +351,7 @@ html:active-view-transition .os-dock-solid {
 }
 .os-more-row[aria-current="page"],
 .os-more-row[aria-pressed="true"] {
-  box-shadow: inset 0 0 0 1px rgb(198 255 94 / 0.4);
+  box-shadow: inset 0 0 0 1px rgb(176 204 134 / 0.4);
 }
 .os-more-text {
   flex: 1;
@@ -508,7 +508,7 @@ html:active-view-transition .os-tabbar {
 
 @media (prefers-reduced-transparency: reduce) {
   .os-dock-tip {
-    background: rgb(20 23 35 / 0.97);
+    background: rgb(21 25 22 / 0.97);
     backdrop-filter: none;
   }
   ::view-transition-group(os-tabbar) {

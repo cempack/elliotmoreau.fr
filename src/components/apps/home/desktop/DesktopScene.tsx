@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useI18n } from "@/i18n/client";
-import { useFinePointer, useHydrated, useReduced } from "@/hooks/env";
+import { useFinePointer, useReduced } from "@/hooks/env";
 import { useSound } from "@/lib/sound";
 import { DesktopIcons } from "./DesktopIcons";
 import { HelloWindow, type HelloHandle } from "./HelloWindow";
@@ -10,13 +10,7 @@ import { ClockWidget, LatestPostWidget, PushWidget } from "./Widgets";
 import { type DesktopIconId } from "./icons";
 import { desktopMemory } from "./store";
 import { INTERACTIVE, intersects, type Rect } from "./physics";
-import { Wordmark } from "./Wordmark";
 import { isPhone } from "./layout";
-
-/* The wordmark's boxes. The field sizes its pixel grid from its box (8 CSS
-   px cells), so a fixed box keeps the letters at a whole-cell scale and
-   CSS scales the result (--app-home-k, a whole number of px per cell). */
-const BOX = { desk: { w: 1040, h: 448 }, phone: { w: 700, h: 296 } };
 
 type Marquee = {
   pid: number;
@@ -28,30 +22,23 @@ type Marquee = {
 };
 
 /**
- * `/`: one screen, nothing scrolls. On a desk, the name and hello.txt sit
- * top left, the widgets top right beside the app icons, which line the
- * right edge on a snap grid; drag on empty desktop for a marquee. Phones
- * get an iOS home screen that fits above the tab bar.
+ * `/`: one screen, nothing scrolls. On a desk, hello.txt sits top left,
+ * the widgets top right beside the app icons, which line the right edge
+ * on a snap grid; drag on empty desktop for a marquee. Phones get a home
+ * screen that fits above the tab bar. (The name plays in the boot.)
  */
 export function DesktopScene() {
   const { t } = useI18n();
   const reduced = useReduced();
   const fine = useFinePointer();
-  const hydrated = useHydrated();
-  // the live field (a canvas loop) runs only after hydration and never
-  // under reduced motion; until then, and instead, the still wordmark
-  const live = hydrated && !reduced;
   const { blip } = useSound();
   const sceneRef = useRef<HTMLElement>(null);
-  const markRef = useRef<HTMLDivElement>(null);
   const widgetsRef = useRef<HTMLDivElement>(null);
   const helloSlotRef = useRef<HTMLDivElement>(null);
   const marqueeRef = useRef<HTMLDivElement>(null);
   const helloRef = useRef<HelloHandle>(null);
   const mq = useRef<Marquee | null>(null);
   const suppressClick = useRef(false);
-  /** the press that began this click cleared a selection (no replay then) */
-  const deselect = useRef(false);
   const [selected, setSelectedState] = useState<Set<DesktopIconId>>(() => new Set());
   const [helloClosed, setHelloClosed] = useState(() => desktopMemory.helloClosed());
 
@@ -72,7 +59,7 @@ export function DesktopScene() {
       const scene = sceneRef.current;
       if (!scene) return;
       const ease = "linear(0, 0.157 4.6%, 0.452 11%, 0.703 18.2%, 0.86 25.2%, 0.946 32.3%, 0.985 40%, 0.998 50%, 1)";
-      const desk = Array.from(scene.querySelectorAll<HTMLElement>(".app-home-mark, .app-home-hello-slot, .app-home-widget")).filter(
+      const desk = Array.from(scene.querySelectorAll<HTMLElement>(".app-home-hello-slot, .app-home-widget")).filter(
         (el) => el.getClientRects().length
       );
       desk.forEach((el, i) =>
@@ -96,19 +83,13 @@ export function DesktopScene() {
     return () => window.removeEventListener("em:intro-done", play);
   }, []);
 
-  /* ── a click on the name replays its entrance ── */
-  const onMarkClick = () => {
-    if (!live || deselect.current) return;
-    window.dispatchEvent(new CustomEvent("em:replay"));
-  };
-
-  /* ── icons never land on the name, the widgets or hello.txt ── */
+  /* ── icons never land on the widgets or hello.txt ── */
   const blockers = useCallback((): Rect[] => {
     const scene = sceneRef.current;
     if (!scene) return [];
     const s = scene.getBoundingClientRect();
     const out: Rect[] = [];
-    for (const el of [markRef.current, widgetsRef.current, helloSlotRef.current]) {
+    for (const el of [widgetsRef.current, helloSlotRef.current]) {
       if (!el || !el.getClientRects().length) continue;
       const r = el.getBoundingClientRect();
       if (r.width === 0) continue;
@@ -159,7 +140,6 @@ export function DesktopScene() {
     }));
 
   const onPointerDown = (e: React.PointerEvent<HTMLElement>) => {
-    deselect.current = selected.size > 0;
     if (e.pointerType === "touch" || e.button !== 0) return;
     const target = e.target as Element;
     if (target.closest(`${INTERACTIVE},.app-home-icon,.app-home-hello,.app-home-widgets`)) return;
@@ -233,15 +213,8 @@ export function DesktopScene() {
     >
       <h1 className="sr-only">{t.home.name}</h1>
 
-      <div className="app-home-lockup">
-        <div ref={markRef} className="app-home-mark" aria-hidden data-live={live || undefined} onClick={onMarkClick}>
-          <div className="app-home-hero">
-            <Wordmark desk={BOX.desk} phone={BOX.phone} live={live} />
-          </div>
-        </div>
-        <div ref={helloSlotRef} className="app-home-hello-slot">
-          <HelloWindow ref={helloRef} closed={helloClosed} onClose={closeHello} reduced={reduced} />
-        </div>
+      <div ref={helloSlotRef} className="app-home-hello-slot">
+        <HelloWindow ref={helloRef} closed={helloClosed} onClose={closeHello} reduced={reduced} />
       </div>
 
       <div ref={widgetsRef} className="app-home-widgets" role="group" aria-label={t.home.widgets.label}>

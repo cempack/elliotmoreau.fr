@@ -1,7 +1,7 @@
 "use client";
 
 import { useId } from "react";
-import { PixelPlanet } from "@/components/PixelPlanet";
+import { Monogram } from "@/components/Monogram";
 import { PixelLabel } from "@/components/PixelLabel";
 import type { Locale } from "@/i18n/config";
 import type { Place } from "@/lib/places";
@@ -9,7 +9,7 @@ import { isoOf } from "./geo";
 import { fmtAxis } from "./fmt";
 
 /**
- * A perforated postage stamp. `lg`: the place card's stamp, a PixelPlanet
+ * A perforated postage stamp. `lg`: the place card's stamp, a monogram
  * seeded by the place id over a value strip, with a circular postmark
  * cancelling one corner. `sm`: the postcard's airmail stamp, the ISO code
  * in pixel letters. Perforations are a CSS mask on a 12px (lg) or 8px (sm)
@@ -55,7 +55,7 @@ export function Stamp({
           <span className="app-atlas-stamp-art">
             {size === "lg" ? (
               <>
-                <PixelPlanet seed={place.id} className="app-atlas-stamp-planet" />
+                <Monogram text={place.id} className="app-atlas-stamp-planet" />
                 <span className="app-atlas-stamp-iso">
                   <PixelLabel text={isoOf(place)} cell={2} />
                 </span>

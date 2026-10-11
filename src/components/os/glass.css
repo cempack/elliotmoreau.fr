@@ -1,88 +1,63 @@
-/* ─────────────────────────── emOS · Liquid Glass ───────────────────────────
-   The material lives on an inset pane (z-index −1 inside the element's own
-   stacking context), never on the element: Chromium shifts an SVG backdrop
-   filter's origin by the element's ink overflow, so shadows and overflowing
-   children stay off the filtered layer. Everything is in a low-priority
-   layer so consumers' position / z-index / radius always win. */
+/* ─────────────────────────── emOS · glass ───────────────────────────
+   A Hyprland-style surface: a dark, mostly opaque tint with a little blur
+   behind it and a thin, even border. The material lives on an inset pane
+   (z-index −1 inside the element's own stacking context), never on the
+   element: Chromium shifts an SVG backdrop filter's origin by the
+   element's ink overflow, so shadows and overflowing children stay off
+   the filtered layer. Everything is in a low-priority layer so consumers'
+   position / z-index / radius always win. */
 
 @layer components {
   .os-glass {
-    --os-glass-tint: rgba(18, 21, 34, 0.42);
-    /* frosted fallback: chained small blurs. One big radius gets
-       downsampled by the compositor and aliases the dithered wallpaper
-       into bands; two small passes stay smooth. */
-    --os-glass-frost: blur(10px) blur(10px);
+    --os-glass-tint: rgba(16, 19, 17, 0.78);
+    /* chained small blurs: one big radius aliases the dithered wallpaper */
+    --os-glass-frost: blur(8px) blur(8px);
     --os-glass-rblur: 1.25px;
-    --os-glass-sat: 1.8;
-    --os-glass-hi: 0.34;
-    --os-glass-shadow: 0 1px 1px rgba(0, 0, 0, 0.18), 0 22px 50px -24px rgba(0, 0, 0, 0.7);
+    --os-glass-sat: 1.2;
+    --os-glass-border: rgba(196, 206, 194, 0.16);
+    --os-glass-shadow: 0 1px 1px rgba(0, 0, 0, 0.2), 0 18px 40px -22px rgba(0, 0, 0, 0.7);
     position: relative;
     z-index: 0;
   }
   .os-glass[data-glass="thin"] {
-    --os-glass-tint: rgba(26, 29, 45, 0.34);
-    --os-glass-frost: blur(10px);
-    --os-glass-rblur: 1.25px;
-    --os-glass-hi: 0.3;
+    --os-glass-tint: rgba(20, 24, 21, 0.68);
+    --os-glass-frost: blur(8px);
+    --os-glass-border: rgba(196, 206, 194, 0.13);
     --os-glass-shadow: 0 1px 1px rgba(0, 0, 0, 0.16), 0 10px 24px -14px rgba(0, 0, 0, 0.6);
   }
   .os-glass[data-glass="thick"] {
-    --os-glass-tint: rgba(13, 15, 25, 0.64);
-    --os-glass-frost: blur(12px) blur(12px);
-    --os-glass-rblur: 10px;
-    --os-glass-sat: 1.9;
-    --os-glass-hi: 0.38;
-    --os-glass-shadow: 0 1px 2px rgba(0, 0, 0, 0.22), 0 46px 110px -40px rgba(0, 0, 0, 0.85);
+    --os-glass-tint: rgba(13, 16, 14, 0.88);
+    --os-glass-frost: blur(10px) blur(10px);
+    --os-glass-rblur: 8px;
+    --os-glass-border: rgba(196, 206, 194, 0.18);
+    --os-glass-shadow: 0 1px 2px rgba(0, 0, 0, 0.22), 0 40px 90px -40px rgba(0, 0, 0, 0.85);
   }
 
-  /* the bright skies would wash out light text: the glass darkens with
-     the light (tertiary text on thick glass keeps ≥ 4.5:1 over the day
-     horizon, the snow peaks and the sun) */
-  html[data-sky="day"] .os-glass {
-    --os-glass-tint: rgba(8, 18, 36, 0.56);
-  }
-  html[data-sky="day"] .os-glass[data-glass="thin"] {
-    --os-glass-tint: rgba(10, 22, 42, 0.5);
-  }
-  html[data-sky="day"] .os-glass[data-glass="thick"] {
-    --os-glass-tint: rgba(6, 14, 30, 0.83);
-  }
+  /* the bright skies would wash out light text: the tint deepens */
+  html[data-sky="day"] .os-glass,
   html[data-sky="dawn"] .os-glass,
   html[data-sky="dusk"] .os-glass {
-    --os-glass-tint: rgba(20, 14, 34, 0.5);
+    --os-glass-tint: rgba(12, 15, 13, 0.84);
   }
+  html[data-sky="day"] .os-glass[data-glass="thick"],
   html[data-sky="dawn"] .os-glass[data-glass="thick"],
   html[data-sky="dusk"] .os-glass[data-glass="thick"] {
-    --os-glass-tint: rgba(14, 10, 26, 0.76);
+    --os-glass-tint: rgba(10, 12, 11, 0.92);
   }
 
   .os-glass[data-glass-shadow] {
     box-shadow: var(--os-glass-shadow);
   }
 
-  /* the material: tint, top-lit gradient, blur or refraction, inner light */
+  /* the material: tint, then blur (or refraction) behind it */
   .os-glass-pane {
     position: absolute;
     inset: 0;
     z-index: -1;
     border-radius: inherit;
     pointer-events: none;
-    background:
-      linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.075) 0%,
-        rgba(255, 255, 255, 0.02) 34%,
-        rgba(255, 255, 255, 0) 60%,
-        rgba(255, 255, 255, 0.025) 100%
-      ),
-      var(--os-glass-tint);
+    background: var(--os-glass-tint);
     backdrop-filter: var(--os-glass-frost) saturate(var(--os-glass-sat));
-    box-shadow:
-      inset 0 1px 0.5px rgba(255, 255, 255, var(--os-glass-hi)),
-      inset 1px 0 0.5px rgba(255, 255, 255, calc(var(--os-glass-hi) * 0.3)),
-      inset 0 -1px 0.5px rgba(255, 255, 255, 0.07),
-      inset 0 16px 26px -24px rgba(255, 255, 255, 0.2),
-      inset 0 -26px 40px -30px rgba(0, 0, 0, 0.5);
   }
   /* real refraction: the displacement first, then a light blur on top */
   .os-glass-pane[data-live] {
@@ -93,29 +68,14 @@
     backdrop-filter: var(--os-glass-filter) blur(var(--os-glass-rblur)) saturate(var(--os-glass-sat)) brightness(1.04);
   }
 
-  /* specular rim: hot where the light lands (top-left), a faint return at
-     the bottom-right, almost nothing on the flanks */
+  /* the border: thin and even all round, like a tiled window's */
   .os-glass::after {
     content: "";
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    padding: 1px;
+    box-shadow: inset 0 0 0 1px var(--os-glass-border);
     pointer-events: none;
-    background: linear-gradient(
-      158deg,
-      rgba(255, 255, 255, 0.55) 0%,
-      rgba(255, 255, 255, 0.16) 18%,
-      rgba(255, 255, 255, 0.04) 46%,
-      rgba(255, 255, 255, 0.06) 74%,
-      rgba(255, 255, 255, 0.26) 100%
-    );
-    mask:
-      linear-gradient(#000 0 0) content-box exclude,
-      linear-gradient(#000 0 0);
-  }
-  .os-glass[data-glass="thin"]::after {
-    opacity: 0.8;
   }
 
   /* pointer sheen: a fixed-size soft light moved by transform only, clipped
@@ -155,13 +115,13 @@
     .os-glass-pane,
     .os-glass-pane[data-live] {
       backdrop-filter: none;
-      background: #151826;
+      background: #161a17;
     }
     .os-glass[data-glass="thin"] > .os-glass-pane {
-      background: #1a1d2b;
+      background: #1b201c;
     }
     .os-glass[data-glass="thick"] > .os-glass-pane {
-      background: #10121c;
+      background: #111412;
     }
   }
 
@@ -169,10 +129,10 @@
     .os-glass-pane,
     .os-glass-pane[data-live] {
       backdrop-filter: none;
-      background: #0a0b12;
+      background: #101311;
     }
     .os-glass::after {
-      background: rgba(255, 255, 255, 0.5);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
     }
   }
 

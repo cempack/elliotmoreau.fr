@@ -18,10 +18,10 @@ const H = 28;
 const HORIZON = 21;
 
 const SKIES: Record<SkyPhase, string[]> = {
-  night: ["#04050c", "#0b0f2a", "#1d1a45"],
-  dawn: ["#0a0a22", "#2c1c4e", "#8a4a6b", "#f29a6b"],
-  day: ["#071b36", "#0f3e6b", "#2f7fa8", "#9ed8e6"],
-  dusk: ["#08061a", "#2a1048", "#7a2a5e", "#ff8a5b"],
+  night: ["#040607", "#0a1314", "#152626"],
+  dawn: ["#0a1213", "#20302f", "#5e6a62", "#d6b48c"],
+  day: ["#16252a", "#2b4249", "#557379", "#a9bdb9"],
+  dusk: ["#07090c", "#1b2228", "#4b4a4f", "#c98762"],
 };
 const FAR_HILL: Record<SkyPhase, string> = {
   night: "#111433",
@@ -30,7 +30,7 @@ const FAR_HILL: Record<SkyPhase, string> = {
   dusk: "#3b1740",
 };
 const NEAR_HILL: Record<SkyPhase, string> = {
-  night: "#05060a",
+  night: "#0a0c0b",
   dawn: "#0d0a1c",
   day: "#0a1a2c",
   dusk: "#0b0716",

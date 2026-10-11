@@ -28,7 +28,7 @@ export const MAX_LINES = 6;
 const SLIDE = TOP - LETTER.y; // rows the letter travels to sit inside
 
 const P = {
-  paper: "#f5f2ec",
+  paper: "#ebe9e1",
   paperEdge: "#d2cec5",
   paperTop: "#fffdf8",
   rule: "#e9e5dd",
@@ -38,14 +38,14 @@ const P = {
   crease: "#aaa69e",
   rim: "#e4e0d8",
   vEdge: "#fffdf8",
-  vShade: "rgba(5, 6, 10, 0.2)",
+  vShade: "rgba(10, 12, 11, 0.2)",
   flapOut: "#ece8e0",
   flapEdge: "#b8b4ac",
   liner: "#1d1a45",
   stripe: "#5a4bc4",
-  ink: "#3a3f55",
-  lime: "#c6ff5e",
-  limeDeep: "#8fd11f",
+  ink: "#3f4842",
+  lime: "#b0cc86",
+  limeDeep: "#86a35c",
   limeLight: "#e9ffc2",
   subject: "#7fbf14",
 } as const;
@@ -133,12 +133,12 @@ const SHADOW = paint(1, W, TOP + 1, BOTTOM + 1, (x, y) => {
   const sx = x - 1;
   const sy = y - 1;
   if (sx < 0 || sx > W - 1 || sy < TOP) return null;
-  return "rgba(5, 6, 10, 0.5)";
+  return "rgba(10, 12, 11, 0.5)";
 });
 
 // tall enough to fill the pocket once tucked in, short enough never to poke out below it
 const LETTER_BODY = paint(LETTER.x, LETTER.x + LETTER.w, LETTER.y, BOTTOM - 1 - SLIDE, (x, y) => {
-  if (x === LETTER.x + LETTER.w) return y > LETTER.y ? "rgba(5, 6, 10, 0.28)" : null; // cast shadow
+  if (x === LETTER.x + LETTER.w) return y > LETTER.y ? "rgba(10, 12, 11, 0.28)" : null; // cast shadow
   if (x === LETTER.x + LETTER.w - 1) return P.paperEdge;
   if (y === LETTER.y) return P.paperTop;
   return P.paper;

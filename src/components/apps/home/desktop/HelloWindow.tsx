@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useImperativeHandle, useRef, useState } from "react";
-import { animate, m, useMotionValue, useMotionValueEvent, type MotionStyle } from "motion/react";
+import { useEffect, useImperativeHandle, useRef } from "react";
+import { animate, m, useMotionValue, type MotionStyle } from "motion/react";
 import { useI18n } from "@/i18n/client";
 import { PLACES } from "@/lib/places";
 import { spring, springFrom } from "@/lib/motion";
@@ -10,7 +10,7 @@ import { useSound } from "@/lib/sound";
 import { PixelGlyph, type Cells } from "@/components/glyphs";
 import { G_CLOSE, G_MIN } from "@/components/os/window/glyphs";
 import { Glass } from "@/components/os/Glass";
-import { FLING, INTERACTIVE, band, intersects, pushSample, releaseVelocity, type Rect, type Sample } from "./physics";
+import { FLING, INTERACTIVE, band, pushSample, releaseVelocity, type Sample } from "./physics";
 import { G_PLANE } from "./icons";
 import { isPhone, menubarPx } from "./layout";
 
@@ -40,8 +40,8 @@ export type HelloHandle = {
   focus: () => void;
 };
 
-/** While it is held or flying home: where home is and where the live name is. */
-type Lift = { token: number; home: Rect | null; field: Rect | null };
+/** Bumped per pick-up, so only the latest flight home lands it. */
+type Lift = { token: number };
 
 type Grab = {
   pid: number;
@@ -69,10 +69,7 @@ type Grab = {
  * it again. Phones get it as a Notes widget (no chrome, no drag).
  *
  * Depth: from pointer-down until the spring has brought it home it is
- * lifted (data-lifted), above the widgets and the icons. Over the living
- * wordmark (data-over) its glass deepens and stops refracting, so the text
- * keeps its contrast and no displacement filter re-renders over a canvas
- * that redraws every frame.
+ * lifted (data-lifted), above the widgets and the icons.
  */
 export function HelloWindow({
   ref,
@@ -94,36 +91,10 @@ export function HelloWindow({
   const scale = useMotionValue(1);
   const grab = useRef<Grab | null>(null);
   const flying = useRef(false);
-  const lift = useRef<Lift>({ token: 0, home: null, field: null });
-  const overRef = useRef(false);
-  const [over, setOver] = useState(false);
-
-  const setOverField = (v: boolean) => {
-    if (v === overRef.current) return;
-    overRef.current = v;
-    const el = rootRef.current;
-    if (el) {
-      if (v) el.dataset.over = "";
-      else delete el.dataset.over;
-    }
-    setOver(v);
-  };
-
-  /* while lifted, follow the window against the name's field */
-  const track = () => {
-    const { home, field } = lift.current;
-    if (!home || !field) return;
-    const dx = x.get();
-    const dy = y.get();
-    setOverField(intersects({ left: home.left + dx, top: home.top + dy, right: home.right + dx, bottom: home.bottom + dy }, field));
-  };
-  useMotionValueEvent(x, "change", track);
-  useMotionValueEvent(y, "change", track);
+  const lift = useRef<Lift>({ token: 0 });
 
   const land = () => {
     const el = rootRef.current;
-    lift.current = { token: lift.current.token, home: null, field: null };
-    setOverField(false);
     if (el) delete el.dataset.lifted;
   };
 
@@ -256,10 +227,7 @@ export function HelloWindow({
     const dock = dockRaw.endsWith("rem") ? parseFloat(dockRaw) * rem : parseFloat(dockRaw) || 76;
     const homeL = r.left - x.get();
     const homeT = r.top - y.get();
-    // the live name's box
-    const mark = document.querySelector(".app-home-mark")?.getBoundingClientRect();
-    const field = mark && mark.width ? { left: mark.left, top: mark.top + 8, right: mark.right, bottom: mark.bottom - 8 } : null;
-    lift.current = { token: lift.current.token + 1, home: { left: homeL, top: homeT, right: homeL + r.width, bottom: homeT + r.height }, field };
+    lift.current = { token: lift.current.token + 1 };
     el.dataset.lifted = "";
     const m8 = 8;
     grab.current = {
@@ -305,7 +273,7 @@ export function HelloWindow({
       className="app-home-hello"
       style={{ x, y, scale } as MotionStyle}
     >
-      <Glass thickness="regular" refract={!over} className="app-home-hello-glass" aria-hidden />
+      <Glass thickness="regular" className="app-home-hello-glass" aria-hidden />
       <div
         className="app-home-hello-bar"
         onPointerDown={onPointerDown}
@@ -314,7 +282,25 @@ export function HelloWindow({
         onPointerCancel={(e) => end(e, true)}
         onLostPointerCapture={(e) => end(e, true)}
       >
+        <p className="app-home-hello-file">
+          <PixelGlyph cells={G_DOC} size={12} className="app-home-hello-file-glyph" />
+          {h.file}
+        </p>
+        <span className="app-home-hello-path" aria-hidden>
+          {h.path}
+        </span>
         <div className="app-home-hello-lights">
+          <button
+            type="button"
+            aria-label={h.minimize}
+            className="app-home-hello-light"
+            onClick={() => {
+              blip("close");
+              onClose();
+            }}
+          >
+            <PixelGlyph cells={G_MIN} size={7} />
+          </button>
           <button
             type="button"
             aria-label={h.close}
@@ -326,26 +312,7 @@ export function HelloWindow({
           >
             <PixelGlyph cells={G_CLOSE} size={7} />
           </button>
-          <button
-            type="button"
-            aria-label={h.minimize}
-            className="app-home-hello-light app-home-hello-light--min"
-            onClick={() => {
-              blip("close");
-              onClose();
-            }}
-          >
-            <PixelGlyph cells={G_MIN} size={7} />
-          </button>
-          <span className="app-home-hello-light app-home-hello-light--zoom" aria-hidden />
         </div>
-        <p className="app-home-hello-file">
-          <PixelGlyph cells={G_DOC} size={12} className="app-home-hello-file-glyph" />
-          {h.file}
-        </p>
-        <span className="app-home-hello-path" aria-hidden>
-          {h.path}
-        </span>
       </div>
 
       <div className="app-home-hello-body">

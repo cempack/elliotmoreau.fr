@@ -29,18 +29,18 @@ const R_OUT = 12.2;
 const R_IN = 9.6;
 
 const PHASE_INK: Record<SkyPhase, string> = {
-  night: "#7b6ff2",
-  dawn: "#f6a07a",
-  day: "#7fdcf7",
-  dusk: "#ff7a6a",
+  night: "#8fa3b8",
+  dawn: "#e6c08e",
+  day: "#b0cc86",
+  dusk: "#e2906b",
 };
 /** the other phases, dimmed but still themselves (a flat opacity turned
     dawn and dusk to mud on the navy glass) */
 const PHASE_DIM: Record<SkyPhase, string> = {
-  night: "#4b4596",
-  dawn: "#9a6077",
-  day: "#3f7f98",
-  dusk: "#a34d62",
+  night: "#46535f",
+  dawn: "#7a6a52",
+  day: "#5a6e48",
+  dusk: "#7a5444",
 };
 /** phase starts, Paris hours (mirrors phaseForHour) */
 const STARTS: [SkyPhase, number][] = [
@@ -115,18 +115,18 @@ function playhead(hour: number) {
 
 /* 5×5 sun (a disc with rays) and moon (a disc with its shadow side) */
 const SUN: [number, number, string][] = [
-  [0, 0, "#e8893d"], [2, 0, "#ffb86b"], [4, 0, "#e8893d"],
-  [1, 1, "#ffb86b"], [2, 1, "#ffb86b"], [3, 1, "#ffb86b"],
-  [0, 2, "#ffb86b"], [1, 2, "#ffb86b"], [2, 2, "#ffe2b8"], [3, 2, "#ffb86b"], [4, 2, "#ffb86b"],
-  [1, 3, "#ffb86b"], [2, 3, "#ffb86b"], [3, 3, "#ffb86b"],
-  [0, 4, "#e8893d"], [2, 4, "#ffb86b"], [4, 4, "#e8893d"],
+  [0, 0, "#e8893d"], [2, 0, "#e0bd6e"], [4, 0, "#e8893d"],
+  [1, 1, "#e0bd6e"], [2, 1, "#e0bd6e"], [3, 1, "#e0bd6e"],
+  [0, 2, "#e0bd6e"], [1, 2, "#e0bd6e"], [2, 2, "#ffe2b8"], [3, 2, "#e0bd6e"], [4, 2, "#e0bd6e"],
+  [1, 3, "#e0bd6e"], [2, 3, "#e0bd6e"], [3, 3, "#e0bd6e"],
+  [0, 4, "#e8893d"], [2, 4, "#e0bd6e"], [4, 4, "#e8893d"],
 ];
 const MOON: [number, number, string][] = [
-  [1, 0, "#9196a6"], [2, 0, "#f5f2ec"], [3, 0, "#f5f2ec"],
-  [0, 1, "#9196a6"], [1, 1, "#9196a6"], [2, 1, "#f5f2ec"], [3, 1, "#c3c5cf"], [4, 1, "#f5f2ec"],
-  [0, 2, "#9196a6"], [1, 2, "#9196a6"], [2, 2, "#f5f2ec"], [3, 2, "#f5f2ec"], [4, 2, "#f5f2ec"],
-  [0, 3, "#9196a6"], [1, 3, "#9196a6"], [2, 3, "#c3c5cf"], [3, 3, "#f5f2ec"], [4, 3, "#f5f2ec"],
-  [1, 4, "#9196a6"], [2, 4, "#f5f2ec"], [3, 4, "#f5f2ec"],
+  [1, 0, "#8f988f"], [2, 0, "#ebe9e1"], [3, 0, "#ebe9e1"],
+  [0, 1, "#8f988f"], [1, 1, "#8f988f"], [2, 1, "#ebe9e1"], [3, 1, "#bcc2ba"], [4, 1, "#ebe9e1"],
+  [0, 2, "#8f988f"], [1, 2, "#8f988f"], [2, 2, "#ebe9e1"], [3, 2, "#ebe9e1"], [4, 2, "#ebe9e1"],
+  [0, 3, "#8f988f"], [1, 3, "#8f988f"], [2, 3, "#bcc2ba"], [3, 3, "#ebe9e1"], [4, 3, "#ebe9e1"],
+  [1, 4, "#8f988f"], [2, 4, "#ebe9e1"], [3, 4, "#ebe9e1"],
 ];
 
 function SkyDial({
@@ -165,9 +165,9 @@ function SkyDial({
           fill={phase == null || c.phase === phase ? PHASE_INK[c.phase] : PHASE_DIM[c.phase]}
         />
       ))}
-      {you && <rect x={you.x} y={you.y} width={you.w} height={you.h} fill="#8be9ff" className="app-home-dial-you" />}
+      {you && <rect x={you.x} y={you.y} width={you.w} height={you.h} fill="#89b4a8" className="app-home-dial-you" />}
       {head.map((c) => (
-        <rect key={`h${c.x}-${c.y}`} x={c.x} y={c.y} width={1} height={1} fill="#f5f2ec" />
+        <rect key={`h${c.x}-${c.y}`} x={c.x} y={c.y} width={1} height={1} fill="#ebe9e1" />
       ))}
       {glyphPhase && (
         <g transform="translate(10 5)">

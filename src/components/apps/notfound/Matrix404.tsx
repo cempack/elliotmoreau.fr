@@ -88,7 +88,7 @@ function Led({ c }: { c: Cell }) {
       <rect x={x} y={y} width={LED} height={LED} fill={c.fill} />
       {/* bevel: lit top edge, shaded foot */}
       <rect x={x} y={y} width={LED} height={0.1} fill="#fff" opacity={0.38} />
-      <rect x={x} y={y + LED - 0.1} width={LED} height={0.1} fill="#05060a" opacity={0.22} />
+      <rect x={x} y={y + LED - 0.1} width={LED} height={0.1} fill="#0a0c0b" opacity={0.22} />
     </>
   );
 }

@@ -16,7 +16,7 @@ import { ART_H, ART_W, drunkenBishop, groups, loadKey, type KeyInfo } from "./pg
 const KEY_FILE = "elliot-moreau.asc";
 
 /** visit count → colour, cool to warm; start and end stand out */
-const HEAT = ["", "#3a3f55", "#7a68e6", "#b3a4ff", "#8be9ff", "#f5f2ec"];
+const HEAT = ["", "#3f4842", "#7a68e6", "#aea3c8", "#89b4a8", "#ebe9e1"];
 
 /** The fingerprint drawn as a 17 × 9 pixel board (the drunken bishop). */
 function VisualFingerprint({ info }: { info: KeyInfo }) {
@@ -32,11 +32,11 @@ function VisualFingerprint({ info }: { info: KeyInfo }) {
       {grid.map((n, i) => {
         const x = i % ART_W;
         const y = Math.floor(i / ART_W);
-        if (!n) return <rect key={i} x={x + 0.4} y={y + 0.4} width={0.2} height={0.2} fill="#3a3f55" />;
+        if (!n) return <rect key={i} x={x + 0.4} y={y + 0.4} width={0.2} height={0.2} fill="#3f4842" />;
         return <rect key={i} x={x + 0.06} y={y + 0.06} width={0.88} height={0.88} fill={HEAT[Math.min(n, 5)]} />;
       })}
-      <rect x={start.x} y={start.y} width={1} height={1} fill="#c6ff5e" />
-      <rect x={end.x} y={end.y} width={1} height={1} fill="#ffb86b" />
+      <rect x={start.x} y={start.y} width={1} height={1} fill="#b0cc86" />
+      <rect x={end.x} y={end.y} width={1} height={1} fill="#e0bd6e" />
     </svg>
   );
 }

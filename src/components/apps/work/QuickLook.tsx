@@ -11,7 +11,7 @@ import { lenisRef } from "@/lib/lenisRef";
 import { timeAgo } from "@/lib/format";
 import { SOCIALS } from "@/lib/places";
 import { useReduced } from "@/hooks/env";
-import { PixelPlanet } from "@/components/PixelPlanet";
+import { Monogram } from "@/components/Monogram";
 import { GLYPH_STAR, PixelGlyph } from "@/components/glyphs";
 import { useSheetDismiss } from "@/components/ui/Sheet";
 import { DitherStage } from "./DitherStage";
@@ -514,7 +514,7 @@ export function QuickLook({
             animate={{ opacity: 1, scale: 1 }}
             transition={spring.snappy}
           >
-            <PixelPlanet seed={repo.name} className="app-work-planet" />
+            <Monogram text={repo.name} className="app-work-planet" />
           </m.div>
         </m.div>
       )}
@@ -654,7 +654,7 @@ function QuickLookBody({
               // the planet itself flies in over this slot (see QuickLook)
               <span className="app-work-qlb-planet" data-ql-slot aria-hidden />
             ) : (
-              <PixelPlanet seed={repo.name} className="app-work-qlb-planet" />
+              <Monogram text={repo.name} className="app-work-qlb-planet" />
             )}
           </>
         )}

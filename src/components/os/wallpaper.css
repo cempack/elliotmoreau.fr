@@ -16,61 +16,61 @@
   contain: strict;
   background: linear-gradient(
     180deg,
-    #04050c 0%,
-    #070a1e 26%,
-    #0b0f2a 44%,
-    #15163a 58%,
-    #1d1a45 66%,
-    #15163a 69%,
-    #10112e 74%,
-    #0b0b23 79%,
-    #080a20 82%,
-    #04040b 100%
+    #040607 0%,
+    #060a0b 26%,
+    #0a1314 44%,
+    #111d1d 58%,
+    #152626 66%,
+    #111d1d 69%,
+    #0c1716 74%,
+    #081210 79%,
+    #060d0d 82%,
+    #020303 100%
   );
 }
 html[data-sky="dawn"] .os-wallpaper {
   background: linear-gradient(
     180deg,
-    #0a0a22 0%,
-    #2c1c4e 22%,
-    #8a4a6b 44%,
-    #d9776b 60%,
-    #f29a6b 67%,
-    #6e3a68 69%,
-    #3b2150 74%,
-    #29163f 79%,
-    #3a2048 82%,
-    #0c0716 100%
+    #0a1213 0%,
+    #20302f 22%,
+    #5e6a62 44%,
+    #b39a80 60%,
+    #d6b48c 67%,
+    #5b6660 69%,
+    #26332e 74%,
+    #1a2822 79%,
+    #1f2c2a 82%,
+    #0b130f 100%
   );
 }
 html[data-sky="day"] .os-wallpaper {
   background: linear-gradient(
     180deg,
-    #071b36 0%,
-    #0f3e6b 20%,
-    #2f7fa8 45%,
-    #6fb8d2 60%,
-    #9ed8e6 67%,
-    #6c9ac0 69%,
-    #2f5b8a 74%,
-    #22406c 79%,
-    #2a6290 82%,
-    #0a1a30 100%
+    #16252a 0%,
+    #2b4249 20%,
+    #557379 45%,
+    #86a1a2 60%,
+    #a9bdb9 67%,
+    #6d8786 69%,
+    #2c4a44 74%,
+    #1f3d2e 79%,
+    #26443f 82%,
+    #0e2116 100%
   );
 }
 html[data-sky="dusk"] .os-wallpaper {
   background: linear-gradient(
     180deg,
-    #08061a 0%,
-    #2a1048 22%,
-    #7a2a5e 44%,
-    #e0625c 60%,
-    #ff8a5b 67%,
-    #62204f 69%,
-    #2a0f40 74%,
-    #1c0a2f 79%,
-    #2a1040 82%,
-    #070310 100%
+    #07090c 0%,
+    #1b2228 22%,
+    #4b4a4f 44%,
+    #a36f5c 60%,
+    #c98762 67%,
+    #4b4144 69%,
+    #1d2425 74%,
+    #131c1a 79%,
+    #151b1c 82%,
+    #070c0a 100%
   );
 }
 
@@ -136,12 +136,12 @@ html[data-sky="dusk"] .os-wallpaper {
   position: absolute;
   width: calc(var(--c) * 2);
   height: var(--c);
-  background: #f5f2ec;
+  background: #ebe9e1;
   box-shadow:
-    calc(var(--c) * 2) calc(var(--c) * -1) 0 0 rgba(245, 242, 236, 0.75),
-    calc(var(--c) * 4) calc(var(--c) * -2) 0 0 rgba(198, 255, 94, 0.5),
-    calc(var(--c) * 6) calc(var(--c) * -3) 0 0 rgba(139, 233, 255, 0.32),
-    calc(var(--c) * 8) calc(var(--c) * -4) 0 0 rgba(179, 164, 255, 0.18);
+    calc(var(--c) * 2) calc(var(--c) * -1) 0 0 rgba(235, 233, 225, 0.75),
+    calc(var(--c) * 4) calc(var(--c) * -2) 0 0 rgba(176, 204, 134, 0.5),
+    calc(var(--c) * 6) calc(var(--c) * -3) 0 0 rgba(137, 180, 168, 0.32),
+    calc(var(--c) * 8) calc(var(--c) * -4) 0 0 rgba(174, 163, 200, 0.18);
   opacity: 0;
   animation: os-wp-meteor 31s 9s infinite both;
 }
@@ -182,8 +182,8 @@ html[data-sky="dusk"] .os-wallpaper {
 .os-wallpaper-plane-light {
   position: absolute;
   inset: 0;
-  background: #ff5f7e;
-  box-shadow: calc(var(--c) * 2) 0 0 0 #f5f2ec;
+  background: #e2786b;
+  box-shadow: calc(var(--c) * 2) 0 0 0 #ebe9e1;
   opacity: 0.2;
   animation: os-wp-blink 1.7s steps(1, end) infinite;
 }

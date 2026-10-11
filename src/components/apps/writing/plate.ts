@@ -1,14 +1,12 @@
-import { paintPlanet } from "@/components/PixelPlanet";
-
 /**
  * The Writing plate: a tiny pixel world per post, seeded by its slug. A
- * Bayer-dithered sky in one of the four emOS phases, stars or clouds, the
- * post's PixelPlanet rising over three ranges of pixel hills, a warm
- * window on the middle ridge, and a dithered fade into the glass at the
- * bottom so the title can sit on it.
+ * Bayer-dithered sky in one of the four emOS phases, stars or clouds, a
+ * low sun or moon over three ranges of pixel hills, a warm window on the
+ * middle ridge, and a dithered fade into the glass at the bottom so the
+ * title can sit on it.
  *
- * It is painted once per size as depth layers (sky, planet, far, mid,
- * near), one canvas cell per planet pixel so everything shares one grid.
+ * It is painted once per size as depth layers (sky, sun, far, mid, near),
+ * one canvas cell per art pixel so everything shares one grid.
  * `composite()` stacks them with each layer offset by whole cells in
  * proportion to its depth: the parallax moves in pixel steps, never in
  * blurry sub-cell slides.
@@ -23,21 +21,21 @@ const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 export const bayer = (x: number, y: number) => (BAYER[((y & 3) << 2) | (x & 3)] + 0.5) / 16;
 
 const PHASES: Record<Phase, { sky: string[]; far: string; mid: string; near: string; rim: string; glow: string; stars: number }> = {
-  night: { sky: ["#04050c", "#0b0f2a", "#1d1a45", "#2c2a66"], far: "#2a2c58", mid: "#15173a", near: "#07080f", rim: "#4b4a8c", glow: "#3d3480", stars: 1 / 60 },
-  dawn: { sky: ["#0a0a22", "#2c1c4e", "#8a4a6b", "#f29a6b"], far: "#6b3a5e", mid: "#311c44", near: "#0b0812", rim: "#c77a72", glow: "#a8566e", stars: 1 / 170 },
-  day: { sky: ["#071b36", "#0f3e6b", "#2f7fa8", "#9ed8e6"], far: "#2f6688", mid: "#173c58", near: "#071222", rim: "#7fc1d6", glow: "#3f8fb8", stars: 0 },
-  dusk: { sky: ["#08061a", "#2a1048", "#7a2a5e", "#ff8a5b"], far: "#66285a", mid: "#2c1238", near: "#0a0610", rim: "#d4645e", glow: "#93305f", stars: 1 / 130 },
+  night: { sky: ["#040607", "#0a1314", "#152626", "#1f3533"], far: "#1d2e2c", mid: "#111d1b", near: "#060a09", rim: "#3f5a50", glow: "#2c4440", stars: 1 / 60 },
+  dawn: { sky: ["#0a1213", "#20302f", "#5e6a62", "#d6b48c"], far: "#4a5650", mid: "#26332e", near: "#0b130f", rim: "#b39a80", glow: "#9a8a6e", stars: 1 / 170 },
+  day: { sky: ["#16252a", "#2b4249", "#557379", "#a9bdb9"], far: "#3e5c58", mid: "#22402f", near: "#0b1a11", rim: "#86a1a2", glow: "#6f8f8a", stars: 0 },
+  dusk: { sky: ["#07090c", "#1b2228", "#4b4a4f", "#c98762"], far: "#3b3a3c", mid: "#1d2425", near: "#070c0a", rim: "#a36f5c", glow: "#7c5a4e", stars: 1 / 130 },
 };
 const PHASE_ORDER: Phase[] = ["night", "dusk", "dawn", "night", "day"];
 
-const STAR_INKS = ["#f5f2ec", "#f5f2ec", "#c3c5cf", "#8be9ff", "#b3a4ff"].map(hex);
-const EMBER = hex("#ffb86b");
+const STAR_INKS = ["#ebe9e1", "#ebe9e1", "#bcc2ba", "#89b4a8", "#aea3c8"].map(hex);
+const EMBER = hex("#e0bd6e");
 const EMBER_SOFT = hex("#ffe2b8");
-const CLOUD = hex("#e6f6fa");
+const CLOUD = hex("#e3ebe7");
 
 /** Spare cells painted past each side of a moving layer: the largest shift. */
 export const PLATE_MARGIN = 6;
-/** Cells per unit of shift, by layer (planet, far, mid, near): near moves most. */
+/** Cells per unit of shift, by layer (sun, far, mid, near): near moves most. */
 const DEPTHS = [0.5, 1, 2, 3];
 /** The largest |shift| `composite` honours (near layer: 3 × 2 = the margin). */
 export const MAX_SHIFT = PLATE_MARGIN / DEPTHS[DEPTHS.length - 1];
@@ -89,23 +87,6 @@ function ridge(rng: () => number, width: number, period: number) {
     return pts[i] * (1 - s) + pts[i + 1] * s;
   };
   return (x: number) => at(a, x, period) * 0.72 + at(b, x, period / 3) * 0.28;
-}
-
-const planetCache = new Map<string, ImageData>();
-
-function planetPixels(seed: string): ImageData | null {
-  const hit = planetCache.get(seed);
-  if (hit) return hit;
-  const c = document.createElement("canvas");
-  c.width = 64;
-  c.height = 64;
-  const ctx = c.getContext("2d");
-  if (!ctx) return null;
-  paintPlanet(seed, ctx);
-  const img = ctx.getImageData(0, 0, 64, 64);
-  if (planetCache.size > 32) planetCache.clear();
-  planetCache.set(seed, img);
-  return img;
 }
 
 /** A pixel writer over one RGBA buffer: source-over, alpha 0..1. */
@@ -165,7 +146,7 @@ export function paintPlateLayers(seed: string, W: number, H: number): PlateLayer
     for (let x = 0; x < W; x++) putSky(x, y, f > bayer(x, y) ? skyInk[i + 1] : skyInk[i]);
   }
 
-  // planet position: right of centre, high enough to rise clear of the hills
+  // the sun (or moon): right of centre, high enough to clear the hills
   const cx = Math.round(W * (0.6 + rng() * 0.16));
   const cy = Math.round(Math.max(30, horizon * (0.42 + rng() * 0.14)));
 
@@ -211,19 +192,14 @@ export function paintPlateLayers(seed: string, W: number, H: number): PlateLayer
     }
   }
 
-  // the post's planet, cell for cell
-  const planet = planetPixels(seed);
-  if (planet) {
-    const ox = cx - 32;
-    const oy = cy - 32;
-    const pd = planet.data;
-    for (let y = 0; y < 64; y++) {
-      for (let x = 0; x < 64; x++) {
-        const i = (y * 64 + x) * 4;
-        const a = pd[i + 3] / 255;
-        if (a <= 0.02) continue;
-        putPlanet(ox + x, oy + y, [pd[i], pd[i + 1], pd[i + 2]], a);
-      }
+  // the sun or moon: a small dithered disc
+  const disc = hex(P.stars > 0 && P.sky[0] === PHASES.night.sky[0] ? "#e9e6d8" : "#f1d79a");
+  const DR = 8;
+  for (let y = -DR; y <= DR; y++) {
+    for (let x = -DR; x <= DR; x++) {
+      const r = Math.hypot(x, y) / DR;
+      if (r > 1) continue;
+      putPlanet(cx + x, cy + y, disc, r > 0.82 ? (r - 0.82 < bayer(x + 8, y + 8) * 0.18 ? 1 : 0.5) : 1);
     }
   }
 

@@ -8,7 +8,7 @@ import { GLYPH_H, bandIndexFor, bandInk, rasterizePixelLine } from "@/lib/pixelw
 
 /**
  * emOS share images and app icons, drawn for ImageResponse (Satori +
- * resvg): a Nocturne night sky with pixel stars, a dithered horizon glow
+ * resvg): a Moss night sky with pixel stars, a dithered horizon glow
  * and two stepped ridges; the pixel wordmark in its laser bands and voxel
  * relief (the same geometry as PixelWordmark); each app's 16×16 Dock
  * glyph on its tinted squircle; and the lime emOS mark. Everything pixel
@@ -22,27 +22,27 @@ const W = OG_SIZE.width;
 const H = OG_SIZE.height;
 
 const C = {
-  paper: "#f5f2ec",
-  paper2: "#c3c5cf",
-  paper3: "#9196a6",
-  ink950: "#05060a",
-  ink900: "#0a0b12",
-  ink600: "#262a3a",
-  signal: "#c6ff5e",
-  signalDeep: "#8fd11f",
-  ion: "#8be9ff",
+  paper: "#ebe9e1",
+  paper2: "#bcc2ba",
+  paper3: "#8f988f",
+  ink950: "#0a0c0b",
+  ink900: "#101311",
+  ink600: "#2b322d",
+  signal: "#b0cc86",
+  signalDeep: "#86a35c",
+  ion: "#89b4a8",
   ionLight: "#cdf6ff",
   ionDeep: "#3fb4dc",
-  lilac: "#b3a4ff",
+  lilac: "#aea3c8",
   lilacDeep: "#7a68e6",
-  ember: "#ffb86b",
+  ember: "#e0bd6e",
   emberDeep: "#e8893d",
   emberLight: "#ffe2b8",
-  flare: "#ff5f7e",
-  night: "#1d1a45",
+  flare: "#e2786b",
+  night: "#152626",
 } as const;
 
-const SKY = "linear-gradient(180deg, #04050c 0%, #0b0f2a 54%, #1d1a45 100%)";
+const SKY = "linear-gradient(180deg, #040607 0%, #0a1314 54%, #152626 100%)";
 
 /* ───────────────────────────── fonts ───────────────────────────── */
 

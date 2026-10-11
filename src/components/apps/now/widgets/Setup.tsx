@@ -1,20 +1,20 @@
 "use client";
 
-import { PixelPlanet } from "@/components/PixelPlanet";
+import { Monogram } from "@/components/Monogram";
 import { PixelLabel } from "@/components/PixelLabel";
 import { useI18n } from "@/i18n/client";
 import type { RepoInfo } from "@/lib/github";
 import { NOW, loc } from "@/content/now";
 
 const PALETTE = [
-  ["ink", "#11131c"],
-  ["flare", "#ff5f7e"],
-  ["signal", "#c6ff5e"],
-  ["ember", "#ffb86b"],
-  ["ion", "#8be9ff"],
-  ["lilac", "#b3a4ff"],
-  ["label-3", "#9196a6"],
-  ["paper", "#f5f2ec"],
+  ["ink", "#161a17"],
+  ["flare", "#e2786b"],
+  ["signal", "#b0cc86"],
+  ["ember", "#e0bd6e"],
+  ["ion", "#89b4a8"],
+  ["lilac", "#aea3c8"],
+  ["label-3", "#8f988f"],
+  ["paper", "#ebe9e1"],
 ] as const;
 
 export function SetupMeta() {
@@ -39,7 +39,7 @@ export function Setup({ repos }: { repos: RepoInfo[] }) {
   return (
     <div className="app-now-fetch">
       <div className="app-now-fetch-logo" aria-hidden>
-        <PixelPlanet seed="dos-moos" className="app-now-fetch-planet" />
+        <Monogram text="dos-moos" className="app-now-fetch-planet" />
         <PixelLabel text="DOS MOOS" cell={2} className="app-now-fetch-mark" />
       </div>
       <div className="app-now-fetch-info">

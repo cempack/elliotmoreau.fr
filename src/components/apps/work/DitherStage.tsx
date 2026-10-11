@@ -5,13 +5,6 @@ import { useEffect, useRef } from "react";
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 const bayer = (x: number, y: number) => (BAYER[((y & 3) << 2) | (x & 3)] + 0.5) / 16;
 
-/** cheap deterministic hash → [0, 1) for star placement (no Math.random) */
-function hash(x: number, y: number) {
-  let h = (x * 374761393 + y * 668265263) | 0;
-  h = Math.imul(h ^ (h >>> 13), 1274126177);
-  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
-}
-
 type RGB = [number, number, number];
 
 /** inks from deepest to brightest; level 0 stays transparent */
@@ -35,7 +28,7 @@ const TONES: Record<"ion" | "lilac", RGB[]> = {
 /**
  * A dithered pool of light, painted once (and again only when its box
  * changes size): an ordered Bayer 4×4 dither over a soft radial falloff,
- * chunky pixels, a few still stars. The stage a project's PixelPlanet
+ * chunky pixels. The stage a project's monogram
  * sits on. Static: it never animates.
  */
 export function DitherStage({
@@ -88,15 +81,6 @@ export function DitherStage({
             d[i] = c[0];
             d[i + 1] = c[1];
             d[i + 2] = c[2];
-            d[i + 3] = 255;
-          }
-          // a sparse, still starfield in the dark outer ring
-          const s = hash(x, y);
-          if (lvl < 2 && s < 0.006) {
-            const bright = s < 0.0015;
-            d[i] = bright ? 245 : 145;
-            d[i + 1] = bright ? 242 : 150;
-            d[i + 2] = bright ? 236 : 166;
             d[i + 3] = 255;
           }
         }

@@ -1,27 +1,27 @@
 @import "tailwindcss";
 
-/* ─────────────────────────── emOS · Nocturne ───────────────────────────
-   A personal OS made of glass and pixels. Cool indigo night, warm paper
-   text, one loud signal colour (lime) and three supporting lights. Every
-   text colour is solid (no opacity) and clears 4.5:1 on ink-900. */
+/* ─────────────────────────── emOS · Moss ───────────────────────────
+   Taken from my Omarchy theme: near-black greens, warm paper text, one
+   moss accent and three quieter lights. Every text colour is solid (no
+   opacity) and clears 4.5:1 on ink-900. */
 @theme {
-  --color-ink-950: #05060a;
-  --color-ink-900: #0a0b12;
-  --color-ink-800: #11131c;
-  --color-ink-700: #1a1d29;
-  --color-ink-600: #262a3a;
-  --color-ink-500: #3a3f55;
+  --color-ink-950: #0a0c0b;
+  --color-ink-900: #101311;
+  --color-ink-800: #161a17;
+  --color-ink-700: #1f2420;
+  --color-ink-600: #2b322d;
+  --color-ink-500: #3f4842;
 
-  --color-label: #f5f2ec;
-  --color-label-2: #c3c5cf;
-  --color-label-3: #9196a6;
+  --color-label: #ebe9e1;
+  --color-label-2: #bcc2ba;
+  --color-label-3: #8f988f;
 
-  --color-signal: #c6ff5e; /* lime: the one loud colour */
-  --color-signal-deep: #8fd11f;
-  --color-ion: #8be9ff; /* cyan: links, live data */
-  --color-lilac: #b3a4ff; /* sky, secondary accents */
-  --color-ember: #ffb86b; /* sun, moon, warmth */
-  --color-flare: #ff5f7e; /* live dot, errors, close */
+  --color-signal: #b0cc86; /* moss: the accent */
+  --color-signal-deep: #86a35c;
+  --color-ion: #89b4a8; /* sage: links, live data */
+  --color-lilac: #aea3c8; /* night, secondary accents */
+  --color-ember: #e0bd6e; /* sun, warmth */
+  --color-flare: #e2786b; /* live dot, errors, close */
 
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
@@ -56,9 +56,9 @@
   --text-caption--line-height: 1.35;
   --text-caption--letter-spacing: 0.01em;
 
-  --radius-window: 22px;
-  --radius-card: 18px;
-  --radius-control: 12px;
+  --radius-window: 12px;
+  --radius-card: 10px;
+  --radius-control: 8px;
 
   --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-quint: cubic-bezier(0.64, 0, 0.78, 0);
@@ -70,8 +70,8 @@
    heavier (more blur, deeper shadow). The refracting Liquid Glass variant
    lives in components/os/Glass.tsx; these are the frosted base. */
 :root {
-  --glass-tint: rgba(22, 25, 38, 0.46);
-  --glass-tint-thick: rgba(16, 18, 28, 0.66);
+  --glass-tint: rgba(22, 26, 23, 0.46);
+  --glass-tint-thick: rgba(16, 19, 17, 0.66);
   --glass-rim: rgba(255, 255, 255, 0.16);
   --glass-rim-strong: rgba(255, 255, 255, 0.28);
   --glass-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.65);
@@ -133,8 +133,8 @@
 }
 @media (prefers-reduced-transparency: reduce) {
   :root {
-    --glass-tint: rgba(22, 25, 38, 0.97);
-    --glass-tint-thick: rgba(16, 18, 28, 0.98);
+    --glass-tint: rgba(22, 26, 23, 0.97);
+    --glass-tint-thick: rgba(16, 19, 17, 0.98);
   }
   .glass-thin,
   .glass,
@@ -145,9 +145,9 @@
 @media (prefers-contrast: more) {
   :root {
     --hairline: rgba(255, 255, 255, 0.45);
-    --glass-tint: rgba(10, 11, 18, 0.96);
-    --glass-tint-thick: rgba(10, 11, 18, 0.98);
-    --color-label-3: #c3c5cf;
+    --glass-tint: rgba(16, 19, 17, 0.96);
+    --glass-tint-thick: rgba(16, 19, 17, 0.98);
+    --color-label-3: #bcc2ba;
   }
 }
 
@@ -214,7 +214,7 @@ p {
 
 /* ───────────────────────── foundation primitives ─────────────────────────
    Component primitives themed through the --ui-* / --pal-* / --cursor-*
-   custom properties defined above (Nocturne). */
+   custom properties defined above (Moss). */
 
 /* cursor */
 html.has-cursor,
@@ -260,7 +260,7 @@ html.has-cursor:has(dialog[open]) :is(a, button, [role="option"], [role="button"
   border-radius: 999px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--cursor-ring, rgba(245, 242, 236, 0.55));
+  border: 1px solid var(--cursor-ring, rgba(235, 233, 225, 0.55));
   background: var(--cursor-fill, transparent);
   mix-blend-mode: var(--cursor-blend, normal);
 }
@@ -326,7 +326,7 @@ html.has-cursor:has(dialog[open]) :is(a, button, [role="option"], [role="button"
   overflow: visible;
 }
 .em-palette::backdrop {
-  background: rgba(5, 6, 10, 0.5);
+  background: rgba(10, 12, 11, 0.5);
   backdrop-filter: blur(6px);
   transition: opacity 0.25s ease;
 }
@@ -427,7 +427,7 @@ html.has-cursor:has(dialog[open]) :is(a, button, [role="option"], [role="button"
 .em-sheet-scrim {
   position: absolute;
   inset: 0;
-  background: rgba(5, 6, 10, 0.55);
+  background: rgba(10, 12, 11, 0.55);
 }
 .em-sheet {
   position: absolute;
@@ -454,7 +454,7 @@ html.has-cursor:has(dialog[open]) :is(a, button, [role="option"], [role="button"
   height: 5px;
   margin: 10px auto 4px;
   border-radius: 999px;
-  background: rgba(245, 242, 236, 0.3);
+  background: rgba(235, 233, 225, 0.3);
 }
 .em-sheet-content {
   overflow: auto;
@@ -558,4 +558,46 @@ html[data-intro="done"] .em-intro {
     opacity: 0;
     translate: 0 10px;
   }
+}
+
+/* Monogram: the stand-in tile where there is no picture */
+.em-mono {
+  --em-mono-c: var(--color-signal);
+  position: relative;
+  container-type: size;
+  border-radius: 18%;
+  background: color-mix(in oklab, var(--em-mono-c) 14%, var(--color-ink-800));
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--em-mono-c) 28%, transparent);
+  color: var(--em-mono-c);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+.em-mono[data-tone="1"] {
+  --em-mono-c: var(--color-ion);
+}
+.em-mono[data-tone="2"] {
+  --em-mono-c: var(--color-ember);
+}
+.em-mono[data-tone="3"] {
+  --em-mono-c: var(--color-flare);
+}
+.em-mono[data-tone="4"] {
+  --em-mono-c: var(--color-lilac);
+}
+.em-mono-t {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34cqmin;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+.em-mono-g {
+  position: absolute;
+  inset: 0;
+  width: 40cqmin;
+  height: 40cqmin;
+  margin: auto;
 }

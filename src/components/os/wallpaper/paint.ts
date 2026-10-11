@@ -128,142 +128,142 @@ type Phase = {
 const PHASES: Record<SkyPhase, Phase> = {
   night: {
     sky: [
-      [0, "#04050c"],
-      [0.3, "#060818"],
-      [0.58, "#0b0f2a"],
-      [0.82, "#151638"],
-      [1, "#1d1a45"],
+      [0, "#040607"],
+      [0.3, "#060a0b"],
+      [0.58, "#0a1314"],
+      [0.82, "#101d1e"],
+      [1, "#152626"],
     ],
-    glow: "#3a2f6e",
-    glowAmt: 0.22,
+    glow: "#2c4440",
+    glowAmt: 0.2,
     stars: 1,
     starLum: 0.2,
-    milky: 1,
-    far: { rock: "#15163a", lit: "#202152", snow: "#5a5a9c", snowShade: "#30316a", edge: "#7470b8" },
-    mid: { body: "#10112e", rim: "#24245a" },
-    near: { body: "#0b0b23", rim: "#1c1b46" },
-    fore: { body: "#05060f", rim: "#15142f" },
-    haze: "#2a2660",
-    shore: "#4a3f86",
-    lake: "#080a20",
-    lakeHi: "#2a2a62",
-    glint: "#ffd9a3",
+    milky: 0.7,
+    far: { rock: "#111d1d", lit: "#1a2a29", snow: "#4f6560", snowShade: "#2a3a38", edge: "#6f8a82" },
+    mid: { body: "#0c1716", rim: "#1c2e2b" },
+    near: { body: "#081210", rim: "#172723" },
+    fore: { body: "#040807", rim: "#111d19" },
+    haze: "#203631",
+    shore: "#3f5a50",
+    lake: "#060d0d",
+    lakeHi: "#21352f",
+    glint: "#f0dca8",
     windows: 0.78,
-    wall: "#26264e",
-    roof: "#0c0c20",
+    wall: "#1f2e2a",
+    roof: "#0a1210",
     cloud: null,
     body: "moon",
-    core: "#f5efe0",
-    rim: "#d9ccae",
-    halo: "#b3a4ff",
+    core: "#efeee4",
+    rim: "#d4d0b8",
+    halo: "#a9bdb2",
     haloAmt: 0.2,
-    vignette: "#020208",
+    vignette: "#010303",
   },
   dawn: {
     sky: [
-      [0, "#0a0a22"],
-      [0.28, "#2c1c4e"],
-      [0.6, "#8a4a6b"],
-      [0.84, "#d9776b"],
-      [1, "#f29a6b"],
+      [0, "#0a1213"],
+      [0.28, "#20302f"],
+      [0.6, "#5e6a62"],
+      [0.84, "#b39a80"],
+      [1, "#d6b48c"],
     ],
-    glow: "#ffcf8f",
-    glowAmt: 0.5,
-    stars: 0.55,
+    glow: "#f0d3a0",
+    glowAmt: 0.45,
+    stars: 0.5,
     starLum: 0.1,
     milky: 0,
-    far: { rock: "#4a2a5c", lit: "#7a3d68", snow: "#ffc0a0", snowShade: "#b06e8e", edge: "#ffd7b0" },
-    mid: { body: "#3b2150", rim: "#8a4a6e" },
-    near: { body: "#29163f", rim: "#673363" },
-    fore: { body: "#130a20", rim: "#3a1d48" },
-    haze: "#c4707e",
-    shore: "#ffc89a",
-    lake: "#2c1a44",
-    lakeHi: "#b9707e",
-    glint: "#ffe2b0",
+    far: { rock: "#3a4643", lit: "#5b6660", snow: "#e6cfb4", snowShade: "#98928a", edge: "#f2dcc0" },
+    mid: { body: "#26332e", rim: "#5a6656" },
+    near: { body: "#1a2822", rim: "#3f4e40" },
+    fore: { body: "#0b130f", rim: "#24332a" },
+    haze: "#9a9a86",
+    shore: "#e8caa0",
+    lake: "#1f2c2a",
+    lakeHi: "#8f8e7c",
+    glint: "#fbe6bc",
     windows: 0.32,
-    wall: "#5a3462",
-    roof: "#24153a",
-    cloud: { lit: "#ffc49a", body: "#7a4068", shade: "#4a2a58", underlit: true },
+    wall: "#4a5148",
+    roof: "#1c2420",
+    cloud: { lit: "#e8c9a4", body: "#6c726a", shade: "#3f4844", underlit: true },
     body: "sun",
-    core: "#fff3dc",
-    rim: "#ffd08a",
-    halo: "#ffc58a",
-    haloAmt: 0.55,
-    vignette: "#06040f",
+    core: "#fff4de",
+    rim: "#f2d79e",
+    halo: "#f0cf98",
+    haloAmt: 0.5,
+    vignette: "#040807",
   },
   day: {
     sky: [
-      [0, "#071b36"],
-      [0.26, "#0f3e6b"],
-      [0.64, "#2f7fa8"],
-      [0.88, "#6fb8d2"],
-      [1, "#9ed8e6"],
+      [0, "#16252a"],
+      [0.26, "#2b4249"],
+      [0.64, "#557379"],
+      [0.88, "#86a1a2"],
+      [1, "#a9bdb9"],
     ],
-    glow: "#e3f6f8",
-    glowAmt: 0.18,
+    glow: "#dfe8e2",
+    glowAmt: 0.16,
     stars: 0,
     starLum: 0,
     milky: 0,
-    far: { rock: "#4c7aa6", lit: "#6c9ac0", snow: "#eef9fc", snowShade: "#a9cde2", edge: "#ffffff" },
-    mid: { body: "#2f5b8a", rim: "#5d8db6" },
-    near: { body: "#22406c", rim: "#3e6898" },
-    fore: { body: "#101f3a", rim: "#24426a" },
-    haze: "#8ec5dc",
-    shore: "#d6f1f6",
-    lake: "#1b4f7c",
-    lakeHi: "#7fbfdc",
-    glint: "#ffffff",
+    far: { rock: "#4d6668", lit: "#6d8786", snow: "#dfe8e4", snowShade: "#a2b6b2", edge: "#f4f8f4" },
+    mid: { body: "#2c4a44", rim: "#4f6e64" },
+    near: { body: "#1f3d2e", rim: "#365a42" },
+    fore: { body: "#0e2116", rim: "#22402b" },
+    haze: "#7f9d9b",
+    shore: "#cfdcd6",
+    lake: "#26443f",
+    lakeHi: "#7c9c97",
+    glint: "#f6faf6",
     windows: 0,
-    wall: "#c9d9e6",
-    roof: "#6a4a6e",
-    cloud: { lit: "#eaf6fa", body: "#bcdcea", shade: "#86b4ce", underlit: false },
+    wall: "#c4cfc8",
+    roof: "#5c4a46",
+    cloud: { lit: "#e3ebe7", body: "#b6c6c2", shade: "#86a09c", underlit: false },
     body: "sun",
-    core: "#fffdf0",
-    rim: "#fff1c4",
-    halo: "#fff6d8",
-    haloAmt: 0.42,
-    vignette: "#03101f",
+    core: "#fbfbf0",
+    rim: "#eeeacc",
+    halo: "#f2f1dc",
+    haloAmt: 0.36,
+    vignette: "#050c0a",
   },
   dusk: {
     sky: [
-      [0, "#08061a"],
-      [0.28, "#2a1048"],
-      [0.6, "#7a2a5e"],
-      [0.85, "#e0625c"],
-      [1, "#ff8a5b"],
+      [0, "#07090c"],
+      [0.28, "#1b2228"],
+      [0.6, "#4b4a4f"],
+      [0.85, "#a36f5c"],
+      [1, "#c98762"],
     ],
-    glow: "#ffb86b",
-    glowAmt: 0.55,
-    stars: 0.5,
+    glow: "#e0b07a",
+    glowAmt: 0.5,
+    stars: 0.45,
     starLum: 0.09,
     milky: 0,
-    far: { rock: "#3a1548", lit: "#62204f", snow: "#ffa486", snowShade: "#8e3f70", edge: "#ffc69a" },
-    mid: { body: "#2a0f40", rim: "#7a2a5a" },
-    near: { body: "#1c0a2f", rim: "#55204e" },
-    fore: { body: "#0c0516", rim: "#2a1236" },
-    haze: "#a6436a",
-    shore: "#ffae7a",
-    lake: "#210c34",
-    lakeHi: "#a8486c",
-    glint: "#ffcf96",
+    far: { rock: "#2d2f33", lit: "#4b4144", snow: "#e0a88a", snowShade: "#7a5f5c", edge: "#efc4a0" },
+    mid: { body: "#1d2425", rim: "#4f4645" },
+    near: { body: "#131c1a", rim: "#3a3a34" },
+    fore: { body: "#070c0a", rim: "#1d2420" },
+    haze: "#806660",
+    shore: "#e6ad86",
+    lake: "#151b1c",
+    lakeHi: "#7c605a",
+    glint: "#f6cc9a",
     windows: 0.82,
-    wall: "#4a2252",
-    roof: "#1a0a28",
-    cloud: { lit: "#ffb27e", body: "#6a2458", shade: "#3a1446", underlit: true },
+    wall: "#3d3a3a",
+    roof: "#141616",
+    cloud: { lit: "#e0a884", body: "#55484c", shade: "#2f2c31", underlit: true },
     body: "sun",
-    core: "#ffe7b8",
-    rim: "#ffb86b",
-    halo: "#ffa766",
-    haloAmt: 0.6,
-    vignette: "#05020c",
+    core: "#ffe9c0",
+    rim: "#e6be7c",
+    halo: "#e8a674",
+    haloAmt: 0.55,
+    vignette: "#030504",
   },
 };
 
 /* Far range key points (x as a share of width, height as a share of the
    peak budget), roughened by midpoint displacement. A broad massif on the
    left, a sharp pyramid on the right, low cols in the middle so the upper
-   centre stays calm for the wordmark. */
+   centre stays calm. */
 const FAR_KEYS: [number, number][] = [
   [-0.04, 0.5],
   [0.0, 0.66],
@@ -457,8 +457,8 @@ function skyPass(s: Scene) {
 function milkyPass(s: Scene) {
   const { W, H, Hz, P } = s;
   if (P.milky <= 0) return;
-  const lilac = hex("#9c8fe0");
-  const dust = hex("#c9c3f0");
+  const lilac = hex("#7f9a90");
+  const dust = hex("#c6d2c8");
   const ax = 0.6 * W;
   const ay = -0.06 * H;
   const lx = 1.12 * W - ax;
@@ -490,8 +490,8 @@ function starsPass(s: Scene) {
   const { W, H, Hz, P } = s;
   if (P.stars <= 0) return;
   const rnd = mulberry32(0xe11107);
-  const inks = ["#f5f2ec", "#f5f2ec", "#f5f2ec", "#c3c5cf", "#8be9ff", "#b3a4ff", "#b3a4ff"].map(hex);
-  const rare = hex("#ffb86b");
+  const inks = ["#ebe9e1", "#ebe9e1", "#ebe9e1", "#bcc2ba", "#89b4a8", "#aea3c8", "#aea3c8"].map(hex);
+  const rare = hex("#e0bd6e");
   const white: RGB = [255, 255, 255];
   const want = Math.round(((W * Hz) / 110) * P.stars);
   for (let k = 0; k < 1400; k++) {
@@ -519,7 +519,7 @@ function starsPass(s: Scene) {
       put(s, x, y, mix(col, white, 0.45));
     }
     if (b > 0.88 && fade > 0.8 && y > H * 0.07 && y < Hz * 0.75) {
-      s.twinkles.push({ x, y, c: ["#f5f2ec", "#8be9ff", "#b3a4ff"][Math.floor(ti * 3)], b });
+      s.twinkles.push({ x, y, c: ["#ebe9e1", "#89b4a8", "#aea3c8"][Math.floor(ti * 3)], b });
     }
   }
 }
@@ -656,7 +656,7 @@ function bodyPass(s: Scene) {
   // the real moon phase (northern hemisphere: waxing lit on the right)
   const k = Math.cos(2 * Math.PI * s.moon);
   const waxing = s.moon < 0.5;
-  const dark = hex("#1a1b3a");
+  const dark = hex("#18211f");
   const maria = [
     { x: -0.32, y: -0.18, r: 0.26 },
     { x: 0.22, y: 0.12, r: 0.2 },
@@ -817,7 +817,7 @@ function midPass(s: Scene) {
   }
   const body = hex(P.mid.body);
   const rim = hex(P.mid.rim);
-  const farm = mix(body, hex("#ffb86b"), 0.5 + 0.45 * P.windows);
+  const farm = mix(body, hex("#e0bd6e"), 0.5 + 0.45 * P.windows);
   for (let x = 0; x < W; x++) {
     const t = Math.ceil(top[x]);
     const facesRight = top[Math.min(W - 1, x + 2)] - top[Math.max(0, x - 2)] > 0;
@@ -872,7 +872,7 @@ function villagePass(s: Scene) {
   const wall = mix(hex(P.wall), haze, phase === "day" ? 0.22 : 0.12);
   const wallLit = mix(wall, hex(P.far.edge), night ? 0.2 : 0.18);
   const roof = mix(hex(P.roof), haze, phase === "day" ? 0.18 : 0.05);
-  const winA = hex("#ffb86b");
+  const winA = hex("#e0bd6e");
   const winB = hex("#ffd9a3");
   const vr = mulberry32(0x5eed);
   const crestAt = (x: number) => Math.ceil(nearTop[ci(x, 0, W - 1)]);
@@ -889,7 +889,7 @@ function villagePass(s: Scene) {
   if (P.windows > 0) {
     const gy0 = crestAt(vx) - 3;
     const gr = Math.max(10, count * 3.4);
-    const ember = hex("#ffb86b");
+    const ember = hex("#e0bd6e");
     for (let y = Math.floor(gy0 - gr * 0.6); y <= gy0 + gr * 0.4; y++) {
       for (let x = Math.floor(vx - gr); x <= vx + gr; x++) {
         const d = Math.hypot((x - vx) / gr, (y - gy0) / (gr * 0.55));

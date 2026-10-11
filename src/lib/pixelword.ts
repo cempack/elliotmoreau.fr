@@ -134,17 +134,17 @@ export function rasterizePixelLine(text: string): PixelLine {
 export const WORDMARK_LINES = ["Elliot", "Moreau"] as const;
 
 /* Canonical wordmark band stack, in omarchy's laser-band proportions,
- * wearing Nocturne inks: a paper-white crest, the signal-lime band, a
+ * wearing Moss inks: a paper-white crest, the signal-lime band, a
  * lime-to-ion seafoam middle cooling into lilac, and an indigo foot that
  * sinks into the night.
  * Both the canvas engine and the SSR wordmark read these, so first paint
  * and live frames wear one gradient. */
 export const WORDMARK_BANDS: [number, string][] = [
-  [5, "#F5F2EC"],
-  [3, "#C6FF5E"],
-  [4, "#9BEBD3"],
-  [3, "#988AF0"],
-  [4, "#48478E"],
+  [5, "#EBE9E1"],
+  [3, "#B0CC86"],
+  [4, "#8FC2A8"],
+  [3, "#6F8FA0"],
+  [4, "#3B4F5A"],
 ];
 export const WORDMARK_BAND_ROWS = WORDMARK_BANDS.reduce((n, [c]) => n + c, 0);
 

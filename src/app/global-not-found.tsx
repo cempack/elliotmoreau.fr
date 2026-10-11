@@ -40,7 +40,7 @@ async function requestLang(): Promise<Locale> {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#05060a",
+  themeColor: "#0a0c0b",
   colorScheme: "dark",
   viewportFit: "cover",
 };

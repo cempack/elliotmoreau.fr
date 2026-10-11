@@ -115,7 +115,7 @@ export type IconsProps = {
   sceneRef: React.RefObject<HTMLElement | null>;
   selected: ReadonlySet<DesktopIconId>;
   setSelected: (s: Set<DesktopIconId>) => void;
-  /** rects (scene coordinates) icons may not land on: the name, the widgets, hello.txt */
+  /** rects (scene coordinates) icons may not land on: the widgets, hello.txt */
   blockers: () => Rect[];
   onReadme: () => void;
   reduced: boolean;
@@ -132,7 +132,7 @@ export type IconsProps = {
  *   and the icons spring into the nearest free grid cells with the release
  *   velocity, a selection keeping its formation. Touch: hold to lift, then
  *   drag. Reduced motion: no projection, instant snap.
- * - Nothing lands on the name, hello.txt or the widgets.
+ * - Nothing lands on hello.txt or the widgets.
  */
 export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onReadme, reduced, fine }: IconsProps) {
   const { t, path } = useI18n();

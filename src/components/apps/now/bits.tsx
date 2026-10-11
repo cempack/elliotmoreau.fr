@@ -2,7 +2,8 @@
 
 import { useRef } from "react";
 import { AnimatePresence, m } from "motion/react";
-import { PixelPlanet } from "@/components/PixelPlanet";
+import { Monogram } from "@/components/Monogram";
+import { GLYPH_NOTE } from "@/components/glyphs";
 import { useReduced } from "@/hooks/env";
 import { springFrom } from "@/lib/motion";
 import type { Cells } from "@/components/glyphs";
@@ -162,7 +163,7 @@ export function Art({ image, seed, className = "" }: { image: string; seed: stri
         // eslint-disable-next-line @next/next/no-img-element
         <img src={image} alt="" draggable={false} loading="lazy" decoding="async" />
       ) : (
-        <PixelPlanet seed={seed} className="app-now-art-planet" />
+        <Monogram text={seed} glyph={GLYPH_NOTE} className="app-now-art-planet" />
       )}
     </span>
   );

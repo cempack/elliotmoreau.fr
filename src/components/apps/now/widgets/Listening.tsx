@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { PixelPlanet } from "@/components/PixelPlanet";
-import { PixelGlyph } from "@/components/glyphs";
+import { Monogram } from "@/components/Monogram";
+import { PixelGlyph, GLYPH_NOTE } from "@/components/glyphs";
 import { useHydrated } from "@/hooks/env";
 import { useI18n } from "@/i18n/client";
 import { timeAgo } from "@/lib/format";
@@ -123,7 +123,7 @@ export function Listening({ status, track, playing }: Listen) {
         <div className="app-now-listen-now app-now-listen-now--quiet">
           <span className="app-now-listen-art" aria-hidden>
             <span className="app-now-art app-now-art--quiet">
-              <PixelPlanet seed="silence" className="app-now-art-planet" />
+              <Monogram text="silence" glyph={GLYPH_NOTE} className="app-now-art-planet" />
             </span>
           </span>
           <div className="app-now-listen-info">

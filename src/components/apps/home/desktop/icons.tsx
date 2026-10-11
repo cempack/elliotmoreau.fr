@@ -36,12 +36,12 @@ export type DesktopIconId = Exclude<AppId, "home"> | "readme";
 export const DESKTOP_ICONS: DesktopIconId[] = ["work", "writing", "atlas", "now", "contact", "readme"];
 
 const C = {
-  paper: "#f5f2ec",
-  paper2: "#c3c5cf",
-  paper3: "#9196a6",
-  ink: "#05060a",
-  signal: "#c6ff5e",
-  ion: "#8be9ff",
+  paper: "#ebe9e1",
+  paper2: "#bcc2ba",
+  paper3: "#8f988f",
+  ink: "#0a0c0b",
+  signal: "#b0cc86",
+  ion: "#89b4a8",
 };
 
 /* A text file with a dog-eared corner, a lime heading and ruled lines. 16×16,

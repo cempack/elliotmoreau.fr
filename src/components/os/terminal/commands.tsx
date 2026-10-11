@@ -160,16 +160,16 @@ const HELP: { cmd: string; label: string; key: keyof Dict["system"]["term"]["hel
 ];
 
 const PALETTE: { name: string; hex: string; key: keyof Dict["system"]["term"]["theme"] }[] = [
-  { name: "ink", hex: "#05060a", key: "ink" },
-  { name: "paper", hex: "#f5f2ec", key: "paper" },
-  { name: "signal", hex: "#c6ff5e", key: "signal" },
-  { name: "ion", hex: "#8be9ff", key: "ion" },
-  { name: "lilac", hex: "#b3a4ff", key: "lilac" },
-  { name: "ember", hex: "#ffb86b", key: "ember" },
-  { name: "flare", hex: "#ff5f7e", key: "flare" },
+  { name: "ink", hex: "#0a0c0b", key: "ink" },
+  { name: "paper", hex: "#ebe9e1", key: "paper" },
+  { name: "signal", hex: "#b0cc86", key: "signal" },
+  { name: "ion", hex: "#89b4a8", key: "ion" },
+  { name: "lilac", hex: "#aea3c8", key: "lilac" },
+  { name: "ember", hex: "#e0bd6e", key: "ember" },
+  { name: "flare", hex: "#e2786b", key: "flare" },
 ];
 
-const FETCH_SWATCHES = ["#05060a", "#11131c", "#262a3a", "#9196a6", "#f5f2ec", "#c6ff5e", "#8be9ff", "#b3a4ff", "#ffb86b", "#ff5f7e"];
+const FETCH_SWATCHES = ["#0a0c0b", "#161a17", "#2b322d", "#8f988f", "#ebe9e1", "#b0cc86", "#89b4a8", "#aea3c8", "#e0bd6e", "#e2786b"];
 
 const SKY_WORDS: Record<string, SkyMode> = {
   live: "auto",
@@ -309,12 +309,12 @@ function neofetch(ctx: RunCtx) {
   const langs = [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([l]) => l);
   const dpr = Math.round(Math.min(window.devicePixelRatio || 1, 3) * 10) / 10;
   const rows: [string, React.ReactNode][] = [
-    [t.os, "emOS 26.10 Nocturne"],
+    [t.os, "emOS 26.10 Moss"],
     [t.host, "elliotmoreau.fr (Vercel)"],
     [t.kernel, "Next.js 16.3 · React 19.2"],
     [t.shell, "zsh 5.9"],
     [t.wm, t.wmValue],
-    [t.theme, "Nocturne"],
+    [t.theme, "Moss"],
     [t.font, "Inter, JetBrains Mono"],
     [t.uptime, fill(t.uptimeValue, { m: Math.floor(secs / 60), s: secs % 60 })],
     [
