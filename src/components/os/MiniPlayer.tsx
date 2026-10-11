@@ -161,6 +161,8 @@ function Pip({ track, playing, live }: { track: TrackInfo; playing: boolean; liv
   const grab = useRef<Grab | null>(null);
   const dragged = useRef(false);
   const firstLayout = useRef(true);
+  /** the toggle had focus: its twin (pill ↔ chevron) takes it over */
+  const refocus = useRef(false);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const s = useMotionValue(1);
@@ -243,6 +245,10 @@ function Pip({ track, playing, live }: { track: TrackInfo; playing: boolean; liv
     if (firstLayout.current) {
       firstLayout.current = false;
       return;
+    }
+    if (refocus.current) {
+      refocus.current = false;
+      rootRef.current?.querySelector<HTMLElement>("[data-pip-toggle]")?.focus({ preventScroll: true });
     }
     const to = targetFor(corner.current);
     publish(corner.current);
@@ -454,6 +460,7 @@ function Pip({ track, playing, live }: { track: TrackInfo; playing: boolean; liv
 
   const toggle = () => {
     const next = !collapsed;
+    refocus.current = !!rootRef.current?.contains(document.activeElement);
     setChosen(next);
     save(COLLAPSED_KEY, next ? "1" : "0");
     blip("toggle");
@@ -495,6 +502,7 @@ function Pip({ track, playing, live }: { track: TrackInfo; playing: boolean; liv
           <button
             type="button"
             className="os-pip-pill"
+            data-pip-toggle=""
             onClick={toggle}
             aria-expanded={false}
             aria-label={`${p.expand}${t.shell.colon}${track.title}, ${track.artist}`}
@@ -528,6 +536,7 @@ function Pip({ track, playing, live }: { track: TrackInfo; playing: boolean; liv
                 <button
                   type="button"
                   className="os-pip-btn"
+                  data-pip-toggle=""
                   onClick={toggle}
                   aria-expanded
                   aria-label={p.collapse}

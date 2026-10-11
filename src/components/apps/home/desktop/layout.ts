@@ -1,6 +1,7 @@
 "use client";
 
 import type { Rect } from "./physics";
+import { PIP_ATTRS, readPip } from "../../pip";
 
 /**
  * When the Desktop becomes an iOS home screen: narrow screens, and short
@@ -19,52 +20,40 @@ export function menubarPx() {
 
 /**
  * Where the shell's mini player is coming to rest, in viewport px, or null
- * when there is none. Its corner (html[data-pip-corner]) and the safe area
- * it snaps inside (.os-pip-safe) say where it is going, not where a fling
- * has it right now, so icons can make room before it lands.
+ * when there is none. The shell publishes its resting rect on <html>
+ * (contract B), so this is where it is going, not where a fling has it
+ * right now: icons can make room before it lands.
  */
 export function pipRect(): Rect | null {
-  const corner = document.documentElement.dataset.pipCorner;
-  const pip = document.querySelector<HTMLElement>(".os-pip");
-  const safe = document.querySelector<HTMLElement>(".os-pip-safe");
-  if (!corner || !pip || !safe || corner.length !== 2) return null;
-  const r = safe.getBoundingClientRect();
-  const w = pip.offsetWidth;
-  const h = pip.offsetHeight;
-  if (!w || !h) return null;
-  const left = corner[1] === "l" ? r.left : Math.max(r.left, r.right - w);
-  const top = corner[0] === "t" ? r.top : Math.max(r.top, r.bottom - h);
-  return { left, top, right: left + w, bottom: top + h };
+  const pip = readPip();
+  return pip && { left: pip.left, top: pip.top, right: pip.right, bottom: pip.bottom };
 }
 
 /**
  * Calls `cb` (once per frame at most) whenever the mini player appears,
- * leaves, is flung to another corner, or collapses / expands.
+ * leaves, is flung to another corner, or collapses / expands: each time,
+ * it republishes its rect on <html>.
  */
 export function watchPip(cb: () => void) {
   let raf = 0;
+  let last = "";
   const fire = () => {
+    // inline style changes for other reasons too: only a new rect counts
+    const r = pipRect();
+    const key = r ? `${r.left},${r.top},${r.right},${r.bottom}` : "";
+    if (key === last) return;
+    last = key;
     cancelAnimationFrame(raf);
     raf = requestAnimationFrame(cb);
   };
-  let watched: HTMLElement | null = null;
-  const ro = new ResizeObserver(fire);
-  const attach = () => {
-    const el = document.querySelector<HTMLElement>(".os-pip");
-    if (el === watched) return;
-    if (watched) ro.unobserve(watched);
-    watched = el;
-    if (el) ro.observe(el);
-  };
-  const mo = new MutationObserver(() => {
-    attach();
-    fire();
-  });
-  mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-pip-corner"] });
-  attach();
+  last = (() => {
+    const r = pipRect();
+    return r ? `${r.left},${r.top},${r.right},${r.bottom}` : "";
+  })();
+  const mo = new MutationObserver(fire);
+  mo.observe(document.documentElement, { attributes: true, attributeFilter: PIP_ATTRS });
   return () => {
     cancelAnimationFrame(raf);
     mo.disconnect();
-    ro.disconnect();
   };
 }

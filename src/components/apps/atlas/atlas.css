@@ -818,7 +818,13 @@
    starts clear of the Dock */
 .app-atlas-cards {
   position: relative;
-  padding: calc(var(--dock-h) + 2.5rem) 0 2.5rem;
+  /* the end clears a mini player resting in a bottom corner (contract B:
+     its room past the window's own Dock clearance) */
+  padding: calc(var(--dock-h) + 2.5rem) 0
+    max(
+      2.5rem,
+      calc(var(--os-pip-room-bottom, 0px) - max(var(--os-win-dock-room, 0px), var(--dock-h) + 1rem) + 1rem)
+    );
 }
 .app-atlas-cards::before {
   content: "";

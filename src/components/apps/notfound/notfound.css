@@ -14,7 +14,10 @@
   display: grid;
   flex: 1;
   min-height: 100svh;
-  padding: calc(var(--menubar-h) + 1.5rem) 1rem calc(var(--dock-h) + 1.5rem);
+  /* the end clears the Dock, and a mini player resting in a bottom
+     corner (contract B: the room it takes, Dock included) */
+  --nf-foot: max(calc(var(--dock-h) + 1.5rem), calc(var(--os-pip-room-bottom, 0px) + 0.75rem));
+  padding: calc(var(--menubar-h) + 1.5rem) 1rem var(--nf-foot);
   overflow: clip;
 }
 
@@ -570,8 +573,6 @@ html[data-sky="day"] .app-nf-alert .os-glass {
 @media (max-width: 767px) {
   .app-nf {
     padding-top: calc(var(--menubar-h) + 1rem);
-    /* clears the mini player's pill, parked over the tab bar */
-    padding-bottom: calc(var(--dock-h) + 4.75rem);
   }
   .app-nf-alert {
     width: min(22rem, calc(100vw - 2rem));
@@ -584,7 +585,7 @@ html[data-sky="day"] .app-nf-alert .os-glass {
   .app-nf {
     --nf-cell: calc((100vw - 1.5rem) / 40);
     padding-top: calc(var(--menubar-h) + 0.25rem);
-    padding-bottom: calc(var(--dock-h) + 4.25rem);
+    --nf-foot: max(calc(var(--dock-h) + 1rem), calc(var(--os-pip-room-bottom, 0px) + 0.5rem));
     row-gap: 0;
   }
   /* the panel's unlit border rows go under the menu bar and the alert */

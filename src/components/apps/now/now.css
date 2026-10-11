@@ -7,7 +7,13 @@
 
 .app-now {
   container: app-now / inline-size;
-  padding: 2.25rem clamp(1.25rem, 3vw, 2.5rem) 2rem;
+  /* contract B: how much further up than the window's own Dock clearance
+     the page must end to clear a mini player resting in a bottom corner */
+  --app-now-pip-pad: max(
+    0px,
+    calc(var(--os-pip-room-bottom, 0px) - max(var(--os-win-dock-room, 0px), var(--dock-h) + 1rem))
+  );
+  padding: 2.25rem clamp(1.25rem, 3vw, 2.5rem) max(2rem, calc(var(--app-now-pip-pad) + 1rem));
 }
 
 /* ───────────────────────── shared bits ───────────────────────── */
@@ -745,10 +751,25 @@ a.app-now-tok:hover {
 .app-now-progress-times {
   display: flex;
   justify-content: space-between;
+  gap: 0.5ch;
   margin-top: 0.4375rem;
   color: var(--color-label-3);
   font-family: var(--font-mono);
   font-size: 0.75rem;
+}
+/* where the widget runs to the window's edge (phones, tablets), the mini
+   player resting on that side would hide the end time: both times move
+   to the other end, "1:37 / 4:03" (contract B: data-os-pip) */
+@container app-now (max-width: 959px) {
+  :root[data-os-pip$="r"] .app-now-progress-times {
+    justify-content: flex-start;
+  }
+  :root[data-os-pip$="l"] .app-now-progress-times {
+    justify-content: flex-end;
+  }
+  :root:is([data-os-pip$="r"], [data-os-pip$="l"]) .app-now-progress-times > :first-child::after {
+    content: " /";
+  }
 }
 
 .app-now-artists {
