@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/i18n/client";
-import { lenisRef } from "@/lib/lenisRef";
+import { scrollToY } from "@/lib/scroller";
 import { APPS, type AppDef } from "../apps";
 
 const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -54,8 +54,7 @@ export function isPlainClick(e: React.MouseEvent) {
 
 /** Tapping the app you're already in glides back to its top (iOS tab bars). */
 export function scrollToTop() {
-  if (lenisRef.current) lenisRef.current.scrollTo(0);
-  else window.scrollTo({ top: 0, behavior: reducedMotion() ? "auto" : "smooth" });
+  scrollToY(0, !reducedMotion());
 }
 
 /** Press feedback on pointer-down, released on up/cancel/leave. */

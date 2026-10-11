@@ -7,7 +7,7 @@ import { AppWindow } from "@/components/os/AppWindow";
 import { useI18n } from "@/i18n/client";
 import { useReduced } from "@/hooks/env";
 import { useSound } from "@/lib/sound";
-import { lenisRef } from "@/lib/lenisRef";
+import { scrollToY, scrollTop } from "@/lib/scroller";
 import { SOCIALS } from "@/lib/places";
 import { PixelGlyph } from "@/components/glyphs";
 import { InlineScript } from "@/components/InlineScript";
@@ -73,11 +73,7 @@ export function MailApp({ data }: { data: SiteData }) {
     const u = new URL(window.location.href);
     window.history.replaceState(window.history.state, "", `${u.pathname}${u.search}${HASH[b] ? `#${HASH[b]}` : ""}`);
     // the new mailbox starts at its top
-    if (window.scrollY > 4) {
-      const l = lenisRef.current;
-      if (l) l.scrollTo(0, reduced ? { immediate: true } : { duration: 0.6 });
-      else window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
-    }
+    if (scrollTop() > 4) scrollToY(0, !reduced);
   };
 
   const email = SOCIALS.email;

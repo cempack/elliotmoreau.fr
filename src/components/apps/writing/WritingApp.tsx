@@ -9,7 +9,7 @@ import { InlineScript } from "@/components/InlineScript";
 import { useI18n } from "@/i18n/client";
 import { useHydrated, useMedia, useReduced } from "@/hooks/env";
 import { useSound } from "@/lib/sound";
-import { lenisRef } from "@/lib/lenisRef";
+import { scrollToY, scrollTop, scrollerTop } from "@/lib/scroller";
 import { PixelGlyph } from "@/components/glyphs";
 import { EmptyState } from "./EmptyState";
 import { FolderChips, FolderColumn, Newsletter } from "./Folders";
@@ -183,13 +183,9 @@ export function WritingApp({ data, initialSlug = null }: { data: SiteData; initi
       const probe = probeRef.current;
       if (!el) return;
       const stick = probe ? parseFloat(getComputedStyle(probe).top) || 0 : 0;
-      const top = el.getBoundingClientRect().top;
+      const top = el.getBoundingClientRect().top - scrollerTop();
       if (top >= stick - 1) return;
-      const y = Math.max(0, window.scrollY + top - stick);
-      const l = lenisRef.current;
-      if (l && !reduced && !instant) l.scrollTo(y, { duration: 0.7 });
-      else if (l) l.scrollTo(y, { immediate: true, force: true });
-      else window.scrollTo({ top: y, behavior: "instant" });
+      scrollToY(scrollTop() + top - stick, !reduced && !instant);
     },
     [reduced]
   );

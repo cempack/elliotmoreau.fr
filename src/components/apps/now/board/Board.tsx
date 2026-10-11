@@ -5,7 +5,7 @@ import { animate, m, useMotionValue, type MotionValue } from "motion/react";
 import { project, rubberband, spring } from "@/lib/motion";
 import { useReduced } from "@/hooks/env";
 import { useSound } from "@/lib/sound";
-import { lenisRef } from "@/lib/lenisRef";
+import { scrollMax, scrollToY, scrollTop, scroller, scrollerBottom } from "@/lib/scroller";
 import { PixelGlyph, type Cells } from "@/components/glyphs";
 import { fill } from "../lib";
 import { bestIndex, measure, moveTo, sameOrder, slots, type Metrics } from "./layout";
@@ -233,7 +233,7 @@ export function Board({
     const p = pos.current.get(d.id);
     if (!it || !p) return;
     const dx = d.px - d.px0;
-    const dy = d.py - d.py0 + (window.scrollY - d.scroll0);
+    const dy = d.py - d.py0 + (scrollTop() - d.scroll0);
     // top-left of the widget in board space, rubber-banded past the board
     const left = band(d.bx + d.x0 + dx, -PLAY, d.boardW - d.w + PLAY, d.boardW);
     const top = band(d.by + d.y0 + dy, -PLAY, d.boardH - d.h + PLAY, Math.max(d.boardH, 600));
@@ -274,7 +274,7 @@ export function Board({
       // auto-scroll when the finger, or the edge of the widget in the hand,
       // nears the title bar or the Dock: the card never slides under them
       const barBottom = document.querySelector(".os-win-bar")?.getBoundingClientRect().bottom ?? 100;
-      const dock = window.innerHeight - (window.innerWidth < 768 ? 96 : 120);
+      const dock = Math.min(scrollerBottom(), window.innerHeight - (window.innerWidth < 768 ? 96 : 0)) - 24;
       const top = barBottom + 56;
       const ease = (over: number) => Math.min(1, over / 72) * 16;
       let v = 0;
@@ -288,16 +288,14 @@ export function Board({
         // fight) and the hand is carrying it that way (a card picked up
         // half under the bar doesn't scroll the page by itself)
         if (r.height < hi - lo) {
-          const maxY = document.documentElement.scrollHeight - window.innerHeight;
-          if (r.top < lo && d.py < d.py0 - 8 && window.scrollY > 0) v = Math.min(v, -ease(lo - r.top));
-          else if (r.bottom > hi && d.py > d.py0 + 8 && window.scrollY < maxY - 1) v = Math.max(v, ease(r.bottom - hi));
+          const maxY = scrollMax();
+          const y0 = scrollTop();
+          if (r.top < lo && d.py < d.py0 - 8 && y0 > 0) v = Math.min(v, -ease(lo - r.top));
+          else if (r.bottom > hi && d.py > d.py0 + 8 && y0 < maxY - 1) v = Math.max(v, ease(r.bottom - hi));
         }
       }
       if (v) {
-        const lenis = lenisRef.current;
-        const y = window.scrollY + v;
-        if (lenis) lenis.scrollTo(y, { immediate: true, force: true });
-        else window.scrollTo(0, y);
+        scrollToY(scrollTop() + v);
         applyDrag();
         maybeReorder();
       }
@@ -410,16 +408,13 @@ export function Board({
     if (carry?.mode === "keyboard" && c && p && boardRef.current) {
       const top = boardRef.current.getBoundingClientRect().top + p.y;
       const bar = document.querySelector(".os-win-bar")?.getBoundingClientRect().bottom ?? 100;
-      const room = window.innerHeight - (window.innerWidth < 768 ? 90 : 110);
+      const room = Math.min(scrollerBottom(), window.innerHeight - (window.innerWidth < 768 ? 90 : 0)) - 16;
       const h = c.el.offsetHeight;
       let dy = 0;
       if (top < bar + 16) dy = top - bar - 16;
       else if (top + Math.min(h, room - bar - 32) > room) dy = top + Math.min(h, room - bar - 32) - room;
       if (dy) {
-        const y = window.scrollY + dy;
-        const lenis = lenisRef.current;
-        if (lenis) lenis.scrollTo(y, { immediate: reducedRef.current, duration: 0.5 });
-        else window.scrollTo({ top: y, behavior: reducedRef.current ? "auto" : "smooth" });
+        scrollToY(scrollTop() + dy, !reducedRef.current);
       }
     }
   }, [liveOrder, carry, board, applyDrag, runSettle, gx, gy, gw, gh]);
@@ -540,7 +535,7 @@ export function Board({
         py0: e.clientY,
         px: e.clientX,
         py: e.clientY,
-        scroll0: window.scrollY,
+        scroll0: scrollTop(),
         bx: 0,
         by: 0,
         x0: it.x.get(),
@@ -677,10 +672,11 @@ export function Board({
         end(drag.current ? { pointerId: drag.current.pid, type: "cancel" } : null, true);
       }
     };
-    window.addEventListener("scroll", onScroll, { passive: true });
+    const scrollTarget: HTMLElement | Window = scroller() ?? window;
+    scrollTarget.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("keydown", onKey);
     return () => {
-      window.removeEventListener("scroll", onScroll);
+      scrollTarget.removeEventListener("scroll", onScroll);
       window.removeEventListener("keydown", onKey);
     };
   }, [carry, applyDrag, maybeReorder, end]);

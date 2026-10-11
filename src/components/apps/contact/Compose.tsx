@@ -6,7 +6,7 @@ import { useI18n } from "@/i18n/client";
 import { useIsMac, useMedia, useReduced } from "@/hooks/env";
 import { useSound } from "@/lib/sound";
 import { spring } from "@/lib/motion";
-import { lenisRef } from "@/lib/lenisRef";
+import { contentTop, scrollToY, scrollTop, scrollerBottom, scrollerTop } from "@/lib/scroller";
 import { SOCIALS } from "@/lib/places";
 import { PixelGlyph } from "@/components/glyphs";
 import { EmosMark } from "@/components/os/menubar/glyphs";
@@ -113,13 +113,8 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
     if (!h || !card) return;
     // keep the confirmation clear of the sticky title bar before focusing it
     const top = parseFloat(getComputedStyle(card).scrollMarginTop) || 0;
-    const r = card.getBoundingClientRect();
-    if (r.top < top || r.top > window.innerHeight * 0.55) {
-      const y = Math.max(0, window.scrollY + r.top - top);
-      const l = lenisRef.current;
-      if (l) l.scrollTo(y, reduced ? { immediate: true } : { duration: 0.6 });
-      else window.scrollTo({ top: y, behavior: reduced ? "auto" : "smooth" });
-    }
+    const rTop = card.getBoundingClientRect().top - scrollerTop();
+    if (rTop < top || rTop > (scrollerBottom() - scrollerTop()) * 0.55) scrollToY(scrollTop() + rTop - top, !reduced);
     h.focus({ preventScroll: true });
   }, [phase, reduced]);
 
@@ -145,14 +140,15 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
         return;
       }
       const r = ta.getBoundingClientRect();
-      const top = r.top + window.scrollY;
+      // where it sits with the window scrolled to the top
+      const top = scrollerTop() + contentTop(ta);
       // the sheet, and the honest note when it sits under the sheet (it moves beside it on wide windows)
       const fb = form.getBoundingClientRect().bottom;
       const hn = honestRef.current?.getBoundingClientRect();
       const below = (hn && hn.top >= fb - 1 ? hn.bottom : fb) - r.bottom;
       const pin = parseFloat(getComputedStyle(foot).bottom) || 0;
       // (2px short of the line, so the footer reads as resting, not pinned)
-      const room = Math.floor(window.innerHeight - pin - top - below) - 2;
+      const room = Math.floor(scrollerBottom() - pin - top - below) - 2;
       if (form.style.getPropertyValue("--app-contact-fit") !== `${room}px`) form.style.setProperty("--app-contact-fit", `${room}px`);
       scrollsInside(ta);
     };

@@ -6,7 +6,7 @@ import type { RepoInfo } from "@/lib/github";
 import { useI18n } from "@/i18n/client";
 import { spring } from "@/lib/motion";
 import { timeAgo } from "@/lib/format";
-import { lenisRef } from "@/lib/lenisRef";
+import { scrollByY, scrollerBottom, scrollerTop } from "@/lib/scroller";
 import { RepoArt } from "./RepoArt";
 import { GLYPH_STAR, PixelGlyph } from "@/components/glyphs";
 import { G_CHEVRON } from "./glyphs";
@@ -24,15 +24,13 @@ export function revealItem(el: HTMLElement | null, immediate = false) {
   if (!el) return;
   const r = el.getBoundingClientRect();
   const cs = getComputedStyle(el);
-  const topSafe = parseFloat(cs.scrollMarginTop) || 0;
-  const bottomSafe = window.innerHeight - (parseFloat(cs.scrollMarginBottom) || 0);
+  const topSafe = scrollerTop() + (parseFloat(cs.scrollMarginTop) || 0);
+  const bottomSafe = scrollerBottom() - (parseFloat(cs.scrollMarginBottom) || 0);
   let delta = 0;
   if (r.top < topSafe) delta = r.top - topSafe;
   else if (r.bottom > bottomSafe) delta = Math.min(r.bottom - bottomSafe, r.top - topSafe);
   if (Math.abs(delta) < 1) return;
-  const lenis = lenisRef.current;
-  if (lenis) lenis.scrollTo(window.scrollY + delta, immediate ? { immediate: true, force: true } : { duration: 0.45 });
-  else window.scrollBy({ top: delta, behavior: "auto" });
+  scrollByY(delta, !immediate);
 }
 
 /**

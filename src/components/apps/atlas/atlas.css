@@ -6,7 +6,7 @@
    AtlasApp.tsx. */
 
 .app-atlas {
-  --app-atlas-stage-h: calc(100svh - var(--menubar-h) - var(--os-win-gap) - var(--os-win-dock-room) - var(--os-win-bar-h));
+  --app-atlas-stage-h: var(--os-win-view-h, 100svh);
   /* the peek strip: grabber, the stamp with its perforations and shadow */
   --app-atlas-peek: 138px;
   /* where the sheet rests above the stage's bottom edge */

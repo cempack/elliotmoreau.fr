@@ -6,7 +6,7 @@ import type { Command } from "@/components/ui/CommandPalette";
 import { useToast } from "@/components/Toasts";
 import { rememberLocale, switchLocaleHref, useI18n } from "@/i18n/client";
 import { useSound } from "@/lib/sound";
-import { lenisRef } from "@/lib/lenisRef";
+import { scrollToY } from "@/lib/scroller";
 import { SOCIALS } from "@/lib/places";
 import { APPS } from "./apps";
 import { useSiteData } from "./SiteData";
@@ -18,10 +18,7 @@ import { lockOS } from "./Intro";
 
 const SKY_MODES: SkyMode[] = ["auto", "dawn", "day", "dusk", "night"];
 
-const toTop = () => {
-  if (lenisRef.current) lenisRef.current.scrollTo(0);
-  else window.scrollTo({ top: 0 });
-};
+const toTop = () => scrollToY(0, true);
 const ext = (href: string) => () => window.open(href, "_blank", "noopener,noreferrer");
 const openPanel = (id: PanelId) => () => window.dispatchEvent(new CustomEvent<PanelId>("em:menubar", { detail: id }));
 const host = (url: string) => url.replace(/^https?:\/\//, "").replace(/\/$/, "");

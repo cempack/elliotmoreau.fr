@@ -136,7 +136,7 @@
   .app-contact-side {
     display: flex;
     flex-direction: column;
-    min-height: calc(100svh - var(--os-win-sticky-top) - var(--os-win-dock-room) - 2.25rem);
+    min-height: calc(var(--os-win-view-h, 100svh) - 2.25rem);
   }
   .app-contact-side > .app-contact-reply {
     margin-top: auto;

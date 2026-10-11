@@ -7,9 +7,8 @@ import { usePathname } from "next/navigation";
 import { useReduced } from "@/hooks/env";
 import { lenisRef } from "@/lib/lenisRef";
 import { clamp, project, rubberband, spring, springFrom } from "@/lib/motion";
-import { PixelGlyph } from "@/components/glyphs";
 import { appForPath } from "../apps";
-import { G_CLOSE, G_MIN, G_UNZOOM, G_ZOOM } from "../window/glyphs";
+import { WinIcon } from "../window/WinIcon";
 // the traffic lights are the app windows' own (one OS, one set of lights)
 import "../window.css";
 import { useTerminal, useTerminalWindow, type WinRect } from "../Terminal";
@@ -264,19 +263,11 @@ export function DesktopWindow({
               <div className="os-win-lights os-term-lights">
                 <button
                   type="button"
-                  className="os-win-light os-win-light--close"
-                  aria-label={t.system.term.close}
-                  onClick={close}
-                >
-                  <PixelGlyph cells={G_CLOSE} size={7} />
-                </button>
-                <button
-                  type="button"
-                  className="os-win-light os-win-light--min"
+                  className="os-win-light"
                   aria-label={t.system.term.minimize}
                   onClick={close}
                 >
-                  <PixelGlyph cells={G_MIN} size={7} />
+                  <WinIcon kind="min" />
                 </button>
                 <button
                   type="button"
@@ -285,7 +276,15 @@ export function DesktopWindow({
                   aria-pressed={zoomed}
                   onClick={toggleZoom}
                 >
-                  <PixelGlyph cells={zoomed ? G_UNZOOM : G_ZOOM} size={7} />
+                  <WinIcon kind={zoomed ? "unmax" : "max"} />
+                </button>
+                <button
+                  type="button"
+                  className="os-win-light os-win-light--close"
+                  aria-label={t.system.term.close}
+                  onClick={close}
+                >
+                  <WinIcon kind="close" />
                 </button>
               </div>
               <p className="os-term-title">
@@ -375,7 +374,7 @@ export function MobileSheet({ shaking, children }: { shaking: boolean; children:
             {t.system.term.title}
           </p>
           <button type="button" className="os-term-done" aria-label={t.system.term.close} onClick={close}>
-            <PixelGlyph cells={G_CLOSE} size={14} />
+            <WinIcon kind="close" />
           </button>
         </div>
         {children}

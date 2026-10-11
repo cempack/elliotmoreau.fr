@@ -9,14 +9,13 @@ import { useI18n } from "@/i18n/client";
 import { useSound } from "@/lib/sound";
 import { spring } from "@/lib/motion";
 import { useReduced } from "@/hooks/env";
-import { PixelGlyph } from "@/components/glyphs";
 import { APPS, type AppId } from "./apps";
 import { AppIcon } from "./icons";
 import { Glass } from "./Glass";
 import { useWindowDrag } from "./window/useWindowDrag";
 import { dockIconCenter, markKeyboardClose, setEnterOrigin, setExitOrigin } from "./window/dock";
 import { getZoomPref, setZoomPref } from "./window/zoomPref";
-import { G_CLOSE, G_MIN, G_UNZOOM, G_ZOOM } from "./window/glyphs";
+import { WinIcon } from "./window/WinIcon";
 
 export { WinNav, WinNavItem } from "./window/WinNav";
 
@@ -80,7 +79,7 @@ export function AppWindow({
   const [thrown, setThrown] = useState(false);
   const winRef = useRef<HTMLElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
-  const sentinelRef = useRef<HTMLSpanElement>(null);
+  const mainRef = useRef<HTMLDivElement>(null);
   const titleId = `win-${app}`;
 
   const drag = useWindowDrag({
@@ -112,33 +111,15 @@ export function AppWindow({
   // the title bar gains its own material once content scrolls under it
   useEffect(() => {
     const bar = barRef.current;
-    const sentinel = sentinelRef.current;
-    if (!bar || !sentinel) return;
-    let io: IntersectionObserver | null = null;
-    let raf = 0;
-    const observe = () => {
-      io?.disconnect();
-      const top = parseFloat(getComputedStyle(bar).top) || 0;
-      io = new IntersectionObserver(
-        ([en]) => {
-          if (!en.isIntersecting && en.boundingClientRect.top < top) bar.dataset.stuck = "";
-          else delete bar.dataset.stuck;
-        },
-        { rootMargin: `${-Math.round(top) - 1}px 0px 0px 0px`, threshold: 0 },
-      );
-      io.observe(sentinel);
+    const main = mainRef.current;
+    if (!bar || !main) return;
+    const onScroll = () => {
+      if (main.scrollTop > 2) bar.dataset.stuck = "";
+      else delete bar.dataset.stuck;
     };
-    const onResize = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(observe);
-    };
-    observe();
-    window.addEventListener("resize", onResize);
-    return () => {
-      io?.disconnect();
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", onResize);
-    };
+    onScroll();
+    main.addEventListener("scroll", onScroll, { passive: true });
+    return () => main.removeEventListener("scroll", onScroll);
   }, []);
 
   // keyboard activation (detail 0) hands focus to the Dock icon afterwards
@@ -173,7 +154,6 @@ export function AppWindow({
       >
         <Glass thickness="thick" className="os-win-glass" aria-hidden />
         <span className="os-win-glow" aria-hidden />
-        <span ref={sentinelRef} className="os-win-sentinel" aria-hidden />
 
         <m.div
           ref={barRef}
@@ -193,19 +173,10 @@ export function AppWindow({
               href={home}
               transitionTypes={["app-close"]}
               onClick={onCloseClick}
-              aria-label={w.close}
-              className="os-win-light os-win-light--close"
-            >
-              <PixelGlyph cells={G_CLOSE} size={7} />
-            </Link>
-            <Link
-              href={home}
-              transitionTypes={["app-close"]}
-              onClick={onCloseClick}
               aria-label={w.minimize}
-              className="os-win-light os-win-light--min"
+              className="os-win-light"
             >
-              <PixelGlyph cells={G_MIN} size={7} />
+              <WinIcon kind="min" />
             </Link>
             <button
               type="button"
@@ -214,8 +185,17 @@ export function AppWindow({
               aria-pressed={zoomed}
               className="os-win-light os-win-light--zoom"
             >
-              <PixelGlyph cells={zoomed ? G_UNZOOM : G_ZOOM} size={7} />
+              <WinIcon kind={zoomed ? "unmax" : "max"} />
             </button>
+            <Link
+              href={home}
+              transitionTypes={["app-close"]}
+              onClick={onCloseClick}
+              aria-label={w.close}
+              className="os-win-light os-win-light--close"
+            >
+              <WinIcon kind="close" />
+            </Link>
           </div>
 
           <div className="os-win-heading">
@@ -242,7 +222,7 @@ export function AppWindow({
             className="os-win-x"
           >
             <span>
-              <PixelGlyph cells={G_CLOSE} size={14} />
+              <WinIcon kind="close" />
             </span>
           </Link>
         </m.div>
@@ -253,7 +233,9 @@ export function AppWindow({
               {sidebar}
             </aside>
           )}
-          <div className="os-win-main">{children}</div>
+          <div ref={mainRef} className="os-win-main" data-lenis-prevent>
+            {children}
+          </div>
         </m.div>
 
         <span className="os-win-rim" aria-hidden />

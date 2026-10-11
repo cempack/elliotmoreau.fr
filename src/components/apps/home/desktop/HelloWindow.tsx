@@ -8,7 +8,7 @@ import { PLACES } from "@/lib/places";
 import { spring, springFrom } from "@/lib/motion";
 import { useSound } from "@/lib/sound";
 import { PixelGlyph, type Cells } from "@/components/glyphs";
-import { G_CLOSE, G_MIN } from "@/components/os/window/glyphs";
+import { WinIcon } from "@/components/os/window/WinIcon";
 import { Glass } from "@/components/os/Glass";
 import { FLING, INTERACTIVE, band, pushSample, releaseVelocity, type Sample } from "./physics";
 import { G_PLANE } from "./icons";
@@ -299,7 +299,7 @@ export function HelloWindow({
               onClose();
             }}
           >
-            <PixelGlyph cells={G_MIN} size={7} />
+            <WinIcon kind="min" />
           </button>
           <button
             type="button"
@@ -310,7 +310,7 @@ export function HelloWindow({
               onClose();
             }}
           >
-            <PixelGlyph cells={G_CLOSE} size={7} />
+            <WinIcon kind="close" />
           </button>
         </div>
       </div>

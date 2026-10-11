@@ -10,7 +10,7 @@ import { useI18n } from "@/i18n/client";
 import { useSound } from "@/lib/sound";
 import { useMedia } from "@/hooks/env";
 import { PressButton } from "@/components/ui/Pressable";
-import { lenisRef } from "@/lib/lenisRef";
+import { scrollToY } from "@/lib/scroller";
 import { HOME, PLACES } from "@/lib/places";
 import { placeById } from "./geo";
 import { AtlasGlobe } from "./AtlasGlobe";
@@ -86,9 +86,7 @@ export function AtlasApp({ data }: { data: SiteData }) {
       const stage = stageRef.current;
       if (stage && stage.getBoundingClientRect().top < -stage.offsetHeight * 0.35) {
         const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        const lenis = lenisRef.current;
-        if (lenis) lenis.scrollTo(0, { immediate: reduced, duration: 1.1 });
-        else window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
+        scrollToY(0, !reduced);
       }
       select(id);
     },

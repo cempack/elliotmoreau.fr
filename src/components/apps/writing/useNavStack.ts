@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { animate, useMotionValue, useTransform, type Transition } from "motion/react";
 import { project, rubberband, spring, springFrom } from "@/lib/motion";
-import { lenisRef } from "@/lib/lenisRef";
+import { contentTop, onScroll as onScrollerScroll, scrollToY as scrollTo, scrollTop } from "@/lib/scroller";
 import { pushSample, releaseVelocity, swallowNextClick, type Sample } from "./gesture";
 
 export type View = "list" | "reader";
@@ -28,9 +28,7 @@ function afterPaint(fn: () => void) {
 }
 
 function scrollToY(y: number) {
-  const l = lenisRef.current;
-  if (l) l.scrollTo(y, { immediate: true, force: true });
-  else window.scrollTo({ top: y, behavior: "instant" });
+  scrollTo(y);
 }
 
 type Drag = {
@@ -151,7 +149,7 @@ export function useNavStack({
     token.current++;
     animating.current = false;
     drag.current = null;
-    savedY.current = window.scrollY;
+    savedY.current = scrollTop();
     setView("reader");
     if (!reduced) setMoving(true);
     setRun((r) => ({ kind: "push", n: (r?.n ?? 0) + 1, v: 0 }));
@@ -204,9 +202,9 @@ export function useNavStack({
       // the reader opens at the top: scroll up to it if the list was scrolled
       const probe = probeRef.current;
       const stick = probe ? parseFloat(getComputedStyle(probe).top) || 0 : 0;
-      const top = stack.getBoundingClientRect().top + window.scrollY;
+      const top = contentTop(stack);
       const target = Math.min(savedY.current, Math.max(0, Math.round(top - stick)));
-      if (Math.abs(window.scrollY - target) > 1) scrollToY(target);
+      if (Math.abs(scrollTop() - target) > 1) scrollToY(target);
       pinList(target);
       if (reduced) {
         x.jump(0);
@@ -227,7 +225,7 @@ export function useNavStack({
         });
       });
     } else {
-      pinList(window.scrollY);
+      pinList(scrollTop());
       animating.current = true;
       flight.current = "list";
       afterPaint(() => {
@@ -264,9 +262,7 @@ export function useNavStack({
   // if the user scrolls while a transition settles, keep the list pinned
   useEffect(() => {
     if (!moving) return;
-    const onScroll = () => pinList(window.scrollY);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return onScrollerScroll(() => pinList(scrollTop()));
   }, [moving, pinList]);
 
   // a wider viewport has no stack: drop any half-finished gesture
@@ -292,7 +288,7 @@ export function useNavStack({
     d.grabX = fromPress ? d.x0 : e.clientX;
     width.set(d.w);
     if (!moving) {
-      pinList(window.scrollY);
+      pinList(scrollTop());
       setMoving(true);
     }
     try {
