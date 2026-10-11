@@ -270,6 +270,28 @@ export function NotFoundApp({ standalone = false }: {
 
   useEffect(() => () => window.clearTimeout(flash.current), []);
 
+  // pull the alert off the dead 0 and its ghost shows (wide screens: it's
+  // hidden under the glass at rest), as much as the alert has moved
+  const { x: ax, y: ay } = tether;
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    let last = -1;
+    const update = () => {
+      const d = Math.hypot(ax.get(), ay.get());
+      const r = Math.round(Math.min(1, Math.max(0, (d - 36) / 180)) * 100) / 100;
+      if (r === last) return;
+      last = r;
+      stage.style.setProperty("--nf-reveal", String(r));
+    };
+    const offX = ax.on("change", update);
+    const offY = ay.on("change", update);
+    return () => {
+      offX();
+      offY();
+    };
+  }, [ax, ay]);
+
   const fullPath = command === "/" ? "/" : `/${command}`;
 
   return (

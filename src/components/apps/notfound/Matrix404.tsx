@@ -8,11 +8,12 @@ import { bandIndexFor, bandInk } from "@/lib/pixelword";
  * ignite left to right in CSS like the boot mark.
  *
  * The 0 is the app that isn't there: it lights with the rest, sputters
- * and dies, and one of its LEDs keeps trying. Where the alert sits over
- * it (wide screens) it dies all the way down to unlit cells, a shade
- * brighter than the panel, so the glass bends crisp grid lines and the
- * text sits on calm glass, not on coloured blocks; where the alert sits
- * below the 404 (phones) it stays a dim ghost of its colours, readable.
+ * and dies to a dim ghost of its colours, and one of its LEDs keeps
+ * trying. Where the alert sits over it (wide screens) that ghost is only
+ * there once you pull the alert away (`--nf-reveal`, 0 at rest → 1, set
+ * from the drag): at rest the glass bends unlit cells, crisp grid lines,
+ * and the text sits on calm glass, not on coloured blocks. On phones the
+ * alert sits below the 404, so the ghost is always in view.
  */
 
 const FOUR = ["...###", "..####", ".##.##", "##..##", "######", "....##", "....##"];
@@ -92,6 +93,17 @@ function Led({ c }: { c: Cell }) {
   );
 }
 
+function Column({ c }: { c: (typeof COLUMNS)[number] }) {
+  return (
+    <g
+      className={c.dead ? "app-nf-matrix-col app-nf-matrix-dead" : "app-nf-matrix-col"}
+      style={{ "--d": `${c.d}ms` } as React.CSSProperties}
+    >
+      {c.cells.map((cell) => (cell.flicker ? null : <Led key={cell.y} c={cell} />))}
+    </g>
+  );
+}
+
 export function Matrix404({ className = "" }: { className?: string }) {
   return (
     <svg
@@ -123,20 +135,19 @@ export function Matrix404({ className = "" }: { className?: string }) {
           <rect key={`${c.x}-${c.y}`} x={c.x} y={c.y} width={1} height={1} fill={c.fill} />
         ))}
       </g>
-      {COLUMNS.map((c) => (
-        <g
-          key={c.col}
-          className={c.dead ? "app-nf-matrix-col app-nf-matrix-dead" : "app-nf-matrix-col"}
-          style={{ "--d": `${c.d}ms` } as React.CSSProperties}
-        >
-          {c.cells.map((cell) => (cell.flicker ? null : <Led key={cell.y} c={cell} />))}
-        </g>
+      {COLUMNS.filter((c) => !c.dead).map((c) => (
+        <Column key={c.col} c={c} />
       ))}
-      {TRYING && (
-        <g className="app-nf-matrix-flicker" style={{ "--d": `${delay(TRYING.x)}ms` } as React.CSSProperties}>
-          <Led c={TRYING} />
-        </g>
-      )}
+      <g className="app-nf-matrix-reveal">
+        {COLUMNS.filter((c) => c.dead).map((c) => (
+          <Column key={c.col} c={c} />
+        ))}
+        {TRYING && (
+          <g className="app-nf-matrix-flicker" style={{ "--d": `${delay(TRYING.x)}ms` } as React.CSSProperties}>
+            <Led c={TRYING} />
+          </g>
+        )}
+      </g>
     </svg>
   );
 }

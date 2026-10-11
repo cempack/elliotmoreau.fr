@@ -4,6 +4,9 @@
    one lime default button, mono for the zsh transcript. */
 
 .app-nf {
+  /* how far the alert has been pulled off the dead 0 (0 at rest, 1 well
+     clear): wide screens only, set from the drag (NotFoundApp) */
+  --nf-reveal: 0;
   /* one cell of the 404's LED panel (26 across). The 0 and its two gaps
      are 12 cells: never narrower than the alert, or it eats the 4s */
   --nf-cell: max(clamp(16px, 2.5vw, 38px), calc((min(22.5rem, 100vw - 2rem) + 1rem) / 12));
@@ -47,15 +50,19 @@
 .app-nf-matrix-bloom {
   opacity: 0.42;
 }
-/* the 0 is the app that isn't there: a dim ghost of its LEDs (phones,
-   where it's in the open), or just unlit cells where the alert's glass
-   sits over it (wide screens: the glass bends grid lines, not colour) */
+/* the 0 is the app that isn't there: a dim ghost of its LEDs */
 .app-nf-matrix-dead {
   opacity: 0.3;
 }
-@media (min-width: 900px) {
-  .app-nf-matrix-dead {
-    opacity: 0;
+/* …which, where the alert's glass sits over it (wide screens), only
+   shows once you pull the alert away: at rest the glass bends unlit
+   cells, not colour (NotFoundApp sets --nf-reveal from the drag) */
+.app-nf-matrix-reveal {
+  opacity: var(--nf-reveal, 1);
+}
+@media (max-width: 899px) {
+  .app-nf-matrix-reveal {
+    opacity: 1;
   }
 }
 @media (prefers-reduced-motion: no-preference) {
@@ -65,11 +72,6 @@
   /* …which lights with the rest, sputters, and dies */
   .app-nf-matrix-dead {
     animation: app-nf-die 1500ms steps(1, end) var(--d) both;
-  }
-  @media (min-width: 900px) {
-    .app-nf-matrix-dead {
-      animation-name: app-nf-die-out;
-    }
   }
   .app-nf-matrix-bloom {
     animation: app-nf-bloom 900ms var(--ease-out-quint) 700ms backwards;
@@ -125,38 +127,6 @@
   76%,
   100% {
     opacity: 0.3;
-  }
-}
-/* the same death, all the way out (under the alert) */
-@keyframes app-nf-die-out {
-  0% {
-    opacity: 0;
-  }
-  11% {
-    opacity: 1;
-  }
-  17% {
-    opacity: 0.25;
-  }
-  24%,
-  52% {
-    opacity: 1;
-  }
-  55% {
-    opacity: 0.3;
-  }
-  58% {
-    opacity: 0.85;
-  }
-  62% {
-    opacity: 0.2;
-  }
-  70% {
-    opacity: 0.55;
-  }
-  76%,
-  100% {
-    opacity: 0;
   }
 }
 @keyframes app-nf-bloom {

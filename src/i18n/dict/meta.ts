@@ -23,7 +23,7 @@ const en = {
 
 const fr: typeof en = {
   siteName: "Elliot Moreau",
-  title: "Elliot Moreau — un système d'exploitation personnel",
+  title: "Elliot Moreau — un système d’exploitation personnel",
   description:
     "Elliot Moreau, développeur en France. Des logiciels, des thèmes et de petits outils agréables à utiliser — et des écrits, de la musique, des voyages.",
   pages: {
@@ -36,10 +36,10 @@ const fr: typeof en = {
     notFound: "Introuvable",
   },
   pageDescriptions: {
-    work: "Les projets d'Elliot Moreau, en direct de GitHub.",
-    writing: "Carnets et essais d'Elliot Moreau.",
+    work: "Les projets d’Elliot Moreau, en direct de GitHub.",
+    writing: "Carnets et essais d’Elliot Moreau.",
     atlas: "Les endroits où Elliot Moreau est allé, et ceux sur la liste.",
-    now: "Ce qu'Elliot Moreau construit, écoute et pense en ce moment.",
+    now: "Ce qu’Elliot Moreau construit, écoute et pense en ce moment.",
     contact: "Écrire à Elliot Moreau. La boîte est ouverte.",
   },
 };
