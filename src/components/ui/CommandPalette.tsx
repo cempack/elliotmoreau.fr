@@ -13,6 +13,8 @@ export type Command = {
   group: string;
   hint?: string;
   keywords?: string;
+  /** the leading glyph: an app's pixel icon, or the kind of thing it is */
+  icon?: React.ReactNode;
   perform: () => void;
 };
 
@@ -33,7 +35,7 @@ function score(c: Command, q: string) {
 }
 
 /**
- * Spotlight-style launcher on a native modal <dialog> (top layer: no
+ * The launcher (Walker-style) on a native modal <dialog> (top layer: no
  * containing-block traps, inert page, Esc for free). ⌘K / Ctrl+K or "/"
  * opens it; ARIA combobox + listbox; springs in from just above, and
  * leaves the way it came before the dialog actually closes.
@@ -189,10 +191,9 @@ export function CommandPalette({
           }}
         >
           <div className="em-palette-field">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-              <circle cx="7" cy="7" r="4.75" stroke="currentColor" strokeWidth="1.5" />
-              <path d="m10.5 10.5 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
+            <span className="em-palette-prompt" aria-hidden>
+              ❯
+            </span>
             <input
               ref={inputRef}
               role="combobox"
@@ -229,6 +230,9 @@ export function CommandPalette({
                     {i === active && (
                       <m.span layoutId={`${listId}-hl`} className="em-palette-hl" transition={spring.snappy} />
                     )}
+                    <span className="em-palette-icon" aria-hidden>
+                      {c.icon}
+                    </span>
                     <span className="em-palette-label">{c.label}</span>
                     {c.hint && <span className="em-palette-hint">{c.hint}</span>}
                   </div>
@@ -236,6 +240,19 @@ export function CommandPalette({
               );
             })}
           </ul>
+          <div className="em-palette-foot" aria-hidden>
+            <span>
+              <kbd>↑</kbd>
+              <kbd>↓</kbd> select
+            </span>
+            <span>
+              <kbd>↵</kbd> open
+            </span>
+            <span>
+              <kbd>esc</kbd> close
+            </span>
+            <span className="em-palette-count">{results.length}</span>
+          </div>
         </m.div>
       </dialog>
     </PaletteCtx.Provider>

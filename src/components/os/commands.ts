@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { createElement, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import type { Command } from "@/components/ui/CommandPalette";
 import { useToast } from "@/components/Toasts";
@@ -8,7 +8,11 @@ import { rememberLocale, switchLocaleHref, useI18n } from "@/i18n/client";
 import { useSound } from "@/lib/sound";
 import { scrollToY } from "@/lib/scroller";
 import { SOCIALS } from "@/lib/places";
+import { PixelGlyph, type Cells } from "@/components/glyphs";
+import { G_COMMIT, G_PEN } from "@/components/apps/home/desktop/icons";
 import { APPS } from "./apps";
+import { AppGlyph, type IconId } from "./icons";
+import { G_EXTERNAL } from "./window/glyphs";
 import { useSiteData } from "./SiteData";
 import { useSky, type SkyMode } from "./sky";
 import { useTerminal } from "./Terminal";
@@ -17,11 +21,16 @@ import { BLOG_URL, fill, restartOS } from "./menubar/util";
 import { lockOS } from "./Intro";
 
 const SKY_MODES: SkyMode[] = ["auto", "dawn", "day", "dusk", "night"];
+/** 7×7 chevron prompt, for actions */
+const G_ACTION: Cells = [[1, 1], [2, 2], [3, 3], [2, 4], [1, 5]];
 
 const toTop = () => scrollToY(0, true);
 const ext = (href: string) => () => window.open(href, "_blank", "noopener,noreferrer");
 const openPanel = (id: PanelId) => () => window.dispatchEvent(new CustomEvent<PanelId>("em:menubar", { detail: id }));
 const host = (url: string) => url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+
+const glyph = (cells: Cells) => createElement(PixelGlyph, { cells, size: 14 });
+const appGlyph = (app: IconId) => createElement(AppGlyph, { app, size: 18 });
 
 /**
  * Spotlight command set: apps (localized paths, opened with the
@@ -51,6 +60,7 @@ export function useSpotlightCommands(): Command[] {
       label: s.apps[app.label],
       hint: sp.app,
       keywords: `${app.id} ${app.path} open app`,
+      icon: appGlyph(app.id),
       perform: () => router.push(path(app.path), { transitionTypes: ["app-open"] }),
     }));
     apps.push({
@@ -59,6 +69,7 @@ export function useSpotlightCommands(): Command[] {
       label: s.apps.terminal,
       hint: sp.app,
       keywords: "terminal shell console cli bash",
+      icon: appGlyph("terminal"),
       perform: () => setTerminal(true),
     });
 
@@ -144,6 +155,7 @@ export function useSpotlightCommands(): Command[] {
       label: p.title,
       hint: p.reading_time ? fill(sp.minRead, { n: p.reading_time }) : undefined,
       keywords: `${p.excerpt} ${p.tags.map((x) => x.name).join(" ")} blog post article`,
+      icon: glyph(G_PEN),
       perform: ext(p.url),
     }));
 
@@ -153,6 +165,7 @@ export function useSpotlightCommands(): Command[] {
       label: r.name,
       hint: [r.language, r.stars ? `★ ${r.stars}` : ""].filter(Boolean).join(" · ") || undefined,
       keywords: `${r.description} ${r.topics.join(" ")} repo github`,
+      icon: glyph(G_COMMIT),
       perform: ext(r.url),
     }));
 
@@ -163,18 +176,20 @@ export function useSpotlightCommands(): Command[] {
       { id: "ln-youtube", label: "YouTube", hint: "@cempack", href: SOCIALS.youtube, k: "video" },
       { id: "ln-x", label: "X", hint: "@cempack_", href: SOCIALS.x, k: "twitter" },
       { id: "ln-spotify", label: "Spotify", hint: "elliot", href: SOCIALS.spotifyUser, k: "music musique playlists" },
-    ].map(({ id, label, hint, href, k }) => ({ id, group: sp.links, label, hint, keywords: k, perform: ext(href) }));
+    ].map(({ id, label, hint, href, k }) => ({ id, group: sp.links, label, hint, keywords: k, icon: glyph(G_EXTERNAL), perform: ext(href) }));
     links.push({
       id: "ln-email",
       group: sp.links,
       label: sp.email,
       hint: SOCIALS.email,
       keywords: "mail email contact",
+      icon: glyph(G_EXTERNAL),
       perform: () => {
         window.location.href = `mailto:${SOCIALS.email}`;
       },
     });
 
-    return [...apps, ...actions, ...writing, ...projects, ...links];
+    const act = actions.map((a) => ({ ...a, icon: a.icon ?? glyph(G_ACTION) }));
+    return [...apps, ...act, ...writing, ...projects, ...links];
   }, [t, other, path, router, pathname, muted, toggle, blip, notify, mode, setMode, setTerminal, posts, repos]);
 }

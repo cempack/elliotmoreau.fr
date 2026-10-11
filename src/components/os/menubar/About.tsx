@@ -1,7 +1,9 @@
 "use client";
 
 import { useI18n } from "@/i18n/client";
-import { ArrowUpRight, EmosMark, GithubIcon, RestartIcon, RssIcon } from "./glyphs";
+import { useHydrated, useReduced } from "@/hooks/env";
+import { Wordmark } from "../intro/Wordmark";
+import { ArrowUpRight, GithubIcon, RestartIcon, RssIcon } from "./glyphs";
 import { BLOG_RSS, FIRST_COMMIT, SITE_REPO, restartOS, useNow } from "./util";
 import { lockOS } from "../Intro";
 
@@ -36,14 +38,19 @@ function Uptime() {
   );
 }
 
+/** The name's box for the menu: the boot's field, a quarter the size. */
+const MARK = { w: 480, h: 128 };
+
 /**
- * "About this site": About This Mac crossed with fastfetch. A seeded
- * pixel planet stands in for the machine; the specs read like a rice's
- * system info, colour blocks included.
+ * "About this site", as fastfetch would print it: the boot's living "emos"
+ * on top, then user@host, the specs with coloured keys and the palette
+ * blocks, then the actions.
  */
 export function AboutPanel() {
   const { t } = useI18n();
   const a = t.shell.about;
+  const hydrated = useHydrated();
+  const reduced = useReduced();
   const rows: [string, React.ReactNode][] = [
     [a.keys.os, a.values.os],
     [a.keys.built, a.values.built],
@@ -55,16 +62,14 @@ export function AboutPanel() {
   ];
   return (
     <div className="os-menubar-about">
-      <div className="os-menubar-about-hero">
-        <div className="os-menubar-about-art">
-          <EmosMark size={112} className="os-menubar-about-mark" />
+      <div className="os-menubar-about-head">
+        <div className="os-menubar-about-mark" aria-hidden>
+          <div className="os-menubar-about-mark-box">
+            <Wordmark desk={MARK} phone={MARK} live={hydrated && !reduced} />
+          </div>
         </div>
-        <div className="os-menubar-about-id">
-          <p className="os-menubar-kicker">{a.kicker}</p>
-          <h2 className="os-menubar-about-title">{t.shell.os}</h2>
-          <p className="os-menubar-about-version">{a.version}</p>
-          <p className="os-menubar-about-tagline">{a.tagline}</p>
-        </div>
+        <p className="os-menubar-about-version">{a.version}</p>
+        <p className="os-menubar-about-tagline">{a.tagline}</p>
       </div>
 
       <div className="os-menubar-about-ff">
@@ -72,6 +77,9 @@ export function AboutPanel() {
           <span className="os-menubar-about-user">{a.user}</span>
           <span className="os-menubar-about-at">@</span>
           <span className="os-menubar-about-host">{a.host}</span>
+        </p>
+        <p className="os-menubar-about-rule" aria-hidden>
+          {"-".repeat(a.user.length + 1 + a.host.length)}
         </p>
         <dl className="os-menubar-about-specs">
           {rows.map(([k, v]) => (
@@ -102,7 +110,7 @@ export function AboutPanel() {
         <button type="button" className="os-menubar-action os-menubar-action--ghost" onClick={lockOS}>
           <span>{t.shell.menu.lock}</span>
         </button>
-        <button type="button" className="os-menubar-action os-menubar-action--ghost" onClick={restartOS}>
+        <button type="button" className="os-menubar-action os-menubar-action--ghost os-menubar-action--tail" onClick={restartOS}>
           <RestartIcon />
           <span>{t.shell.menu.restart}</span>
         </button>
