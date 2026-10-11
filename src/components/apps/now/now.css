@@ -615,75 +615,114 @@ a.app-now-tok:hover {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.125rem;
   min-height: 0;
 }
 .app-now-listen-now {
   display: flex;
-  gap: 1.25rem;
+  flex-direction: column;
+  gap: 0.875rem;
   min-width: 0;
 }
-.app-now-listen-art {
+
+/* the deck: 88×64 art px at 3 CSS px each, the sleeve leaning on its left */
+.app-now-deck {
+  --app-now-peek: 5.25rem;
   position: relative;
-  isolation: isolate;
+  display: block;
   flex: none;
   align-self: flex-start;
-  width: clamp(7.5rem, 41cqi, 15rem);
-  border-radius: 14px;
-  transition: transform 0.35s var(--ease-out-quint);
+  width: calc(264px + var(--app-now-peek));
+  max-width: 100%;
+  padding-left: var(--app-now-peek);
+  border-radius: 6px;
+  -webkit-tap-highlight-color: transparent;
 }
-.app-now-listen-art:active {
-  transform: scale(0.97);
+.app-now-deck:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 4px;
 }
-.app-now-listen-art > .app-now-art {
-  width: 86%;
-}
-/* the record: tucked behind the sleeve, out while it plays */
-.app-now-vinyl {
-  position: absolute;
-  top: 4%;
-  left: 8%;
-  z-index: -1;
-  width: 78%;
-  aspect-ratio: 1;
-  border-radius: 999px;
-  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.55));
-  translate: 7% 0;
-  transition: translate 0.7s var(--ease-out-quint);
-}
-.app-now-vinyl[data-out] {
-  translate: 25% 0;
-}
-.app-now-vinyl-disc,
-.app-now-vinyl-label {
+.app-now-deck-body {
+  position: relative;
+  z-index: 1;
   display: block;
-  image-rendering: pixelated;
+  width: 100%;
+  aspect-ratio: 88 / 64;
 }
-.app-now-vinyl-disc {
+.app-now-deck-canvas {
+  display: block;
   width: 100%;
   height: 100%;
+  border-radius: 3px;
+  box-shadow:
+    0 22px 36px -22px rgba(0, 0, 0, 0.9),
+    0 2px 0 rgba(0, 0, 0, 0.35);
+  image-rendering: pixelated;
 }
-.app-now-vinyl-label {
+/* the record: round, so a grab only lands on it; it holds the page still on touch */
+.app-now-deck-disc {
+  position: absolute;
+  top: calc(5 / 64 * 100%);
+  left: calc(7 / 88 * 100%);
+  width: calc(54 / 88 * 100%);
+  height: calc(54 / 64 * 100%);
+  border-radius: 50%;
+  cursor: grab;
+  touch-action: none;
+}
+.app-now-deck-disc:active {
+  cursor: grabbing;
+}
+.app-now-deck-sleeve {
   position: absolute;
   top: 50%;
-  left: 50%;
-  width: 41.6%;
-  height: 41.6%;
+  left: 0;
+  z-index: 0;
+  width: 9.5rem;
+  translate: 0 -50%;
+  rotate: -2.5deg;
+}
+.app-now-deck-sleeve > .app-now-art {
+  border-radius: 3px;
+  box-shadow:
+    0 18px 30px -18px rgba(0, 0, 0, 0.9),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  animation: app-now-sleeve-in 0.28s var(--ease-out-quint);
+}
+@keyframes app-now-sleeve-in {
+  from {
+    opacity: 0;
+  }
+}
+/* the headshell: hover (or tap) reads where the needle is */
+.app-now-deck-head {
+  position: absolute;
+  z-index: 2;
+  width: 18px;
+  height: 18px;
   translate: -50% -50%;
 }
-.app-now-vinyl[data-spin] .app-now-vinyl-label {
-  animation: app-now-spin 1.8s steps(12) infinite;
+.app-now-deck-readout {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  padding: 0.25rem 0.4375rem;
+  border-radius: 6px;
+  background: var(--color-ink-950);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  color: var(--color-label);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1;
+  white-space: nowrap;
+  translate: -50% 0;
+  pointer-events: none;
 }
-@keyframes app-now-spin {
-  to {
-    rotate: 1turn;
-  }
+.app-now-board[data-arrange] .app-now-deck,
+.app-now-board[data-arrange] .app-now-crate-bin {
+  pointer-events: none;
 }
-@media (prefers-reduced-motion: reduce) {
-  .app-now-vinyl {
-    transition: none;
-  }
-}
+
 .app-now-art {
   position: relative;
   display: block;
@@ -705,30 +744,13 @@ a.app-now-tok:hover {
 .app-now-art-cover {
   image-rendering: pixelated;
 }
-.app-now-art--round {
-  border-radius: 999px;
-}
-/* an artist with no photo gets a small sleeve, not a disc */
-.app-now-art--sleeve {
-  border-radius: 8px;
-}
-/* nothing from Spotify at all: a still life where the music goes. The
-   planet sits where the art would, the eq lies flat (one cell a column) */
-.app-now-art--quiet {
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
-}
 .app-now-art--quiet .app-now-art-cover {
   opacity: 0.8;
 }
-.app-now-listen-now--quiet .app-now-cava-col::before {
-  background: repeating-linear-gradient(180deg, var(--color-label-3) 0 3px, transparent 3px 4px);
-  opacity: 0.5;
-  transform: translateY(28px);
-}
-.app-now-listen-now--quiet .app-now-listen-title {
+.app-now-listen-now[data-quiet] .app-now-listen-title {
   font-size: clamp(1.125rem, 0.85rem + 1.8cqi, 1.5rem);
 }
-.app-now-listen-now--quiet .app-now-listen-album {
+.app-now-listen-now[data-quiet] .app-now-listen-album {
   max-width: 22rem;
   margin-top: 0.4375rem;
   color: var(--color-label-2);
@@ -741,30 +763,22 @@ a.app-now-tok:hover {
   margin-top: 0.875rem;
   font-size: var(--text-footnote);
 }
-/* no top artists: the one block sits in the middle of the tile, larger */
-.app-now-listen[data-solo] .app-now-listen-now {
-  margin-block: auto;
-}
-.app-now-listen[data-solo] .app-now-listen-art {
-  width: clamp(7.5rem, 47cqi, 17rem);
-}
 .app-now-listen-info {
   display: flex;
-  flex: 1;
   flex-direction: column;
   min-width: 0;
 }
 .app-now-listen-title {
-  margin: 0.125rem 0 0;
+  margin: 0;
   color: var(--color-label);
-  font-size: clamp(1.25rem, 0.9rem + 2.4cqi, 1.875rem);
+  font-size: clamp(1.125rem, 0.9rem + 1.6cqi, 1.5rem);
   font-weight: 650;
-  letter-spacing: -0.028em;
-  line-height: 1.08;
+  letter-spacing: -0.024em;
+  line-height: 1.12;
   overflow-wrap: anywhere;
 }
 .app-now-listen-artist {
-  margin: 0.375rem 0 0;
+  margin: 0.25rem 0 0;
   color: var(--color-label-2);
   font-size: var(--text-callout);
   line-height: 1.3;
@@ -775,14 +789,8 @@ a.app-now-tok:hover {
   font-size: var(--text-footnote);
   line-height: 1.35;
 }
-.app-now-listen-cava {
-  /* the padding is room above it, not taken from its 8 cells */
-  box-sizing: content-box;
-  margin-top: auto;
-  padding-top: 0.75rem;
-}
 .app-now-progress {
-  margin-top: 0.625rem;
+  margin-top: 0.75rem;
 }
 .app-now-progress-bar {
   position: relative;
@@ -807,127 +815,232 @@ a.app-now-tok:hover {
   font-family: var(--font-mono);
   font-size: 0.75rem;
 }
-.app-now-artists {
-  margin-top: auto;
-  padding-top: 1rem;
+
+/* ── the crate ── */
+.app-now-crate {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: end;
+  column-gap: 1rem;
+  min-width: 0;
+  padding-top: 0.875rem;
   border-top: 1px solid var(--hairline);
 }
-.app-now-artists-list {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 0.75rem;
-  margin: 0.25rem 0 0;
-  padding: 0;
-  list-style: none;
+.app-now-crate-title {
+  grid-column: 1 / -1;
 }
-.app-now-artist {
+.app-now-crate-bin {
+  /* sleeve size, wall, the rise of each sleeve further back, the front wall */
+  --s: 5.75rem;
+  --wall: 7px;
+  --rise: 9px;
+  --front: calc(var(--s) * 0.36);
+  --base: 3px;
+  --pull: 0px;
+  position: relative;
+  width: calc(var(--s) + var(--wall) * 2);
+  height: calc(var(--s) + var(--rise) * (var(--n) - 1) + var(--base) + 6px);
+  border-radius: 4px;
+  outline: none;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.app-now-crate-bin:active {
+  cursor: grabbing;
+}
+.app-now-crate-bin:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 4px;
+}
+/* the crate's sides and back: dark end grain behind the sleeves */
+.app-now-crate-side {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(var(--front) + var(--rise) * (var(--n) - 1) + var(--s) * 0.18);
+  background:
+    linear-gradient(90deg, #4a3523 0 var(--wall), transparent var(--wall) calc(100% - var(--wall)), #4a3523 calc(100% - var(--wall))),
+    linear-gradient(180deg, #2a1f15, #1c150e);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+}
+.app-now-crate-sleeve {
+  position: absolute;
+  bottom: calc(var(--base) + var(--rise) * var(--k));
+  left: var(--wall);
+  width: var(--s);
+  height: var(--s);
+  border-radius: 2px;
+  background: #3d362e;
+  box-shadow:
+    0 -1px 0 rgba(255, 255, 255, 0.06),
+    0 6px 10px -6px rgba(0, 0, 0, 0.9);
+  scale: calc(1 - var(--k) * 0.018);
+  transform: perspective(360px) rotateX(0deg);
+  transform-origin: 50% 100%;
+  transition:
+    transform 0.15s steps(3, end),
+    translate 0.15s steps(2, end);
+}
+.app-now-crate-face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 2px;
+}
+.app-now-crate-face > .app-now-art {
+  border-radius: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+/* the spine along the top edge, the rank on it in pixel digits */
+.app-now-crate-spine {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  height: 7px;
+  padding-left: 3px;
+  background: #161a17;
+  color: var(--color-label-2);
+}
+.app-now-crate-spine[data-first] {
+  color: var(--color-signal);
+}
+.app-now-crate-sleeve[data-state="front"] {
+  translate: var(--pull) -4px;
+}
+/* passed: tipped forward onto the front wall, its plain back up; only
+   its edge shows over the wall, a little higher for each one on the pile */
+.app-now-crate-sleeve[data-state="tipped"] {
+  background: linear-gradient(180deg, #6b5d4c, #4b4237);
+  transform: perspective(2000px) rotateX(-84deg);
+  translate: 0 calc(var(--base) + 5px - var(--front));
+}
+.app-now-crate-sleeve[data-state="tipped"] .app-now-crate-face,
+.app-now-crate-sleeve[data-state="tipped"] .app-now-crate-spine {
+  visibility: hidden;
+}
+.app-now-crate-front {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 25;
+  height: var(--front);
+  border-radius: 2px;
+  background:
+    linear-gradient(90deg, #5b4430 0 var(--wall), transparent var(--wall) calc(100% - var(--wall)), #5b4430 calc(100% - var(--wall))),
+    linear-gradient(
+      180deg,
+      #a7825a 0 2px,
+      #84613f 2px calc(50% - 1px),
+      #3b2a1b calc(50% - 1px) calc(50% + 1px),
+      #84613f calc(50% + 1px) calc(100% - 2px),
+      #4a3523 calc(100% - 2px)
+    );
+  box-shadow: 0 10px 18px -10px rgba(0, 0, 0, 0.9);
+  pointer-events: none;
+}
+.app-now-crate-caption {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
+  gap: 0.25rem;
   min-width: 0;
-  text-align: center;
+  margin: 0 0 0.25rem;
 }
-.app-now-artist-face {
-  position: relative;
-  width: 100%;
-  max-width: 4rem;
-  transition: transform 0.35s var(--ease-out-quint);
-}
-@media (hover: hover) and (pointer: fine) {
-  a.app-now-artist:hover .app-now-artist-face {
-    transform: translateY(-2px);
-  }
-}
-.app-now-artist-rank {
-  position: absolute;
-  top: -0.25rem;
-  left: -0.25rem;
-  display: grid;
-  place-items: center;
-  min-width: 1.25rem;
-  height: 1.25rem;
-  padding: 0 0.25rem;
-  border-radius: 6px;
-  background: var(--color-ink-900);
-  box-shadow: inset 0 0 0 1px var(--hairline);
-  color: var(--color-label-2);
+.app-now-crate-rank {
+  color: var(--color-ember);
   font-family: var(--font-mono);
   font-size: 0.75rem;
   line-height: 1;
 }
-li:first-child .app-now-artist-rank {
-  background: var(--color-signal);
-  box-shadow: none;
-  color: var(--color-ink-950);
-  font-weight: 600;
-}
-.app-now-artist-name {
-  display: -webkit-box;
-  max-width: 100%;
+.app-now-crate-name {
   overflow: hidden;
-  color: var(--color-label-2);
-  font-size: var(--text-footnote);
+  color: var(--color-label);
+  font-size: var(--text-callout);
+  font-weight: 600;
   line-height: 1.25;
-  overflow-wrap: normal;
-  word-break: normal;
-  hyphens: manual;
-  text-wrap: balance;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: reduce) {
+  /* sleeves highlight instead of tipping */
+  .app-now-crate-sleeve,
+  .app-now-crate-sleeve[data-state="tipped"] {
+    transform: none;
+    transition: none;
+  }
+  .app-now-crate-sleeve[data-state="tipped"] {
+    opacity: 0;
+  }
+  .app-now-crate-sleeve[data-state="front"] {
+    translate: 0 0;
+    box-shadow: 0 0 0 2px var(--color-signal);
+  }
+  .app-now-deck-sleeve > .app-now-art {
+    animation-duration: 0.15s;
+  }
 }
 
-/* narrow widgets (phones): a ranked list, one artist a row, so long names
-   end in an ellipsis instead of breaking inside a word */
-@container app-now-w (max-width: 460px) {
-  .app-now-artists-list {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0;
-    margin: 0;
-  }
-  .app-now-artist {
-    position: relative;
+/* wide tiles: the deck and the track on the left, the crate beside them */
+@container app-now-w (min-width: 480px) {
+  .app-now-listen:not([data-solo]) {
     flex-direction: row;
-    gap: 0.75rem;
-    min-height: 2.75rem;
-    padding: 0.25rem 0 0.25rem 1.875rem;
-    text-align: left;
+    gap: 1.5rem;
   }
-  .app-now-artists-list li + li .app-now-artist::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    right: 0;
-    left: 4.625rem;
-    height: 1px;
-    background: var(--hairline);
-  }
-  .app-now-artist-face {
-    position: static;
+  .app-now-listen:not([data-solo]) .app-now-listen-now {
     flex: none;
-    width: 2.25rem;
+    width: calc(264px + 5.25rem);
   }
-  .app-now-artist-rank {
-    top: 50%;
-    left: 0;
-    translate: 0 -50%;
-  }
-  li:not(:first-child) .app-now-artist-rank {
-    background: none;
-    box-shadow: none;
-    color: var(--color-label-3);
-  }
-  .app-now-artist-name {
-    display: block;
+  .app-now-listen:not([data-solo]) .app-now-crate {
+    display: flex;
     flex: 1;
-    min-width: 0;
-    color: var(--color-label);
-    font-size: var(--text-callout);
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0 0 1.5rem;
+    border-top: 0;
+    border-left: 1px solid var(--hairline);
   }
-  a.app-now-artist:hover .app-now-artist-face {
-    transform: none;
+  .app-now-listen:not([data-solo]) .app-now-crate-title {
+    align-self: stretch;
+    margin-bottom: auto;
+  }
+  .app-now-crate-bin {
+    --s: clamp(6rem, 22cqi, 8.5rem);
+  }
+  .app-now-listen:not([data-solo]) .app-now-crate-caption {
+    align-items: center;
+    align-self: stretch;
+    margin: 0.875rem 0 auto;
+    text-align: center;
+  }
+  /* no crate: the deck and the track side by side */
+  .app-now-listen[data-solo] .app-now-listen-now {
+    flex-direction: row;
+    align-items: center;
+    gap: 1.5rem;
+    margin-block: auto;
+  }
+}
+/* phones: the deck goes full width, the sleeve a small tab on its corner */
+@container app-now-w (max-width: 479px) {
+  .app-now-deck {
+    --app-now-peek: 0px;
+    align-self: center;
+    width: min(264px, 100%);
+  }
+  .app-now-deck-sleeve {
+    top: -0.5rem;
+    left: -0.625rem;
+    z-index: 2;
+    width: 3rem;
+    translate: none;
+    rotate: -4deg;
   }
 }
 
@@ -1888,22 +2001,6 @@ li:first-child .app-now-artist-rank {
     -webkit-box-orient: vertical;
   }
 }
-/* in the grid the Listening tile has a fixed height: the art takes all the
-   height the top artists leave (square, up to a little over half the
-   width), and the cava and progress sit on its bottom edge, so no dead
-   band opens between the track and the artists */
-@container app-now (min-width: 620px) {
-  .app-now-listen:not([data-solo]) .app-now-listen-now {
-    flex: 1 1 0;
-    min-height: 0;
-  }
-  .app-now-listen:not([data-solo]) .app-now-listen-art {
-    align-self: stretch;
-    width: auto;
-    max-width: 58%;
-    aspect-ratio: 1;
-  }
-}
 /* phones: tiles grow with their content, but a very long title or credit
    list still stops at a few lines */
 @container app-now (max-width: 619px) {
@@ -1960,15 +2057,6 @@ li:first-child .app-now-artist-rank {
   .app-now-w-card {
     padding: 0.875rem 1rem 1rem;
   }
-  .app-now-listen-now {
-    gap: 1rem;
-  }
-  .app-now-listen-cava {
-    padding-top: 0.625rem;
-  }
-  .app-now-artists-list {
-    gap: 0.5rem;
-  }
   .app-now-sky {
     min-height: 11.5rem;
   }
@@ -1976,7 +2064,6 @@ li:first-child .app-now-artist-rank {
     gap: 1rem;
   }
   .app-now-build-repos,
-  .app-now-artists,
   .app-now-more {
     margin-top: 0.25rem;
   }
@@ -2110,7 +2197,8 @@ li:first-child .app-now-artist-rank {
   .app-now-repo i,
   .app-now-spine,
   .app-now-fetch-pal,
-  .app-now-artist-rank {
+  .app-now-deck-canvas,
+  .app-now-crate-bin {
     forced-color-adjust: none;
   }
 }

@@ -1,8 +1,7 @@
 "use client";
 
-import { memo, useMemo, useRef } from "react";
-import { useReduced } from "@/hooks/env";
-import { hashString, useOnScreen, useTabHidden } from "./lib";
+import { memo, useMemo } from "react";
+import { hashString } from "./lib";
 
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 const bayer = (x: number, y: number) => (BAYER[((y & 3) << 2) | (x & 3)] + 0.5) / 16;
@@ -134,67 +133,3 @@ export const PixelCover = memo(function PixelCover({ seed, n = 24, className = "
     </svg>
   );
 });
-
-const VN = 24;
-/** the record's grooves and a fixed sheen (the light doesn't turn with it) */
-const DISC = (() => {
-  const out: { x: number; y: number; w: number; c: string }[] = [];
-  const c = VN / 2 - 0.5;
-  for (let y = 0; y < VN; y++) {
-    let run: { x: number; c: string } | null = null;
-    for (let x = 0; x <= VN; x++) {
-      let ink: string | null = null;
-      if (x < VN) {
-        const d = Math.hypot(x - c, y - c);
-        if (d <= VN / 2 && d > 4.6) {
-          const a = Math.atan2(y - c, x - c);
-          const sheen = Math.abs(Math.sin(a * 2 + 0.6)) > 0.94 && d > 6;
-          const rim = d > VN / 2 - 1;
-          ink = rim ? "#3f4842" : sheen ? "#4a544d" : Math.floor(d) % 2 ? "#141816" : "#232925";
-        }
-      }
-      if (run && ink !== run.c) {
-        out.push({ x: run.x, y, w: x - run.x, c: run.c });
-        run = null;
-      }
-      if (ink && !run) run = { x, c: ink };
-    }
-  }
-  return out;
-})();
-
-/**
- * The record behind the sleeve. It slides out while something plays and
- * its label turns (stepped, like a pixel animation would); it tucks back in
- * and stops when paused, off screen, hidden, or under reduced motion.
- */
-export function Vinyl({ seed, playing }: { seed: string; playing: boolean }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const on = useOnScreen(ref, "40px");
-  const hidden = useTabHidden();
-  const reduced = useReduced();
-  const th = themeFor(seed);
-  return (
-    <span
-      ref={ref}
-      className="app-now-vinyl"
-      data-out={playing || undefined}
-      data-spin={(playing && on && !hidden && !reduced) || undefined}
-      aria-hidden
-    >
-      <svg className="app-now-vinyl-disc" viewBox={`0 0 ${VN} ${VN}`} shapeRendering="crispEdges">
-        {DISC.map((r) => (
-          <rect key={`${r.x}-${r.y}`} x={r.x} y={r.y} width={r.w} height={1} fill={r.c} />
-        ))}
-      </svg>
-      <svg className="app-now-vinyl-label" viewBox="0 0 10 10" shapeRendering="crispEdges">
-        <rect x={3} y={0} width={4} height={10} fill={th.a} />
-        <rect x={0} y={3} width={10} height={4} fill={th.a} />
-        <rect x={1} y={1} width={8} height={8} fill={th.a} />
-        <rect x={2} y={1} width={3} height={1} fill={th.b} />
-        <rect x={1} y={2} width={1} height={2} fill={th.b} />
-        <rect x={4} y={4} width={2} height={2} fill="#0a0c0b" />
-      </svg>
-    </span>
-  );
-}

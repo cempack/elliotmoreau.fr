@@ -7,8 +7,9 @@ import { useI18n } from "@/i18n/client";
 import { timeAgo } from "@/lib/format";
 import { SOCIALS } from "@/lib/places";
 import type { SpotifyStatus, TrackInfo } from "@/lib/spotify";
-import { Art, G_ARROW, LiveDot, PixelCava } from "../bits";
-import { PixelCover, Vinyl } from "../Cover";
+import { G_ARROW, LiveDot } from "../bits";
+import { Crate } from "../Crate";
+import { Deck } from "../Deck";
 import { fill, fmtMs, useOnScreen, useTrackProgress } from "../lib";
 
 export type Listen = { status: SpotifyStatus | null; track: TrackInfo | null; playing: boolean };
@@ -74,12 +75,10 @@ function Progress({ progress, duration, label }: { progress: number | null; dura
 }
 
 /**
- * Now playing as the hero of the widget (the art, or a seeded pixel sleeve,
- * with the record sliding out of it while it plays; a pixel cava; live
- * progress), then the top artists, ranked. Ranks only:
- * Spotify gives an order, not play counts, so there are no bars. When
- * Spotify has nothing at all, the tile holds a quiet still life instead:
- * a sleeve with the record tucked in, the eq lying flat.
+ * The record deck with the song on (or the last one played), the title and
+ * the live progress under it, and the top artists in a crate beside it, or
+ * under it on phones. With nothing from Spotify at all, the platter shows
+ * its bare felt, the arm rests, and the crate still stands if there is one.
  */
 export function Listening({ status, track, playing }: Listen) {
   const { t } = useI18n();
@@ -87,30 +86,28 @@ export function Listening({ status, track, playing }: Listen) {
   const rootRef = useRef<HTMLDivElement>(null);
   const on = useOnScreen(rootRef, "40px");
   const progress = useTrackProgress(track, playing, on);
-  const artists = status?.artists ?? [];
+  const artists = (status?.artists ?? []).slice(0, 5);
+  const seed = track ? `${track.title} · ${track.artist}` : null;
 
   return (
     <div ref={rootRef} className="app-now-listen" data-solo={artists.length === 0 || undefined}>
-      {track ? (
-        <div className="app-now-listen-now">
-          <a
-            href={track.url || SOCIALS.spotifyUser}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="app-now-listen-art"
-            aria-label={fill(l.open, { title: track.title })}
-           
-          >
-            <Vinyl seed={`${track.title} · ${track.artist}`} playing={playing} />
-            <Art image={track.image} seed={`${track.title} · ${track.artist}`} />
-          </a>
+      <div className="app-now-listen-now" data-quiet={!track || undefined}>
+        <Deck
+          track={track && seed ? { seed, image: track.image } : null}
+          playing={playing}
+          last={!status?.now}
+          progress={status?.now ? progress : null}
+          duration={track?.durationMs ?? 0}
+          href={track?.url || SOCIALS.spotifyUser}
+          labels={{ open: track ? fill(l.open, { title: track.title }) : l.profile, needle: l.progress }}
+        />
+        {track ? (
           <div className="app-now-listen-info">
             <p className="app-now-listen-title" title={track.title}>
               {track.title}
             </p>
             <p className="app-now-listen-artist">{track.artist}</p>
             {track.album && <p className="app-now-listen-album">{track.album}</p>}
-            <PixelCava playing={playing} className="app-now-listen-cava" />
             {/* a position only means something for the track Spotify holds now */}
             {status?.now && track.durationMs > 0 && (
               <Progress
@@ -120,61 +117,19 @@ export function Listening({ status, track, playing }: Listen) {
               />
             )}
           </div>
-        </div>
-      ) : (
-        <div className="app-now-listen-now app-now-listen-now--quiet">
-          <span className="app-now-listen-art" aria-hidden>
-            <Vinyl seed="silence" playing={false} />
-            <span className="app-now-art app-now-art--quiet">
-              <PixelCover seed="silence" className="app-now-art-cover" />
-            </span>
-          </span>
+        ) : (
           <div className="app-now-listen-info">
             <p className="app-now-listen-title">{l.nothing}</p>
             <p className="app-now-listen-album">{l.nothingBody}</p>
-            <PixelCava playing={false} className="app-now-listen-cava" />
             <a href={SOCIALS.spotifyUser} target="_blank" rel="noopener noreferrer" className="app-now-link app-now-listen-profile">
               {l.profile}
               <PixelGlyph cells={G_ARROW} size={8} />
             </a>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {artists.length > 0 && (
-        <div className="app-now-artists">
-          <h3 className="app-now-label">{l.topArtists}</h3>
-          <ol className="app-now-artists-list">
-            {artists.slice(0, 5).map((a, i) => {
-              const body = (
-                <>
-                  <span className="app-now-artist-face">
-                    <Art image={a.image} seed={`artist · ${a.name}`} n={12} className={a.image ? "app-now-art--round" : "app-now-art--sleeve"} />
-                    {/* the <ol> carries the rank for assistive tech */}
-                    <span className="app-now-artist-rank tabular" aria-hidden>
-                      {i + 1}
-                    </span>
-                  </span>
-                  <span className="app-now-artist-name" title={a.name}>
-                    {a.name}
-                  </span>
-                </>
-              );
-              return (
-                <li key={a.name}>
-                  {a.url ? (
-                    <a href={a.url} target="_blank" rel="noopener noreferrer" className="app-now-artist">
-                      {body}
-                    </a>
-                  ) : (
-                    <span className="app-now-artist">{body}</span>
-                  )}
-                </li>
-              );
-            })}
-          </ol>
-        </div>
-      )}
+      {artists.length > 0 && <Crate artists={artists} labels={{ title: l.topArtists, hint: l.crateHint }} />}
     </div>
   );
 }
