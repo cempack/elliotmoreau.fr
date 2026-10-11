@@ -176,6 +176,9 @@ export function WorkDeck() {
                   key={repo.name}
                   type="button"
                   className="app-story-deck-dot"
+                  // pointer shortcuts: the keyboard pages with the arrows on
+                  // the card (roving focus), so the dots stay off the Tab path
+                  tabIndex={-1}
                   data-on={r === index || undefined}
                   aria-label={fill(s.position, { i: r + 1, n, name: repo.name })}
                   aria-current={r === index ? "true" : undefined}
@@ -248,12 +251,20 @@ function DeckCard({
   const tuck = useTransform(q, (v) => Math.min(1, Math.max(0, r - v)));
   const rowX = useTransform(tuck, (t) => `${t * 100}%`);
   const nameX = useTransform(tuck, (t) => `${-t * 100}%`);
-  // narrow screens: a piled card is a sliver, so its words would only show
-  // as clipped fragments; they fade in as it comes forward
+  // a piled card shows only its right end, so its words would read as
+  // clipped fragments: only the first card back keeps them, and only where
+  // there's room for them to show whole; deeper cards are window snapshots
+  // (title bar and stars over a dark body), like the switcher's
   const words = useTransform(q, (v) => {
     const d = v - r;
-    return geo && !geo.roomy && d < 0 ? Math.max(0, 1 + d * 2) : 1;
+    if (!geo || d >= 0) return 1;
+    return geo.roomy ? Math.max(0, 1 + (d + 1) * 2.5) : Math.max(0, 1 + d * 2);
   });
+  // the title bar (path, stars) stays on wide screens: the stars sit at the
+  // card's visible end; narrow slivers drop it with the words
+  const bar = useTransform(words, (o) => (geo?.roomy ? 1 : o));
+  // the status row starts under the card in front: it leaves first
+  const meta = useTransform(q, (v) => Math.max(0, Math.min(1, 1 + (v - r) * 2.2)));
   const descId = `story-deck-desc-${r}`;
 
   return (
@@ -292,7 +303,7 @@ function DeckCard({
         {/* an app snapshot, like the switcher's: opaque, so a stack of
             moving cards never re-blurs what's under it every frame */}
         <span aria-hidden className="app-story-deck-surface" />
-        <m.span className="app-story-deck-bar" aria-hidden style={{ opacity: words }}>
+        <m.span className="app-story-deck-bar" aria-hidden style={{ opacity: bar }}>
           <span className="app-story-mc-lights">
             <i />
             <i />
@@ -333,7 +344,7 @@ function DeckCard({
             )}
           </m.span>
         </span>
-        <m.span className="app-story-deck-status" aria-hidden style={{ opacity: words }}>
+        <m.span className="app-story-deck-status" aria-hidden style={{ opacity: meta }}>
           <span className="app-story-deck-lang">
             <i style={{ background: LANG_COLORS[repo.language] ?? LANG_FALLBACK }} />
             {repo.language || "—"}

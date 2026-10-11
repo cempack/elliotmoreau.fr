@@ -36,19 +36,31 @@ function offsetIn(el: HTMLElement, root: HTMLElement) {
   return n === root ? y : NaN;
 }
 
-/** How far a mini player resting in a bottom corner reaches up into the
-    clip (0 when there is none, or it sits up top). Reads what the shell
-    publishes: html[data-pip-corner] and --os-pip-bottom. */
-function pipReach(clip: HTMLElement) {
+/** How high above the stage's bottom edge the sheet must rest to stay
+    clear of a mini player in a bottom corner it would otherwise sit under
+    (0: none, it is up top, or it is beside the sheet). Glass never stacks
+    on glass: the sheet rests above the pill, as a sheet rests above the
+    mini player in Music. Reads what the shell publishes
+    (html[data-pip-corner], --os-pip-bottom) and, until it publishes the
+    pill's box too, the pill and its safe area. */
+function pipClearance(stage: HTMLElement, clip: HTMLElement) {
   const root = document.documentElement;
   const corner = root.dataset.pipCorner;
   if (corner !== "bl" && corner !== "br") return 0;
+  const pip = document.querySelector<HTMLElement>(".os-pip");
   const bottom = parseFloat(getComputedStyle(root).getPropertyValue("--os-pip-bottom"));
-  if (!bottom) return 0;
-  // the pill is 3.25rem; the shell does not publish its height (yet)
-  const h = document.querySelector<HTMLElement>(".os-pip")?.offsetHeight || 52;
-  return Math.max(0, clip.getBoundingClientRect().bottom - (bottom - h));
+  if (!pip || !bottom) return 0;
+  const w = pip.offsetWidth;
+  const safe = document.querySelector<HTMLElement>(".os-pip-safe")?.getBoundingClientRect();
+  const left = corner === "bl" ? (safe?.left ?? 0) : Math.max(safe?.left ?? 0, (safe?.right ?? window.innerWidth) - w);
+  const c = clip.getBoundingClientRect();
+  if (left >= c.right - 1 || left + w <= c.left + 1) return 0;
+  const top = bottom - pip.offsetHeight;
+  return Math.max(0, Math.round(stage.getBoundingClientRect().bottom - top + 10));
 }
+
+/** the half detent ends this far under its anchor (the fade takes most) */
+const HALF_PAD = 22;
 
 export type SheetMetrics = {
   /** sheet translateY at each detent (full is 0) */
@@ -61,8 +73,8 @@ export type SheetMetrics = {
 
 /**
  * Apple Maps-style sheet over the globe with three detents: peek (the
- * place's name), half (its card down to the note) and full (everything:
- * details, places, stats, postcards). Drag anywhere on it, 1:1 from the
+ * place's name), half (its card down to the note, fading out on a clean
+ * break) and full (everything: details, places, stats, postcards). Drag anywhere on it, 1:1 from the
  * touch-down point, rubber-banded past full and peek; on release the
  * velocity is projected to pick a detent (a real flick always moves at
  * least one detent its way) and the spring takes over with that velocity.
@@ -71,9 +83,10 @@ export type SheetMetrics = {
  * pulling down from its top then hands the gesture back to the sheet.
  * Tap or arrow keys on the grabber step through detents; Esc collapses
  * from full while focus is inside it. A mini player resting in a bottom
- * corner is kept clear of the half detent's content and of the end of
- * the scroll. `beside` (landscape tablets): it floats next to the globe,
- * covers nothing, and so rests fully open like an iPad sidebar.
+ * corner under it lifts its resting edge above the pill. Pulled past full
+ * it stretches (the glass reaches down behind it, so no gap opens).
+ * `beside` (landscape tablets): it floats next to the globe, covers
+ * nothing, and so rests fully open like an iPad sidebar.
  * Reduced motion: it snaps.
  */
 export function MapSheet({
@@ -131,25 +144,30 @@ export function MapSheet({
     [metrics]
   );
 
-  /** 1:1 inside the detents, resisting past them: past full it gives a
-      few points (the clip leaves it room; the content is what scrolls
-      there), below peek a little more, never enough to sink the name */
+  /** 1:1 inside the detents, resisting past them: past full it stretches
+      in proportion to the sheet (the clip and the glass leave it room),
+      below peek a little, never enough to sink the name */
   const band = useCallback(
     (v: number) => {
       const max = metrics.peekY.get();
-      if (v < 0) return -rubberband(-v, 20);
+      if (v < 0) return -rubberband(-v, Math.max(56, Math.min(84, (sheetRef.current?.offsetHeight ?? 600) * 0.12)));
       if (v > max) return max + rubberband(v - max, 64);
       return v;
     },
     [metrics]
   );
 
-  const setSettled = useCallback((on: boolean) => {
-    settledRef.current = on;
+  /** Where it rests (null while it moves). Resting at full, and only
+      then, the content scrolls natively; resting at half, it fades out at
+      the fold. */
+  const setRest = useCallback((d: Detent | null) => {
+    settledRef.current = d === "full";
     const el = sheetRef.current;
     if (!el) return;
-    if (on) el.setAttribute("data-settled", "");
+    if (d === "full") el.setAttribute("data-settled", "");
     else el.removeAttribute("data-settled");
+    if (d) el.setAttribute("data-rest", d);
+    else el.removeAttribute("data-rest");
   }, []);
 
   const setDetent = useCallback(
@@ -165,24 +183,24 @@ export function MapSheet({
     (d: Detent, v = 0, silent = false) => {
       const changed = d !== detentRef.current;
       setDetent(d);
-      setSettled(false);
+      setRest(null);
       if (d !== "full") scrollRef.current?.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
       if (changed && !silent) blip("tick");
       target.current = yFor(d);
       if (reduced) {
         y.jump(target.current);
-        setSettled(d === "full");
+        setRest(d);
         return;
       }
       animate(y, target.current, {
         ...(Math.abs(v) > 900 ? spring.flick : spring.default),
         velocity: v,
         onComplete: () => {
-          if (detentRef.current === d && !grab.current) setSettled(d === "full");
+          if (detentRef.current === d && !grab.current) setRest(d);
         },
       });
     },
-    [blip, reduced, setDetent, setSettled, y, yFor]
+    [blip, reduced, setDetent, setRest, y, yFor]
   );
 
   const release = useCallback(
@@ -209,27 +227,46 @@ export function MapSheet({
     const cardEl = cardRef.current;
     if (!sheet || !cardEl) return;
     const clip = sheet.parentElement as HTMLElement;
+    const stage = clip.parentElement as HTMLElement;
+    let pipEl: HTMLElement | null = null;
+    let clear = -1;
     const measure = () => {
+      // first where it rests: above a mini player in a bottom corner
+      const c = pipClearance(stage, clip);
+      if (c !== clear) {
+        clear = c;
+        if (c) stage.style.setProperty("--app-atlas-pip-clear", `${c}px`);
+        else stage.style.removeProperty("--app-atlas-pip-clear");
+      }
+      const pip = document.querySelector<HTMLElement>(".os-pip");
+      if (pip !== pipEl) {
+        if (pipEl) ro.unobserve(pipEl);
+        pipEl = pip;
+        if (pip) ro.observe(pip);
+      }
       const H = sheet.offsetHeight;
       const css = getComputedStyle(sheet);
       const peek = parseFloat(css.getPropertyValue("--app-atlas-peek")) || 136;
-      // half shows the card down to its note; a mini player resting in a
-      // bottom corner floats over the sheet's foot, so half rises until
-      // the note clears it
-      const anchor = cardEl.querySelector<HTMLElement>("[data-sheet-half]");
-      const at = anchor ? offsetIn(anchor, sheet) + anchor.offsetHeight : NaN;
-      const end = Number.isFinite(at) ? at : offsetIn(cardEl, sheet) + cardEl.offsetHeight;
-      const reach = beside ? 0 : pipReach(clip);
-      const half = Math.round(Math.max(peek + 160, Math.min(H * 0.68, end + 14 + Math.max(0, reach - 4))));
+      // half shows the card down to a clean break: under the note, or,
+      // on a short screen, under the facts
+      const ends = Array.from(cardEl.querySelectorAll<HTMLElement>("[data-sheet-half]"))
+        .map((el) => offsetIn(el, sheet) + el.offsetHeight + HALF_PAD)
+        .filter(Number.isFinite)
+        .sort((p, q) => p - q);
+      const fits = ends.filter((e) => e <= H * 0.74);
+      const end = fits[fits.length - 1] ?? ends[0] ?? offsetIn(cardEl, sheet) + cardEl.offsetHeight;
+      const half = Math.round(Math.max(peek + 120, Math.min(H - 8, end)));
       metrics.peekY.set(Math.max(0, H - peek));
       metrics.halfY.set(Math.max(0, H - half));
+      const scrollTop = scrollRef.current?.offsetTop ?? 24;
+      sheet.style.setProperty("--app-atlas-half-vis", `${half - scrollTop}px`);
       // tablets: the sheet floats beside the globe, nothing to dodge
       metrics.room.set(beside ? 0 : Math.max(96, clip.offsetTop + (H - half) - 12));
       if (!entered.current) {
         entered.current = true;
         if (reduced) {
           y.jump(yFor(detentRef.current));
-          setSettled(detentRef.current === "full");
+          setRest(detentRef.current);
         } else {
           // rise in from below, the same path it would leave by
           y.jump(H + 24);
@@ -238,7 +275,7 @@ export function MapSheet({
             ...spring.gentle,
             delay: 0.15,
             onComplete: () => {
-              if (!grab.current) setSettled(detentRef.current === "full");
+              if (!grab.current) setRest(detentRef.current);
             },
           });
         }
@@ -246,7 +283,7 @@ export function MapSheet({
         const to = yFor(detentRef.current);
         if (!y.isAnimating()) {
           y.jump(to);
-          setSettled(detentRef.current === "full");
+          setRest(detentRef.current);
         } else if (Math.abs(target.current - to) > 1) {
           // the card reflowed mid-flight (a new name wrapping): retarget,
           // keeping the spring's velocity
@@ -256,14 +293,14 @@ export function MapSheet({
             ...spring.default,
             velocity: y.getVelocity(),
             onComplete: () => {
-              if (detentRef.current === d && !grab.current) setSettled(d === "full");
+              if (detentRef.current === d && !grab.current) setRest(d);
             },
           });
         }
       }
     };
-    measure();
     const ro = new ResizeObserver(measure);
+    measure();
     ro.observe(sheet);
     ro.observe(cardEl);
     // the mini player moved corners, mounted or changed size
@@ -273,7 +310,7 @@ export function MapSheet({
       ro.disconnect();
       mo.disconnect();
     };
-  }, [beside, metrics, reduced, setSettled, y, yFor]);
+  }, [beside, metrics, reduced, setRest, y, yFor]);
 
   // a new place: show its card
   const shownPlace = useRef(place.id);
@@ -330,7 +367,7 @@ export function MapSheet({
         if (th.on) {
           y.stop();
           th.y0 = y.get();
-          setSettled(false);
+          setRest(null);
           sheetRef.current?.setAttribute("data-grabbing", "");
         }
       }
@@ -358,7 +395,24 @@ export function MapSheet({
       el.removeEventListener("touchend", end);
       el.removeEventListener("touchcancel", end);
     };
-  }, [band, reduced, release, setSettled, y]);
+  }, [band, reduced, release, setRest, y]);
+
+  // scrolled at full: the content fades out under the grabber instead of
+  // butting against it
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    let on = false;
+    const onScroll = () => {
+      const next = el.scrollTop > 2;
+      if (next === on) return;
+      on = next;
+      if (on) el.setAttribute("data-scrolled", "");
+      else el.removeAttribute("data-scrolled");
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0) return;
@@ -387,7 +441,7 @@ export function MapSheet({
       if (Math.abs(dy) < 6) return;
       g.on = true;
       dragged.current = true;
-      setSettled(false);
+      setRest(null);
       sheetRef.current?.setPointerCapture(e.pointerId);
       sheetRef.current?.setAttribute("data-grabbing", "");
     }

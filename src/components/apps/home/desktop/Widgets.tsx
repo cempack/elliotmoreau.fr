@@ -4,15 +4,13 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { useI18n } from "@/i18n/client";
 import { useHydrated } from "@/hooks/env";
-import { useSpotifyStatus } from "@/hooks/useSpotifyStatus";
 import { timeAgo } from "@/lib/format";
-import { PixelGlyph } from "@/components/glyphs";
-import { PixelPlanet } from "@/components/PixelPlanet";
+import { GLYPH_PIN, PixelGlyph } from "@/components/glyphs";
 import { Glass } from "@/components/os/Glass";
 import { useSiteData } from "@/components/os/SiteData";
-import { phaseForHour, type SkyPhase } from "@/components/os/sky";
-import { PixelEq } from "@/components/os/window/PixelEq";
-import { G_PEN } from "./icons";
+import { phaseForHour, useSky, type SkyPhase } from "@/components/os/sky";
+import { SOCIALS } from "@/lib/places";
+import { G_COMMIT, G_PEN } from "./icons";
 import { PARIS, fmtOffset, hhmm, offsetMinutes, useMinute, useVisitorZone, zoned } from "./time";
 
 const fill = (s: string, v: Record<string, string | number>) => s.replace(/\{(\w+)\}/g, (_, k: string) => String(v[k] ?? ""));
@@ -35,6 +33,14 @@ const PHASE_INK: Record<SkyPhase, string> = {
   dawn: "#f6a07a",
   day: "#7fdcf7",
   dusk: "#ff7a6a",
+};
+/** the other phases, dimmed but still themselves (a flat opacity turned
+    dawn and dusk to mud on the navy glass) */
+const PHASE_DIM: Record<SkyPhase, string> = {
+  night: "#4b4596",
+  dawn: "#9a6077",
+  day: "#3f7f98",
+  dusk: "#a34d62",
 };
 /** phase starts, Paris hours (mirrors phaseForHour) */
 const STARTS: [SkyPhase, number][] = [
@@ -123,14 +129,29 @@ const MOON: [number, number, string][] = [
   [1, 4, "#9196a6"], [2, 4, "#f5f2ec"], [3, 4, "#f5f2ec"],
 ];
 
-function SkyDial({ hour, phase, visitorHour }: { hour: number | null; phase: SkyPhase | null; visitorHour: number | null }) {
+function SkyDial({
+  hour,
+  phase,
+  glyphPhase,
+  visitorHour,
+}: {
+  hour: number | null;
+  /** the real phase in Paris (the lit arc) */
+  phase: SkyPhase | null;
+  /** the sky on screen (pinned or real): sun or moon */
+  glyphPhase: SkyPhase | null;
+  visitorHour: number | null;
+}) {
   const head = useMemo(() => (hour == null ? [] : playhead(hour)), [hour]);
   const you = useMemo(() => {
     if (visitorHour == null) return null;
+    // two cells along the ring's tangent, just inside it
     const p = pointAt(visitorHour, R_IN - 1.5);
-    return { x: Math.floor(p.x), y: Math.floor(p.y) };
+    const a = ((visitorHour - 12) / 24) * 2 * Math.PI;
+    const along = Math.abs(Math.cos(a)) >= Math.abs(Math.sin(a));
+    return { x: Math.floor(p.x - (along ? 0.5 : 0)), y: Math.floor(p.y - (along ? 0 : 0.5)), w: along ? 2 : 1, h: along ? 1 : 2 };
   }, [visitorHour]);
-  const glyph = phase === "night" ? MOON : SUN;
+  const glyph = glyphPhase === "night" ? MOON : SUN;
 
   return (
     <svg viewBox={`0 0 ${N} ${N}`} className="app-home-dial" shapeRendering="crispEdges" aria-hidden focusable="false">
@@ -141,15 +162,14 @@ function SkyDial({ hour, phase, visitorHour }: { hour: number | null; phase: Sky
           y={c.y}
           width={1}
           height={1}
-          fill={PHASE_INK[c.phase]}
-          opacity={phase == null || c.phase === phase ? 1 : 0.5}
+          fill={phase == null || c.phase === phase ? PHASE_INK[c.phase] : PHASE_DIM[c.phase]}
         />
       ))}
-      {you && <rect x={you.x} y={you.y} width={1} height={1} fill="#8be9ff" className="app-home-dial-you" />}
+      {you && <rect x={you.x} y={you.y} width={you.w} height={you.h} fill="#8be9ff" className="app-home-dial-you" />}
       {head.map((c) => (
         <rect key={`h${c.x}-${c.y}`} x={c.x} y={c.y} width={1} height={1} fill="#f5f2ec" />
       ))}
-      {phase && (
+      {glyphPhase && (
         <g transform="translate(10 5)">
           {glyph.map(([x, y, c]) => (
             <rect key={`g${x}-${y}`} x={x} y={y} width={1} height={1} fill={c} />
@@ -183,6 +203,9 @@ export function ClockWidget() {
   const w = t.home.widgets.clock;
   const now = useMinute();
   const zone = useVisitorZone();
+  // Control Center can pin the sky: the dial stays true to Paris, the
+  // phase line and the sun or moon follow the sky you are looking at
+  const { mode } = useSky();
 
   let hour: number | null = null;
   let phase: SkyPhase | null = null;
@@ -202,12 +225,17 @@ export function ClockWidget() {
       visitorTime = hhmm(now, lang, zone);
     }
   }
+  const pinned = phase && mode !== "auto" ? mode : null;
+  const shown = pinned ?? phase;
   const [nextPhase, nextAt] = phase ? NEXT[phase] : ["night" as SkyPhase, "21:00"];
   const next = fill(w.next[nextPhase], { time: nextAt });
+  const real = phase ? fill(w.real, { phase: w.phase[phase].toLocaleLowerCase(lang) }) : "";
   const label = now
-    ? `${fill(w.aria, { time, phase: phase ? w.phase[phase] : "", next })}${
-        offset !== 0 ? ` ${fill(w.ariaYou, { time: visitorTime, offset: fmtOffset(offset) })}` : ""
-      }`
+    ? `${
+        pinned && phase
+          ? fill(w.ariaPinned, { time, pinned: w.phase[pinned], phase: w.phase[phase] })
+          : fill(w.aria, { time, phase: phase ? w.phase[phase] : "", next })
+      }${offset !== 0 ? ` ${fill(w.ariaYou, { time: visitorTime, offset: fmtOffset(offset) })}` : ""}`
     : w.title;
 
   return (
@@ -220,12 +248,15 @@ export function ClockWidget() {
       />
       {offset !== 0 && (
         <span className="app-home-clock-you" aria-hidden>
-          <i />
-          {fmtOffset(offset)}
+          <span className="app-home-clock-you-k">
+            <i />
+            {w.you}
+          </span>
+          <span className="tabular">{fmtOffset(offset)}</span>
         </span>
       )}
       <div className="app-home-clock-face" aria-hidden>
-        <SkyDial hour={hour} phase={phase} visitorHour={visitorHour} />
+        <SkyDial hour={hour} phase={phase} glyphPhase={shown} visitorHour={visitorHour} />
         <span className="app-home-clock-center">
           <span className="app-home-clock-time tabular" suppressHydrationWarning>
             {time}
@@ -234,12 +265,13 @@ export function ClockWidget() {
       </div>
       <p className="app-home-clock-phase" aria-hidden>
         <span className="app-home-clock-phase-line">
-          <span className="app-home-clock-phase-name" data-phase={phase ?? undefined}>
-            {phase ? w.phase[phase] : " "}
+          {pinned && <PixelGlyph cells={GLYPH_PIN} size={9} className="app-home-clock-pin" />}
+          <span className="app-home-clock-phase-name" data-phase={shown ?? undefined}>
+            {shown ? w.phase[shown] : " "}
           </span>
-          <span className="app-home-clock-city">{w.title}</span>
+          <span className="app-home-clock-city">{pinned ? w.pinned : w.title}</span>
         </span>
-        <span className="app-home-clock-next">{phase ? next : " "}</span>
+        <span className="app-home-clock-next">{phase ? (pinned ? real : next) : " "}</span>
       </p>
     </Tile>
   );
@@ -274,6 +306,9 @@ export function LatestPostWidget() {
   const n = Math.max(1, post.reading_time || 1);
   const minutes = fill(w.minutes, { n });
   const tag = post.tags[0]?.name;
+  // the first sentence only, so the clamp never lands just after a full
+  // stop ("regrets.…")
+  const excerpt = post.excerpt?.trim().split(/(?<=[.!?…])\s+/)[0] ?? "";
   const label = fill(w.aria, { title: post.title, minutes, ago });
 
   return (
@@ -291,7 +326,7 @@ export function LatestPostWidget() {
       </div>
       <div className="app-home-post" aria-hidden>
         <p className="app-home-post-title">{post.title}</p>
-        {post.excerpt && <p className="app-home-post-excerpt">{post.excerpt}</p>}
+        {excerpt && <p className="app-home-post-excerpt">{excerpt}</p>}
         <p className="app-home-post-foot">
           <span className="tabular">{fill(w.minutesShort, { n })}</span>
           <span className="app-home-post-ago" suppressHydrationWarning>
@@ -303,60 +338,58 @@ export function LatestPostWidget() {
   );
 }
 
-export function MusicWidget() {
-  const { t } = useI18n();
-  const w = t.home.widgets.music;
-  const { spotify } = useSiteData();
-  const { track, playing } = useSpotifyStatus(spotify);
+/**
+ * The last push (phones, beside the clock): the commit message itself,
+ * which says more about the work than a count ever could. The mini
+ * player already is the now-playing widget on this screen.
+ */
+export function PushWidget() {
+  const { t, lang } = useI18n();
+  const w = t.home.widgets.push;
+  const { activity } = useSiteData();
+  const hydrated = useHydrated();
 
-  if (!track) {
+  if (!activity) {
     return (
-      <Tile size="s" className="app-home-widget--music">
-        <div className="app-home-music app-home-music--empty">
-          <span className="app-home-music-art" aria-hidden>
-            <PixelPlanet seed="silence" className="app-home-music-planet" />
-          </span>
-          <p className="app-home-music-title">{w.nothing}</p>
-          <p className="app-home-music-artist">{w.quiet}</p>
+      <Tile size="s" className="app-home-widget--push">
+        <a href={SOCIALS.github} target="_blank" rel="noreferrer" className="app-home-widget-hit" aria-label={w.ariaEmpty} />
+        <div className="app-home-widget-head" aria-hidden>
+          <PixelGlyph cells={G_COMMIT} size={14} className="app-home-push-glyph" />
+          <span>{w.title}</span>
+        </div>
+        <div className="app-home-push app-home-push--empty" aria-hidden>
+          <p className="app-home-push-msg">{w.empty}</p>
+          <p className="app-home-push-foot">
+            <span className="app-home-push-repo">{SOCIALS.github.replace("https://", "")}</span>
+          </p>
         </div>
       </Tile>
     );
   }
 
-  const inner = (
-    <div className="app-home-music">
-      <div className="app-home-music-top">
-        <span className="app-home-music-art" aria-hidden>
-          {track.image ? (
-            // remote Spotify art, already small
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={track.image} alt="" draggable={false} />
-          ) : (
-            <PixelPlanet seed={`${track.title} · ${track.artist}`} className="app-home-music-planet" />
-          )}
-        </span>
-        <PixelEq playing={playing} className="app-home-music-eq" />
-      </div>
-      <p className="app-home-music-state" data-live={playing || undefined}>
-        {playing ? w.nowPlaying : w.lastPlayed}
-      </p>
-      <p className="app-home-music-title">{track.title}</p>
-      <p className="app-home-music-artist">{track.artist}</p>
-    </div>
-  );
-
+  const ago = hydrated ? timeAgo(activity.createdAt, lang) : "";
   return (
-    <Tile size="s" className="app-home-widget--music">
-      {track.url ? (
-        <a
-          href={track.url}
-          target="_blank"
-          rel="noreferrer"
-          className="app-home-widget-hit"
-          aria-label={fill(w.open, { title: track.title, artist: track.artist })}
-        />
-      ) : null}
-      {inner}
+    <Tile size="s" className="app-home-widget--push">
+      <a
+        href={activity.repoUrl}
+        target="_blank"
+        rel="noreferrer"
+        className="app-home-widget-hit"
+        aria-label={fill(w.aria, { message: activity.message, repo: activity.repo, ago })}
+      />
+      <div className="app-home-widget-head" aria-hidden>
+        <PixelGlyph cells={G_COMMIT} size={14} className="app-home-push-glyph" />
+        <span>{w.title}</span>
+      </div>
+      <div className="app-home-push" aria-hidden>
+        <p className="app-home-push-msg">{activity.message}</p>
+        <p className="app-home-push-foot">
+          <span className="app-home-push-repo">{activity.repo}</span>
+          <span className="app-home-push-ago" suppressHydrationWarning>
+            {ago}
+          </span>
+        </p>
+      </div>
     </Tile>
   );
 }

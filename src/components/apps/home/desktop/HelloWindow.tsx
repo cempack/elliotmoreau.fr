@@ -1,24 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useImperativeHandle, useRef } from "react";
-import { animate, m, useMotionValue, type MotionStyle } from "motion/react";
+import { useEffect, useImperativeHandle, useRef, useState } from "react";
+import { animate, m, useMotionValue, useMotionValueEvent, type MotionStyle } from "motion/react";
 import { useI18n } from "@/i18n/client";
 import { useHydrated } from "@/hooks/env";
 import { timeAgo } from "@/lib/format";
+import { PLACES } from "@/lib/places";
 import { spring } from "@/lib/motion";
 import { useSound } from "@/lib/sound";
 import { PixelGlyph, type Cells } from "@/components/glyphs";
 import { useSiteData } from "@/components/os/SiteData";
 import { G_CLOSE, G_EXTERNAL, G_MIN } from "@/components/os/window/glyphs";
 import { Glass } from "@/components/os/Glass";
-import { FLING, INTERACTIVE, band, pushSample, releaseVelocity, type Sample } from "./physics";
-import { G_PEN } from "./icons";
+import { FLING, INTERACTIVE, band, intersects, pushSample, releaseVelocity, type Rect, type Sample } from "./physics";
+import { G_COMMIT, G_PEN, G_PLANE } from "./icons";
 import { isPhone, menubarPx } from "./layout";
 
 const fill = (s: string, v: Record<string, string | number>) => s.replace(/\{(\w+)\}/g, (_, k: string) => String(v[k] ?? ""));
 
-/* 7×7 glyphs for the file and the push chip */
+/** places been (home included) and the first one on the list */
+const BEEN = PLACES.filter((p) => p.status === "been").length;
+const NEXT = PLACES.find((p) => p.status === "want");
+
+/* 7×7 glyph for the file in the title bar */
 const G_DOC: Cells = [
   [1, 0], [2, 0], [3, 0], [4, 0],
   [1, 1], [4, 1], [5, 1],
@@ -26,9 +31,6 @@ const G_DOC: Cells = [
   [1, 3], [2, 3], [3, 3], [5, 3],
   [1, 4], [5, 4],
   [1, 5], [2, 5], [3, 5], [4, 5], [5, 5],
-];
-const G_COMMIT: Cells = [
-  [3, 0], [3, 1], [2, 2], [3, 2], [4, 2], [1, 3], [2, 3], [4, 3], [5, 3], [2, 4], [3, 4], [4, 4], [3, 5], [3, 6],
 ];
 
 export type HelloHandle = {
@@ -40,6 +42,9 @@ export type HelloHandle = {
   nudge: () => void;
   focus: () => void;
 };
+
+/** While it is held or flying home: where home is and where the live name is. */
+type Lift = { token: number; home: Rect | null; field: Rect | null };
 
 type Grab = {
   pid: number;
@@ -65,6 +70,12 @@ type Grab = {
  * bounces a little, a placement settles). Interruptible: grab it mid-flight.
  * Close or minimize and it shrinks into the README icon; the README opens
  * it again. Phones get it as a Notes widget (no chrome, no drag).
+ *
+ * Depth: from pointer-down until the spring has brought it home it is
+ * lifted (data-lifted), above the widgets and the icons. Over the living
+ * wordmark (data-over) its glass deepens and stops refracting, so the text
+ * keeps its contrast and no displacement filter re-renders over a canvas
+ * that redraws every frame.
  */
 export function HelloWindow({
   ref,
@@ -86,6 +97,38 @@ export function HelloWindow({
   const scale = useMotionValue(1);
   const grab = useRef<Grab | null>(null);
   const flying = useRef(false);
+  const lift = useRef<Lift>({ token: 0, home: null, field: null });
+  const overRef = useRef(false);
+  const [over, setOver] = useState(false);
+
+  const setOverField = (v: boolean) => {
+    if (v === overRef.current) return;
+    overRef.current = v;
+    const el = rootRef.current;
+    if (el) {
+      if (v) el.dataset.over = "";
+      else delete el.dataset.over;
+    }
+    setOver(v);
+  };
+
+  /* while lifted, follow the window against the name's field */
+  const track = () => {
+    const { home, field } = lift.current;
+    if (!home || !field) return;
+    const dx = x.get();
+    const dy = y.get();
+    setOverField(intersects({ left: home.left + dx, top: home.top + dy, right: home.right + dx, bottom: home.bottom + dy }, field));
+  };
+  useMotionValueEvent(x, "change", track);
+  useMotionValueEvent(y, "change", track);
+
+  const land = () => {
+    const el = rootRef.current;
+    lift.current = { token: lift.current.token, home: null, field: null };
+    setOverField(false);
+    if (el) delete el.dataset.lifted;
+  };
 
   const stopAll = () => {
     x.stop();
@@ -170,11 +213,16 @@ export function HelloWindow({
       x.jump(0);
       y.jump(0);
       scale.jump(1);
+      land();
       return;
     }
     const tr = Math.hypot(vx, vy) > FLING ? spring.flick : spring.default;
-    animate(x, 0, { ...tr, velocity: vx });
-    animate(y, 0, { ...tr, velocity: vy });
+    const token = lift.current.token;
+    // it stays lifted until it is home, not when the hand lets go, so it
+    // never drops back under the icons mid-flight
+    Promise.all([animate(x, 0, { ...tr, velocity: vx }).finished, animate(y, 0, { ...tr, velocity: vy }).finished]).then(() => {
+      if (lift.current.token === token && !grab.current) land();
+    });
     animate(scale, 1, spring.default);
   };
 
@@ -211,6 +259,15 @@ export function HelloWindow({
     const dock = dockRaw.endsWith("rem") ? parseFloat(dockRaw) * rem : parseFloat(dockRaw) || 76;
     const homeL = r.left - x.get();
     const homeT = r.top - y.get();
+    // the live name's field: the part of its box inside its band
+    const hero = document.querySelector(".app-home-hero")?.getBoundingClientRect();
+    const wrap = document.querySelector(".app-home-hero-wrap")?.getBoundingClientRect();
+    const field =
+      hero && wrap && hero.width && wrap.height
+        ? { left: Math.max(hero.left, wrap.left), top: Math.max(hero.top, wrap.top) + 8, right: Math.min(hero.right, wrap.right), bottom: Math.min(hero.bottom, wrap.bottom) - 8 }
+        : null;
+    lift.current = { token: lift.current.token + 1, home: { left: homeL, top: homeT, right: homeL + r.width, bottom: homeT + r.height }, field };
+    el.dataset.lifted = "";
     const m8 = 8;
     grab.current = {
       pid: e.pointerId,
@@ -255,7 +312,7 @@ export function HelloWindow({
       className="app-home-hello"
       style={{ x, y, scale } as MotionStyle}
     >
-      <Glass thickness="regular" className="app-home-hello-glass" aria-hidden />
+      <Glass thickness="regular" refract={!over} className="app-home-hello-glass" aria-hidden />
       <div
         className="app-home-hello-bar"
         onPointerDown={onPointerDown}
@@ -336,12 +393,12 @@ function StatusChips({ label, lang }: { label: string; lang: "en" | "fr" }) {
   const { activity, posts } = useSiteData();
   const hydrated = useHydrated();
   const post = posts[0];
-  if (!activity && !post) return null;
 
   // the menu bar already carries the clock and the song, and the mini
   // player the song again: hello.txt keeps only what is nowhere else on
-  // this screen. The latest post rides along on desks too narrow for its
-  // widget.
+  // this screen (the last push, the travels). The latest post rides along
+  // on desks too narrow for its widget, the places on desks wide enough.
+  // A row left with nothing to show hides itself (CSS).
   return (
     <ul className="app-home-chips" aria-label={label}>
       {activity && (
@@ -375,6 +432,27 @@ function StatusChips({ label, lang }: { label: string; lang: "en" | "fr" }) {
             <PixelGlyph cells={G_PEN} size={11} className="app-home-chip-note" />
             <span className="app-home-chip-k">{h.post}</span>
             <span className="app-home-chip-v">{post.title}</span>
+          </Link>
+        </li>
+      )}
+      {BEEN > 0 && (
+        <li className="app-home-chip-slot--places">
+          <Link
+            href={path("/atlas")}
+            transitionTypes={["app-open"]}
+            className="app-home-chip app-home-chip--link"
+            aria-label={fill(NEXT ? h.openAtlasNext : h.openAtlas, { n: BEEN, next: NEXT?.name[lang] ?? "" })}
+          >
+            <PixelGlyph cells={G_PLANE} size={11} className="app-home-chip-plane" />
+            <span className="app-home-chip-v">{fill(h.places, { n: BEEN })}</span>
+            {NEXT && (
+              <span className="app-home-chip-k">
+                <span className="app-home-chip-arrow" aria-hidden>
+                  →
+                </span>{" "}
+                {NEXT.name[lang]}
+              </span>
+            )}
           </Link>
         </li>
       )}

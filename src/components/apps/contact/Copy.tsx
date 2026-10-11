@@ -36,7 +36,7 @@ export function CopyButton({
   label,
   className = "",
   children,
-  glyph = 12,
+  glyph = 14,
 }: {
   text: string | null;
   ok: string;

@@ -66,6 +66,31 @@ function depthFor(y: number, g: DeckGeo) {
   return d;
 }
 
+/**
+ * Paging deceleration for a throw: about 0.2s of glide per unit of speed,
+ * so a flick carries one card and a hard throw two or three. (Scroll's
+ * 0.998 would ask for half a second, more than any spring this snappy
+ * can carry without first speeding the card up.)
+ */
+const THROW_RATE = 0.995;
+
+/**
+ * The spring a throw hands over to, sized to the distance left: a spring
+ * of damping ratio ζ released at speed v with a gap x ahead starts with
+ * zero acceleration when ω = 2ζ·v/x, so the card leaves the hand at
+ * the hand's speed and only ever slows down from there (a glide, never a
+ * launch). Clamped so a short hop isn't twitchy and a long one isn't
+ * floaty; a throw too strong for its gap (into an end of the deck)
+ * overshoots and settles back with a little bounce, the only bounce here.
+ */
+function throwSpring(from: number, to: number, v: number) {
+  const gap = to - from;
+  const ideal = Math.sign(gap) === Math.sign(v) && Math.abs(gap) > 0.02 ? (2 * 0.9 * Math.abs(v)) / Math.abs(gap) : Infinity;
+  const w = clamp(ideal, 8, 16);
+  const zeta = ideal > 16 ? 0.8 : 0.9;
+  return { type: "spring" as const, stiffness: w * w, damping: 2 * zeta * w, mass: 1, velocity: v };
+}
+
 type Sample = { t: number; x: number };
 type Grab = {
   pid: number;
@@ -102,8 +127,8 @@ function releaseVelocity(samples: Sample[], now: number) {
  * The deck's physics: 1:1 tracking from the grab offset (the card under
  * the hand stays under it, the rest follow with parallax), rubber-band
  * past both ends, momentum projected in card widths to pick the card it
- * would come to rest on, then a spring that carries the release velocity
- * (bounce only after a real fling). Interruptible at any time: a press
+ * would come to rest on, then a spring sized to that distance that
+ * carries the release velocity (throwSpring: it glides, never launches). Interruptible at any time: a press
  * mid-flight catches the deck, and releasing it settles the nearest card.
  * Horizontal trackpad swipes scroll it 1:1 and settle on the nearest
  * card. Reduced motion: drags still track, snaps are instant.
@@ -158,7 +183,7 @@ export function useDeck({ count, reduced, onSnap }: { count: number; reduced: bo
         q.jump(to);
         return;
       }
-      anim.current = animate(q, to, { ...(flung ? spring.flick : spring.default), velocity });
+      anim.current = animate(q, to, flung ? throwSpring(q.get(), to, velocity) : { ...spring.default, velocity });
     },
     [max, q, reduced]
   );
@@ -284,9 +309,12 @@ export function useDeck({ count, reduced, onSnap }: { count: number; reduced: bo
       // into the tight pile must not multiply the throw), against the
       // screen (x = A − f). The spring starts at the grabbed card's own
       // speed, so the release never jolts.
-      const target = clamp(Math.round(now - project(vx) / g.R), 0, max);
+      const flung = Math.abs(vx) > 420;
+      let target = Math.round(now - project(vx, THROW_RATE) / g.R);
+      // a real throw always leaves the card it was on, the way it was thrown
+      if (flung) target = vx < 0 ? Math.max(target, Math.floor(now + 1e-3) + 1) : Math.min(target, Math.ceil(now - 1e-3) - 1);
       const vq = -vx / slopeAt(d, g);
-      settle(target, vq, Math.abs(vx) > 420);
+      settle(clamp(target, 0, max), vq, flung);
       if (target !== gr.from) onSnapRef.current?.(target);
     },
     [max, q, settle, swallowClick]

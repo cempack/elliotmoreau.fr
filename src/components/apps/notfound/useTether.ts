@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { animate, useMotionValue, useSpring } from "motion/react";
+import { animate, useMotionValue, useSpring, useTransform } from "motion/react";
 import { project, rubberband, spring } from "@/lib/motion";
+import { bounce, visibleIcon } from "@/components/os/dock/launch";
 
 /**
  * The alert's physics. A modal alert is tethered to the middle of the
@@ -13,8 +14,11 @@ import { project, rubberband, spring } from "@/lib/motion";
  * and it springs home carrying the release velocity (a bounce only after
  * a real fling). Thrown hard down into the Dock, it flies into the
  * Desktop icon and `onThrow` takes you there, like any emOS window; the
- * Desktop buttons send it down the same path (`dismiss`). Interruptible:
- * grabbing mid-flight continues from where it is.
+ * Desktop buttons send it down the same path (`dismiss`). It navigates
+ * when it lands (not on a timer), fading only in the last stretch of the
+ * flight, and the Dock icon nods as it catches it. Interruptible:
+ * grabbing mid-flight continues from exactly where it is, even caught
+ * while stretched past an edge.
  *
  * On touch, when the page is taller than the screen (short phones), a
  * vertical swipe on the alert scrolls the page: the alert only claims a
@@ -36,6 +40,12 @@ const MAX_SETTLE_V = 2400;
 const MAX_FLY_V = 4000;
 /** px/s of release speed above which the return may bounce */
 const FLICK_SPEED = 900;
+/** the flight's scale where the alert counts as caught by the Dock (it
+    flies to 0.1); it's faded out by then, so the page can change */
+const LANDED = 0.14;
+/** …and where it starts to fade (a glass's ancestor at opacity < 1 stops
+    refracting, so this stays late, when it's small and fast) */
+const FADE_FROM = 0.4;
 
 type Sample = { t: number; x: number; y: number };
 type Grab = {
@@ -91,7 +101,26 @@ function band(v: number, min: number, max: number, dim: number) {
   return v;
 }
 
+/** band()'s inverse: the hand offset that stretches the alert to `v`. A
+    grab while it's stretched starts from there, so the band isn't applied
+    twice and the alert stays under the finger. */
+function unband(v: number, min: number, max: number, dim: number) {
+  const inv = (r: number) => {
+    const c = Math.min(r, dim - 1);
+    return (c * dim) / (0.55 * (dim - c));
+  };
+  if (v > max) return max + inv(v - max);
+  if (v < min) return min - inv(min - v);
+  return v;
+}
+
 const clampAbs = (v: number, m: number) => Math.max(-m, Math.min(m, v));
+
+/** The Desktop's Dock icon (or tab) nods as it catches the alert. */
+function catchInDock() {
+  const icon = visibleIcon("home")?.querySelector("[data-dock-bounce]");
+  bounce(icon, window.matchMedia("(max-width: 767px)").matches ? 7 : 12);
+}
 
 export function useTether({
   surfaceRef,
@@ -110,13 +139,14 @@ export function useTether({
   target: () => { x: number; y: number };
   /** the alert starts flying into the Dock (sound goes here) */
   onLeave?: () => void;
-  /** it's there: navigate */
+  /** it landed in the Dock (or reduced motion skipped the flight): navigate */
   onThrow: () => void;
 }) {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const scale = useMotionValue(1);
-  const opacity = useMotionValue(1);
+  // the fade is tied to the flight, not a clock: it's gone as it lands
+  const opacity = useTransform(scale, [LANDED, FADE_FROM], [0, 1], { clamp: true });
   /** 0 at rest, 1 held: drives the deeper shadow */
   const lift = useMotionValue(0);
   const tiltRaw = useMotionValue(0);
@@ -173,7 +203,7 @@ export function useTether({
     animate(lift, 0, spring.default);
   };
 
-  /** into the Desktop's Dock icon, then `onThrow` */
+  /** into the Desktop's Dock icon; `onThrow` once it's there */
   const fly = (cx: number, cy: number, vx: number, vy: number) => {
     gone.current = true;
     onLeave?.();
@@ -185,11 +215,19 @@ export function useTether({
     tiltRaw.set(0);
     animate(x, to.x - cx, { ...FLY, velocity: clampAbs(vx, MAX_FLY_V) });
     animate(y, to.y - cy, { ...FLY, velocity: clampAbs(vy, MAX_FLY_V) });
-    animate(scale, 0.1, FLY);
     animate(lift, 0, spring.snappy);
-    // fade only at the very end: opacity on the glass's ancestor blanks it
-    animate(opacity, 0, { duration: 0.18, delay: 0.18, ease: [0.4, 0, 1, 1] });
-    window.setTimeout(onThrow, 220);
+    let landed = false;
+    const land = () => {
+      if (landed) return;
+      landed = true;
+      stop();
+      catchInDock();
+      onThrow();
+    };
+    const stop = scale.on("change", (s) => {
+      if (s <= LANDED) land();
+    });
+    animate(scale, 0.1, FLY).then(land);
   };
 
   /** The Desktop buttons: the alert leaves the way a throw does. */
@@ -246,6 +284,9 @@ export function useTether({
       } catch {}
     }
     if (!touch) e.preventDefault(); // no text selection
+    // grabbing the alert gives it focus, like clicking a window (its keys
+    // answer zsh while it has it)
+    if (!el.contains(document.activeElement)) el.focus({ preventScroll: true });
     x.stop();
     y.stop();
     scale.stop();
@@ -257,20 +298,25 @@ export function useTether({
     const top = parseFloat(cs.paddingTop) || 0;
     const bottom = parseFloat(cs.paddingBottom) || 0;
     const m = 8;
+    const minX = Math.min(0, m - b.l);
+    const maxX = Math.max(0, vw - m - b.r);
+    const minY = Math.min(0, top * 0.6 - b.t);
+    const maxY = Math.max(0, vh - bottom * 0.6 - b.b);
     grab.current = {
       pid: e.pointerId,
       yieldY: !!scrolls,
       sx: e.clientX,
       sy: e.clientY,
-      x0: x.get(),
-      y0: y.get(),
+      // in hand space: caught while stretched, the band isn't applied twice
+      x0: unband(x.get(), minX, maxX, STRETCH),
+      y0: unband(y.get(), minY, maxY, STRETCH),
       moved: false,
       hand: [{ t: e.timeStamp, x: e.clientX, y: e.clientY }],
       body: [{ t: e.timeStamp, x: x.get(), y: y.get() }],
-      minX: Math.min(0, m - b.l),
-      maxX: Math.max(0, vw - m - b.r),
-      minY: Math.min(0, top * 0.6 - b.t),
-      maxY: Math.max(0, vh - bottom * 0.6 - b.b),
+      minX,
+      maxX,
+      minY,
+      maxY,
       cx: (b.l + b.r) / 2,
       cy: (b.t + b.b) / 2,
     };
@@ -315,12 +361,22 @@ export function useTether({
     }
   };
 
+  /** Once, unprompted: a small tug, so the sheet (and its loose pixels)
+      shows it's a thing you can move. Never under reduced motion, never
+      while held or gone. */
+  const nudge = () => {
+    if (reduced || grab.current || gone.current) return;
+    animate(x, 0, { ...FLICK, velocity: 190 });
+    animate(y, 0, { ...FLICK, velocity: -110 });
+  };
+
   return {
     style: { x, y, scale, rotate, opacity },
     x,
     y,
     lift,
     dismiss,
+    nudge,
     handlers: {
       onPointerDown,
       onPointerMove,

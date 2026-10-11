@@ -15,6 +15,22 @@ export const G_PEN: Cells = [
   [0, 6],
 ];
 
+/** 7×7 commit (a node on a line), for the last push. */
+export const G_COMMIT: Cells = [
+  [3, 0], [3, 1], [2, 2], [3, 2], [4, 2], [1, 3], [2, 3], [4, 3], [5, 3], [2, 4], [3, 4], [4, 4], [3, 5], [3, 6],
+];
+
+/** 7×7 plane heading right (top view), for the places chip. */
+export const G_PLANE: Cells = [
+  [3, 0],
+  [3, 1], [4, 1],
+  [0, 2], [3, 2], [4, 2], [5, 2],
+  [0, 3], [1, 3], [2, 3], [3, 3], [4, 3], [5, 3], [6, 3],
+  [0, 4], [3, 4], [4, 4], [5, 4],
+  [3, 5], [4, 5],
+  [3, 6],
+];
+
 /** The six things on the desktop: five apps and the README that is hello.txt. */
 export type DesktopIconId = Exclude<AppId, "home"> | "readme";
 export const DESKTOP_ICONS: DesktopIconId[] = ["work", "writing", "atlas", "now", "contact", "readme"];

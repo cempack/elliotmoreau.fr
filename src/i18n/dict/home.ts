@@ -26,6 +26,10 @@ const en = {
     /** the latest-post chip (narrow desks, where its widget is hidden) */
     post: "new post",
     openPost: "Latest post: {title}, {ago}. Open in Writing.",
+    /** the places chip: "6 places → Japan" */
+    places: "{n} places",
+    openAtlas: "{n} places visited. Open Atlas.",
+    openAtlasNext: "{n} places visited, {next} next. Open Atlas.",
   },
   widgets: {
     label: "Widgets",
@@ -36,6 +40,13 @@ const en = {
       next: { dawn: "Dawn at {time}", day: "Day at {time}", dusk: "Dusk at {time}", night: "Night at {time}" },
       aria: "Paris time {time}, {phase}. {next}.",
       ariaYou: "Your time {time}, {offset} from Paris.",
+      /** the sky pinned in Control Center: the phase line says so */
+      pinned: "pinned",
+      /** …and the second line keeps the real phase in Paris */
+      real: "Paris: {phase}",
+      ariaPinned: "Paris time {time}. The sky is pinned to {pinned}; in Paris it is {phase}.",
+      /** the badge by the visitor's tick on the dial */
+      you: "you",
       open: "Open {app}.",
     },
     post: {
@@ -50,12 +61,12 @@ const en = {
     },
     /** the phone's widget pages */
     page: "Widget page {n} of {total}",
-    music: {
-      nowPlaying: "Now playing",
-      lastPlayed: "Last played",
-      nothing: "Nothing playing",
-      quiet: "The speakers are resting.",
-      open: "{title} by {artist}, open in Spotify",
+    /** the last push (phones, beside the clock) */
+    push: {
+      title: "Last push",
+      aria: "Last push to {repo}, {ago}: {message}. Open on GitHub.",
+      empty: "No public pushes lately.",
+      ariaEmpty: "No public pushes lately. Open GitHub.",
     },
   },
   icons: {
@@ -84,7 +95,7 @@ const fr: typeof en = {
     file: "hello.txt",
     path: "~/Bureau",
     greeting: "Salut, moi c’est Elliot.",
-    lead: "Développeur en France. Je construis des logiciels et de petits outils agréables à utiliser, puis je raconte comment je les ai faits. Entre deux projets, je suis souvent ailleurs, casque sur les oreilles.",
+    lead: "Développeur en France. Je crée des logiciels et de petits outils agréables à utiliser, puis je raconte comment ils sont nés. Entre deux projets, je bourlingue, casque sur les oreilles.",
     work: "Voir mes projets",
     contact: "Dire bonjour",
     close: "Fermer hello.txt",
@@ -94,6 +105,9 @@ const fr: typeof en = {
     openRepo: "{repo} sur GitHub",
     post: "nouvel article",
     openPost: "Dernier article : {title}, {ago}. Ouvrir dans Écrits.",
+    places: "{n} lieux",
+    openAtlas: "{n} lieux visités. Ouvrir Atlas.",
+    openAtlasNext: "{n} lieux visités, prochain : {next}. Ouvrir Atlas.",
   },
   widgets: {
     label: "Widgets",
@@ -103,6 +117,10 @@ const fr: typeof en = {
       next: { dawn: "Aube à {time}", day: "Jour à {time}", dusk: "Crépuscule à {time}", night: "Nuit à {time}" },
       aria: "Heure de Paris {time}, {phase}. {next}.",
       ariaYou: "Chez vous {time}, {offset} par rapport à Paris.",
+      pinned: "épinglé",
+      real: "Paris : {phase}",
+      ariaPinned: "Heure de Paris {time}. Le ciel est épinglé sur {pinned} ; à Paris, c’est {phase}.",
+      you: "vous",
       open: "Ouvrir {app}.",
     },
     post: {
@@ -115,12 +133,11 @@ const fr: typeof en = {
       ariaEmpty: "Pas encore d’article. Ouvrir Écrits.",
     },
     page: "Page de widgets {n} sur {total}",
-    music: {
-      nowPlaying: "En écoute",
-      lastPlayed: "Dernière écoute",
-      nothing: "Rien en écoute",
-      quiet: "Les enceintes se reposent.",
-      open: "{title} par {artist}, ouvrir dans Spotify",
+    push: {
+      title: "Dernier push",
+      aria: "Dernier push sur {repo}, {ago} : {message}. Ouvrir sur GitHub.",
+      empty: "Pas de push public ces temps-ci.",
+      ariaEmpty: "Pas de push public ces temps-ci. Ouvrir GitHub.",
     },
   },
   icons: {

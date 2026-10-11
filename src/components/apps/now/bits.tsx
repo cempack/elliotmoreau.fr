@@ -91,9 +91,13 @@ export const G_CHECK: Cells = [
   [2, 5],
 ];
 
-/** The flare live dot; pulses (once on, then calmly) only when `live`. */
-export function LiveDot({ live = true, className = "" }: { live?: boolean; className?: string }) {
-  return <span aria-hidden className={`app-now-dot ${className}`} data-live={live || undefined} />;
+/**
+ * The flare live dot. Lit only when `live`; it breathes unless `still`
+ * (one breathing dot per screen: the headline's; the rest hold a steady
+ * lit pixel).
+ */
+export function LiveDot({ live = true, still = false, className = "" }: { live?: boolean; still?: boolean; className?: string }) {
+  return <span aria-hidden className={`app-now-dot ${className}`} data-live={live || undefined} data-still={still || undefined} />;
 }
 
 /**
@@ -102,7 +106,18 @@ export function LiveDot({ live = true, className = "" }: { live?: boolean; class
  * to be. Holds still when paused, off screen, hidden or under reduced
  * motion.
  */
-export function PixelCava({ playing, cols = 24, className = "" }: { playing: boolean; cols?: number; className?: string }) {
+export function PixelCava({
+  playing,
+  still = false,
+  cols = 24,
+  className = "",
+}: {
+  playing: boolean;
+  /** lit while playing, but never animated (a glyph, not a meter) */
+  still?: boolean;
+  cols?: number;
+  className?: string;
+}) {
   const ref = useRef<HTMLSpanElement>(null);
   const on = useOnScreen(ref, "80px");
   const hidden = useTabHidden();
@@ -113,6 +128,7 @@ export function PixelCava({ playing, cols = 24, className = "" }: { playing: boo
       aria-hidden
       className={`app-now-cava ${className}`}
       data-playing={playing || undefined}
+      data-still={still || undefined}
       data-paused={!playing || !on || hidden || reduced || undefined}
     >
       {Array.from({ length: cols }, (_, i) => {

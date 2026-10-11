@@ -6,18 +6,18 @@ import { useI18n } from "@/i18n/client";
 import { useFinePointer, useHydrated, useReduced } from "@/hooks/env";
 import { lenisRef } from "@/lib/lenisRef";
 import { useSound } from "@/lib/sound";
-import { HeroNameFx } from "@/components/HeroNameFx";
 import { DesktopIcons } from "./DesktopIcons";
 import { HelloWindow, type HelloHandle } from "./HelloWindow";
-import { ClockWidget, LatestPostWidget, MusicWidget } from "./Widgets";
+import { ClockWidget, LatestPostWidget, PushWidget } from "./Widgets";
 import { WidgetPager } from "./WidgetPager";
 import { DESKTOP_ICONS, type DesktopIconId } from "./icons";
 import { desktopMemory } from "./store";
 import { INTERACTIVE, intersects, type Rect } from "./physics";
-import { StillWordmark, letterRects } from "./hero";
-import { isPhone, menubarPx, pipRect } from "./layout";
+import { letterRects } from "./hero";
+import { Wordmark } from "./Wordmark";
+import { isPhone, menubarPx, pipRect, watchPip } from "./layout";
 
-/* The wordmark's stage box. HeroNameFx sizes its pixel field from its box
+/* The wordmark's stage box. The field sizes its pixel grid from its box
    (8 CSS px cells up to 150 × 80), so a fixed box keeps the letters at a
    whole-cell scale with square cells, and a transform scales the result
    to the screen: s = 3 on desktop, s = 2 on phones. FIT is the wordmark's
@@ -25,7 +25,7 @@ import { isPhone, menubarPx, pipRect } from "./layout";
    two lines are 2 × 7 × 3 + 3 = 45 rows of 8 px (360) by 126 columns plus
    the extrusion. */
 const BOX = { desk: { w: 1040, h: 448, fitW: 1040, fitH: 360 }, phone: { w: 700, h: 296, fitW: 700, fitH: 250 } };
-/* HeroNameFx's drift tilts the stage up to ~10° each way in perspective:
+/* The wordmark's drift tilts the stage up to ~10° each way in perspective:
    the corner nearest the eye grows ~20 box px past the word's footprint.
    The word gets that much air inside its band, and the band's soft edge
    (FADE, matching the CSS mask) on top. */
@@ -205,6 +205,13 @@ export function DesktopScene() {
         k = Math.min(availW / b.fitW, (bottom0 - top0 - FADE) / (b.fitH + 2 * DRIFT));
       }
       k = Math.max(0.3, Math.min(k, phone ? 1 : 1.32));
+      // whole device pixels per 8 px cell, so the pixelated field stays
+      // crisp at rest (no 16/17 px cells alternating), unless that would
+      // cost the name more than a few percent of its size (1× screens
+      // step in eighths)
+      const dpr = window.devicePixelRatio || 1;
+      const kq = Math.floor(k * 8 * dpr) / (8 * dpr);
+      if (kq >= k * 0.96) k = kq;
       scene.style.setProperty("--app-home-k", k.toFixed(4));
       scene.style.setProperty("--app-home-hero-x", `${Math.round(shift)}px`);
       scene.style.setProperty("--app-home-band-t", `${Math.round(bandT)}px`);
@@ -228,6 +235,36 @@ export function DesktopScene() {
       window.removeEventListener("resize", fit);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* ── a phone held sideways: the mini player comes to rest over the
+     widget column, so the widgets step down below it (the icon grid
+     already keeps a slot free for it). In page px at the top: the player
+     is fixed, so where it rests on the screen is where it is on the page. */
+  useEffect(() => {
+    const mq = window.matchMedia("(pointer: coarse) and (max-height: 520px) and (min-width: 600px)");
+    let applied = 0;
+    const measure = () => {
+      const el = widgetsRef.current;
+      if (!el) return;
+      let shift = 0;
+      const pip = mq.matches ? pipRect() : null;
+      if (pip) {
+        const r = el.getBoundingClientRect();
+        const top0 = r.top + window.scrollY - applied;
+        if (intersects({ left: r.left, top: top0, right: r.right, bottom: top0 + r.height }, pip)) shift = Math.ceil(pip.bottom - top0 + 12);
+      }
+      if (shift === applied) return;
+      applied = shift;
+      el.style.marginTop = shift ? `${shift}px` : "";
+    };
+    measure();
+    const unwatch = watchPip(measure);
+    mq.addEventListener("change", measure);
+    return () => {
+      unwatch();
+      mq.removeEventListener("change", measure);
+    };
   }, []);
 
   /* ── when the lock screen lifts (first visit this session), the desk
@@ -266,17 +303,6 @@ export function DesktopScene() {
     return () => window.removeEventListener("em:intro-done", play);
   }, []);
 
-  /* HeroNameFx brings its own heading and tooltip from the legacy
-     dictionary, which has no provider here (raw keys). This page already
-     has its h1 and the glass cursor says Replay: drop both before paint.
-     (It mounts only on the client, so neither reaches the server HTML.) */
-  useLayoutEffect(() => {
-    if (!live) return;
-    const box = heroRef.current;
-    box?.querySelectorAll("h1").forEach((h) => h.remove());
-    box?.querySelectorAll("[title]").forEach((n) => n.removeAttribute("title"));
-  }, [live]);
-
   /* ── the name, and only the name, replays ──
      The field is ~1000 × 420 px; clicking its empty corners is clicking
      the desktop (to deselect, say), not the wordmark. */
@@ -312,8 +338,6 @@ export function DesktopScene() {
   };
 
   const onHeroClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    // HeroNameFx would restart on any click in its box: decide here instead
-    e.stopPropagation();
     if (!live || deselect.current || !overLetters(e.clientX, e.clientY)) return;
     window.dispatchEvent(new CustomEvent("em:replay"));
   };
@@ -362,17 +386,32 @@ export function DesktopScene() {
   };
 
   const onReadme = () => {
-    const win = helloRef.current;
-    if (!win) return;
-    if (helloClosed) {
-      win.open(readmeCenter());
-      desktopMemory.setHelloClosed(false);
-      setHelloClosed(false);
-      blip("open");
-      requestAnimationFrame(() => helloRef.current?.focus());
-    } else {
-      win.focus();
-      win.nudge();
+    const act = () => {
+      const win = helloRef.current;
+      if (!win) return;
+      if (desktopMemory.helloClosed()) {
+        win.open(readmeCenter());
+        desktopMemory.setHelloClosed(false);
+        setHelloClosed(false);
+        blip("open");
+        requestAnimationFrame(() => helloRef.current?.focus());
+      } else {
+        win.focus();
+        win.nudge();
+      }
+    };
+    if (window.scrollY <= 4) {
+      act();
+      return;
+    }
+    // activated from further down (keyboard): bring the desk back first,
+    // then open or nudge where it can be seen
+    const l = lenisRef.current;
+    if (l && !reduced) l.scrollTo(0, { onComplete: act });
+    else {
+      if (l) l.scrollTo(0, { immediate: true });
+      else window.scrollTo({ top: 0 });
+      requestAnimationFrame(act);
     }
   };
 
@@ -479,9 +518,9 @@ export function DesktopScene() {
             data-live={live || undefined}
             onPointerMove={onHeroMove}
             onPointerLeave={onHeroLeave}
-            onClickCapture={onHeroClick}
+            onClick={onHeroClick}
           >
-            {live ? <HeroNameFx className="h-full" /> : <StillWordmark />}
+            <Wordmark desk={BOX.desk} phone={BOX.phone} live={live} />
           </div>
         </m.div>
       </div>
@@ -498,7 +537,7 @@ export function DesktopScene() {
           pages={[
             <>
               <ClockWidget />
-              <MusicWidget />
+              <PushWidget />
             </>,
             <LatestPostWidget key="post" />,
           ]}

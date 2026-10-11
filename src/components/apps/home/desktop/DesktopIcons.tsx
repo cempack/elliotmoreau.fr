@@ -164,6 +164,8 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
   const [focusId, setFocusId] = useState<DesktopIconId | null>(null);
   /** phones: the grid slot left empty because the mini player rests on it */
   const [gap, setGap] = useState<number | null>(null);
+  /** phones: how far the row was pushed below the fold (px) */
+  const below = useRef(0);
 
   const L = (id: DesktopIconId): Live => {
     let v = live.current[id];
@@ -354,11 +356,31 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reduced]);
 
-  /* phones: leave the grid slot under the mini player empty, so it never
-     sits on an icon on the first screen (the rest scrolls under it) */
+  /* phones: a row the tab bar would cut in half on the first screen goes
+     below the fold instead (it reads as "scroll for more", not broken);
+     and the grid slot under the mini player stays empty, so it never sits
+     on an icon on the first screen (the rest scrolls under it). Measured
+     on mount and when the grid or the player changes, never on a bare
+     viewport resize (a mobile URL bar collapsing must not move it). */
   useEffect(() => {
+    const fold = (grid: HTMLElement) => {
+      let shift = 0;
+      if (isPhone() && window.innerHeight > window.innerWidth) {
+        const bar = document.querySelector<HTMLElement>(".os-tabbar")?.getBoundingClientRect();
+        const line = bar && bar.height ? bar.top : window.innerHeight;
+        const g = grid.getBoundingClientRect();
+        const top0 = g.top + window.scrollY - below.current;
+        if (top0 < line && top0 + g.height > line - 6) shift = Math.ceil(window.innerHeight + 16 - top0);
+      }
+      if (shift === below.current) return;
+      below.current = shift;
+      grid.style.setProperty("--app-home-below", `${shift}px`);
+      if (shift) grid.dataset.below = "";
+      else delete grid.dataset.below;
+    };
     const measure = () => {
       const grid = gridRef.current;
+      if (grid) fold(grid);
       const pip = isPhone() ? pipRect() : null;
       if (!grid || !pip) {
         setGap(null);
@@ -393,17 +415,25 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
       setGap(hit);
     };
     let raf = requestAnimationFrame(measure);
-    const ro = new ResizeObserver(() => {
+    const again = () => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(measure);
-    });
+    };
+    // the grid's own size, and everything above it (the scene grows when
+    // the web fonts land and hello.txt rewraps)
+    const ro = new ResizeObserver(again);
     if (gridRef.current) ro.observe(gridRef.current);
+    if (sceneRef.current) ro.observe(sceneRef.current);
+    let alive = true;
+    document.fonts?.ready.then(() => alive && again());
     const unwatch = watchPip(measure);
     return () => {
+      alive = false;
       cancelAnimationFrame(raf);
       ro.disconnect();
       unwatch();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

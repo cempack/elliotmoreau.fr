@@ -30,7 +30,11 @@ export function Building({ activity, repos }: { activity: ActivityInfo | null; r
   const b = t.now.building;
   const mounted = useHydrated();
   const ago = (iso: string) => (mounted ? timeAgo(iso, lang) : " ");
-  const recent = [...repos].sort((a, z) => +new Date(z.pushedAt) - +new Date(a.pushedAt)).slice(0, 3);
+  // one clock per repo: the live push event can be newer than the repo
+  // listing's pushedAt (the Pulse reconciles them the same way)
+  const at = (r: RepoInfo) =>
+    Math.max(Date.parse(r.pushedAt) || 0, activity && activity.repo === r.name ? Date.parse(activity.createdAt) || 0 : 0);
+  const recent = [...repos].sort((a, z) => at(z) - at(a)).slice(0, 3);
   const now = useNow(60_000);
   const fresh = now && activity ? now.getTime() - +new Date(activity.createdAt) < 86_400_000 : false;
   const f = NOW.focus;
@@ -80,7 +84,7 @@ export function Building({ activity, repos }: { activity: ActivityInfo | null; r
             }
           >
             <span className="app-now-push-repo">
-              <LiveDot live={fresh} />
+              <LiveDot live={fresh} still />
               {activity.repo}
             </span>
             {activity.message && <span className="app-now-push-msg">{activity.message}</span>}
@@ -105,7 +109,7 @@ export function Building({ activity, repos }: { activity: ActivityInfo | null; r
                 <a href={r.url} target="_blank" rel="noopener noreferrer" className="app-now-repo">
                   <i style={{ background: LANG_COLORS[r.language] ?? LANG_FALLBACK }} aria-hidden />
                   <span className="app-now-repo-name">{r.name}</span>
-                  <span className="app-now-repo-ago tabular">{ago(r.pushedAt)}</span>
+                  <span className="app-now-repo-ago tabular">{ago(new Date(at(r)).toISOString())}</span>
                 </a>
               </li>
             ))}

@@ -29,24 +29,25 @@
   vertical-align: 0.05em;
 }
 
+/* section labels inside a widget: sentence case, a step below the widget
+   title (which is the mono, uppercase, paper-white one) */
 .app-now-label {
   display: flex;
   align-items: baseline;
   gap: 0.5rem;
   margin: 0 0 0.5rem;
   color: var(--color-label-3);
-  font-family: var(--font-mono);
   font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.06em;
+  font-weight: 600;
+  letter-spacing: 0.005em;
   line-height: 1.3;
-  text-transform: uppercase;
 }
 .app-now-label-aside {
   margin-left: auto;
   color: var(--color-label-3);
+  font-family: var(--font-mono);
+  font-weight: 400;
   letter-spacing: 0;
-  text-transform: none;
 }
 .app-now-label-link {
   display: inline-flex;
@@ -74,6 +75,10 @@
   background: var(--color-flare);
   box-shadow: 0 0 10px color-mix(in oklab, var(--color-flare) 70%, transparent);
   animation: app-now-breathe 2.4s var(--ease-out-quint) infinite;
+}
+.app-now-dot[data-live][data-still] {
+  box-shadow: 0 0 6px color-mix(in oklab, var(--color-flare) 55%, transparent);
+  animation: none;
 }
 @keyframes app-now-breathe {
   0%,
@@ -126,7 +131,7 @@
   align-items: center;
   gap: 0.25rem 0.625rem;
   margin: 0 0 1.25rem;
-  color: var(--color-label-3);
+  color: var(--color-label-2);
   font-family: var(--font-mono);
   font-size: 0.75rem;
   letter-spacing: 0.08em;
@@ -236,7 +241,7 @@ a.app-now-tok:hover {
 }
 .app-now-updated {
   margin: 0.875rem 0 0;
-  color: var(--color-label-3);
+  color: var(--color-label-2);
   font-family: var(--font-mono);
   font-size: 0.75rem;
 }
@@ -318,7 +323,7 @@ a.app-now-tok:hover {
 }
 .app-now-hint {
   margin: 0;
-  color: var(--color-label-3);
+  color: var(--color-label-2);
   font-family: var(--font-mono);
   font-size: 0.75rem;
 }
@@ -402,6 +407,10 @@ a.app-now-tok:hover {
   touch-action: pan-y;
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
+}
+.app-now-w a,
+.app-now-w img {
+  -webkit-user-drag: none;
 }
 .app-now-w[data-size="L"] {
   --app-now-wob: 0.22deg;
@@ -518,7 +527,7 @@ a.app-now-tok:hover {
   min-width: 0;
   margin: 0;
   overflow: hidden;
-  color: var(--color-label-2);
+  color: var(--color-label);
   font-family: var(--font-mono);
   font-size: 0.75rem;
   font-weight: 500;
@@ -609,14 +618,10 @@ a.app-now-tok:hover {
   gap: 1.25rem;
   min-height: 0;
 }
-.app-now-listen-now,
-.app-now-listen-empty {
+.app-now-listen-now {
   display: flex;
   gap: 1.25rem;
   min-width: 0;
-}
-.app-now-listen-empty {
-  align-items: center;
 }
 .app-now-listen-art {
   flex: none;
@@ -651,10 +656,41 @@ a.app-now-tok:hover {
 .app-now-art--round {
   border-radius: 999px;
 }
+/* nothing from Spotify at all: a still life where the music goes. The
+   planet sits where the art would, the eq lies flat (one cell a column) */
 .app-now-art--quiet {
-  width: 5.5rem;
-  flex: none;
-  opacity: 0.85;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+.app-now-art--quiet .app-now-art-planet {
+  opacity: 0.8;
+}
+.app-now-listen-now--quiet .app-now-cava-col::before {
+  background: repeating-linear-gradient(180deg, var(--color-label-3) 0 3px, transparent 3px 4px);
+  opacity: 0.5;
+  transform: translateY(28px);
+}
+.app-now-listen-now--quiet .app-now-listen-title {
+  font-size: clamp(1.125rem, 0.85rem + 1.8cqi, 1.5rem);
+}
+.app-now-listen-now--quiet .app-now-listen-album {
+  max-width: 22rem;
+  margin-top: 0.4375rem;
+  color: var(--color-label-2);
+  white-space: normal;
+}
+.app-now-listen-profile {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  margin-top: 0.875rem;
+  font-size: var(--text-footnote);
+}
+/* no top artists: the one block sits in the middle of the tile, larger */
+.app-now-listen[data-solo] .app-now-listen-now {
+  margin-block: auto;
+}
+.app-now-listen[data-solo] .app-now-listen-art {
+  width: clamp(6.5rem, 42cqi, 15rem);
 }
 .app-now-listen-info {
   display: flex;
@@ -683,13 +719,9 @@ a.app-now-tok:hover {
   font-size: var(--text-footnote);
   line-height: 1.35;
 }
-.app-now-listen-empty .app-now-link {
-  display: inline-flex;
-  align-items: center;
-  margin-top: 0.625rem;
-  font-size: var(--text-footnote);
-}
 .app-now-listen-cava {
+  /* the padding is room above it, not taken from its 8 cells */
+  box-sizing: content-box;
   margin-top: auto;
   padding-top: 0.75rem;
 }
@@ -709,7 +741,6 @@ a.app-now-tok:hover {
   position: absolute;
   inset: 0;
   background: linear-gradient(90deg, var(--color-signal), var(--color-ion));
-  transition: transform 1s linear;
 }
 .app-now-progress-times {
   display: flex;
@@ -780,10 +811,66 @@ li:first-child .app-now-artist-rank {
   color: var(--color-label-2);
   font-size: var(--text-footnote);
   line-height: 1.25;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: manual;
   text-wrap: balance;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+}
+
+/* narrow widgets (phones): a ranked list, one artist a row, so long names
+   end in an ellipsis instead of breaking inside a word */
+@container app-now-w (max-width: 460px) {
+  .app-now-artists-list {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    margin: 0;
+  }
+  .app-now-artist {
+    position: relative;
+    flex-direction: row;
+    gap: 0.75rem;
+    min-height: 2.75rem;
+    padding: 0.25rem 0 0.25rem 1.875rem;
+    text-align: left;
+  }
+  .app-now-artists-list li + li .app-now-artist::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 4.625rem;
+    height: 1px;
+    background: var(--hairline);
+  }
+  .app-now-artist-face {
+    position: static;
+    flex: none;
+    width: 2.25rem;
+  }
+  .app-now-artist-rank {
+    top: 50%;
+    left: 0;
+    translate: 0 -50%;
+  }
+  li:not(:first-child) .app-now-artist-rank {
+    background: none;
+    box-shadow: none;
+    color: var(--color-label-3);
+  }
+  .app-now-artist-name {
+    display: block;
+    flex: 1;
+    min-width: 0;
+    color: var(--color-label);
+    font-size: var(--text-callout);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  a.app-now-artist:hover .app-now-artist-face {
+    transform: none;
+  }
 }
 
 /* pixel cava (8 cells of 4px: 3 lit, 1 dark) */
@@ -826,6 +913,9 @@ li:first-child .app-now-artist-rank {
 }
 .app-now-cava[data-paused] .app-now-cava-col::before {
   animation-play-state: paused;
+}
+.app-now-cava[data-still] .app-now-cava-col::before {
+  animation: none;
 }
 @keyframes app-now-cava-0 {
   0%, 100% { transform: translateY(16px); }
@@ -1589,6 +1679,40 @@ a.app-now-book:hover .app-now-spine {
     -webkit-box-orient: vertical;
   }
 }
+/* in the grid the Listening tile has a fixed height: the art takes all the
+   height the top artists leave (square, up to a little over half the
+   width), and the cava and progress sit on its bottom edge, so no dead
+   band opens between the track and the artists */
+@container app-now (min-width: 620px) {
+  .app-now-listen:not([data-solo]) .app-now-listen-now {
+    flex: 1 1 0;
+    min-height: 0;
+  }
+  .app-now-listen:not([data-solo]) .app-now-listen-art {
+    align-self: stretch;
+    width: auto;
+    max-width: 58%;
+    aspect-ratio: 1;
+  }
+}
+/* phones: tiles grow with their content, but a very long title or credit
+   list still stops at a few lines */
+@container app-now (max-width: 619px) {
+  .app-now-listen-title,
+  .app-now-listen-artist,
+  .app-now-listen-album {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+  }
+  .app-now-listen-title {
+    -webkit-line-clamp: 3;
+  }
+  .app-now-listen-artist,
+  .app-now-listen-album {
+    -webkit-line-clamp: 2;
+  }
+}
 /* tablet: Setup spans the full width; like real fastfetch output, the
    logo takes the room (a big pixel planet) instead of an empty right half */
 @container app-now (min-width: 620px) and (max-width: 999px) {
@@ -1696,8 +1820,27 @@ a.app-now-book:hover .app-now-spine {
   }
 }
 
-/* touch: every link and control is at least 44px tall */
+/* touch: every link and control is at least 44px tall. Vertical padding on
+   an inline link grows its hit area without moving a line (and follows a
+   link that wraps); headline tokens get just enough to clear 44px inside
+   their word masks */
 @media (pointer: coarse) {
+  .app-now-link {
+    padding-block: 0.8125rem;
+    margin-block: -0.8125rem;
+  }
+  .app-now-listen-profile {
+    min-height: 2.75rem;
+    margin-block: 0.25rem 0;
+    padding-block: 0;
+  }
+  .app-now-tok {
+    padding-block: 0.1em;
+    margin-block: -0.1em;
+  }
+  .app-now-tok--focus {
+    background-position: left bottom 0.1em;
+  }
   .app-now-repo,
   .app-now-more {
     min-height: 2.75rem;
@@ -1726,10 +1869,8 @@ a.app-now-book:hover .app-now-spine {
 /* ───────────────────────── preferences ───────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
-  .app-now-dot[data-live],
-  .app-now-progress-fill {
+  .app-now-dot[data-live] {
     animation: none;
-    transition: none;
   }
 }
 @media (prefers-contrast: more) {
@@ -1737,8 +1878,32 @@ a.app-now-book:hover .app-now-spine {
     background: var(--color-ink-900);
     box-shadow: inset 0 0 0 1px var(--color-label-3);
   }
+  .app-now-tool,
+  .app-now-push,
+  .app-now-post {
+    box-shadow: inset 0 0 0 1px var(--color-label-3);
+  }
+}
+/* forced colors strip shadows and backgrounds: cards get real borders, and
+   the pixel meters, swatches and dots keep their own colours */
+@media (forced-colors: active) {
+  .app-now-w-card,
+  .app-now-push,
+  .app-now-post,
   .app-now-tool {
-    box-shadow: inset 0 0 0 1px var(--hairline);
+    border: 1px solid CanvasText;
+  }
+  .app-now-progress-bar,
+  .app-now-cava,
+  .app-now-dot,
+  .app-now-legend i,
+  .app-now-pulse-readout i,
+  .app-now-pulse-svg,
+  .app-now-repo i,
+  .app-now-spine,
+  .app-now-fetch-pal,
+  .app-now-artist-rank {
+    forced-color-adjust: none;
   }
 }
 @media (prefers-reduced-transparency: reduce) {

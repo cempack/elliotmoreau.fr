@@ -156,9 +156,8 @@ export function PlaceCard({
 
   return (
     <article className="app-atlas-card" data-compact={compact || undefined} aria-labelledby={titleId}>
-      {/* compact (the sheet): the peek row keeps to the status chip, so
-          the floating mini player (bottom right) never covers it; region
-          and coordinates move down into the facts */}
+      {/* compact (the sheet): the peek row keeps to the name and status
+          chip; region and coordinates move down into the details */}
       <div className="app-atlas-card-meta">
         <StatusChip place={place} />
         <p className="app-atlas-card-region">{region}</p>
@@ -191,7 +190,9 @@ export function PlaceCard({
 
       <AnimatePresence mode="popLayout" initial={false}>
         <m.div key={place.id} className="app-atlas-card-body" {...swap}>
-          <dl className="app-atlas-facts">
+          {/* the sheet's half detent ends under the note, or, on a short
+              screen, under these */}
+          <dl className="app-atlas-facts" data-sheet-half="">
             {isHome ? (
               <div className="app-atlas-fact app-atlas-fact--wide">
                 <dt>{a.card.routes}</dt>
@@ -229,7 +230,6 @@ export function PlaceCard({
               </>
             )}
           </dl>
-          {/* the sheet's half detent ends under the note */}
           <p className="app-atlas-note" data-sheet-half="">
             {isHome ? `${a.notes[place.id] ?? ""} ${a.card.homeLine}` : a.notes[place.id]}
           </p>
@@ -248,7 +248,7 @@ export function PlaceCard({
         </m.div>
       </AnimatePresence>
 
-      <nav className="app-atlas-card-nav" aria-label={a.card.steps}>
+      <div className="app-atlas-card-nav" role="group" aria-label={a.card.steps}>
         <button type="button" className="app-atlas-step" onClick={() => onSelect(prev.id)} aria-label={fill(a.labelled, { label: a.card.prev, value: prev.name[lang] })}>
           <PixelGlyph cells={G_CHEVRON} size={9} className="app-atlas-step-prev" />
           <span>{prev.name[lang]}</span>
@@ -260,7 +260,7 @@ export function PlaceCard({
           <span>{next.name[lang]}</span>
           <PixelGlyph cells={G_CHEVRON} size={9} className="app-atlas-step-next" />
         </button>
-      </nav>
+      </div>
     </article>
   );
 }

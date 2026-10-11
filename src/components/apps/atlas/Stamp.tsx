@@ -108,7 +108,17 @@ function Postmark({ place, name, lang }: { place: Place; name: string; lang: Loc
   const fitA = a.length * 7.4 > 84 ? 84 : undefined;
   const fitB = b.length * 7.4 > 92 ? 92 : undefined;
   return (
-    <svg className="app-atlas-postmark" width="176" height="88" viewBox="0 0 176 88" aria-hidden focusable="false">
+    // slice, not meet: a card may narrow the box (CSS width) to crop the
+    // waves' tail without scaling the 12px lettering
+    <svg
+      className="app-atlas-postmark"
+      width="176"
+      height="88"
+      viewBox="0 0 176 88"
+      preserveAspectRatio="xMinYMid slice"
+      aria-hidden
+      focusable="false"
+    >
       <defs>
         {/* baseline r=28 over the top, left to right; r=36.5 under the
             bottom, left to right, so the letters stand inside the ring */}

@@ -189,7 +189,7 @@ const fr: typeof en = {
   building: {
     focus: "Priorité",
     source: "Code source",
-    sourceOf: "Code source de {name} sur GitHub",
+    sourceOf: "{name}\u202f: code source sur GitHub",
     lastPush: "Dernier push",
     recent: "Dépôts récents",
     pushedTo: "Push sur {repo}",

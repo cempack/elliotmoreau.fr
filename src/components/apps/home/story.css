@@ -4,6 +4,14 @@
    story rises; chapters pad themselves to the content column. */
 
 .app-story {
+  /* small controls and chips over the pixel landscape carry their own
+     surface: frosted ink dark enough for 12px text on the brightest peaks */
+  --app-story-chip: color-mix(in oklab, var(--color-ink-900) 70%, transparent);
+  --app-story-chip-hover: color-mix(in oklab, var(--color-ink-600) 78%, transparent);
+  /* small type set straight on the landscape (kickers, dates, captions)
+     wears a soft ink halo: on the dark sky it doesn't show, on a snowy
+     peak or the sun it keeps the letters at full contrast */
+  --app-story-halo: 0 0 1px rgba(5, 6, 10, 0.8), 0 0 6px rgba(5, 6, 10, 0.9), 0 0 14px rgba(5, 6, 10, 0.7);
   --app-story-gutter: clamp(1.25rem, 5.5vw, 5rem);
   --app-story-max: 82rem;
   --app-story-pad: max(var(--app-story-gutter), calc((100% - var(--app-story-max)) / 2));
@@ -33,6 +41,20 @@
   pointer-events: none;
 }
 
+.app-story-kicker,
+.app-story-lede,
+.app-story-deck-count,
+.app-story-deck-hint,
+.app-story-deck-label-name,
+.app-story-wr-date,
+.app-story-wr-meta > .tabular,
+.app-story-fin-sub,
+.app-story-fin-k,
+.app-story-foot,
+.app-story-band-k {
+  text-shadow: var(--app-story-halo);
+}
+
 /* loops rest off-screen */
 .app-story > section[data-idle] * {
   animation-play-state: paused !important;
@@ -41,7 +63,21 @@
 /* ───────────── chapter masthead ───────────── */
 
 .app-story-head {
+  position: relative;
   padding-inline: var(--app-story-pad);
+}
+/* text protection: the wallpaper's sun (or moon) and its bright peaks sit
+   at fixed spots on screen, and every heading passes over them; a soft
+   ink pool under the words keeps the small type legible, invisible as a
+   shape */
+.app-story-head::before,
+.app-story-fin-inner::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -4rem -2rem -3rem;
+  background: radial-gradient(48% 62% at 26% 52%, rgba(5, 6, 10, 0.62), rgba(5, 6, 10, 0.3) 55%, transparent 100%);
+  pointer-events: none;
 }
 .app-story-kicker {
   display: flex;
@@ -110,11 +146,12 @@
 }
 .app-story-pill--quiet {
   color: var(--color-label);
-  background: rgba(255, 255, 255, 0.06);
-  box-shadow: inset 0 0 0 1px var(--hairline);
+  background: var(--app-story-chip);
+  backdrop-filter: blur(14px) saturate(1.5);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 0 0 1px var(--hairline);
 }
 .app-story-pill--quiet:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--app-story-chip-hover);
 }
 .app-story-round {
   display: grid;
@@ -123,12 +160,13 @@
   height: 2.75rem;
   border-radius: 999px;
   color: var(--color-label);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--app-story-chip);
+  backdrop-filter: blur(14px) saturate(1.5);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 0 0 1px var(--hairline);
   transition: background-color 0.2s, color 0.2s;
 }
 .app-story-round:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.13);
+  background: var(--app-story-chip-hover);
 }
 .app-story-round:disabled {
   color: var(--color-ink-500);
@@ -217,6 +255,16 @@
 }
 .app-story-mc-cell[data-app="contact"] {
   grid-column: 8 / span 5;
+}
+.app-story-mc[data-layout="compact"] .app-story-mc-cell[data-app="contact"] {
+  grid-column: 10 / span 3;
+}
+.app-story-mc[data-layout="compact"] .app-story-mc-cell[data-app="now"] {
+  grid-column: 8 / span 5;
+}
+/* a narrow Mail: the field labels take only the room their words need */
+.app-story-mc[data-layout="compact"] .app-story-pv-field .app-story-pv-k {
+  width: auto;
 }
 
 .app-story-mc-win {
@@ -1060,7 +1108,7 @@
 }
 .app-story-deck-count-of {
   font-weight: 400;
-  color: var(--color-label-3);
+  color: var(--color-label-2);
 }
 .app-story-deck-arrows {
   display: flex;
@@ -1332,7 +1380,7 @@
   order: 2;
   margin: 0 0 0 1rem;
   font: 400 0.75rem/1.3 var(--font-mono);
-  color: var(--color-label-3);
+  color: var(--color-label-2);
 }
 .app-story-deck-dot {
   display: grid;
@@ -1432,7 +1480,7 @@
 }
 .app-story-wr-date {
   font: 400 0.8125rem/1.2 var(--font-mono);
-  color: var(--color-label-3);
+  color: var(--color-label-2);
 }
 .app-story-wr-title {
   font-size: clamp(1.625rem, 3.3vw, 3rem);
@@ -1443,6 +1491,10 @@
   transition:
     transform 0.55s var(--ease-spring),
     color 0.25s;
+}
+/* on the landscape, the tag sits on ink before its ember tint */
+.app-story-wr-meta .app-story-wr-tag {
+  background: color-mix(in oklab, var(--color-ember) 16%, rgba(10, 11, 18, 0.8));
 }
 .app-story-wr-meta {
   display: inline-flex;
@@ -1499,8 +1551,11 @@
   /* it grows from the edge nearest the row it belongs to */
   transform-origin: 56px 0;
 }
-.app-story-wr-plate[data-above] {
+.app-story-wr-plate[data-dock="above"] {
   transform-origin: 56px 100%;
+}
+.app-story-wr-plate[data-dock="beside"] {
+  transform-origin: 0 50%;
 }
 .app-story-wr-plate-win {
   aspect-ratio: 16 / 10;
@@ -1658,7 +1713,7 @@
   font: 500 0.75rem/1 var(--font-mono);
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--color-label-3);
+  color: var(--color-label-2);
 }
 .app-story-fin-social ul {
   display: flex;
@@ -1677,12 +1732,13 @@
   border-radius: 999px;
   color: var(--color-label);
   text-decoration: none;
-  background: rgba(255, 255, 255, 0.04);
-  box-shadow: inset 0 0 0 1px var(--hairline);
+  background: var(--app-story-chip);
+  backdrop-filter: blur(14px) saturate(1.5);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 0 0 1px var(--hairline);
   transition: background-color 0.2s;
 }
 .app-story-fin-link:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--app-story-chip-hover);
 }
 .app-story-fin-link svg {
   color: var(--color-signal);
@@ -1692,7 +1748,7 @@
 }
 .app-story-fin-link-handle {
   font: 400 0.75rem/1 var(--font-mono);
-  color: var(--color-label-3);
+  color: var(--color-label-2);
 }
 
 .app-story-foot-made {
@@ -1909,10 +1965,14 @@
   }
 }
 
-/* tablets: three full rows in reading order, Mail across the bottom */
+/* tablets: three full rows in reading order, Mail across the bottom; the
+   deck's cards stay wide enough (≥ 520px) to keep all their content */
 @media (min-width: 768px) and (max-width: 1023px) {
   .app-story-mc-grid {
     grid-template-rows: 19rem 19rem 15.5rem;
+  }
+  .app-story-deck {
+    --app-story-card-w: min(560px, 68vw);
   }
 }
 @media (max-width: 1023px) {
@@ -1992,8 +2052,10 @@
   .app-story-deck-hint {
     display: none;
   }
+  /* under the card's left edge, clear of the mini player's bubble on the
+     right */
   .app-story-deck-pager {
-    justify-content: center;
+    padding-right: calc(var(--app-story-gutter) + 6.5rem);
   }
 
   .app-story-wr-row {
@@ -2113,7 +2175,22 @@
   }
 }
 
+@media (prefers-reduced-transparency: reduce) {
+  .app-story {
+    --app-story-chip: var(--color-ink-900);
+    --app-story-chip-hover: var(--color-ink-700);
+  }
+  .app-story-pill--quiet,
+  .app-story-round,
+  .app-story-fin-link {
+    backdrop-filter: none;
+  }
+}
+
 @media (prefers-contrast: more) {
+  .app-story {
+    --app-story-chip: var(--color-ink-950);
+  }
   .app-story-veil {
     background: var(--color-ink-950);
   }

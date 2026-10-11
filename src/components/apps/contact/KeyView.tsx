@@ -104,11 +104,11 @@ export function KeyView({ active }: { active: boolean }) {
                   setAttempt((a) => a + 1);
                 }}
               >
-                <PixelGlyph cells={G_RETRY} size={12} />
+                <PixelGlyph cells={G_RETRY} size={14} />
                 <span>{c.retry}</span>
               </button>
               <a className="app-contact-btn app-contact-btn--ghost" href="/pgp.asc" download={KEY_FILE}>
-                <PixelGlyph cells={G_DOWN} size={12} />
+                <PixelGlyph cells={G_DOWN} size={14} />
                 <span>{c.keyErrorCta}</span>
               </a>
             </div>
@@ -182,7 +182,7 @@ export function KeyView({ active }: { active: boolean }) {
                 <span>{c.copyKey}</span>
               </CopyButton>
               <a className="app-contact-btn" href="/pgp.asc" download={KEY_FILE}>
-                <PixelGlyph cells={G_DOWN} size={12} />
+                <PixelGlyph cells={G_DOWN} size={14} />
                 <span>{c.download}</span>
               </a>
               <button
@@ -198,7 +198,7 @@ export function KeyView({ active }: { active: boolean }) {
                 }}
               >
                 <span className="app-contact-chev" aria-hidden>
-                  <PixelGlyph cells={G_CHEVRON} size={12} />
+                  <PixelGlyph cells={G_CHEVRON} size={14} />
                 </span>
                 <span>{open ? c.hideKey : c.showKey}</span>
               </button>
@@ -237,9 +237,10 @@ export function KeyView({ active }: { active: boolean }) {
         <p className="app-contact-label">{c.importHint}</p>
         <div className="app-contact-cmd">
           <span className="app-contact-cmd-prompt" aria-hidden>
-            <PixelGlyph cells={G_TERM} size={12} />
+            <PixelGlyph cells={G_TERM} size={14} />
           </span>
-          <code className="app-contact-cmd-text" data-lenis-prevent>
+          {/* a sideways scroller: focusable, so the keyboard can scroll it too */}
+          <code className="app-contact-cmd-text" data-lenis-prevent tabIndex={0} role="region" aria-label={c.importHint}>
             {command}
           </code>
           <CopyButton

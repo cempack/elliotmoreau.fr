@@ -19,16 +19,15 @@ export const HASH: Record<Box, string> = { compose: "", elsewhere: "elsewhere", 
  * the list (wide only), a small honest note about replies with the time
  * it is in Paris right now.
  */
-export function Sidebar({ box, onSelect, nets }: { box: Box; onSelect: (b: Box) => void; nets: number }) {
+export function Sidebar({ box, onSelect }: { box: Box; onSelect: (b: Box) => void }) {
   const { t, path } = useI18n();
   const c = t.contact;
   const { time } = useParisTime();
 
-  const item = (b: Box, glyph: Cells, label: React.ReactNode, count?: number) => (
+  const item = (b: Box, glyph: Cells, label: React.ReactNode) => (
     <WinNavItem
       href={HASH[b] ? `#${HASH[b]}` : path("/contact")}
       active={box === b}
-      count={count}
       icon={<PixelGlyph cells={glyph} size={14} />}
       // a plain click switches in place; modified clicks keep the browser's own behaviour
       onClick={(e?: React.MouseEvent) => {
@@ -55,7 +54,7 @@ export function Sidebar({ box, onSelect, nets }: { box: Box; onSelect: (b: Box) 
             <span className="app-contact-nav-short">{c.boxComposeShort}</span>
           </>
         )}
-        {item("elsewhere", G_AT, c.boxElsewhere, nets)}
+        {item("elsewhere", G_AT, c.boxElsewhere)}
         {item("key", G_KEY, c.boxKey)}
       </WinNav>
 

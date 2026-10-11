@@ -15,13 +15,21 @@ import { angleBetween, focusFor, slerp, toVec, worldGrid, type Vec3 } from "./ge
  *   Bayer dither, so coastlines crawl across a fixed pixel grid as it turns;
  * - day and night are live: the sun's real position lights it, the
  *   terminator is dithered, and city lights flicker on the night side;
- * - drag spins it 1:1 from the grab point on both axes (latitude rubber-
- *   bands past its limits); a throw carries on with momentum and decays
- *   like a scroll view; grabbing mid-flight catches it;
+ * - drag is an arcball: the point you grab stays under the finger wherever
+ *   on the disc you grab it (latitude rubber-bands past its limits); a
+ *   throw carries on with momentum and decays like a scroll view; grabbing
+ *   mid-flight catches it;
  * - choosing a place flies the camera on a critically damped spring to
  *   the middle of the route from home, so the whole great-circle arc is on
- *   the near side, and the arc draws itself out of France; home shows every
- *   route at once, a small flight network;
+ *   the near side, and zooms in until the route spans a good part of the
+ *   disc (a hop between two near places pulls out a little on the way, as
+ *   a flight would); the arc then draws itself out of France; home shows
+ *   every route at once, a small flight network;
+ * - the zoom is a loupe: the planet grows inside the resting disc, so the
+ *   silhouette, its limb, halo and orbit stay where they are and a zoomed
+ *   view costs no more than the whole globe;
+ * - hovering a marker names it in a small callout beside it (the shell's
+ *   cursor is reduced to its dot here, so nothing hides what you aim at);
  * - when a sheet rises over it (`lift`), the planet shrinks and climbs
  *   into the room left above the sheet by being redrawn at its new size,
  *   never by scaling the canvas, so the pixel grid stays crisp at every
@@ -55,6 +63,12 @@ const ARC_DRAW = 1.05;
 const PULSE_PERIOD = 3.4;
 /** CSS px per planet pixel */
 const CELL = 3;
+/** a route is framed to span about this angle of the disc's radius */
+const ZOOM_FRAME = 0.62;
+const ZOOM_MAX = 3.2;
+/** releases faster than this (rad/s) are capped: a grab at the very rim
+    maps a few pixels to a large turn */
+const SPIN_MAX = 8;
 
 function hash(n: number) {
   let h = (n * 1664525 + 1013904223) >>> 0;
@@ -131,8 +145,8 @@ export type AtlasGlobeProps = {
   /** gap between the rim and the canvas edge, CSS px */
   margin?: number;
   label: string;
-  /** cursor label over the globe ("Spin") */
-  spinLabel: string;
+  /** a one-time hint by the pointer until the first drag ("Drag to spin") */
+  hint: string;
   /** live camera centre, for a readout (called only when it changes) */
   onCamera?: (lat: number, lon: number) => void;
   /** 0–1: how far a sheet has risen over the globe (1 = its half detent) */
@@ -150,7 +164,7 @@ export function AtlasGlobe({
   recenter = 0,
   margin = 28,
   label,
-  spinLabel,
+  hint,
   onCamera,
   lift,
   liftRoom,
@@ -158,19 +172,22 @@ export function AtlasGlobe({
 }: AtlasGlobeProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const tipRef = useRef<HTMLSpanElement>(null);
   // live props for the imperative loop (synced after commit)
-  const live = useRef({ places, selectedId, onSelect, ambient, margin, spinLabel, onCamera });
+  const live = useRef({ places, selectedId, onSelect, ambient, margin, hint, onCamera });
   const api = useRef<{ focus: (cut: boolean) => void; wake: () => void } | null>(null);
 
   useEffect(() => {
-    live.current = { places, selectedId, onSelect, ambient, margin, spinLabel, onCamera };
+    live.current = { places, selectedId, onSelect, ambient, margin, hint, onCamera };
     api.current?.wake();
   });
 
   useEffect(() => {
     const wrap = wrapRef.current;
     const cvs = canvasRef.current;
-    if (!wrap || !cvs) return;
+    const tip = tipRef.current;
+    if (!wrap || !cvs || !tip) return;
+    const tipEl: HTMLSpanElement = tip;
     const ctx0 = cvs.getContext("2d");
     if (!ctx0) return;
     const ctx: CanvasRenderingContext2D = ctx0;
@@ -192,13 +209,27 @@ export function AtlasGlobe({
       tLon: null as number | null,
       coasting: false,
     };
-    const start = focusFor(live.current.places.find((p) => p.id === live.current.selectedId) ?? HOME);
+    const startPlace = live.current.places.find((p) => p.id === live.current.selectedId) ?? HOME;
+    const start = focusFor(startPlace);
     cam.lat = Math.min(LAT_MAX, Math.max(LAT_MIN, start.lat * RAD));
     cam.lon = start.lon * RAD;
 
+    /** how far in to frame a place's route: short hops fill the disc */
+    const zoomFor = (p: Place) => {
+      if (p.home || p.id === HOME.id) return 1;
+      const ang = angleBetween(homeV, toVec(p.lat, p.lon));
+      return Math.min(ZOOM_MAX, Math.max(1, ZOOM_FRAME / Math.max(1e-3, ang)));
+    };
+    // ── zoom: a critically damped spring like the camera's ──
+    const zoom = { v: zoomFor(startPlace), vel: 0, t: zoomFor(startPlace) };
+    /** the zoom actually drawn (the spring, less a pull-out while flying) */
+    let zoomShown = zoom.v;
+
     let W = 0;
     let H = 0;
+    /** the planet's radius (zoomed), and the disc it is seen through */
     let R = 0;
+    let RL = 0;
     let cx = 0;
     let cy = 0;
     let dpr = 1;
@@ -206,13 +237,23 @@ export function AtlasGlobe({
     let R0 = 0;
     let cy0 = 0;
 
-    // ── the planet raster: one entry per cell inside the disc ──
+    // ── the planet raster: one entry per cell inside both the disc and
+    //    the canvas (a zoomed planet overflows the canvas) ──
     let buf: HTMLCanvasElement | null = null;
     let bctx: CanvasRenderingContext2D | null = null;
     let img: ImageData | null = null;
     let px: Uint32Array = new Uint32Array(0);
-    let bn = 0; // cells across the buffer
-    let cN = 0; // cells inside the disc
+    let stride = 0; // allocated buffer width (cells)
+    let rows = 0; // allocated buffer height (cells)
+    let bw = 0; // cells in use, across and down
+    let bh = 0;
+    let gox = 0; // the grid's origin on the canvas (CSS px), and the
+    let goy = 0; // first cell of it that is in use
+    let gi0 = 0;
+    let gj0 = 0;
+    let geoKey = "";
+    let geoVer = 0;
+    let cN = 0; // cells in use inside the disc
     let cap = 0; // capacity of the per-cell arrays
     let cIdx = new Int32Array(0);
     let cE = new Float32Array(0);
@@ -224,23 +265,29 @@ export function AtlasGlobe({
     let sunAt = performance.now();
     let rasterKey = "";
 
-    /** Index the cells inside the disc. Runs on every radius change (a
-        sheet drag changes it each frame), so the buffers are reused. */
-    const buildRaster = () => {
+    /** Index the cells of the disc that land on the canvas. Runs on every
+        radius change (a sheet drag or a zoom changes it each frame), so the
+        buffers only ever grow. */
+    const buildRaster = (n0: number, i0: number, i1: number, j0: number, j1: number) => {
       rasterKey = "";
-      const nbn = Math.ceil((2 * R) / CELL) + 2;
+      geoVer++;
+      bw = Math.max(0, i1 - i0);
+      bh = Math.max(0, j1 - j0);
+      gi0 = i0;
+      gj0 = j0;
       buf ??= document.createElement("canvas");
-      if (nbn !== bn || !img || !bctx) {
-        bn = nbn;
-        buf.width = bn;
-        buf.height = bn;
+      if (bw > stride || bh > rows || !img || !bctx) {
+        stride = Math.max(stride, bw + 8);
+        rows = Math.max(rows, bh + 8);
+        buf.width = stride;
+        buf.height = rows;
         bctx = buf.getContext("2d");
         if (!bctx) return;
-        img = bctx.createImageData(bn, bn);
+        img = bctx.createImageData(stride, rows);
         px = new Uint32Array(img.data.buffer);
       } else px.fill(0);
-      if (bn * bn > cap) {
-        cap = bn * bn;
+      if (bw * bh > cap) {
+        cap = bw * bh;
         cIdx = new Int32Array(cap);
         cE = new Float32Array(cap);
         cY = new Float32Array(cap);
@@ -248,31 +295,44 @@ export function AtlasGlobe({
         cTh = new Float32Array(cap);
         cRim = new Uint8Array(cap);
       }
-      const half = (bn * CELL) / 2;
+      const half = (n0 * CELL) / 2;
+      const k = RL / R;
       let n = 0;
-      for (let j = 0; j < bn; j++) {
-        for (let i = 0; i < bn; i++) {
-          const e = ((i + 0.5) * CELL - half) / R;
-          const y = (half - (j + 0.5) * CELL) / R;
-          const rr = e * e + y * y;
-          if (rr > 1) continue;
-          const z = Math.sqrt(Math.max(0, 1 - rr));
+      for (let j = j0; j < j1; j++) {
+        const yl = (half - (j + 0.5) * CELL) / RL;
+        for (let i = i0; i < i1; i++) {
+          const el = ((i + 0.5) * CELL - half) / RL;
+          const rl = el * el + yl * yl;
+          if (rl > 1) continue;
+          const zl = Math.sqrt(Math.max(0, 1 - rl));
+          // the planet under this cell of the loupe
+          const e = el * k;
+          const y = yl * k;
           const th = (BAYER[((j & 3) << 2) | (i & 3)] + 0.5) / 16;
-          cIdx[n] = j * bn + i;
+          cIdx[n] = (j - j0) * stride + (i - i0);
           cE[n] = e;
           cY[n] = y;
-          cZ[n] = z;
+          cZ[n] = Math.sqrt(Math.max(0, 1 - e * e - y * y));
           cTh[n] = th;
           // the limb darkens: solid at the very edge, dithered just inside
-          cRim[n] = z < 0.16 || (z < 0.3 && th > (z - 0.16) / 0.14) ? 1 : 0;
+          cRim[n] = zl < 0.16 || (zl < 0.3 && th > (zl - 0.16) / 0.14) ? 1 : 0;
           n++;
         }
       }
       cN = n;
     };
 
-    /** The circle for the current lift: from resting to the room above
-        the sheet, in whole pixels; a new radius re-indexes the raster. */
+    /** angular distance the camera still has to fly (0 when it is not) */
+    const flightLeft = () => {
+      if (cam.tLat === null || cam.tLon === null) return 0;
+      const c =
+        Math.sin(cam.lat) * Math.sin(cam.tLat) + Math.cos(cam.lat) * Math.cos(cam.tLat) * Math.cos(cam.tLon - cam.lon);
+      return Math.acos(Math.min(1, Math.max(-1, c)));
+    };
+
+    /** The circle for the current lift and zoom: from resting to the room
+        above the sheet, in whole pixels; a new radius (or a new part of a
+        zoomed planet on the canvas) re-indexes the raster. */
     const fit = () => {
       let r = R0;
       let c = cy0;
@@ -280,13 +340,31 @@ export function AtlasGlobe({
       const room = liftRoom ? liftRoom.get() : 0;
       if (l > 0 && room > 0 && room < H - 1) {
         const r1 = Math.min(R0, Math.max(40, Math.floor(Math.min(W, room) / 2 - live.current.margin)));
-        r = Math.round(R0 + (r1 - R0) * l);
+        r = R0 + (r1 - R0) * l;
         c = Math.round(cy0 + (room / 2 - cy0) * l);
       }
+      // a long flight pulls the camera out on the way and dives in as it
+      // arrives; never below the whole globe
+      zoomShown = Math.max(1, zoom.v / (1 + 1.6 * flightLeft()));
+      const rl = Math.round(r);
+      r = Math.round(rl * zoomShown);
       cy = c;
-      if (r !== R) {
+      const n0 = Math.ceil((2 * rl) / CELL) + 2;
+      const size = n0 * CELL;
+      const ox = Math.round(cx - size / 2);
+      const oy = Math.round(c - size / 2);
+      const i0 = Math.max(0, Math.floor(-ox / CELL));
+      const i1 = Math.min(n0, Math.ceil((W - ox) / CELL));
+      const j0 = Math.max(0, Math.floor(-oy / CELL));
+      const j1 = Math.min(n0, Math.ceil((H - oy) / CELL));
+      gox = ox;
+      goy = oy;
+      const key = `${r}|${rl}|${i0}|${i1}|${j0}|${j1}`;
+      if (key !== geoKey) {
+        geoKey = key;
         R = r;
-        buildRaster();
+        RL = rl;
+        buildRaster(n0, i0, i1, j0, j1);
       }
     };
 
@@ -302,10 +380,12 @@ export function AtlasGlobe({
       const flick = Math.floor(t * 1.6);
       // the raster only changes with the camera, the lights' flicker step
       // and the sun: while flights run over a still planet, reuse it
-      const key = `${cam.lat}|${cam.lon}|${amb ? flick : -1}|${sunAt}|${bn}`;
-      const size = bn * CELL;
+      const key = `${cam.lat}|${cam.lon}|${amb ? flick : -1}|${sunAt}|${geoVer}`;
+      if (!bw || !bh) return;
+      const b = buf;
+      const blit = () => ctx.drawImage(b, 0, 0, bw, bh, gox + gi0 * CELL, goy + gj0 * CELL, bw * CELL, bh * CELL);
       if (key === rasterKey) {
-        ctx.drawImage(buf, Math.round(cx - size / 2), Math.round(cy - size / 2), size, size);
+        blit();
         return;
       }
       rasterKey = key;
@@ -358,8 +438,8 @@ export function AtlasGlobe({
         }
         px[cIdx[k]] = PAL[ink][cRim[k]];
       }
-      bctx.putImageData(img, 0, 0);
-      ctx.drawImage(buf, Math.round(cx - size / 2), Math.round(cy - size / 2), size, size);
+      bctx.putImageData(img, 0, 0, 0, 0, bw, bh);
+      blit();
     };
 
     // ── arcs: one per route out of home, rebuilt on selection ──
@@ -412,10 +492,15 @@ export function AtlasGlobe({
       return P;
     };
 
+    /** a point drawn at the zoomed scale still inside the disc it is
+        seen through */
+    const inLoupe = (x: number, y: number) => R === RL || (x - cx) ** 2 + (y - cy) ** 2 < (RL - 3) ** 2;
+
     // ── halo + dotted orbit: drawn once per size, then blitted ──
     let deco: HTMLCanvasElement | null = null;
     let decoKey = "";
     const paintDeco = () => {
+      const R = RL; // the halo and orbit belong to the disc, not the zoom
       const ext = Math.ceil(R * 1.3) + 16;
       const size = ext * 2;
       const key = `${R}|${dpr}`;
@@ -457,7 +542,7 @@ export function AtlasGlobe({
       R0 = Math.max(40, Math.floor(Math.min(w, h) / 2 - live.current.margin));
       cx = Math.round(w / 2);
       cy0 = Math.round(h / 2);
-      R = 0;
+      geoKey = "";
       decoKey = "";
       // resizing cleared the canvas: repaint now, inside the observer's
       // callback, so no blank frame reaches the screen
@@ -473,10 +558,25 @@ export function AtlasGlobe({
       id: -1,
       x0: 0,
       y0: 0,
-      lat0: 0,
-      lon0: 0,
+      /** where the pointer is now, canvas px (the zoom may change under a
+          finger that holds still: the grab is re-solved every frame) */
+      mx: 0,
+      my: 0,
+      /** the grabbed point on the planet, radians */
+      gLat: 0,
+      gLon: 0,
+      back: false,
       moved: false,
-      samples: [] as { t: number; x: number; y: number }[],
+      /** the camera after each move, for the release velocity */
+      samples: [] as { t: number; lat: number; lon: number }[],
+    };
+
+    const zoomTo = (z: number, cut = false) => {
+      zoom.t = z;
+      if (cut || reduced) {
+        zoom.v = z;
+        zoom.vel = 0;
+      }
     };
 
     const focus = (cut: boolean) => {
@@ -485,6 +585,7 @@ export function AtlasGlobe({
       const tLat = Math.min(LAT_MAX, Math.max(LAT_MIN, f.lat * RAD));
       const tLon = cam.lon + wrapPi(f.lon * RAD - cam.lon);
       cam.coasting = false;
+      zoomTo(zoomFor(p), cut);
       if (cut || reduced) {
         cam.lat = tLat;
         cam.lon = tLon;
@@ -510,10 +611,12 @@ export function AtlasGlobe({
     /** something outside the loop changed: paint on the next frame */
     let dirty = true;
 
+    const zooming = () => zoom.v !== zoom.t || zoom.vel !== 0;
     const busy = () =>
       drag.id !== -1 ||
       cam.tLat !== null ||
       cam.coasting ||
+      zooming() ||
       (!reduced && arcClock < ARC_DRAW + arcs.length * 0.07 + 0.2);
     const ambientOn = () => live.current.ambient && !reduced;
 
@@ -526,6 +629,15 @@ export function AtlasGlobe({
     }
 
     function step(dt: number) {
+      if (zooming()) {
+        const a = -OMEGA * OMEGA * (zoom.v - zoom.t) - 2 * OMEGA * zoom.vel;
+        zoom.vel += a * dt;
+        zoom.v += zoom.vel * dt;
+        if (Math.abs(zoom.v - zoom.t) < 1e-4 && Math.abs(zoom.vel) < 1e-3) {
+          zoom.v = zoom.t;
+          zoom.vel = 0;
+        }
+      }
       if (drag.id !== -1) return;
       if (cam.tLat !== null && cam.tLon !== null) {
         // critically damped spring toward the target, velocity carried in
@@ -590,6 +702,15 @@ export function AtlasGlobe({
       paintDeco();
       paintPlanet(amb);
 
+      // zoomed, routes and markers keep inside the loupe
+      const zoomedIn = zoomShown > 1.001;
+      if (zoomedIn) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, RL + 1, 0, Math.PI * 2);
+        ctx.clip();
+      }
+
       // routes out of home
       const homeSel = sel === HOME.id;
       for (const a of arcs) {
@@ -643,20 +764,26 @@ export function AtlasGlobe({
         }
       }
 
-      // markers
+      // markers: while zoomed in on a route, the places off it step back
       const blink = amb ? 0.62 + 0.38 * Math.sin(t * 4) : 1;
+      const close = zoomShown > 1.25;
       for (const place of live.current.places) {
         const p = project(toVecCached(place.lat, place.lon));
-        if (p.z <= 0.1) continue;
+        if (p.z <= 0.1 || !inLoupe(p.x, p.y)) continue;
         const qx = Math.round(p.x);
         const qy = Math.round(p.y);
         const isSel = place.id === sel;
         const isHover = place.id === hovered;
-        ctx.globalAlpha = Math.min(1, 0.35 + p.z);
+        const minor = close && !isSel && !isHover && !place.home;
+        ctx.globalAlpha = Math.min(1, 0.35 + p.z) * (minor ? 0.75 : 1);
         if (place.status === "want") {
           ctx.strokeStyle = isSel ? PAPER : "#8BE9FF";
           ctx.lineWidth = 2;
-          ctx.strokeRect(qx - 5, qy - 5, 10, 10);
+          if (minor) ctx.strokeRect(qx - 3, qy - 3, 6, 6);
+          else ctx.strokeRect(qx - 5, qy - 5, 10, 10);
+        } else if (minor) {
+          ctx.fillStyle = "#FFB86B";
+          ctx.fillRect(qx - 3, qy - 3, 6, 6);
         } else {
           ctx.fillStyle = place.home ? "#C6FF5E" : "#FFB86B";
           ctx.fillRect(qx - 4, qy - 4, 8, 8);
@@ -686,6 +813,8 @@ export function AtlasGlobe({
         }
       }
       ctx.globalAlpha = 1;
+      if (zoomedIn) ctx.restore();
+      updateTip();
 
       // readout
       const cb = live.current.onCamera;
@@ -714,6 +843,9 @@ export function AtlasGlobe({
         dirty = false;
         lastPaint = now;
         fit();
+        // a zoom easing out under a finger that holds still: keep the
+        // grabbed point under it
+        if (drag.id !== -1 && drag.moved) applyDrag();
         paint();
       }
       if (visible && pageVisible && (active || ambientOn())) raf = requestAnimationFrame(frame);
@@ -739,7 +871,7 @@ export function AtlasGlobe({
       let bestD = slop;
       for (const place of live.current.places) {
         const p = project(toVecCached(place.lat, place.lon));
-        if (p.z <= 0.1) continue;
+        if (p.z <= 0.1 || !inLoupe(p.x, p.y)) continue;
         const d = Math.hypot(p.x - mx, p.y - my);
         if (d < bestD) {
           bestD = d;
@@ -749,51 +881,170 @@ export function AtlasGlobe({
       return best;
     };
 
+    // ── the callout: a place's name beside its marker, or (until the
+    //    first drag) how to use the globe, by the pointer ──
+    const ptr = { x: 0, y: 0, in: false };
+    let hinted = false;
+    try {
+      hinted = sessionStorage.getItem("em-atlas-spun") === "1";
+    } catch {}
+    let tipText = "";
+    let tipW = 0;
+    let tipH = 0;
+    let tipPos = "";
+    let tipOn = false;
+    function showTip(text: string | null, x: number, y: number) {
+      if (!text) {
+        if (tipOn) {
+          tipOn = false;
+          delete tipEl.dataset.show;
+        }
+        return;
+      }
+      const el = tipEl;
+      if (text !== tipText) {
+        tipText = text;
+        el.textContent = text;
+        tipW = el.offsetWidth;
+        tipH = el.offsetHeight;
+      }
+      // up and to the right of what it names, kept inside the canvas
+      let tx = x + 12;
+      let ty = y - 12 - tipH;
+      if (tx + tipW > W - 4) tx = x - 12 - tipW;
+      if (ty < 4) ty = y + 12;
+      const pos = `${Math.round(tx)},${Math.round(ty)}`;
+      if (pos !== tipPos) {
+        tipPos = pos;
+        el.style.transform = `translate3d(${Math.round(tx)}px, ${Math.round(ty)}px, 0)`;
+      }
+      if (!tipOn) {
+        tipOn = true;
+        el.dataset.show = "";
+      }
+    }
+    function updateTip() {
+      if (drag.id !== -1 && drag.moved) return showTip(null, 0, 0);
+      if (hovered) {
+        const place = live.current.places.find((p) => p.id === hovered);
+        const p = place && project(toVecCached(place.lat, place.lon));
+        if (!place || !p || p.z <= 0.1 || !inLoupe(p.x, p.y)) return showTip(null, 0, 0);
+        const lang = document.documentElement.lang === "fr" ? "fr" : "en";
+        return showTip(place.name[lang], Math.round(p.x), Math.round(p.y));
+      }
+      if (ptr.in && !hinted && drag.id === -1) return showTip(live.current.hint, ptr.x, ptr.y);
+      showTip(null, 0, 0);
+    }
+
     const setHover = (id: string | null) => {
       if (id === hovered) return;
       hovered = id;
-      const name = id ? live.current.places.find((p) => p.id === id)?.name : null;
-      const lang = document.documentElement.lang === "fr" ? "fr" : "en";
-      wrap.dataset.cursor = name ? name[lang] : live.current.spinLabel;
       cvs.style.cursor = id ? "pointer" : "";
-      // the glass cursor reads its label on pointerover
-      cvs.dispatchEvent(new PointerEvent("pointerover", { bubbles: true, pointerType: "mouse" }));
       wake();
     };
 
+    // ── arcball: screen ↔ planet ──
+    /** the view-space unit vector under a canvas pixel (east, up, toward
+        the viewer), clamped to the rim outside the disc */
+    const viewAt = (mx: number, my: number): Vec3 => {
+      const e = (mx - cx) / R;
+      const y = (cy - my) / R;
+      const rr = e * e + y * y;
+      if (rr >= 1) {
+        const k = 1 / Math.sqrt(rr);
+        return [e * k, y * k, 0];
+      }
+      return [e, y, Math.sqrt(1 - rr)];
+    };
+    /** the planet point (radians) under a view vector, for the camera now */
+    const planetAt = ([e, y2, z2]: Vec3) => {
+      const ct = Math.cos(cam.lat);
+      const st = Math.sin(cam.lat);
+      const n = y2 * ct + z2 * st;
+      const x = -y2 * st + z2 * ct;
+      const cl = Math.cos(cam.lon);
+      const sl = Math.sin(cam.lon);
+      return { lat: Math.asin(Math.min(1, Math.max(-1, n))), lon: Math.atan2(x * sl + e * cl, x * cl - e * sl) };
+    };
+    /** Turn the camera so the grabbed point lands under the pointer: its
+        east offset fixes the longitude, the remaining angle the latitude
+        (which rubber-bands past its limits). A point can only ever appear
+        as far east as its own parallel reaches (a globe on a turntable
+        never rolls), so past ~76° of that the longitude carries on
+        linearly instead of stalling, with the latitude held. `back`: the
+        point was grabbed beyond the pole, on the far branch. */
+    function applyDrag() {
+      const c = viewAt(drag.mx, drag.my);
+      const cg = Math.cos(drag.gLat);
+      if (cg < 1e-3) return;
+      const S = 0.97;
+      const sr = c[0] / cg;
+      const sg = sr < 0 ? -1 : 1;
+      const as = Math.abs(sr);
+      const core = Math.asin(Math.min(as, S));
+      const ext = as <= S ? Math.asin(as) : core + (as - S);
+      const d = drag.back ? sg * Math.PI - sg * ext : sg * ext;
+      const dl = drag.back ? sg * Math.PI - sg * core : sg * core;
+      cam.lon += wrapPi(drag.gLon - d - cam.lon);
+      const lat = wrapPi(Math.atan2(c[2], c[1]) - Math.atan2(cg * Math.cos(dl), Math.sin(drag.gLat)));
+      cam.lat = Math.max(-LAT_HARD, Math.min(LAT_HARD, rubber(lat, LAT_MIN, LAT_MAX, 0.3)));
+    }
+
     const onDown = (e: PointerEvent) => {
       if (e.button !== 0 || drag.id !== -1) return;
-      drag.id = e.pointerId;
-      drag.x0 = e.clientX;
-      drag.y0 = e.clientY;
-      drag.lat0 = cam.lat;
-      drag.lon0 = cam.lon;
-      drag.moved = false;
-      drag.samples = [{ t: e.timeStamp, x: e.clientX, y: e.clientY }];
-      // catch it mid-flight
+      // catch it mid-flight, then take hold of the point under the finger
       cam.tLat = cam.tLon = null;
       cam.coasting = false;
       cam.vLat = cam.vLon = 0;
+      const r = cvs.getBoundingClientRect();
+      drag.id = e.pointerId;
+      drag.x0 = e.clientX;
+      drag.y0 = e.clientY;
+      drag.mx = e.clientX - r.left;
+      drag.my = e.clientY - r.top;
+      const g = planetAt(viewAt(drag.mx, drag.my));
+      drag.gLat = g.lat;
+      drag.gLon = g.lon;
+      drag.back = Math.cos(g.lon - cam.lon) < 0;
+      drag.moved = false;
+      drag.samples = [{ t: e.timeStamp, lat: cam.lat, lon: cam.lon }];
       lastInteract = t;
       cvs.setPointerCapture(e.pointerId);
       wrap.dataset.grabbing = "";
       wake();
     };
     const onMove = (e: PointerEvent) => {
+      const r = cvs.getBoundingClientRect();
+      const mx = e.clientX - r.left;
+      const my = e.clientY - r.top;
       if (drag.id !== e.pointerId) {
-        if (e.pointerType === "mouse" && drag.id === -1) setHover(hitTest(e.clientX, e.clientY, 16));
+        if (e.pointerType === "mouse" && drag.id === -1) {
+          ptr.x = Math.round(mx);
+          ptr.y = Math.round(my);
+          ptr.in = true;
+          setHover(hitTest(e.clientX, e.clientY, 16));
+          updateTip();
+        }
         return;
       }
-      const dx = e.clientX - drag.x0;
-      const dy = e.clientY - drag.y0;
-      if (!drag.moved && Math.hypot(dx, dy) > 4) {
+      drag.mx = mx;
+      drag.my = my;
+      if (!drag.moved) {
+        if (Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) <= 4) return;
         drag.moved = true;
         setHover(null);
+        // taking hold of the globe: the framing of a route gives way to it
+        zoomTo(1);
+        if (!hinted) {
+          hinted = true;
+          try {
+            sessionStorage.setItem("em-atlas-spun", "1");
+          } catch {}
+        }
+        updateTip();
       }
-      // 1:1 at the centre of the disc: a pixel of travel is 1/R radians
-      cam.lon = drag.lon0 - dx / R;
-      cam.lat = Math.max(-LAT_HARD, Math.min(LAT_HARD, rubber(drag.lat0 + dy / R, LAT_MIN, LAT_MAX, 0.3)));
-      drag.samples.push({ t: e.timeStamp, x: e.clientX, y: e.clientY });
+      applyDrag();
+      drag.samples.push({ t: e.timeStamp, lat: cam.lat, lon: cam.lon });
       if (drag.samples.length > 12) drag.samples.shift();
       lastInteract = t;
       wake();
@@ -812,7 +1063,8 @@ export function AtlasGlobe({
         wake();
         return;
       }
-      // velocity from the last ~80ms of the hand, handed to the momentum
+      // the surface's own angular velocity over the last ~80ms of the hand
+      // (true to the finger wherever it held the planet), handed on
       const s = drag.samples;
       const lastS = s[s.length - 1];
       let first = lastS;
@@ -822,10 +1074,9 @@ export function AtlasGlobe({
       }
       const dtS = Math.max(8, lastS.t - first.t) / 1000;
       const stale = e.timeStamp - lastS.t > 60;
-      const vx = stale ? 0 : (lastS.x - first.x) / dtS;
-      const vy = stale ? 0 : (lastS.y - first.y) / dtS;
-      cam.vLon = reduced ? 0 : -vx / R;
-      cam.vLat = reduced ? 0 : vy / R;
+      const cap = (v: number) => Math.max(-SPIN_MAX, Math.min(SPIN_MAX, v));
+      cam.vLon = reduced || stale ? 0 : cap((lastS.lon - first.lon) / dtS);
+      cam.vLat = reduced || stale ? 0 : cap((lastS.lat - first.lat) / dtS);
       cam.coasting = true;
       if (reduced) {
         cam.lat = Math.min(LAT_MAX, Math.max(LAT_MIN, cam.lat));
@@ -835,7 +1086,11 @@ export function AtlasGlobe({
     };
     const onUp = (e: PointerEvent) => release(e, true);
     const onCancel = (e: PointerEvent) => release(e, false);
-    const onLeave = () => setHover(null);
+    const onLeave = () => {
+      ptr.in = false;
+      setHover(null);
+      updateTip();
+    };
 
     // keyboard: arrows nudge the globe on the same spring
     const onKey = (e: KeyboardEvent) => {
@@ -850,6 +1105,7 @@ export function AtlasGlobe({
       else return;
       e.preventDefault();
       lastInteract = t;
+      zoomTo(1);
       const fromLat = cam.tLat ?? cam.lat;
       const fromLon = cam.tLon ?? cam.lon;
       cam.coasting = false;
@@ -899,7 +1155,6 @@ export function AtlasGlobe({
 
     buildArcs();
     layout();
-    wrap.dataset.cursor = live.current.spinLabel;
     api.current = {
       focus,
       wake,
@@ -942,8 +1197,12 @@ export function AtlasGlobe({
       aria-roledescription="globe"
       aria-label={label}
       tabIndex={0}
+      // the shell's cursor keeps to its dot here: a label pill would hide
+      // the very markers you aim at (the callout names them instead)
+      data-cursor-hide=""
     >
       <canvas ref={canvasRef} className="app-atlas-globe-canvas" aria-hidden />
+      <span ref={tipRef} className="app-atlas-globe-tip" aria-hidden />
     </div>
   );
 }

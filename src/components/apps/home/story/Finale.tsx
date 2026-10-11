@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { AnimatePresence, m, useInView } from "motion/react";
 import { useI18n } from "@/i18n/client";
 import { Glass } from "@/components/os/Glass";
@@ -10,7 +10,7 @@ import { GLYPH_CHAT, GLYPH_CODE, GLYPH_PLAY, GLYPH_X, PixelGlyph, type Cells } f
 import { PixelLabel } from "@/components/PixelLabel";
 import { useToast } from "@/components/Toasts";
 import { PressAnchor, PressButton } from "@/components/ui/Pressable";
-import { useFinePointer, useReduced } from "@/hooks/env";
+import { useFinePointer, useIsMac, useReduced } from "@/hooks/env";
 import { SOCIALS } from "@/lib/places";
 import { spring } from "@/lib/motion";
 import { useSound } from "@/lib/sound";
@@ -39,13 +39,34 @@ export function Finale() {
   const { notify } = useToast();
   const { blip } = useSound();
   const [copied, setCopied] = useState(false);
-  const [off, setOff] = useState(false);
   const timer = useRef(0);
+  const addrRef = useRef<HTMLAnchorElement>(null);
+  const fine = useFinePointer();
+  const mac = useIsMac();
 
   useEffect(() => () => window.clearTimeout(timer.current), []);
 
-  const copy = () => {
-    navigator.clipboard?.writeText(SOCIALS.email).catch(() => {});
+  const copy = async () => {
+    let ok = false;
+    try {
+      if (!navigator.clipboard) throw new Error("no clipboard");
+      await navigator.clipboard.writeText(SOCIALS.email);
+      ok = true;
+    } catch {
+      // insecure context or denied: hand the address over selected instead
+    }
+    if (!ok) {
+      const addr = addrRef.current;
+      const sel = window.getSelection();
+      if (addr && sel) {
+        const range = document.createRange();
+        range.selectNodeContents(addr);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+      notify(fine ? fill(s.copyFallback, { key: mac ? "⌘C" : "Ctrl+C" }) : s.copyFallbackTouch);
+      return;
+    }
     notify(s.copiedToast);
     blip("success");
     setCopied(true);
@@ -73,10 +94,10 @@ export function Finale() {
         <p className="app-story-fin-sub">{s.sub}</p>
 
         <Glass thickness="regular" className="app-story-fin-mail">
-          <a href={`mailto:${SOCIALS.email}`} className="app-story-fin-addr" aria-label={fill(s.write, { email: SOCIALS.email })}>
+          <a ref={addrRef} href={`mailto:${SOCIALS.email}`} className="app-story-fin-addr" aria-label={fill(s.write, { email: SOCIALS.email })}>
             {SOCIALS.email}
           </a>
-          <PressButton className="app-story-fin-copy" onClick={copy}>
+          <PressButton className="app-story-fin-copy" onClick={() => void copy()}>
             <AnimatePresence mode="popLayout" initial={false}>
               <m.span
                 key={copied ? "y" : "n"}
@@ -112,21 +133,9 @@ export function Finale() {
           <EmosMark size={14} />
           {s.made}
         </span>
-        <span className="app-story-foot-actions">
-          <button
-            type="button"
-            className="app-story-foot-btn"
-            aria-label={s.shutDownLabel}
-            aria-haspopup="dialog"
-            onClick={() => {
-              blip("close");
-              setOff(true);
-            }}
-          >
-            <PowerGlyph size={12} />
-            {s.shutDown}
-          </button>
-          <button type="button" className="app-story-foot-btn" onClick={reboot} aria-label={s.restartLabel}>
+        <div className="app-story-foot-actions">
+          <ShutDown />
+          <PressButton className="app-story-foot-btn" onClick={reboot} aria-label={s.restartLabel}>
             <svg width="12" height="12" viewBox="0 0 7 7" shapeRendering="crispEdges" fill="currentColor" aria-hidden>
               <rect x="2" y="0" width="3" height="1" />
               <rect x="6" y="0" width="1" height="3" />
@@ -140,8 +149,8 @@ export function Finale() {
               <rect x="2" y="6" width="3" height="1" />
             </svg>
             {s.restart}
-          </button>
-          <button type="button" className="app-story-foot-btn" onClick={top}>
+          </PressButton>
+          <PressButton className="app-story-foot-btn" onClick={top}>
             {s.top}
             <svg width="11" height="11" viewBox="0 0 7 7" shapeRendering="crispEdges" fill="currentColor" aria-hidden>
               <rect x="3" y="1" width="1" height="6" />
@@ -150,11 +159,30 @@ export function Finale() {
               <rect x="1" y="3" width="1" height="1" />
               <rect x="5" y="3" width="1" height="1" />
             </svg>
-          </button>
-        </span>
+          </PressButton>
+        </div>
       </footer>
-      {off && <PowerOff onDone={() => setOff(false)} />}
     </section>
+  );
+}
+
+/**
+ * The Shut down control and its power-off screen, on their own: turning
+ * emOS off re-renders this and nothing else, so the click reaches the
+ * modal (and the fold) without a long task in between.
+ */
+function ShutDown() {
+  const { t } = useI18n();
+  const s = t.story.finale;
+  const [off, setOff] = useState(false);
+  return (
+    <>
+      <PressButton className="app-story-foot-btn" aria-label={s.shutDownLabel} aria-haspopup="dialog" onClick={() => setOff(true)}>
+        <PowerGlyph size={12} />
+        {s.shutDown}
+      </PressButton>
+      <PowerOff open={off} onDone={() => setOff(false)} />
+    </>
   );
 }
 
@@ -166,7 +194,7 @@ const REST = 600;
  * (a soft gaussian of the distance), easing back to rest when it leaves.
  * Words reserve their boldest width so the line never rewraps.
  */
-function WeightLine({ text }: { text: string }) {
+const WeightLine = memo(function WeightLine({ text }: { text: string }) {
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, amount: 0.5 });
   const fine = useFinePointer();
@@ -268,4 +296,4 @@ function WeightLine({ text }: { text: string }) {
       </span>
     </>
   );
-}
+});

@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import type { SiteData } from "@/lib/data";
 import type { SpotifyStatus } from "@/lib/spotify";
 import { useI18n } from "@/i18n/client";
 import { useHydrated } from "@/hooks/env";
+import { useSpotifyStatus } from "@/hooks/useSpotifyStatus";
 import { SOCIALS } from "@/lib/places";
 import { timeAgo } from "@/lib/format";
 import { PixelGlyph, type Cells } from "@/components/glyphs";
@@ -23,35 +23,10 @@ type Net = {
   live?: React.ReactNode;
 };
 
-/**
- * The track line, mounted only while this mailbox is open: it asks for the
- * live status as it opens (not 30s later), then every 30s while visible.
- */
+/** The track line, mounted (and polling) only while this mailbox is open. */
 function SpotifyLive({ seed }: { seed: SpotifyStatus | null }) {
   const { t } = useI18n();
-  const [status, setStatus] = useState(seed);
-  useEffect(() => {
-    let alive = true;
-    const load = () => {
-      if (document.hidden) return;
-      fetch("/api/spotify/status")
-        .then((r) => (r.ok ? r.json() : null))
-        .then((j: SpotifyStatus | { disabled: true } | null) => {
-          if (alive && j && !("disabled" in j)) setStatus(j);
-        })
-        .catch(() => {});
-    };
-    load();
-    const id = window.setInterval(load, 30_000);
-    document.addEventListener("visibilitychange", load);
-    return () => {
-      alive = false;
-      window.clearInterval(id);
-      document.removeEventListener("visibilitychange", load);
-    };
-  }, []);
-  const track = status?.now ?? status?.recent ?? null;
-  const playing = Boolean(status?.now?.playing);
+  const { track, playing } = useSpotifyStatus(seed);
   if (!track) return null;
   const name = `${track.title} · ${track.artist}`;
   return (

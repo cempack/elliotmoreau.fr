@@ -15,6 +15,7 @@ const en = {
   copyAddress: "Copy address",
   copyAddressLabel: "Copy {email}",
   draftsDir: "drafts",
+  elsewhereDir: "elsewhere",
 
   /* compose */
   composeEyebrow: "New message",
@@ -65,18 +66,19 @@ const en = {
   flying: "On its way to your mail app…",
 
   /* after sending */
-  sentEyebrow: "Sent to your mail app",
+  sentEyebrow: "One last step",
   sentTitle: "Over to your mail app.",
   sentBody: "It should have opened with your message filled in. Press send there and it’s on its way to me.",
-  readyEyebrow: "Sealed",
+  readyEyebrow: "One click left",
   readyTitle: "Sealed and ready.",
-  readyBody: "Open it in your mail app to send it. Everything is already filled in.",
+  readyBody: "Your browser needs one more click to open your mail app. Everything is already filled in.",
   openMail: "Open mail app",
   openAgain: "Open it again",
   nothingOpened: "Nothing opened? Write to {email} from anywhere.",
   editMessage: "Edit message",
   newMessage: "New message",
-  outbox: "Out for delivery",
+  outbox: "Handed to your mail app",
+  waiting: "In the outbox",
   noSubject: "No subject",
 
   /* elsewhere */
@@ -138,6 +140,7 @@ const fr: typeof en = {
   copyAddress: "Copier l’adresse",
   copyAddressLabel: "Copier {email}",
   draftsDir: "brouillons",
+  elsewhereDir: "ailleurs",
 
   composeEyebrow: "Nouveau message",
   composeTitle: "Écrivez-moi.",
@@ -186,18 +189,19 @@ const fr: typeof en = {
   writeFirst: "Écrivez d’abord un mot",
   flying: "En route vers votre messagerie…",
 
-  sentEyebrow: "Transmis à votre messagerie",
+  sentEyebrow: "Une dernière étape",
   sentTitle: "Direction votre messagerie.",
   sentBody: "Elle a dû s’ouvrir avec votre message déjà rempli. Appuyez sur Envoyer, et il est en route.",
-  readyEyebrow: "Cachetée",
+  readyEyebrow: "Plus qu’un clic",
   readyTitle: "Cachetée, prête à partir.",
-  readyBody: "Ouvrez-la dans votre messagerie pour l’envoyer. Tout est déjà rempli.",
+  readyBody: "Votre navigateur demande un clic de plus pour ouvrir votre messagerie. Tout est déjà rempli.",
   openMail: "Ouvrir la messagerie",
   openAgain: "La rouvrir",
   nothingOpened: "Rien ne s’est ouvert ? Écrivez à {email} depuis n’importe où.",
   editMessage: "Modifier le message",
   newMessage: "Nouveau message",
-  outbox: "En cours d’acheminement",
+  outbox: "Remise à votre messagerie",
+  waiting: "Dans la boîte d’envoi",
   noSubject: "Sans objet",
 
   elsewhereEyebrow: "{n} profils",

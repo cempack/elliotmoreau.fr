@@ -54,11 +54,17 @@ export function NowApp({ data }: { data: SiteData }) {
   const arrangeRef = useRef<HTMLButtonElement>(null);
   const [said, setSaid] = useState("");
 
-  // Escape leaves Arrange mode (a carried widget handles its own Escape first)
+  // Escape leaves Arrange mode. A carried widget handles its own Escape
+  // first, and an Escape meant for something else (Spotlight, a dialog, the
+  // Terminal) only closes that one thing.
   useEffect(() => {
     if (!arrange) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !e.defaultPrevented) setArrange(false);
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      const from = e.target instanceof Element ? e.target : null;
+      if (from?.closest("dialog,[role=dialog],[role=alertdialog],[aria-modal=true],.os-term")) return;
+      if (document.querySelector("dialog[open],[aria-modal=true]")) return;
+      setArrange(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);

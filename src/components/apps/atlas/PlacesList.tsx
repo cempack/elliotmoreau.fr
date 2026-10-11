@@ -8,10 +8,12 @@ import { BEEN, NEXT, distanceKm } from "./geo";
 import { useKm } from "./fmt";
 
 /**
- * Been (home first, marked) and Next, as one keyboard path: a single tab
- * stop (the selected row, roving tabindex), then ↑/↓ move the selection
- * (and the globe with it), Home/End jump to the ends. The active row
- * carries a thumb that springs between rows.
+ * Been (home first, marked) and Next, as one single-select listbox with
+ * two labelled groups, so a screen reader announces "option, selected, 3
+ * of 10" and the arrow keys it implies: one tab stop (the selected option,
+ * roving tabindex), then ↑/↓ move the selection (and the globe with it),
+ * Home/End jump to the ends. The active row carries a thumb that springs
+ * between rows.
  */
 export function PlacesList({
   selectedId,
@@ -20,7 +22,8 @@ export function PlacesList({
 }: {
   selectedId: string;
   onSelect: (id: string) => void;
-  /** layoutId for the selection thumb (unique per mounted list) */
+  /** layoutId for the selection thumb, also the prefix of the group
+      label ids (unique per mounted list) */
   thumbId: string;
 }) {
   const { t, lang } = useI18n();
@@ -46,11 +49,12 @@ export function PlacesList({
     const active = p.id === selectedId;
     const tone = p.home ? "home" : p.status;
     return (
-      <li key={p.id}>
+      <li key={p.id} role="none">
         <button
           type="button"
+          role="option"
           data-place={p.id}
-          aria-pressed={active}
+          aria-selected={active}
           tabIndex={active ? 0 : -1}
           data-active={active || undefined}
           className="app-atlas-row"
@@ -64,7 +68,7 @@ export function PlacesList({
           ) : (
             <span className="app-atlas-row-km tabular">
               {fmt(distanceKm(HOME, p))}
-              <span className="app-atlas-row-unit"> {a.km}</span>
+              <span className="app-atlas-row-unit">{"\u00a0"}{a.km}</span>
             </span>
           )}
         </button>
@@ -72,22 +76,24 @@ export function PlacesList({
     );
   };
 
+  const group = (key: "been" | "next", places: Place[]) => (
+    <div role="group" aria-labelledby={`${thumbId}-${key}`} className="app-atlas-places-group">
+      <p id={`${thumbId}-${key}`} className="app-atlas-places-h" role="presentation">
+        <span>{a[key]}</span>
+        <span className="app-atlas-places-n tabular" aria-hidden>
+          {places.length}
+        </span>
+      </p>
+      <ul className="app-atlas-places-list" role="none">
+        {places.map(row)}
+      </ul>
+    </div>
+  );
+
   return (
-    <nav className="app-atlas-places" aria-label={a.placesLabel} onKeyDown={onKeyDown}>
-      <h2 className="app-atlas-places-h">
-        <span>{a.been}</span>
-        <span className="app-atlas-places-n tabular">{BEEN.length}</span>
-      </h2>
-      <ul className="app-atlas-places-list" role="list">
-        {been.map(row)}
-      </ul>
-      <h2 className="app-atlas-places-h">
-        <span>{a.next}</span>
-        <span className="app-atlas-places-n tabular">{NEXT.length}</span>
-      </h2>
-      <ul className="app-atlas-places-list" role="list">
-        {NEXT.map(row)}
-      </ul>
-    </nav>
+    <div className="app-atlas-places" role="listbox" aria-label={a.placesLabel} onKeyDown={onKeyDown}>
+      {group("been", been)}
+      {group("next", NEXT)}
+    </div>
   );
 }

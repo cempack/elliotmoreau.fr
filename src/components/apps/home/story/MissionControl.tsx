@@ -33,6 +33,18 @@ const WINDOWS: { id: WinId; flight: number }[] = [
   { id: "atlas", flight: 3 },
   { id: "contact", flight: 4 },
 ];
+/**
+ * Narrow pinned screens (1024–1199px): the mini player covers most of the
+ * bottom-right window, so Now takes that corner (the player sits over its
+ * music card, the very track it shows) and Mail moves up to the top row.
+ */
+const WINDOWS_COMPACT: { id: WinId; flight: number }[] = [
+  { id: "work", flight: 0 },
+  { id: "writing", flight: 1 },
+  { id: "contact", flight: 2 },
+  { id: "atlas", flight: 3 },
+  { id: "now", flight: 4 },
+];
 
 /** Where the pile sits in depth, and when the flight runs (scroll progress). */
 const PILE_SCALE = 0.3;
@@ -64,10 +76,12 @@ export function MissionControl({ music }: { music: Music }) {
   const reduced = useReduced();
   const roomy = useMedia("(min-width: 1024px) and (min-height: 740px)");
   const pinned = roomy && !reduced;
+  const compact = useMedia("(max-width: 1199px)") && pinned;
+  const order = compact ? WINDOWS_COMPACT : WINDOWS;
 
   const wrapRef = useRef<HTMLElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
-  const [offsets, setOffsets] = useState<Offset[]>([]);
+  const [offsets, setOffsets] = useState<Partial<Record<WinId, Offset>>>({});
 
   const { scrollYProgress: p } = useScroll({ target: wrapRef, offset: ["start end", "end end"] });
   // function transforms throughout: range transforms of a scroll progress
@@ -96,22 +110,26 @@ export function MissionControl({ music }: { music: Music }) {
     const measure = () => {
       const gw = grid.clientWidth / 2;
       const gh = grid.clientHeight / 2;
-      const next = Array.from(grid.children as HTMLCollectionOf<HTMLElement>).map((el) => ({
-        x: gw - (el.offsetLeft + el.offsetWidth / 2),
-        y: gh - (el.offsetTop + el.offsetHeight / 2),
-      }));
+      const next: Partial<Record<WinId, Offset>> = {};
+      for (const el of Array.from(grid.children as HTMLCollectionOf<HTMLElement>)) {
+        next[el.dataset.app as WinId] = {
+          x: gw - (el.offsetLeft + el.offsetWidth / 2),
+          y: gh - (el.offsetTop + el.offsetHeight / 2),
+        };
+      }
       setOffsets(next);
     };
     const ro = new ResizeObserver(measure);
     ro.observe(grid);
     return () => ro.disconnect();
-  }, [pinned]);
+  }, [pinned, compact]);
 
   return (
     <section
       ref={wrapRef}
       className="app-story-mc"
       data-mode={pinned ? "pin" : "flow"}
+      data-layout={compact ? "compact" : undefined}
       data-veil="0.5"
       aria-labelledby="story-mc-title"
     >
@@ -126,9 +144,9 @@ export function MissionControl({ music }: { music: Music }) {
           />
         </m.div>
         <div ref={gridRef} className="app-story-mc-grid" onFocusCapture={pinned ? assemble : undefined}>
-          {WINDOWS.map((w) =>
+          {order.map((w) =>
             pinned ? (
-              <FlyingWindow key={w.id} id={w.id} flight={w.flight} p={p} offset={offsets[WINDOWS.indexOf(w)]} music={music} />
+              <FlyingWindow key={w.id} id={w.id} flight={w.flight} p={p} offset={offsets[w.id]} music={music} />
             ) : (
               <m.div
                 key={w.id}

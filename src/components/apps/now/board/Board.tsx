@@ -82,8 +82,13 @@ type Drag = {
 
 /* ──────────────────────────── constants ──────────────────────────── */
 
-/** Drags never start on something meant to be clicked or typed into. */
-const INTERACTIVE = 'a,button,input,select,textarea,label,summary,[role="button"],[role="link"],[contenteditable="true"],[data-no-drag]';
+/**
+ * Drags never start on a real control. Links are not in the list: a press
+ * on one waits like any other press (the move threshold with a mouse, the
+ * hold on touch), so a click still clicks and a drag lifts the widget. The
+ * native link drag is disabled on the board.
+ */
+const CONTROLS = 'button,input,select,textarea,label,summary,[role="button"],[contenteditable="true"],[data-no-drag]';
 /** touch: how long a finger rests before the widget lifts */
 const HOLD_MS = 320;
 /** touch: movement that turns a pending hold into a scroll */
@@ -161,7 +166,7 @@ export type BoardState = ReturnType<typeof useBoard>;
 /**
  * A dashboard of widgets you rearrange with your hands.
  *
- * - Mouse: press anywhere on a widget (not on a link) and it gives under
+ * - Mouse: press anywhere on a widget (links included) and it gives under
  *   the finger; past a few px it lifts and follows 1:1 from the grab point,
  *   tilting a little with its velocity like a card in the hand.
  * - Touch: touch and hold to lift (scrolling stays native), or drag the
@@ -266,13 +271,28 @@ export function Board({
       const d = drag.current;
       if (!d || !d.lifted) return;
       const it = items.current.get(d.id);
-      // auto-scroll when the finger nears the top (under the title bar) or the Dock
-      const bar = document.querySelector(".os-win-bar");
-      const top = (bar?.getBoundingClientRect().bottom ?? 100) + 56;
-      const bottom = window.innerHeight - (window.innerWidth < 768 ? 96 : 120);
+      // auto-scroll when the finger, or the edge of the widget in the hand,
+      // nears the title bar or the Dock: the card never slides under them
+      const barBottom = document.querySelector(".os-win-bar")?.getBoundingClientRect().bottom ?? 100;
+      const dock = window.innerHeight - (window.innerWidth < 768 ? 96 : 120);
+      const top = barBottom + 56;
+      const ease = (over: number) => Math.min(1, over / 72) * 16;
       let v = 0;
-      if (d.py < top) v = -Math.min(1, (top - d.py) / 72) * 16;
-      else if (d.py > bottom) v = Math.min(1, (d.py - bottom) / 72) * 16;
+      if (d.py < top) v = -ease(top - d.py);
+      else if (d.py > dock) v = ease(d.py - dock);
+      if (it) {
+        const r = it.el.getBoundingClientRect();
+        const lo = barBottom + 12;
+        const hi = dock + 24;
+        // only when the card fits between them (or the two edges would
+        // fight) and the hand is carrying it that way (a card picked up
+        // half under the bar doesn't scroll the page by itself)
+        if (r.height < hi - lo) {
+          const maxY = document.documentElement.scrollHeight - window.innerHeight;
+          if (r.top < lo && d.py < d.py0 - 8 && window.scrollY > 0) v = Math.min(v, -ease(lo - r.top));
+          else if (r.bottom > hi && d.py > d.py0 + 8 && window.scrollY < maxY - 1) v = Math.max(v, ease(r.bottom - hi));
+        }
+      }
       if (v) {
         const lenis = lenisRef.current;
         const y = window.scrollY + v;
@@ -478,6 +498,9 @@ export function Board({
     for (const [id, x] of items.current) els.set(id, x.el);
     d.metrics = measure(boardEl, els);
     d.startOrder = [...liveRef.current];
+    try {
+      boardEl.setPointerCapture(d.pid);
+    } catch {}
     it.el.dataset.lifted = "";
     if (reducedRef.current) it.scale.set(1.02);
     else animate(it.scale, 1.035, spring.snappy);
@@ -490,7 +513,7 @@ export function Board({
   const onItemPointerDown = useCallback(
     (id: string, e: React.PointerEvent, viaGrip: boolean) => {
       if (e.button !== 0 || drag.current || carry) return;
-      if (!viaGrip && (e.target as Element).closest(INTERACTIVE)) return;
+      if (!viaGrip && (e.target as Element).closest(CONTROLS)) return;
       const it = items.current.get(id);
       const boardEl = boardRef.current;
       if (!it || !boardEl) return;
@@ -531,9 +554,8 @@ export function Board({
         lastSwap: 0,
         startOrder: [...liveRef.current],
       };
-      try {
-        boardEl.setPointerCapture(e.pointerId);
-      } catch {}
+      // capture only once it lifts: a captured press would end its click on
+      // the board instead of the link under the finger
       // respond on pointer-down: the widget gives a little under the finger
       if (!reducedRef.current) animate(it.scale, viaGrip ? 1 : 0.985, spring.snappy);
       if (viaGrip) lift();
@@ -663,6 +685,20 @@ export function Board({
     };
   }, [carry, applyDrag, maybeReorder, end]);
 
+  // a press released off the board before it lifted (never captured)
+  useEffect(() => {
+    const onUp = (e: PointerEvent) => {
+      const d = drag.current;
+      if (d && !d.lifted && e.pointerId === d.pid) end(e);
+    };
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+    return () => {
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+    };
+  }, [end]);
+
   useEffect(
     () => () => {
       cancelAnimationFrame(rafRef.current);
@@ -772,6 +808,7 @@ export function Board({
         data-carrying={carry ? carry.mode : undefined}
         onPointerMove={onPointerMove}
         onPointerUp={(e) => end(e)}
+        onDragStart={(e) => e.preventDefault()}
         onPointerCancel={(e) => end(e, !drag.current?.lifted)}
         onLostPointerCapture={(e) => {
           if (drag.current && e.pointerId === drag.current.pid) end(e);

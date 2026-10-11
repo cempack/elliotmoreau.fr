@@ -46,7 +46,7 @@ html[data-sky="dusk"] .app-home-scene {
   --app-home-l3: var(--color-label-2);
 }
 html[data-sky="day"] .app-home-hello-glass {
-  --os-glass-tint: rgba(8, 18, 36, 0.7);
+  --os-glass-tint: rgba(8, 18, 36, 0.74);
 }
 html[data-sky="dawn"] .app-home-hello-glass,
 html[data-sky="dusk"] .app-home-hello-glass {
@@ -100,11 +100,46 @@ html[data-sky="dusk"] .app-home-widget-glass {
   translate: calc(-50% + var(--app-home-hero-x)) calc(-50% + 4px * var(--app-home-k));
   scale: var(--app-home-k);
 }
+/* the name (Wordmark.tsx): a perspective box, the drifting stage, and on
+   it the still face and the live canvas on the very same cells */
+.app-home-word {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  perspective: 900px;
+}
+.app-home-word-stage {
+  position: absolute;
+  inset: 0;
+  transform: rotateX(var(--app-home-rx, 0deg)) rotateY(var(--app-home-ry, 0deg));
+  transform-style: preserve-3d;
+}
+.app-home-word-still,
+.app-home-word-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.app-home-word-still--phone {
+  display: none;
+}
 /* the live field is a 1×-DPR canvas that is always resampled (stage
    scale, the drift's perspective): nearest-neighbour keeps every cell a
    hard pixel against the smooth glass instead of a soft bilinear blur */
-.app-home-hero canvas {
+.app-home-word-canvas {
+  opacity: 0;
   image-rendering: pixelated;
+}
+/* hand-over: the canvas has painted its first frame under the still
+   face (the same cells), which then fades into the decrypt entrance */
+.app-home-word-stage[data-on] .app-home-word-canvas {
+  opacity: 1;
+}
+.app-home-word-stage[data-on] .app-home-word-still {
+  opacity: 0;
+  transition: opacity 0.32s var(--ease-out-quint);
 }
 /* only the letters replay: the field around them is desktop */
 .app-home-hero > * {
@@ -146,8 +181,14 @@ html[data-sky="dusk"] .app-home-widget-glass {
   display: none;
 }
 .app-home-hello-slot {
+  position: relative;
+  z-index: 1; /* over the widgets beside it, whatever the DOM order */
   grid-row: 1;
   grid-column: 2;
+}
+/* hello.txt held or flying home: the whole desk rises over the icons */
+.app-home-scene:has(.app-home-hello[data-lifted]) .app-home-desk {
+  z-index: 5;
 }
 
 /* ───────────────────────────── widgets ───────────────────────────── */
@@ -279,22 +320,35 @@ html[data-sky="dusk"] .app-home-widget-glass {
   line-height: 1.2;
   white-space: nowrap;
 }
+/* the legend for the ion tick on the dial: "■ you" over "−6 h", tucked
+   in the corner the ring leaves free */
 .app-home-clock-you {
   position: absolute !important;
-  top: 12px;
-  right: 13px;
+  top: 11px;
+  right: 12px;
   display: flex;
-  align-items: center;
-  gap: 5px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
   color: var(--color-ion);
   font-family: var(--font-mono);
   font-size: 0.75rem;
   line-height: 1;
 }
+.app-home-clock-you-k {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 .app-home-clock-you i {
-  width: 4px;
+  width: 8px;
   height: 4px;
   background: currentColor;
+}
+.app-home-clock-pin {
+  flex: none;
+  align-self: center;
+  color: var(--color-label-2);
 }
 
 /* latest post */
@@ -366,70 +420,63 @@ html[data-sky="dusk"] .app-home-widget-glass {
   font-weight: 500;
 }
 
-/* now playing (phones) */
-.app-home-widget--music {
+/* the last push (phones, beside the clock): the commit message is the
+   content, in the system face */
+.app-home-widget--push {
   display: none;
-  padding: 14px;
-}
-.app-home-music {
-  display: flex;
   flex-direction: column;
-  height: 100%;
+  padding: 15px 15px 13px;
 }
-.app-home-music-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-}
-.app-home-music-art {
-  display: block;
-  width: 58px;
-  height: 58px;
-  overflow: hidden;
-  border-radius: 12px;
-  background: var(--color-ink-800);
-  box-shadow:
-    0 8px 18px -10px rgba(0, 0, 0, 0.8),
-    inset 0 0 0 1px var(--hairline);
-}
-.app-home-music-art img,
-.app-home-music-planet {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.app-home-music-state {
-  margin-top: auto;
-  color: var(--app-home-l3);
-  font-size: 0.75rem;
-  line-height: 1.2;
-}
-.app-home-music-state[data-live] {
+.app-home-push-glyph {
+  flex: none;
   color: var(--color-signal);
 }
-.app-home-music-title {
+.app-home-push {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  margin-top: 12px;
+}
+.app-home-push-msg {
   display: -webkit-box;
   overflow: hidden;
-  margin-top: 3px;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  line-height: 1.2;
+  color: var(--color-label);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.42;
   letter-spacing: -0.01em;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 4;
 }
-.app-home-music-artist {
-  overflow: hidden;
-  margin-top: 2px;
-  color: var(--color-label-2);
-  font-size: 0.8125rem;
-  line-height: 1.25;
+.app-home-push-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 8px;
+  color: var(--app-home-l3);
+  font-size: 0.75rem;
+  line-height: 1;
   white-space: nowrap;
+}
+.app-home-push-repo {
+  min-width: 0;
+  overflow: hidden;
   text-overflow: ellipsis;
 }
-.app-home-music--empty .app-home-music-art {
-  margin-bottom: auto;
+.app-home-push-ago {
+  flex: none;
+  color: var(--color-ion);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.app-home-push--empty .app-home-push-msg {
+  color: var(--color-label-2);
+  font-family: inherit;
+  font-size: 0.8125rem;
 }
 
 /* ───────────────────────────── hello.txt ───────────────────────────── */
@@ -450,6 +497,45 @@ html[data-sky="dusk"] .app-home-widget-glass {
 }
 .app-home-hello[data-dragging] {
   will-change: transform;
+}
+/* picked up: a longer, softer shadow fades in under it (opacity only),
+   the light source unchanged, so it reads as height, not as a new window */
+.app-home-hello::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  box-shadow:
+    0 48px 90px -28px rgba(0, 0, 0, 0.78),
+    0 18px 36px -18px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s var(--ease-out-quint);
+}
+.app-home-hello[data-lifted]::before {
+  opacity: 1;
+  transition-duration: 0.18s;
+}
+/* over the living name: the glass deepens (and Glass stops refracting),
+   so the text keeps ≥ 4.5:1 over the brightest cells and nothing
+   displaces a canvas that redraws every frame */
+.app-home-hello::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background: rgba(7, 8, 14, 0.62);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.28s var(--ease-out-quint);
+}
+.app-home-hello[data-over] {
+  --app-home-l3: var(--color-label-2);
+}
+.app-home-hello[data-over]::after {
+  opacity: 1;
 }
 .app-home-hello:focus-visible {
   outline: 2px solid var(--color-signal);
@@ -584,6 +670,7 @@ html[data-sky="dusk"] .app-home-widget-glass {
   font-size: 0.9375rem;
   line-height: 1.52;
   letter-spacing: -0.004em;
+  text-wrap: pretty; /* no one-word last line */
 }
 .app-home-hello-ctas {
   display: flex;
@@ -726,6 +813,21 @@ html[data-sky="dusk"] .app-home-widget-glass {
 .app-home-chip-note {
   flex: none;
   color: var(--color-ember);
+}
+.app-home-chip-plane {
+  flex: none;
+  color: var(--color-ion);
+}
+.app-home-chip-arrow {
+  color: var(--app-home-l3);
+}
+/* the places chip belongs to desks wide enough for the post widget (it
+   takes the post chip's seat); a row with nothing left to show hides */
+.app-home-chips > .app-home-chip-slot--places {
+  display: none;
+}
+.app-home-chips:not(:has(> li:not(.app-home-chip-slot--places))) {
+  display: none;
 }
 .app-home-chip-ext {
   flex: none;
@@ -897,8 +999,10 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   box-shadow: inset 0 0 0 1px var(--hairline);
   color: var(--color-signal);
 }
+/* the chevron bobs a few times after the desk settles, then rests: a hint,
+   not a loop */
 .app-home-scroll-chev svg {
-  animation: app-home-bob 1.8s steps(1, end) infinite;
+  animation: app-home-bob 1.8s steps(1, end) 1.2s 5;
 }
 @keyframes app-home-bob {
   0%,
@@ -947,10 +1051,66 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   }
 }
 
+/* short laptop screens (1280 × 720, 1366 × 768, 1536 × 730 and the like,
+   browser chrome included): hello.txt grows wider and shorter, its chips
+   join the buttons' row with no rule above them, and the icon grid packs
+   tighter so six still fit in one column. Every px saved under the name is
+   name: its band ends where hello.txt begins. */
+@media (min-width: 1200px) and (not ((pointer: coarse) and (max-height: 520px))) and (max-height: 820px) {
+  .app-home-scene {
+    --app-home-cell-h: 84px;
+  }
+  .app-home-icon {
+    gap: 3px;
+    padding-top: 2px;
+  }
+  .app-home-icon-tile {
+    width: 66px;
+    height: 60px;
+    border-radius: 14px;
+  }
+  .app-home-icon-label {
+    padding: 1px 6px 2px;
+    font-size: 0.75rem;
+    line-height: 1.15;
+  }
+  .app-home-hello {
+    /* as wide as the room beside the two widgets allows, centred */
+    width: clamp(388px, calc(100vw - 2 * var(--app-home-pad) - 4 * var(--app-home-widget) - 80px), 560px);
+  }
+  .app-home-hello-body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 10px;
+  }
+  .app-home-hello-greeting,
+  .app-home-hello-lead {
+    flex: 0 0 100%;
+  }
+  .app-home-chips {
+    margin-top: 12px;
+    padding-top: 0;
+    border-top: 0;
+  }
+  .app-home-hello-ctas {
+    margin-top: 12px;
+  }
+}
+
 /* wide desks show the latest post as a widget; narrower ones keep one
    widget (the clock) and carry the post as a chip in hello.txt instead */
 @media (min-width: 768px) and (not ((pointer: coarse) and (max-height: 520px))) and (min-width: 1200px) {
   .app-home-chips > .app-home-chip-slot--post {
+    display: none;
+  }
+  .app-home-chips > .app-home-chip-slot--places {
+    display: flex;
+  }
+  .app-home-chips:not(:has(> li:not(.app-home-chip-slot--places))) {
+    display: flex;
+  }
+  .app-home-chips:not(:has(> li:not(.app-home-chip-slot--post))) {
     display: none;
   }
 }
@@ -984,16 +1144,27 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   .app-home-chips > .app-home-chip-slot--post {
     display: none;
   }
+  .app-home-chips > .app-home-chip-slot--places {
+    display: flex;
+  }
+  .app-home-chips:not(:has(> li:not(.app-home-chip-slot--places))) {
+    display: flex;
+  }
+  .app-home-chips:not(:has(> li:not(.app-home-chip-slot--post))) {
+    display: none;
+  }
 }
 
 /* phones: an iOS home screen (and a phone held sideways: the column stays
    phone-wide in the middle) */
 @media (max-width: 767px), (pointer: coarse) and (max-height: 520px) {
+  /* the first screen is wordmark, hello.txt, the widgets and the icon row
+     above the tab bar at 390 × 844 (FR too): every gap is counted */
   .app-home-scene {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
     min-height: 0;
     padding: calc(var(--menubar-h) + 10px) 16px 36px;
   }
@@ -1002,24 +1173,34 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   .app-home-icons {
     width: min(100%, 560px);
   }
+  /* the box keeps 24 px of air over the letters and 32 under: trimmed to
+     what the drift's tilt needs (about 11 px at the nearest corner) */
   .app-home-stage {
     min-height: 0;
-    height: calc(296px * var(--app-home-k));
+    height: calc(268px * var(--app-home-k));
   }
   .app-home-hero-wrap {
     transform-origin: 50% 0;
+    /* nothing to fade into at the bottom here: hello.txt is below, not over */
+    mask-image: linear-gradient(to bottom, transparent var(--app-home-clip, 0px), #000 calc(var(--app-home-clip, 0px) + 10px));
   }
   .app-home-hero {
-    top: 0;
+    top: calc(-14px * var(--app-home-k));
     width: 700px;
     height: 296px;
     translate: -50% 0;
     transform-origin: 50% 0;
   }
+  .app-home-word-still--desk {
+    display: none;
+  }
+  .app-home-word-still--phone {
+    display: block;
+  }
   .app-home-desk {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
     padding: 0;
     transform: none !important;
   }
@@ -1052,7 +1233,7 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
     width: auto;
     height: calc((100cqw - 16px) / 2);
   }
-  .app-home-widget--music {
+  .app-home-widget--push {
     display: flex;
   }
   .app-home-widget--clock {
@@ -1138,19 +1319,19 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
     font-weight: 500;
   }
   .app-home-hello-body {
-    padding: 10px 18px 18px;
+    padding: 8px 18px 16px;
   }
   .app-home-hello-greeting {
     font-size: 1.25rem;
   }
   .app-home-hello-lead {
-    margin-top: 8px;
-    font-size: 0.9375rem;
-    line-height: 1.52;
+    margin-top: 6px;
+    font-size: 0.875rem;
+    line-height: 1.48;
   }
   .app-home-hello-ctas {
     flex-wrap: nowrap;
-    margin-top: 18px;
+    margin-top: 16px;
   }
   .app-home-hello-ctas .app-home-btn {
     flex: 1 1 0;
@@ -1167,7 +1348,7 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     row-gap: 14px;
-    margin-top: 2px;
+    margin-top: calc(2px + var(--app-home-below, 0px));
     pointer-events: auto;
   }
   .app-home-icon {
@@ -1204,9 +1385,15 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   .app-home-icon:focus-visible .app-home-icon-tile {
     outline-offset: 2px;
   }
+  /* iOS labels: one line, never wrapped (a long one may borrow a little
+     of the gutter on either side before it truncates) */
   .app-home-icon-label {
-    max-width: 100%;
+    display: block;
+    max-width: calc(100% + 10px);
+    padding: 2px 4px 3px;
     font-size: 0.75rem;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
   .app-home-scroll,
   .app-home-marquee {
@@ -1237,6 +1424,28 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   }
   .app-home-icons {
     grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+/* touch on a desk-sized screen (tablets): every target reaches 44 px */
+@media (pointer: coarse) {
+  .app-home-hello-lights {
+    gap: 20px;
+  }
+  .app-home-hello-light::before {
+    inset: -16px;
+  }
+  .app-home-chip--link {
+    position: relative;
+  }
+  .app-home-chip--link::after {
+    content: "";
+    position: absolute;
+    inset: -8px 0;
+  }
+  .app-home-scroll {
+    height: 44px;
+    bottom: calc(var(--dock-h) / 2 - 22px);
   }
 }
 

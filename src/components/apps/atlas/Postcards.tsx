@@ -245,7 +245,7 @@ export function Postcards({
             // leaving the strip: the tab stop returns to the selected card
             if (e.currentTarget.contains(e.relatedTarget as Node)) return;
             e.currentTarget.querySelectorAll<HTMLButtonElement>("button.app-atlas-pc").forEach((b) => {
-              b.tabIndex = b.getAttribute("aria-pressed") === "true" ? 0 : -1;
+              b.tabIndex = b.hasAttribute("data-active") ? 0 : -1;
             });
           }}
         >
@@ -260,7 +260,7 @@ export function Postcards({
                   className="app-atlas-pc"
                   data-active={active || undefined}
                   data-tone={p.home ? "home" : p.status}
-                  aria-pressed={active}
+                  aria-current={active || undefined}
                   tabIndex={active ? 0 : -1}
                   aria-label={fill(a.labelled, { label: a.postcards.show, value: name })}
                   data-cursor={a.postcards.show}
@@ -281,9 +281,18 @@ export function Postcards({
                   <span className="app-atlas-pc-text">
                     <span className="app-atlas-pc-kicker">{a.postcards.greetings}</span>
                     <span className="app-atlas-pc-name">{name}</span>
+                    {/* each value stays whole: the distance wraps as one
+                        unit, never leaving its "km" behind; the compact
+                        cards keep to the distance (home: where it is) */}
                     <span className="app-atlas-pc-meta tabular">
-                      {coords(p.lat, p.lon)}
-                      {!p.home && ` · ${fmt(km)} ${a.km}`}
+                      {(!compact || p.home) && <span className="app-atlas-pc-v">{coords(p.lat, p.lon)}</span>}
+                      {!p.home && (
+                        <span className="app-atlas-pc-v" data-km="">
+                          {fmt(km)}
+                          {lang === "fr" ? "\u202f" : "\u00a0"}
+                          {a.km}
+                        </span>
+                      )}
                     </span>
                   </span>
                 </button>

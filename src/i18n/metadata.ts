@@ -18,7 +18,17 @@ export async function appMetadata(params: Promise<{ lang: string }>, key: PageKe
       canonical: localePath(lang, path),
       languages: { en: localePath("en", path), fr: localePath("fr", path), "x-default": localePath("en", path) },
     },
-    openGraph: { title: `${title} — ${t.siteName}`, description, url: localePath(lang, path) },
-    twitter: { title: `${title} — ${t.siteName}`, description },
+    // Next merges metadata shallowly per key: these replace the layout's
+    // openGraph/twitter objects whole, so they restate type, site name,
+    // locale and the large card
+    openGraph: {
+      type: "website",
+      siteName: t.siteName,
+      locale: lang === "fr" ? "fr_FR" : "en_US",
+      title: `${title} — ${t.siteName}`,
+      description,
+      url: localePath(lang, path),
+    },
+    twitter: { card: "summary_large_image", title: `${title} — ${t.siteName}`, description },
   };
 }

@@ -3,39 +3,49 @@
 import { useEffect, useImperativeHandle, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { animate, m, useMotionValue, type AnimationPlaybackControls } from "motion/react";
-import { clamp, project, spring } from "@/lib/motion";
+import { clamp, project, rubberband, spring, springFrom } from "@/lib/motion";
 import { bounce, visibleIcon } from "@/components/os/dock/launch";
 import { useI18n } from "@/i18n/client";
 import { useSound } from "@/lib/sound";
 import { PixelGlyph } from "@/components/glyphs";
+import { PixelLabel } from "@/components/PixelLabel";
+import type { Phase } from "./Compose";
 import { Envelope } from "./Envelope";
 import { G_DOWN } from "./glyphs";
+import { activationFresh } from "./mail";
 
 /**
  * The envelope on its stage, and the one gesture this app is about.
  *
  * Pick the envelope up and it follows the pointer 1:1 from where you
- * grabbed it, lifted out of the window into a layer above the Dock. A
- * ring lights up around Mail in the Dock (the tab bar on phones). Over
- * the Dock it folds shut in your hand and hovers just above the icon.
- * Let go and the release velocity is projected (`project()`): if it lands
- * on Mail, or the throw is clearly headed there, it flies an arc into the
- * icon carrying the release velocity, and the icon bounces as it lands.
+ * grabbed it, lifted out of the window into a layer above the Dock, with
+ * rubber-banding at the top and sides of the screen. A ring lights up
+ * around Mail in the Dock (the tab bar on phones). Held over the Dock, it
+ * folds shut in your hand and hovers just above the icon (position only,
+ * so a quick move elsewhere never folds it). Let go and the release
+ * velocity is projected (`project()`): if it lands on Mail, or the throw is
+ * clearly headed there, it flies an arc into the icon that starts at the
+ * exact speed it left your hand, and the icon bounces as it lands.
  * Otherwise it springs home, with a little bounce only if it was thrown,
- * and it can be caught again on the way.
+ * and it can be caught again on the way. Delivered, the sealed letter
+ * comes back to the stage with its postmark.
  *
  * Touch: hold the envelope still for a moment to lift it (as iOS does for
  * drag and drop), so a scroll that starts on it stays a scroll.
  *
  * Pressing Send does the same from rest: the envelope folds where it
- * stands and leaves as the seal stamps. Reduced motion: no gesture and no
- * flight; it seals in place.
+ * stands and leaves as the seal stamps. When the browser would no longer
+ * open the mail app (a long drag outlives the gesture), nothing pretends:
+ * the letter seals and stays, waiting for a click. Reduced motion: no
+ * gesture and no flight; it seals in place.
  */
 
 export type StageHandle = {
   /** fold, then fly into the Dock; resolves through `onLand` */
   send: () => void;
-  /** a fresh letter comes back onto the stage */
+  /** the mail app was just opened by a click: the sealed letter makes the trip */
+  deliver: (from?: Element | null) => void;
+  /** back to writing: the letter opens again (or a fresh one comes back) */
   reset: () => void;
 };
 
@@ -61,6 +71,8 @@ type Gesture = {
   samples: Sample[];
   target: Target;
   armed: boolean;
+  /** the menu bar's bottom edge: the envelope rubber-bands below it */
+  ceiling: number;
 };
 
 /** touch: hold this long, within LIFT_SLOP px, to pick the envelope up */
@@ -70,6 +82,10 @@ const DRAG_SLOP = 4;
 /** the launch goes out a little before the envelope is all the way in */
 const LAUNCH_AT = 0.8;
 const ARRIVE_AT = 0.965;
+/** flight response (s): critically damped, so it never overshoots the icon */
+const FLIGHT = 0.5;
+/** px the "held over the Dock" zone grows once armed, so its edge doesn't chatter */
+const HYSTERESIS = 28;
 
 /** eight pixels thrown out from the icon on delivery (px offsets) */
 const BURST = Array.from({ length: 8 }, (_, i) => {
@@ -92,6 +108,15 @@ function dockTarget(): Target {
   return { x: window.innerWidth / 2, y: window.innerHeight - 40, w: 48, h: 48, bounceEl: null, tab };
 }
 
+/** The menu bar's height in px (`--menubar-h`, in rem). */
+function ceiling() {
+  const root = getComputedStyle(document.documentElement);
+  const v = root.getPropertyValue("--menubar-h").trim();
+  const n = parseFloat(v);
+  if (!n) return 44;
+  return v.endsWith("rem") ? n * (parseFloat(root.fontSize) || 16) : n;
+}
+
 /**
  * px/s over the last ~100ms of samples (from the oldest sample inside that
  * window, so a long still hold before the flick doesn't water it down);
@@ -110,27 +135,33 @@ function velocity(s: Sample[], now: number): Pt {
 }
 
 /**
- * Would letting go here send it? `ptr` is the pointer, `c` the envelope's
- * visual center and `half` its visual half-size, `v` the release velocity.
+ * Held over the Dock (position only): `ptr` is the pointer, `c` the
+ * envelope's visual center and `half` its visual half-size. `slack` widens
+ * the zone once armed.
  */
-function headedForDock(ptr: Pt, c: Pt, half: Pt, v: Pt, t: Target) {
+function overDock(ptr: Pt, c: Pt, half: Pt, t: Target, slack = 0) {
   const top = t.y - t.h / 2;
   // the envelope itself touches the icon
-  if (Math.abs(c.x - t.x) < half.x + t.w / 2 + 16 && Math.abs(c.y - t.y) < half.y + t.h / 2 + 16) return true;
+  const pad = 16 + slack;
+  if (Math.abs(c.x - t.x) < half.x + t.w / 2 + pad && Math.abs(c.y - t.y) < half.y + t.h / 2 + pad) return true;
+  // phones: held over the Mail tab
+  if (t.tab) return ptr.y > top - 70 - slack && Math.abs(ptr.x - t.x) < 80 + slack;
+  // over the Dock, or just above it
+  const reach = Math.max(200, window.innerWidth * 0.16);
+  return ptr.y > Math.max(top - 110, window.innerHeight * 0.6) - slack && Math.abs(ptr.x - t.x) < reach + slack;
+}
+
+/** Thrown: would the release velocity `v` carry it into the Dock? */
+function thrownAtDock(ptr: Pt, c: Pt, v: Pt, t: Target) {
+  const top = t.y - t.h / 2;
   if (t.tab) {
-    // phones: held over the Mail tab…
-    if (ptr.y > top - 70 && Math.abs(ptr.x - t.x) < 80) return true;
-    // …or flicked down so that it would land on it
+    // phones: flicked down so that it would land on the Mail tab
     if (v.y < 250) return false;
     if (ptr.y + project(v.y) < t.y - 60) return false;
     const xAt = ptr.x + ((t.y - ptr.y) * v.x) / v.y;
     return Math.abs(xAt - t.x) < 90;
   }
-  const vh = window.innerHeight;
   const reach = Math.max(200, window.innerWidth * 0.16);
-  // held over the Dock (or just above it)
-  if (ptr.y > Math.max(top - 110, vh * 0.6) && Math.abs(ptr.x - t.x) < reach) return true;
-  // thrown: where the release velocity would carry it
   const p = { x: ptr.x + project(v.x), y: ptr.y + project(v.y) };
   if (v.y > 150 && p.y > top - 20 && Math.abs(p.x - t.x) < reach) return true;
   // a fast flick aimed at the icon
@@ -159,6 +190,8 @@ function tick() {
 
 export function Stage({
   ref,
+  phase,
+  postmark,
   subject,
   lines,
   lifted,
@@ -171,6 +204,9 @@ export function Stage({
   onLand,
 }: {
   ref?: React.Ref<StageHandle>;
+  phase: Phase;
+  /** Paris time the letter left ("HH:MM"), once it has */
+  postmark: string;
   subject: number;
   lines: number[];
   lifted: boolean;
@@ -184,8 +220,11 @@ export function Stage({
   origin: () => DOMRect | null;
   /** the gesture decided to send */
   onThrow: () => void;
-  /** time to hand over to the mail app (or sealed in place, reduced) */
-  onLand: () => void;
+  /**
+   * Time to hand over to the mail app (or sealed in place). `canOpen` is
+   * false when the browser would refuse; returns whether it opened.
+   */
+  onLand: (canOpen: boolean) => boolean;
 }) {
   const { t } = useI18n();
   const c = t.contact;
@@ -198,6 +237,8 @@ export function Stage({
   const [carry, setCarry] = useState<Carry | null>(null);
   /** springing home: the flyer can be caught */
   const [returning, setReturning] = useState(false);
+  /** in flight: a clear shield keeps the Dock from reacting to the pointer resting over it */
+  const [flying, setFlying] = useState(false);
   const [target, setTarget] = useState<Target | null>(null);
   const [armed, setArmed] = useState(false);
   const [grip, setGrip] = useState<"slot" | "flyer" | null>(null);
@@ -207,9 +248,10 @@ export function Stage({
   /** mouse over the envelope: a faint ring shows where it goes */
   const [peek, setPeek] = useState<Target | null>(null);
   const burstTimer = useRef(0);
-  const pendingFlight = useRef(false);
+  /** what happens once the in-slot fold is done */
+  const pending = useRef<"fly" | "land" | null>(null);
 
-  // in-slot envelope: hop on tap, shake when refused, rise back in on reset
+  // in-slot envelope: hop on tap, shake when refused, rise back in after a trip
   const slotX = useMotionValue(0);
   const slotY = useMotionValue(0);
   const slotO = useMotionValue(1);
@@ -253,12 +295,20 @@ export function Stage({
     // armed: centered on the pointer, its bottom edge 0.6 icon above it, so the icon and ring stay in view
     const held = { x: P.x + (g.w / 2 - g.ox) * s, y: P.y + (g.h / 2 - g.oy) * s };
     const above = { x: P.x, y: P.y - T.h * 0.6 - (g.h * s) / 2 };
-    return {
-      s,
-      c: { x: held.x + (above.x - held.x) * a, y: held.y + (above.y - held.y) * a },
-      free,
-      half: { x: (g.w / 2) * sFree, y: (g.h / 2) * sFree },
-    };
+    const ctr = { x: held.x + (above.x - held.x) * a, y: held.y + (above.y - held.y) * a };
+    // rubber-band past the menu bar and the sides of the screen (the bottom is the target: free)
+    const hw = (g.w * s) / 2;
+    const hh = (g.h * s) / 2;
+    const vw = window.innerWidth;
+    const top = g.ceiling + hh + 6;
+    if (ctr.y < top) ctr.y = top - rubberband(top - ctr.y, window.innerHeight);
+    const l = hw + 8;
+    const r = vw - hw - 8;
+    if (r > l) {
+      if (ctr.x < l) ctr.x = l - rubberband(l - ctr.x, vw);
+      else if (ctr.x > r) ctr.x = r + rubberband(ctr.x - r, vw);
+    }
+    return { s, c: ctr, free, half: { x: (g.w / 2) * sFree, y: (g.h / 2) * sFree } };
   };
 
   const place = (g: Gesture) => {
@@ -315,47 +365,69 @@ export function Stage({
     armAnim.current = animate(arm, to, spring.snappy);
   };
 
-  /** Fly from `from` (center, viewport px) at scale `s0` into the Dock. */
-  const fly = (from: Pt, v: Pt, s0: number, w: number, h: number, tg: Target, duration: number) => {
+  /** The sealed letter returns to its place on the stage, postmarked. */
+  const comeBack = () => {
+    setGone(false);
+    setInstant(true);
+    setSealed(true);
+    slotX.set(0);
+    slotY.set(26);
+    slotO.set(0);
+    anims.current.push(
+      animate(slotY, 0, { ...spring.gentle, delay: 0.22 }),
+      animate(slotO, 1, { duration: 0.3, delay: 0.22, ease: "easeOut" })
+    );
+  };
+
+  /**
+   * Fly from `from` (center, viewport px) at scale `s0` into the Dock.
+   * `v` is the release velocity (px/s; zero from rest) and `lead` the
+   * curve's first control arm, which sets the direction it leaves in.
+   * `deliver`: the mail app is already open (a click did it).
+   */
+  const fly = (from: Pt, v: Pt, lead: Pt, s0: number, w: number, h: number, tg: Target, deliver = false) => {
     stopAll();
+    setFlying(true);
     const T = { x: tg.x, y: tg.y };
     const dist = Math.hypot(T.x - from.x, T.y - from.y);
-    const lead = { x: v.x * 0.16, y: v.y * 0.16 };
-    const lm = Math.hypot(lead.x, lead.y);
+    const L = { ...lead };
+    const lm0 = Math.hypot(L.x, L.y);
     const maxL = Math.max(80, dist * 0.5);
-    if (lm > maxL) {
-      lead.x *= maxL / lm;
-      lead.y *= maxL / lm;
+    if (lm0 > maxL) {
+      L.x *= maxL / lm0;
+      L.y *= maxL / lm0;
     }
+    const lm = Math.hypot(L.x, L.y);
+    // the curve's speed at q = 0 is 3·|P1 − P0|·dq/dt: start at exactly the speed it left the hand
+    // (capped below the spring's natural frequency, so it never overshoots the icon)
+    const dq = lm > 1 ? Math.min(9, Math.hypot(v.x, v.y) / (3 * lm)) : 0;
     const P0 = from;
-    const P1 = { x: from.x + lead.x, y: from.y + lead.y };
+    const P1 = { x: from.x + L.x, y: from.y + L.y };
     const P2 = { x: T.x, y: T.y - clamp(dist * 0.42, 90, 260) };
     const P3 = T;
-    const L = (dist + Math.hypot(P1.x - P0.x, P1.y - P0.y) + Math.hypot(P2.x - P1.x, P2.y - P1.y) + Math.hypot(P3.x - P2.x, P3.y - P2.y)) / 2;
-    const v0 = Math.hypot(v.x, v.y) / Math.max(1, L);
     const s1 = (tg.w * 0.8) / w;
     let launched = false;
     let arrived = false;
+    let opened = deliver;
     const launch = () => {
       if (launched) return;
       launched = true;
-      cbs.current.onLand();
+      if (!deliver) opened = cbs.current.onLand(true);
     };
     const arrive = () => {
       if (arrived) return;
       arrived = true;
+      // only a letter that really went out gets a welcome
+      if (!opened) return;
       bounce(tg.bounceEl, tg.tab ? 7 : 16);
-      // delivered: a little puff of pixels around the icon
       setBurst({ x: T.x, y: T.y, id: performance.now() });
       window.clearTimeout(burstTimer.current);
       burstTimer.current = window.setTimeout(() => setBurst(null), 700);
       cbs.current.blip("success");
     };
     const a = animate(0, 1, {
-      type: "spring",
-      visualDuration: duration,
-      bounce: 0,
-      velocity: v0,
+      ...springFrom(FLIGHT, 0),
+      velocity: dq,
       onUpdate: (p) => {
         const q = clamp(p, 0, 1);
         const u = 1 - q;
@@ -377,6 +449,8 @@ export function Stage({
         arrive();
         setCarry(null);
         setTarget(null);
+        setFlying(false);
+        comeBack();
       },
     });
     anims.current.push(a);
@@ -385,8 +459,8 @@ export function Stage({
   const slotVisible = (r: DOMRect | undefined): r is DOMRect =>
     !!r && r.width > 0 && r.bottom > 120 && r.top < window.innerHeight - 90;
 
-  /** Send from rest (the button): the envelope leaves its slot as the seal stamps. */
-  const startFromSlot = (stamp: boolean) => {
+  /** Leave from rest (Send, or a click that opened the mail app): out of the slot, or from `at` when it's scrolled away. */
+  const startFromSlot = (stamp: boolean, deliver = false, at?: DOMRect | null) => {
     const r = slotRef.current?.getBoundingClientRect();
     const tg = dockTarget();
     const vh = window.innerHeight;
@@ -397,8 +471,8 @@ export function Stage({
     if (slotVisible(r)) {
       from = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
     } else {
-      // scrolled away: a small envelope leaves from the Send button
-      const o = cbs.current.origin();
+      // scrolled away: a small envelope leaves from the button
+      const o = at?.width ? at : cbs.current.origin();
       from = o && o.width ? { x: o.left + o.width / 2, y: o.top + o.height / 2 } : { x: window.innerWidth / 2, y: vh / 2 };
       s0 = clamp(60 / w, 0.2, 1);
     }
@@ -410,15 +484,24 @@ export function Stage({
     setCarry({ w, h, sealed: true, stamp });
     setGone(true);
     setTarget(tg);
-    fly(from, { x: 0, y: -760 }, s0, w, h, tg, 0.5);
+    // from rest: it rises first, then arcs down into the icon
+    fly(from, { x: 0, y: 0 }, { x: 0, y: -120 }, s0, w, h, tg, deliver);
   };
 
   useImperativeHandle(ref, () => ({
     send: () => {
+      const fresh = activationFresh();
       if (reduced || !slotRef.current) {
         setInstant(true);
         setSealed(true);
-        cbs.current.onLand();
+        cbs.current.onLand(fresh);
+        return;
+      }
+      if (!fresh) {
+        // the browser won't open anything now: seal it where it stands, then offer the click
+        pending.current = "land";
+        setInstant(false);
+        setSealed(true);
         return;
       }
       if (sealed || !slotVisible(slotRef.current.getBoundingClientRect())) {
@@ -429,24 +512,40 @@ export function Stage({
         return;
       }
       setInstant(false);
-      pendingFlight.current = true;
+      pending.current = "fly";
       setSealed(true);
+    },
+    deliver: (from) => {
+      if (reduced || carry || gesture.current) return;
+      startFromSlot(false, true, from?.getBoundingClientRect());
     },
     reset: () => {
       stopAll();
-      pendingFlight.current = false;
+      pending.current = null;
+      const inSlot = !carry && !gone;
       setCarry(null);
       setTarget(null);
       setArmed(false);
       setReturning(false);
-      setInstant(!!reduced);
-      setSealed(false);
+      setFlying(false);
       setGone(false);
       slotX.set(0);
-      if (!reduced) {
+      if (reduced) {
+        setInstant(true);
+        setSealed(false);
+        slotY.set(0);
+        slotO.set(1);
+        return;
+      }
+      // the letter in the slot opens up again; one still out comes back first
+      setInstant(false);
+      setSealed(false);
+      if (!inSlot) {
         slotY.set(28);
         slotO.set(0);
         anims.current.push(animate(slotY, 0, spring.gentle), animate(slotO, 1, { duration: 0.25 }));
+      } else {
+        anims.current.push(animate(slotY, 0, spring.default), animate(slotO, 1, { duration: 0.2 }));
       }
     },
   }));
@@ -476,11 +575,12 @@ export function Stage({
     return () => window.clearTimeout(id);
   }, [interactive, reduced, slotY]);
 
-  /** the in-slot fold is done: leave as the seal stamps */
+  /** the in-slot fold is done: leave as the seal stamps (or stay, sealed, when the browser won't open anything) */
   const onFolded = () => {
-    if (!pendingFlight.current) return;
-    pendingFlight.current = false;
-    startFromSlot(true);
+    const p = pending.current;
+    pending.current = null;
+    if (p === "fly") startFromSlot(true);
+    else if (p === "land") cbs.current.onLand(false);
   };
 
   const hop = () => {
@@ -509,7 +609,7 @@ export function Stage({
       // iOS-style lift: settle in a touch smaller, then rise toward the finger
       pop.jump(0.94);
       place(g);
-      anims.current.push(animate(pop, 1, { type: "spring", visualDuration: 0.3, bounce: 0.25 }));
+      anims.current.push(animate(pop, 1, springFrom(0.3, 0.25)));
       tick();
     } else {
       pop.jump(1);
@@ -545,6 +645,7 @@ export function Stage({
       samples: [{ ...P, t: e.timeStamp }],
       target: dockTarget(),
       armed: false,
+      ceiling: ceiling(),
     };
     gesture.current = g;
     setGrip("slot"); // respond on pointer-down
@@ -590,6 +691,7 @@ export function Stage({
       samples: [{ ...P, t: e.timeStamp }],
       target: dockTarget(),
       armed: false,
+      ceiling: ceiling(),
     };
     gesture.current = g;
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -627,7 +729,8 @@ export function Stage({
     // lean into the motion, like something held by one corner
     fr.set(clamp(v.x / 90, -10, 10) * (1 - arm.get()));
     const geo = place(g);
-    const a = headedForDock(P, geo.free, geo.half, v, g.target);
+    // where it is, not how fast it moves: the projection is for the release
+    const a = overDock(P, geo.free, geo.half, g.target, g.armed ? HYSTERESIS : 0);
     if (a !== g.armed) {
       // over the Dock it folds shut in your hand and settles above the icon; away again, it opens
       g.armed = a;
@@ -638,7 +741,8 @@ export function Stage({
     }
   };
 
-  const goHome = (w: number, h: number, v: Pt, refused: boolean) => {
+  /** Spring back to the slot with the release velocity. `refused`: nothing written; `seal`: it stays sealed there. */
+  const goHome = (w: number, h: number, v: Pt, refused: boolean, seal = false) => {
     const slot = slotRef.current?.getBoundingClientRect();
     const ctr = { x: fx.get() + w / 2, y: fy.get() + h / 2 };
     const hx = slot ? slot.left : ctr.x - w / 2;
@@ -646,11 +750,16 @@ export function Stage({
     const thrown = Math.hypot(v.x, v.y) > 500;
     const sp = thrown ? spring.flick : spring.default;
     stopAll();
-    setCarry({ w, h, sealed: false, stamp: false });
-    setReturning(true);
+    setCarry({ w, h, sealed: seal, stamp: false });
+    setReturning(!seal);
     let done = 0;
     const finish = () => {
       if (++done < 2) return;
+      if (seal) {
+        setInstant(true);
+        setSealed(true);
+        setGone(false);
+      }
       setCarry(null);
       setTarget(null);
       setReturning(false);
@@ -659,6 +768,7 @@ export function Stage({
         cbs.current.blip("tick");
         anims.current.push(animate(slotX, [0, -7, 6, -4, 2, 0], { duration: 0.42, ease: "easeOut" }));
       }
+      if (seal) cbs.current.onLand(false);
     };
     anims.current.push(
       animate(fx, hx, { ...sp, velocity: v.x, onComplete: finish }),
@@ -692,21 +802,30 @@ export function Stage({
     const geo = geometry(g);
     arm.jump(0);
     const ctr = { x: fx.get() + g.w / 2, y: fy.get() + g.h / 2 };
-    if (!cancelled && headedForDock(g.last, geo.free, geo.half, v, g.target)) {
-      if (cbs.current.empty) {
-        goHome(g.w, g.h, v, true);
-        return;
-      }
-      setCarry({ w: g.w, h: g.h, sealed: true, stamp: false });
-      setGone(true);
-      setSealed(true);
-      setInstant(true);
-      cbs.current.onThrow();
-      fly(ctr, v, fs.get(), g.w, g.h, dockTarget(), 0.5);
+    const send =
+      !cancelled &&
+      (overDock(g.last, geo.free, geo.half, g.target, g.armed ? HYSTERESIS : 0) ||
+        thrownAtDock(g.last, geo.free, v, g.target));
+    if (!send) {
+      // home: back to the slot, carrying the release velocity
+      goHome(g.w, g.h, v, false);
       return;
     }
-    // home: back to the slot, carrying the release velocity
-    goHome(g.w, g.h, v, false);
+    if (cbs.current.empty) {
+      goHome(g.w, g.h, v, true);
+      return;
+    }
+    cbs.current.onThrow();
+    if (!activationFresh()) {
+      // held too long for the browser to open the mail app: it comes back sealed, waiting for a click
+      goHome(g.w, g.h, v, false, true);
+      return;
+    }
+    setCarry({ w: g.w, h: g.h, sealed: true, stamp: false });
+    setGone(true);
+    setSealed(true);
+    setInstant(true);
+    fly(ctr, v, { x: v.x * 0.16, y: v.y * 0.16 }, fs.get(), g.w, g.h, dockTarget());
   };
 
   const canThrow = interactive && !reduced;
@@ -719,6 +838,8 @@ export function Stage({
   };
   const refuse = armed && empty;
   const ring = carry ? target : canThrow && !gone ? peek : null;
+  /** the letter is back on the stage after its trip (or never left) */
+  const home = !carry && !gone;
 
   return (
     <div
@@ -748,24 +869,47 @@ export function Stage({
           className="app-contact-slot-env"
           style={{ x: slotX, y: slotY, opacity: slotO, visibility: showSlot || (reduced && gone) ? "visible" : "hidden" }}
         >
-          <Envelope subject={subject} lines={lines} lifted={lifted} sealed={sealed} instant={instant} onFolded={onFolded} />
+          <Envelope
+            subject={subject}
+            lines={lines}
+            lifted={lifted && !reduced}
+            sealed={sealed}
+            instant={instant}
+            onFolded={onFolded}
+          />
         </m.div>
       </div>
 
-      <p className="app-contact-stage-hint">
-        {gone || sealed ? (
-          <span className="app-contact-stage-out">{c.outbox}</span>
-        ) : canThrow ? (
-          <>
-            <PixelGlyph cells={G_DOWN} size={10} />
+      <p className="app-contact-stage-hint" data-phase={phase}>
+        {phase === "sent" ? (
+          home && (
+            <span className="app-contact-stage-done">
+              {postmark && (
+                <span className="app-contact-stamp" aria-hidden>
+                  <PixelLabel text={`Paris ${postmark}`} cell={2} />
+                </span>
+              )}
+              <span className="app-contact-stage-out">{c.outbox}</span>
+            </span>
+          )
+        ) : phase === "ready" ? (
+          home && (
+            <span className="app-contact-stage-done">
+              <span className="app-contact-stage-wait">{c.waiting}</span>
+            </span>
+          )
+        ) : phase === "compose" && canThrow ? (
+          <span className="app-contact-stage-tip">
+            <PixelGlyph cells={G_DOWN} size={14} />
             <span>{coarse ? c.holdHint : c.throwHint}</span>
-          </>
+          </span>
         ) : null}
       </p>
 
       {(carry || burst || (peek && canThrow && !gone)) &&
         createPortal(
           <div className="app-contact-air" aria-hidden>
+            {flying && <div className="app-contact-shield" />}
             {burst && (
               <span key={burst.id} className="app-contact-burst" style={{ left: burst.x, top: burst.y }}>
                 {BURST.map(([dx, dy], i) => (

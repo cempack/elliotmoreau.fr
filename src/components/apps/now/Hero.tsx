@@ -76,7 +76,7 @@ export function NowHero({ listen, updated }: { listen: Listen; updated: string }
             className="app-now-tok app-now-tok--track"
             tabIndex={-1}
           >
-            {j === 0 && <PixelCava playing={playing} cols={4} className="app-now-tok-cava" />}
+            {j === 0 && <PixelCava playing={playing} still cols={4} className="app-now-tok-cava" />}
             {w}
           </a>
         );

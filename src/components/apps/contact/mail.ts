@@ -131,14 +131,21 @@ export async function copyText(text: string): Promise<boolean> {
   }
 }
 
+type UA = { userActivation?: { isActive: boolean; hasBeenActive: boolean } };
+
 /**
- * Hand the message to the viewer's mail app. Browsers only launch an
- * external app close to a user gesture: when the gesture has gone stale
- * (a long drag), report false so the UI can offer a button instead.
+ * Browsers only launch an external app close to a user gesture (about five
+ * seconds in Chromium; a mouse drag starts the clock at pointer-down). False
+ * once that window has passed, so the UI can offer a button instead of
+ * pretending. True where the platform can't tell.
  */
+export function activationFresh() {
+  return (navigator as Navigator & UA).userActivation?.isActive !== false;
+}
+
+/** Hand the message to the viewer's mail app; false when the browser wouldn't allow it now. */
 export function launchMail(href: string): boolean {
-  const ua = (navigator as Navigator & { userActivation?: { isActive: boolean } }).userActivation;
-  if (ua && !ua.isActive) return false;
+  if (!activationFresh()) return false;
   const a = document.createElement("a");
   a.href = href;
   a.rel = "noopener";

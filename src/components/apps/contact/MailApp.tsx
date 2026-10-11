@@ -16,10 +16,8 @@ import { Compose, type Phase } from "./Compose";
 import { Elsewhere } from "./Elsewhere";
 import { KeyView } from "./KeyView";
 import { HASH, Sidebar, type Box } from "./Sidebar";
-import { G_SEND } from "./glyphs";
+import { G_SEND_UP } from "./glyphs";
 import { draftFile, fill } from "./mail";
-
-const NETS = 5;
 
 /** runs while the HTML is parsed, before first paint: which mailbox a shared link asks for */
 const HASH_SCRIPT = `(function(s){var h=location.hash.slice(1);if(h==="${HASH.elsewhere}"||h==="${HASH.key}")s.parentElement.setAttribute("data-hash",h)})(document.currentScript)`;
@@ -92,7 +90,7 @@ export function MailApp({ data }: { data: SiteData }) {
       className="app-contact"
       subtitle={
         <span className="app-contact-path" aria-hidden>
-          {box === "compose" ? <DraftPath /> : box === "elsewhere" ? "~/contact/elsewhere" : "~/contact/pgp.asc"}
+          {box === "compose" ? <DraftPath /> : box === "elsewhere" ? `~/contact/${c.elsewhereDir}` : "~/contact/pgp.asc"}
         </span>
       }
       toolbar={
@@ -113,12 +111,12 @@ export function MailApp({ data }: { data: SiteData }) {
               aria-label={c.sendLabel}
               disabled={phase === "sending"}
             >
-              <PixelGlyph cells={G_SEND} size={14} />
+              <PixelGlyph cells={G_SEND_UP} size={14} />
             </button>
           )}
         </>
       }
-      sidebar={<Sidebar box={box} onSelect={select} nets={NETS} />}
+      sidebar={<Sidebar box={box} onSelect={select} />}
     >
       <div
         className="app-contact-views"

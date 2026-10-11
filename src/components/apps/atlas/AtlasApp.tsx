@@ -141,7 +141,7 @@ export function AtlasApp({ data }: { data: SiteData }) {
   return (
     <AppWindow app="atlas" toolbar={toolbar}>
       <div className="app-atlas">
-        <section ref={stageRef} className="app-atlas-stage">
+        <section ref={stageRef} className="app-atlas-stage" data-layout={wide ? "wide" : beside ? "beside" : "sheet"}>
           {/* source order is the reading order (list, globe, card); the
               grid places them */}
           {wide && (
@@ -160,7 +160,7 @@ export function AtlasApp({ data }: { data: SiteData }) {
               recenter={recenter}
               margin={wide ? 30 : 18}
               label={a.globe}
-              spinLabel={a.spin}
+              hint={a.spin}
               onCamera={onCamera}
               lift={wide ? undefined : lift}
               liftRoom={wide ? undefined : room}

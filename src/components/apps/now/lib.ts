@@ -101,28 +101,37 @@ export const fmtMs = (ms: number) => {
 /**
  * Live playback position: the server's progress plus the time since it
  * arrived, while playing. Null until mounted. Holds at the end of the
- * track until the next poll brings the next one.
+ * track until the next poll brings the next one. Ticks once a second, and
+ * only while `active` (on screen) and the tab is visible; the arrival time
+ * is kept per poll, so pausing the tick never rewinds the position.
  */
-export function useTrackProgress(track: TrackInfo | null, playing: boolean) {
-  const [state, setState] = useState<{ key: string; base: number; at: number; now: number } | null>(null);
-  const key = track ? `${track.title}|${track.artist}|${track.progressMs}` : "";
+export function useTrackProgress(track: TrackInfo | null, playing: boolean, active = true) {
+  const key = track ? `${track.title}|${track.artist}|${track.progressMs}|${playing}` : "";
+  const [anchor, setAnchor] = useState<{ key: string; at: number } | null>(null);
+  const [now, setNow] = useState(0);
   useEffect(() => {
-    if (!track) return;
-    const at = Date.now();
-    const base = track.progressMs;
-    const sync = () => setState({ key, base, at, now: Date.now() });
-    const first = window.setTimeout(sync, 0);
-    if (!playing) return () => window.clearTimeout(first);
-    const id = window.setInterval(() => {
-      if (!document.hidden) setState((s) => (s && s.key === key ? { ...s, now: Date.now() } : { key, base, at, now: Date.now() }));
-    }, 1000);
+    if (!key) return;
+    const id = window.setTimeout(() => {
+      const t = Date.now();
+      setAnchor((a) => (a?.key === key ? a : { key, at: t }));
+      setNow(t);
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, [key]);
+  useEffect(() => {
+    if (!key || !playing || !active) return;
+    const tick = () => {
+      if (!document.hidden) setNow(Date.now());
+    };
+    const first = window.setTimeout(tick, 0);
+    const id = window.setInterval(tick, 1000);
     return () => {
       window.clearTimeout(first);
       window.clearInterval(id);
     };
-  }, [key, playing, track]);
-  if (!track || !state || state.key !== key) return null;
-  const elapsed = state.base + (playing ? state.now - state.at : 0);
+  }, [key, playing, active]);
+  if (!track || !anchor || anchor.key !== key) return null;
+  const elapsed = track.progressMs + (playing ? Math.max(0, now - anchor.at) : 0);
   return Math.min(track.durationMs || elapsed, Math.max(0, elapsed));
 }
 

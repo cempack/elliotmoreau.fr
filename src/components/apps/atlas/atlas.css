@@ -11,7 +11,9 @@
   --app-atlas-peek: 138px;
   /* the mini player's pill, until the shell publishes its height */
   --app-atlas-pip-h: 3.25rem;
-  --app-atlas-sheet-bottom: 12px;
+  /* where the sheet rests above the stage's bottom edge; MapSheet raises
+     it above a mini player resting under it (--app-atlas-pip-clear) */
+  --app-atlas-sheet-base: 12px;
   --app-atlas-home: var(--color-signal);
   --app-atlas-been: var(--color-ember);
   --app-atlas-want: var(--color-ion);
@@ -24,6 +26,7 @@
 /* ───────────────────────────── stage ───────────────────────────── */
 
 .app-atlas-stage {
+  --app-atlas-sheet-bottom: max(var(--app-atlas-sheet-base), var(--app-atlas-pip-clear, 0px));
   position: relative;
   height: var(--app-atlas-stage-h);
   min-height: 34rem;
@@ -56,6 +59,34 @@
 }
 .app-atlas-globe[data-grabbing] .app-atlas-globe-canvas {
   cursor: grabbing;
+}
+/* the callout naming a marker (or, once, how to spin it): paper on ink,
+   like the routes' casing */
+.app-atlas-globe-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  padding: 0.3125rem 0.5rem;
+  border-radius: 6px;
+  background: rgba(5, 6, 10, 0.9);
+  box-shadow:
+    inset 0 0 0 1px var(--hairline),
+    0 6px 16px -8px rgba(0, 0, 0, 0.7);
+  color: var(--color-label);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.14s var(--ease-out-quint);
+}
+.app-atlas-globe-tip[data-show] {
+  opacity: 1;
+  transition-duration: 0.08s;
 }
 
 /* ───────────────────────────── wide: panels ───────────────────────────── */
@@ -201,11 +232,8 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.app-atlas-places-h + .app-atlas-places-list {
-  margin-bottom: 0.875rem;
-}
-.app-atlas-places-list:last-child {
-  margin-bottom: 0;
+.app-atlas-places-group + .app-atlas-places-group {
+  margin-top: 0.875rem;
 }
 .app-atlas-places-n {
   color: var(--color-label-3);
@@ -663,6 +691,18 @@
 .app-atlas-stamp-ink .app-atlas-postmark {
   color: var(--app-atlas-ink);
 }
+/* the cancellation waves run out of ink by the stamp's right edge, so a
+   narrow card never cuts them off at its own edge (--app-atlas-pm-end is
+   where they end, in the postmark's own px) */
+.app-atlas-card-stamp .app-atlas-postmark {
+  width: var(--app-atlas-pm-end, 176px);
+  mask-image: linear-gradient(90deg, #000 calc(100% - 26px), transparent);
+}
+@media (max-width: 1439px) {
+  .app-atlas-card-stamp {
+    --app-atlas-pm-end: 160px;
+  }
+}
 .app-atlas-postmark-text {
   fill: currentColor;
   font-family: var(--font-mono);
@@ -744,12 +784,18 @@
     padding: 0.625rem 0.75rem 0.6875rem;
   }
   .app-atlas-stat-k {
-    letter-spacing: 0.03em;
-    white-space: normal;
-    line-height: 1.25;
+    letter-spacing: 0.02em;
   }
   .app-atlas-stat-v {
     font-size: 1.25rem;
+  }
+}
+/* narrower still: a key may take two lines rather than run into its
+   neighbour (the values stay lined up on the subgrid) */
+@container (max-width: 26rem) {
+  .app-atlas-stat-k {
+    white-space: normal;
+    line-height: 1.25;
   }
 }
 .app-atlas-stats[data-layout="grid"] .app-atlas-stats-list {
@@ -850,6 +896,14 @@
   /* clip, not hidden: not a scroll container, so focus cannot scroll it
      underneath the transform */
   overflow: clip;
+  /* the cards fade out inside the gutters, never a sliver of the last one */
+  mask-image: linear-gradient(
+    90deg,
+    transparent calc(var(--app-atlas-pcs-pad) - 1rem),
+    #000 var(--app-atlas-pcs-pad),
+    #000 calc(100% - var(--app-atlas-pcs-pad)),
+    transparent calc(100% - var(--app-atlas-pcs-pad) + 1rem)
+  );
   padding: 1.5rem var(--app-atlas-pcs-pad) 1.25rem;
   touch-action: pan-y;
   cursor: grab;
@@ -965,10 +1019,21 @@
   white-space: nowrap;
 }
 .app-atlas-pc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.5rem;
   margin-top: 0.25rem;
   color: var(--color-label-2);
   font-family: var(--font-mono);
   font-size: 0.75rem;
+}
+.app-atlas-pc-v {
+  white-space: nowrap;
+}
+.app-atlas-pc-v + .app-atlas-pc-v::before {
+  content: "·";
+  margin-right: 0.5rem;
+  color: var(--color-label-3);
 }
 
 /* ───────────────────────────── toolbar ───────────────────────────── */
@@ -1055,11 +1120,24 @@
   .app-atlas-globe-slot {
     position: absolute;
     inset: 0 0 calc(var(--app-atlas-peek) + var(--app-atlas-sheet-bottom) + 4px);
+    transition:
+      opacity 0.25s var(--ease-out-quint),
+      visibility 0s;
+  }
+  /* the sheet resting at full covers the globe: it steps out (its orbit
+     would peek over the sheet's top edge, and its paint would only feed
+     the sheet's blur) and returns as soon as the sheet moves */
+  .app-atlas-stage[data-layout="sheet"]:has(.app-atlas-sheet[data-settled]) .app-atlas-globe-slot {
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.2s var(--ease-out-quint),
+      visibility 0s 0.2s;
   }
 }
 @media (max-width: 767px) {
   .app-atlas {
-    --app-atlas-sheet-bottom: calc(var(--dock-h) + 8px);
+    --app-atlas-sheet-base: calc(var(--dock-h) + 8px);
     /* the window pads its content for the tab bar; the stage already
        stops at the screen's bottom edge, so take that room back */
     margin-bottom: calc(-1 * (var(--dock-h) + env(safe-area-inset-bottom) + 1rem));
@@ -1080,9 +1158,9 @@
 /* the sheet slides inside a clip that ends where it rests, so the part
    below never shows through the translucent tab bar. A clip-path, not
    overflow: nothing here is a scroll container that focus could scroll.
-   Its top edge sits above the sheet's full position by more than the
-   stiff rubber band past full can travel (MapSheet), so a stretch or a
-   bounce at the top never meets an invisible edge */
+   Its top edge is the window's title bar: stretched past full, the sheet
+   tucks under the bar's hairline rather than sliding beneath its
+   controls */
 .app-atlas-sheet-clip {
   position: absolute;
   top: 0.5rem;
@@ -1090,7 +1168,7 @@
   bottom: var(--app-atlas-sheet-bottom);
   left: 0.5rem;
   z-index: 2;
-  clip-path: inset(-1.75rem 0 0 0 round 0 0 1.625rem 1.625rem);
+  clip-path: inset(-0.5rem 0 0 0 round 0 0 1.625rem 1.625rem);
   pointer-events: none;
 }
 .app-atlas-sheet {
@@ -1122,9 +1200,11 @@
     width: min(25rem, 50%);
   }
 }
+/* the glass reaches down behind the sheet (the clip hides it), so a
+   stretch past full never opens a gap above the sheet's resting edge */
 .app-atlas-sheet-glass {
   position: absolute;
-  inset: 0;
+  inset: 0 0 -6rem;
   border-radius: inherit;
 }
 .app-atlas-sheet-grab {
@@ -1176,9 +1256,17 @@
   overflow-y: auto;
   touch-action: pan-y;
 }
-/* a mini player resting in a bottom corner: the end of the scroll clears it */
-html:is([data-pip-corner="br"], [data-pip-corner="bl"]) .app-atlas-sheet-scroll {
-  --app-atlas-foot: calc(var(--app-atlas-pip-h) + 2rem);
+/* at rest at half, the card fades out at the fold, on a clean break */
+.app-atlas-sheet[data-rest="half"] .app-atlas-sheet-scroll {
+  mask-image: linear-gradient(
+    180deg,
+    #000 calc(var(--app-atlas-half-vis, 100%) - 18px),
+    transparent var(--app-atlas-half-vis, 100%)
+  );
+}
+/* scrolled at full, the content fades out under the grabber */
+.app-atlas-sheet[data-settled] .app-atlas-sheet-scroll[data-scrolled] {
+  mask-image: linear-gradient(180deg, transparent 0, #000 1.125rem);
 }
 .app-atlas-sheet-section {
   margin-top: 1.5rem;
@@ -1293,11 +1381,6 @@ html:is([data-pip-corner="br"], [data-pip-corner="bl"]) .app-atlas-sheet-scroll 
 .app-atlas-facts--details .app-atlas-coords {
   font-size: 0.8125rem;
 }
-/* peek with the mini player in the bottom-right corner: the name and
-   status keep to the left of it */
-html[data-pip-corner="br"] .app-atlas-card[data-compact] :is(.app-atlas-name, .app-atlas-card-meta) {
-  padding-right: calc(var(--app-atlas-pip-h) + 3rem);
-}
 .app-atlas-card[data-compact] .app-atlas-card-nav {
   margin-inline: -0.5rem;
 }
@@ -1319,6 +1402,9 @@ html[data-pip-corner="br"] .app-atlas-card[data-compact] :is(.app-atlas-name, .a
   .app-atlas-card-stamp .app-atlas-stamp-planet {
     width: 72px;
     height: 72px;
+  }
+  .app-atlas-card-stamp {
+    --app-atlas-pm-end: 136px;
   }
   .app-atlas-card-stamp .app-atlas-postmark {
     top: 28px;
@@ -1343,6 +1429,11 @@ html[data-pip-corner="br"] .app-atlas-card[data-compact] :is(.app-atlas-name, .a
     padding-top: 0.375rem;
   }
 }
+@media (min-width: 1440px) and (max-height: 820px) {
+  .app-atlas-card-stamp {
+    --app-atlas-pm-end: 156px;
+  }
+}
 @media (min-width: 1200px) and (max-height: 760px) {
   .app-atlas-card-stamp .app-atlas-stamp {
     --tile: 8px;
@@ -1362,6 +1453,9 @@ html[data-pip-corner="br"] .app-atlas-card[data-compact] :is(.app-atlas-name, .a
   }
   .app-atlas-card-stamp .app-atlas-stamp-value svg {
     scale: 0.75;
+  }
+  .app-atlas-card-stamp {
+    --app-atlas-pm-end: 124px;
   }
   .app-atlas-card-stamp .app-atlas-postmark {
     top: 6px;

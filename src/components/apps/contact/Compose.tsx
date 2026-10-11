@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { m } from "motion/react";
 import { useI18n } from "@/i18n/client";
 import { useIsMac, useMedia, useReduced } from "@/hooks/env";
@@ -9,12 +9,11 @@ import { spring } from "@/lib/motion";
 import { lenisRef } from "@/lib/lenisRef";
 import { SOCIALS } from "@/lib/places";
 import { PixelGlyph } from "@/components/glyphs";
-import { PixelLabel } from "@/components/PixelLabel";
 import { EmosMark } from "@/components/os/menubar/glyphs";
 import { CopyButton } from "./Copy";
 import { MAX_LINES, TEXT_CELLS } from "./Envelope";
 import { Stage, type StageHandle } from "./Stage";
-import { G_INFO, G_SEND } from "./glyphs";
+import { G_INFO, G_OPEN, G_SEND } from "./glyphs";
 import { MAILTO_SAFE, draftFile, fill, launchMail, letterLines, mailtoHref, plural, slug, wordCount } from "./mail";
 import { useDraft } from "./useDraft";
 
@@ -38,6 +37,15 @@ const CHIPS = [
  * only. `formId` lets a Send button outside the form (the window's
  * toolbar on phones) submit it; `onPhase` tells MailApp when to show it.
  */
+/**
+ * Windows: once the message box scrolls inside itself, Lenis leaves the
+ * wheel to it (`data-lenis-prevent`); phones grow it with the page instead.
+ */
+function scrollsInside(ta: HTMLTextAreaElement) {
+  const inside = window.matchMedia("(min-width: 768px)").matches && ta.scrollHeight > ta.clientHeight + 1;
+  ta.toggleAttribute("data-lenis-prevent", inside);
+}
+
 export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phase) => void }) {
   const { t, lang } = useI18n();
   const c = t.contact;
@@ -67,6 +75,7 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
   const sendRef = useRef<HTMLButtonElement>(null);
   const footRef = useRef<HTMLDivElement>(null);
   const footEndRef = useRef<HTMLSpanElement>(null);
+  const honestRef = useRef<HTMLParagraphElement>(null);
   const subjectRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const resultRef = useRef<HTMLHeadingElement>(null);
@@ -114,6 +123,56 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
     h.focus({ preventScroll: true });
   }, [phase, reduced]);
 
+  /**
+   * Windows: the message box takes whatever height is left above the Dock,
+   * like a compose window's body, so the whole sheet and Send are in view
+   * at once and a long message scrolls inside it. Only on very short
+   * windows does the card still run past the fold (the footer then pins).
+   * Measured before paint, written straight to the DOM (no re-render).
+   */
+  useLayoutEffect(() => {
+    const ta = bodyRef.current;
+    const form = ta?.form;
+    const foot = footRef.current;
+    const root = form?.parentElement;
+    if (!ta || !form || !foot || !root || phase !== "compose") return;
+    const wide = window.matchMedia("(min-width: 768px)");
+    let raf = 0;
+    const fit = () => {
+      if (!wide.matches) {
+        form.style.removeProperty("--app-contact-fit");
+        scrollsInside(ta);
+        return;
+      }
+      const r = ta.getBoundingClientRect();
+      const top = r.top + window.scrollY;
+      // the sheet, and the honest note when it sits under the sheet (it moves beside it on wide windows)
+      const fb = form.getBoundingClientRect().bottom;
+      const hn = honestRef.current?.getBoundingClientRect();
+      const below = (hn && hn.top >= fb - 1 ? hn.bottom : fb) - r.bottom;
+      const pin = parseFloat(getComputedStyle(foot).bottom) || 0;
+      // (2px short of the line, so the footer reads as resting, not pinned)
+      const room = Math.floor(window.innerHeight - pin - top - below) - 2;
+      if (form.style.getPropertyValue("--app-contact-fit") !== `${room}px`) form.style.setProperty("--app-contact-fit", `${room}px`);
+      scrollsInside(ta);
+    };
+    const later = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(fit);
+    };
+    fit();
+    const ro = new ResizeObserver(later);
+    ro.observe(root);
+    window.addEventListener("resize", later);
+    wide.addEventListener("change", later);
+    return () => {
+      ro.disconnect();
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", later);
+      wide.removeEventListener("change", later);
+    };
+  }, [phase]);
+
   // the footer pins above the Dock while the card runs below the fold; it gets its own material only then
   useEffect(() => {
     const foot = footRef.current;
@@ -156,17 +215,25 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
     liftTimer.current = window.setTimeout(() => setLifted(false), 900);
   };
 
-  /** the envelope is nearly in the Dock (or sealed in place): over to the mail app */
-  const land = () => {
-    state.sent();
+  const stampNow = () =>
     setPostmark(
       new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(
         new Date()
       )
     );
-    const opened = launchMail(href);
+
+  /**
+   * The envelope is nearly in the Dock (or sealed in place): over to the
+   * mail app, unless the browser would refuse (`canOpen` false), in which
+   * case the card offers the click. Returns whether it opened.
+   */
+  const land = (canOpen: boolean) => {
+    state.sent();
+    const opened = canOpen && launchMail(href);
+    if (opened) stampNow();
     focusNext.current = "result";
     go(opened ? "sent" : "ready");
+    return opened;
   };
 
   const send = () => {
@@ -217,6 +284,8 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
       <div className="app-contact-stagecol">
         <Stage
           ref={stageRef}
+          phase={phase}
+          postmark={postmark}
           subject={subjectCells}
           lines={lines}
           lifted={lifted}
@@ -236,6 +305,11 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
           }}
           onLand={land}
         />
+        {/* under the sheet on narrow windows; beside it, under the envelope, on wide ones */}
+        <p ref={honestRef} className="app-contact-honest">
+          <PixelGlyph cells={G_INFO} size={14} />
+          <span>{c.honest}</span>
+        </p>
       </div>
 
       {!done ? (
@@ -349,6 +423,7 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
               onChange={(e) => {
                 update({ body: e.target.value });
                 typing();
+                scrollsInside(e.currentTarget);
               }}
             />
           </div>
@@ -376,7 +451,7 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
                 <span className="app-contact-status-busy">{c.flying}</span>
               ) : empty ? (
                 <span className="app-contact-status-opens">
-                  <PixelGlyph cells={G_INFO} size={10} />
+                  <PixelGlyph cells={G_INFO} size={14} />
                   <span>{c.opensMail}</span>
                 </span>
               ) : (
@@ -399,7 +474,7 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
               aria-keyshortcuts={isMac ? "Meta+Enter" : "Control+Enter"}
               disabled={busy}
             >
-              <PixelGlyph cells={G_SEND} size={12} />
+              <PixelGlyph cells={G_SEND} size={14} />
               <span>{c.send}</span>
               <kbd className="app-contact-kbd" aria-hidden>
                 {keys}
@@ -428,52 +503,65 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
             <span className="app-contact-result-subject">{draft.subject.trim() || c.noSubject}</span>
             <span aria-hidden> · </span>
             <span className="tabular">{wordsLabel}</span>
-            {postmark && (
-              <span className="app-contact-postmark" aria-hidden>
-                <PixelLabel text={`Paris ${postmark}`} cell={2} />
-              </span>
-            )}
           </p>
-          <div className="app-contact-actions">
+          <div className="app-contact-actions app-contact-result-actions">
             <a
               href={href}
               className={`app-contact-btn ${phase === "ready" ? "app-contact-btn--primary" : ""}`}
-              onClick={() => {
-                if (phase === "ready") go("sent");
+              onClick={(e) => {
+                // a real click opens the mail app: the sealed letter makes the trip it waited for
+                if (phase === "ready") {
+                  stampNow();
+                  go("sent");
+                }
+                stageRef.current?.deliver(e.currentTarget);
               }}
             >
-              <PixelGlyph cells={G_SEND} size={12} />
+              <PixelGlyph cells={G_OPEN} size={14} />
               <span>{phase === "sent" ? c.openAgain : c.openMail}</span>
             </a>
             <button type="button" className="app-contact-btn" onClick={() => backToCompose(false)}>
               {c.editMessage}
             </button>
-            <button type="button" className="app-contact-btn app-contact-btn--ghost" onClick={() => backToCompose(true)}>
+            <button
+              type="button"
+              className="app-contact-btn app-contact-btn--ghost app-contact-result-new"
+              onClick={() => backToCompose(true)}
+            >
               {c.newMessage}
             </button>
           </div>
-          <p className="app-contact-result-note">
-            <span>{fill(c.nothingOpened, { email })}</span>
-            <CopyButton
-              text={email}
-              ok={c.copied}
-              fail={fill(c.copyFailed, { email })}
-              label={fill(c.copyAddressLabel, { email })}
-              className="app-contact-iconbtn"
-            />
-          </p>
+          {phase === "sent" && <NothingOpened email={email} />}
         </m.section>
       )}
-
-      <p className="app-contact-honest">
-        <PixelGlyph cells={G_INFO} size={12} />
-        <span>{c.honest}</span>
-      </p>
 
       <div className="app-contact-reply app-contact-reply--inline">
         <p>{c.replyNote}</p>
         <p>{c.langNote}</p>
       </div>
     </div>
+  );
+}
+
+/** "Nothing opened? Write to {email} from anywhere.", the address and its copy button kept together. */
+function NothingOpened({ email }: { email: string }) {
+  const { t } = useI18n();
+  const c = t.contact;
+  const [before, after = ""] = c.nothingOpened.split("{email}");
+  return (
+    <p className="app-contact-result-note">
+      {before}
+      <span className="app-contact-result-addr">
+        <span>{email}</span>
+        <CopyButton
+          text={email}
+          ok={c.copied}
+          fail={fill(c.copyFailed, { email })}
+          label={fill(c.copyAddressLabel, { email })}
+          className="app-contact-iconbtn"
+        />
+      </span>
+      {after}
+    </p>
   );
 }
