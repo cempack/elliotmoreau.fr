@@ -308,7 +308,7 @@ const fr: typeof en = {
       nothing: "rien en écoute",
       pushed: "en chantier",
       wrote: "à lire",
-      based: "basé en",
+      based: "basé à",
       basedValue: "Toulouse, France · {time}",
       sky: "ciel",
       more: "la page complète : {cmd}",

@@ -92,6 +92,8 @@ export function AppWindow({
       // it flies into the Dock itself: no exit animation on top of that
       setThrown(true);
       blip("close");
+      // a throw is a close: its workspace leaves the bar too
+      closeWorkspace(app);
     },
     onClose: () => router.push(home, { transitionTypes: ["app-close"] }),
     target: () => dockIconCenter(app, appHref),
@@ -132,6 +134,8 @@ export function AppWindow({
   // closing (not minimising) also takes the app's workspace off the bar
   const onCloseWindow = (e: React.MouseEvent) => {
     onCloseClick(e);
+    // a modified click opens the Desktop elsewhere and this window stays
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     closeWorkspace(app);
   };
 

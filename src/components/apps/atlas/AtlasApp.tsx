@@ -163,7 +163,9 @@ export function AtlasApp({ data }: { data: SiteData }) {
           {wide ? (
             <>
               <Glass as="aside" thickness="thick" refract={false} className="app-atlas-panel app-atlas-panel--card" aria-label={a.card.label}>
-                <PlaceCard place={place} onSelect={select} titleId={cardTitle} />
+                <div className="app-atlas-card-scroll" data-lenis-prevent>
+                  <PlaceCard place={place} onSelect={select} titleId={cardTitle} />
+                </div>
               </Glass>
               <div className="app-atlas-stats-slot">
                 <Stats layout="strip" />

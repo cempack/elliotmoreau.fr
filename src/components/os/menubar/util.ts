@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Locale } from "@/i18n/config";
+import { resetWorkspaces } from "../workspaces";
 
 export const PARIS_TZ = "Europe/Paris";
 /** The repository's first commit: emOS uptime counts from here. */
@@ -151,6 +152,8 @@ export function restartOS() {
   try {
     sessionStorage.removeItem("em-intro");
   } catch {}
+  // a reboot closes every app: no workspace survives it
+  resetWorkspaces();
   const home = /^\/fr(\/|$)/.test(window.location.pathname) ? "/fr" : "/";
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (reduced) {

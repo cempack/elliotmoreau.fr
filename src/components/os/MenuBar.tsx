@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { AnimatePresence, m, useScroll, useTransform } from "motion/react";
 import { useI18n } from "@/i18n/client";
 import { spring } from "@/lib/motion";
-import { useIsMac } from "@/hooks/env";
+import { useHydrated, useIsMac } from "@/hooks/env";
 import { useSpotifyStatus } from "@/hooks/useSpotifyStatus";
 import { useHomeTime } from "@/hooks/useHomeTime";
 import { usePalette } from "@/components/ui/CommandPalette";
@@ -75,11 +75,16 @@ function AppName({ id, label }: { id: string; label: string }) {
 function Workspaces({ current }: { current: AppDef }) {
   const { t, path } = useI18n();
   const ids = useWorkspaces(current.id);
+  // the server knows only the current app; the rest come back from this
+  // tab's storage on hydration. Remounting the group then shows them as
+  // they were (no "just opened" entrance on every reload); only apps
+  // opened after that animate in
+  const hydrated = useHydrated();
   // opening an app opens its workspace for the rest of the visit
   useEffect(() => openWorkspace(current.id), [current.id]);
   return (
     <nav className="os-menubar-ws" aria-label={t.shell.menu.workspaces}>
-      <AnimatePresence initial={false}>
+      <AnimatePresence key={hydrated ? "client" : "server"} initial={false}>
         {ids.map((id) => {
           const a = APPS.find((x) => x.id === id)!;
           const on = id === current.id;

@@ -48,6 +48,14 @@ export function openWorkspace(id: AppId) {
   if (!ids.includes(id)) write([...ids, id]);
 }
 
+/** A restart: every app is closed, only the Desktop remains. */
+export function resetWorkspaces() {
+  try {
+    sessionStorage.removeItem(KEY);
+  } catch {}
+  listeners.forEach((l) => l());
+}
+
 /** Its window was closed: the workspace goes away. */
 export function closeWorkspace(id: AppId) {
   const ids = parse(read());
