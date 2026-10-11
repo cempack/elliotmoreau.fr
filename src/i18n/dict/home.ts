@@ -51,12 +51,16 @@ const en = {
       aria: "Latest post: {title}, {minutes}, {ago}. Open in Writing.",
       ariaEmpty: "No posts yet. Open Writing.",
     },
-    /** the last push */
+    /** the last push: a wall of Toulouse brick, one brick per day */
     push: {
-      title: "Last push",
-      aria: "Last push to {repo}, {ago}: {message}. Open on GitHub.",
-      empty: "No public pushes lately.",
-      ariaEmpty: "No public pushes lately. Open GitHub.",
+      wall: "Public pushes, last 13 weeks",
+      wallRole: "brick wall",
+      hint: "Each brick is a day; the redder, the more pushes. Arrow keys move by day (up and down) and by week (left and right); Enter opens that repo in Projects.",
+      none: "No public push that day",
+      dayOne: "{date}, 1 push to {repo}",
+      dayMany: "{date}, {n} pushes to {repo}",
+      dayNone: "{date}",
+      empty: "No public pushes in the last 90 days.",
     },
   },
   icons: {
@@ -114,10 +118,14 @@ const fr: typeof en = {
       ariaEmpty: "Pas encore d’article. Ouvrir Écrits.",
     },
     push: {
-      title: "Dernier push",
-      aria: "Dernier push sur {repo}, {ago} : {message}. Ouvrir sur GitHub.",
-      empty: "Pas de push public ces temps-ci.",
-      ariaEmpty: "Pas de push public ces temps-ci. Ouvrir GitHub.",
+      wall: "Pushs publics, 13 dernières semaines",
+      wallRole: "mur de briques",
+      hint: "Chaque brique est un jour ; plus elle est rouge, plus il y a eu de pushs. Les flèches avancent d’un jour (haut et bas) ou d’une semaine (gauche et droite) ; Entrée ouvre le dépôt dans Projets.",
+      none: "Aucun push public ce jour-là",
+      dayOne: "{date}, 1 push sur {repo}",
+      dayMany: "{date}, {n} pushs sur {repo}",
+      dayNone: "{date}",
+      empty: "Aucun push public ces 90 derniers jours.",
     },
   },
   icons: {

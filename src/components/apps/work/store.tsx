@@ -167,6 +167,27 @@ export function WorkProvider({ data, children }: { data: SiteData; children: Rea
     revealItem(el);
   };
 
+  // ?repo=name (the desk's brick wall links here): select it and bring it into view
+  useEffect(() => {
+    const want = new URLSearchParams(window.location.search).get("repo");
+    if (!want) return;
+    const id = window.setTimeout(() => {
+      const hit = repos.find((r) => r.name.toLowerCase() === want.toLowerCase());
+      if (hit) {
+        setFilterState({ kind: "all" });
+        setQuery("");
+        setSelected(hit.name);
+        requestAnimationFrame(() => focusItem(hit.name));
+      }
+      const u = new URL(window.location.href);
+      u.searchParams.delete("repo");
+      window.history.replaceState(window.history.state, "", u);
+    }, 0);
+    return () => window.clearTimeout(id);
+    // once, on arrival
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const openQL = (name: string, from: QL["from"] = "item") => {
     const mode = window.matchMedia("(max-width: 767px)").matches ? "sheet" : "panel";
     setSelected(name);

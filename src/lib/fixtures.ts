@@ -1,5 +1,5 @@
 import type { GhostPost } from "./ghost";
-import type { ActivityInfo, RepoInfo } from "./github";
+import type { ActivityInfo, PushHistory, RepoInfo } from "./github";
 import type { SpotifyStatus } from "./spotify";
 
 /**
@@ -147,3 +147,38 @@ export const FIXTURE_ACTIVITY: ActivityInfo = {
   message: "tune the springs until they feel right",
   createdAt: daysAgo(0.1),
 };
+
+/** ~90 days of sample pushes: steady weekdays, quiet weekends, a few busy
+    stretches. Seeded, so it is the same wall on every render. */
+export const FIXTURE_PUSHES: PushHistory = (() => {
+  let a = 0x5eed;
+  const rnd = () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const fmt = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" });
+  const repos = ["elliotmoreau.fr", "omarchy-dos-moos-theme", "ttfx", "dotfiles"];
+  const msgs = [
+    "tune the springs until they feel right",
+    "relight the city from the real sun",
+    "fix the dock overlapping app bottoms",
+    "dither the moon phase",
+    "tighten the waybar spacing",
+    "Safari: rims as real borders",
+    "add the sundial",
+    "write the French strings",
+  ];
+  const days: PushHistory["days"] = [];
+  for (let k = 0; k < 90; k++) {
+    const date = new Date(Date.now() - k * 86_400_000);
+    const weekend = [0, 6].includes(date.getUTCDay());
+    const busy = Math.sin(k / 9) > 0.55;
+    const r = rnd();
+    const n = weekend ? (r < 0.75 ? 0 : 1) : r < 0.22 ? 0 : Math.floor(1 + rnd() * (busy ? 8 : 4));
+    if (!n) continue;
+    days.push({ d: fmt.format(date), n, repo: repos[Math.floor(rnd() * (busy ? 1.5 : repos.length))], msg: msgs[Math.floor(rnd() * msgs.length)] });
+  }
+  return { days, since: fmt.format(new Date(Date.now() - 89 * 86_400_000)) };
+})();

@@ -127,39 +127,104 @@ export type ActivityInfo = {
   createdAt: string;
 };
 
-let activityCache: { at: number; data: ActivityInfo | null } | null = null;
-const ACTIVITY_TTL = 5 * 60 * 1000;
+/** One Toulouse calendar day of public pushes. */
+export type PushDay = {
+  /** YYYY-MM-DD, Toulouse time */
+  d: string;
+  /** pushes that day (not commits) */
+  n: number;
+  /** the repo pushed to most that day */
+  repo: string;
+  /** the day's first commit message, when the API still gives one */
+  msg: string;
+};
+
+/** What the public events API remembers (~90 days, 300 events). */
+export type PushHistory = {
+  days: PushDay[];
+  /** the oldest event actually returned: the wall starts here, not at an assumed 90 days */
+  since: string;
+};
+
+type GhEvent = {
+  type?: string;
+  repo?: { name?: string };
+  created_at?: string;
+  payload?: { commits?: { message?: string }[] };
+};
+
+let eventsCache: { at: number; data: GhEvent[] | null } | null = null;
+const EVENTS_TTL = 5 * 60 * 1000;
+
+/** Public events, newest first: up to three pages of 100 (all the API keeps). */
+async function getEvents(): Promise<GhEvent[] | null> {
+  if (eventsCache && Date.now() - eventsCache.at < EVENTS_TTL) return eventsCache.data;
+  try {
+    const all: GhEvent[] = [];
+    for (let page = 1; page <= 3; page++) {
+      const res = await fetch(`${API}/users/${USER}/events/public?per_page=100&page=${page}`, {
+        headers: headers(),
+        next: { revalidate: 300 },
+      });
+      if (!res.ok) {
+        if (page === 1) return eventsCache?.data ?? null;
+        break;
+      }
+      const batch = (await res.json()) as GhEvent[];
+      all.push(...batch);
+      if (batch.length < 100) break;
+    }
+    eventsCache = { at: Date.now(), data: all };
+    return all;
+  } catch {
+    return eventsCache?.data ?? null;
+  }
+}
+
+const firstLine = (m: string | undefined) => {
+  const msg = (m ?? "").split("\n")[0].trim();
+  return msg.length > 72 ? msg.slice(0, 72) + "…" : msg;
+};
 
 export async function getActivity(): Promise<ActivityInfo | null> {
-  if (activityCache && Date.now() - activityCache.at < ACTIVITY_TTL) return activityCache.data;
-  try {
-    const res = await fetch(`${API}/users/${USER}/events/public?per_page=10`, {
-      headers: headers(),
-      next: { revalidate: 300 },
-    });
-    if (!res.ok) return activityCache?.data ?? null;
-    const events = (await res.json()) as {
-      type?: string;
-      repo?: { name?: string };
-      created_at?: string;
-      payload?: { commits?: { message?: string }[] };
-    }[];
-    const push = events.find((e) => e.type === "PushEvent") ?? events[0];
-    if (!push?.repo?.name || !push.created_at) {
-      activityCache = { at: Date.now(), data: null };
-      return null;
-    }
-    const msg = push.payload?.commits?.[0]?.message?.split("\n")[0] ?? "";
-    const data: ActivityInfo = {
-      type: push.type ?? "Event",
-      repo: push.repo.name.replace(`${USER}/`, ""),
-      repoUrl: `https://github.com/${push.repo.name}`,
-      message: msg.length > 72 ? msg.slice(0, 72) + "…" : msg,
-      createdAt: push.created_at,
-    };
-    activityCache = { at: Date.now(), data: data };
-    return data;
-  } catch {
-    return activityCache?.data ?? null;
+  const events = await getEvents();
+  if (!events?.length) return null;
+  const push = events.find((e) => e.type === "PushEvent") ?? events[0];
+  if (!push?.repo?.name || !push.created_at) return null;
+  return {
+    type: push.type ?? "Event",
+    repo: push.repo.name.replace(`${USER}/`, ""),
+    repoUrl: `https://github.com/${push.repo.name}`,
+    message: firstLine(push.payload?.commits?.[0]?.message),
+    createdAt: push.created_at,
+  };
+}
+
+const toulouseDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" });
+
+/** Public pushes grouped by Toulouse day, newest first. */
+export async function getPushes(): Promise<PushHistory | null> {
+  const events = await getEvents();
+  if (!events?.length) return null;
+  const byDay = new Map<string, { n: number; repos: Map<string, number>; msg: string }>();
+  for (const e of events) {
+    if (e.type !== "PushEvent" || !e.created_at || !e.repo?.name) continue;
+    const d = toulouseDay.format(new Date(e.created_at));
+    const day = byDay.get(d) ?? { n: 0, repos: new Map(), msg: "" };
+    day.n += 1;
+    const repo = e.repo.name.replace(`${USER}/`, "");
+    day.repos.set(repo, (day.repos.get(repo) ?? 0) + 1);
+    // events come newest first: the last one seen is the day's first push
+    const m = firstLine(e.payload?.commits?.[0]?.message);
+    if (m) day.msg = m;
+    byDay.set(d, day);
   }
+  const days: PushDay[] = [...byDay].map(([d, v]) => ({
+    d,
+    n: v.n,
+    repo: [...v.repos].sort((a, b) => b[1] - a[1])[0][0],
+    msg: v.msg,
+  }));
+  const oldest = events[events.length - 1]?.created_at;
+  return { days, since: oldest ? toulouseDay.format(new Date(oldest)) : days[days.length - 1]?.d ?? "" };
 }

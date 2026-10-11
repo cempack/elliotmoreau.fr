@@ -7,8 +7,7 @@ import { timeAgo } from "@/lib/format";
 import { PixelGlyph } from "@/components/glyphs";
 import { Glass } from "@/components/os/Glass";
 import { useSiteData } from "@/components/os/SiteData";
-import { SOCIALS } from "@/lib/places";
-import { G_COMMIT, G_PEN } from "./icons";
+import { G_PEN } from "./icons";
 
 const fill = (s: string, v: Record<string, string | number>) => s.replace(/\{(\w+)\}/g, (_, k: string) => String(v[k] ?? ""));
 
@@ -83,62 +82,6 @@ export function LatestPostWidget() {
         <p className="app-home-post-foot">
           <span className="tabular">{fill(w.minutesShort, { n })}</span>
           <span className="app-home-post-ago" suppressHydrationWarning>
-            {ago}
-          </span>
-        </p>
-      </div>
-    </Tile>
-  );
-}
-
-/**
- * The last push (phones, beside the clock): the commit message itself,
- * which says more about the work than a count ever could. The mini
- * player already is the now-playing widget on this screen.
- */
-export function PushWidget() {
-  const { t, lang } = useI18n();
-  const w = t.home.widgets.push;
-  const { activity } = useSiteData();
-  const hydrated = useHydrated();
-
-  if (!activity) {
-    return (
-      <Tile size="s" className="app-home-widget--push">
-        <a href={SOCIALS.github} target="_blank" rel="noreferrer" className="app-home-widget-hit" aria-label={w.ariaEmpty} />
-        <div className="app-home-widget-head" aria-hidden>
-          <PixelGlyph cells={G_COMMIT} size={14} className="app-home-push-glyph" />
-          <span>{w.title}</span>
-        </div>
-        <div className="app-home-push app-home-push--empty" aria-hidden>
-          <p className="app-home-push-msg">{w.empty}</p>
-          <p className="app-home-push-foot">
-            <span className="app-home-push-repo">{SOCIALS.github.replace("https://", "")}</span>
-          </p>
-        </div>
-      </Tile>
-    );
-  }
-
-  const ago = hydrated ? timeAgo(activity.createdAt, lang) : "";
-  return (
-    <Tile size="s" className="app-home-widget--push">
-      <a
-        href={activity.repoUrl}
-        target="_blank"
-        rel="noreferrer"
-        className="app-home-widget-hit"
-        aria-label={fill(w.aria, { message: activity.message, repo: activity.repo, ago })}
-      />
-      <div className="app-home-widget-head" aria-hidden>
-        <PixelGlyph cells={G_COMMIT} size={14} className="app-home-push-glyph" />
-        <span>{w.title}</span>
-      </div>
-      <div className="app-home-push" aria-hidden>
-        <p className="app-home-push-msg">{activity.message}</p>
-        <p className="app-home-push-foot">
-          <span className="app-home-push-repo">{activity.repo}</span>
-          <span className="app-home-push-ago" suppressHydrationWarning>
             {ago}
           </span>
         </p>

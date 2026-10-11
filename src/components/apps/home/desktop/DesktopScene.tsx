@@ -8,7 +8,8 @@ import { DesktopIcons } from "./DesktopIcons";
 import { HelloWindow, type HelloHandle } from "./HelloWindow";
 import { ClockWidget } from "./Sundial";
 import { SunHandle } from "./SunHandle";
-import { LatestPostWidget, PushWidget } from "./Widgets";
+import { PushWidget } from "./BrickWall";
+import { LatestPostWidget } from "./Widgets";
 import { type DesktopIconId } from "./icons";
 import { desktopMemory } from "./store";
 import { INTERACTIVE, intersects, type Rect } from "./physics";
@@ -224,8 +225,8 @@ export function DesktopScene() {
 
       <div ref={widgetsRef} className="app-home-widgets" role="group" aria-label={t.home.widgets.label}>
         <ClockWidget />
-        <PushWidget />
         <LatestPostWidget />
+        <PushWidget />
       </div>
 
       <DesktopIcons
