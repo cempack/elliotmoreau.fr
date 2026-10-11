@@ -51,4 +51,5 @@ const fr: typeof en = {
   },
 };
 
-export default { en, fr };
+const notfound = { en, fr };
+export default notfound;

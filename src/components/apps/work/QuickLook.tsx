@@ -148,21 +148,27 @@ export function QuickLook({
   );
 
   /**
-   * The planet's box on screen: where the glass carries it (N), blended
-   * with the origin's planet (I, plus the hand) while it travels. At p = 1
-   * it is exactly N, so it stays locked to the panel through any drag.
+   * The planet's box on screen: a straight flight from the origin's planet
+   * (I) to its slot in the panel (R), both carried by the hand. At p = 1 it
+   * is exactly where the glass holds it, so it stays locked to the panel
+   * through any drag; without an origin it simply rides the glass.
    */
   const planet = () => {
     const pv = p.get();
-    const s = lerp(os.get(), 1, pv) * ds.get();
-    const nx = cx.get() + lerp(ox.get(), 0, pv) + dx.get() + s * px.get();
-    const ny = cy.get() + lerp(oy.get(), 0, pv) + dy.get() + s * py.get();
-    const nw = s * pw.get();
+    const d = ds.get();
+    const s = lerp(os.get(), 1, pv) * d;
     const e = 1 - fly.get() * (1 - pv);
+    // R: where the glass carries the slot right now (= rest slot at p = 1)
+    const rx = cx.get() + lerp(ox.get(), 0, pv) + dx.get() + s * px.get();
+    const ry = cy.get() + lerp(oy.get(), 0, pv) + dy.get() + s * py.get();
+    // in flight, aim for the slot's resting place instead of the moving glass
+    const tx = cx.get() + dx.get() + d * px.get();
+    const ty = cy.get() + dy.get() + d * py.get();
+    const k = fly.get();
     return {
-      x: lerp(ix.get() + dx.get(), nx, e),
-      y: lerp(iy.get() + dy.get(), ny, e),
-      w: lerp(iw.get() * ds.get(), nw, e),
+      x: lerp(ix.get() + dx.get(), lerp(rx, tx, k), e),
+      y: lerp(iy.get() + dy.get(), lerp(ry, ty, k), e),
+      w: k ? lerp(iw.get(), pw.get(), e) * d : s * pw.get(),
     };
   };
   const fx = useTransform(() => planet().x - pw.get() / 2);
