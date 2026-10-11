@@ -18,7 +18,7 @@
   /* the gap under the shelf and a little side slack belong to the hover
      zone, so skimming the screen edge doesn't drop the magnification */
   padding: 0 12px 8px;
-  transition: transform 0.5s var(--ease-out-quint);
+  transition: transform 0.3s var(--ease-out-quint);
 }
 
 .os-dock-shelf {
@@ -218,7 +218,7 @@ html:active-view-transition .os-dock-solid {
   box-shadow:
     0 18px 40px -16px rgb(0 0 0 / 0.7),
     0 2px 8px -3px rgb(0 0 0 / 0.45);
-  transition: transform 0.45s var(--ease-out-quint);
+  transition: transform 0.3s var(--ease-out-quint);
 }
 /* content scrolls right under the bar: a denser material than the shelf */
 .os-tabbar-glass {

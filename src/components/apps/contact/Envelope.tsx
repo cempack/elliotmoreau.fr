@@ -240,6 +240,7 @@ export function Envelope({
       }
       const fold = animate([
         [letter, SLIDE, { duration: FOLD.letter, ease: [0.5, 0, 0.75, 0] }],
+        // the flap falls shut: it gathers speed, then lands
         [back, 0, { duration: FOLD.back[1], ease: "easeIn", at: FOLD.back[0] }],
         [front, 1, { duration: FOLD.front[1], ease: "easeOut", at: FOLD.front[0] }],
       ]);
@@ -265,8 +266,9 @@ export function Envelope({
       return;
     }
     const c = animate([
-      [seal, 0, { duration: 0.1, ease: "easeIn" }],
-      [front, 0, { duration: 0.12, ease: "easeIn", at: 0.06 }],
+      // reopening answers an edit: it starts fast
+      [seal, 0, { duration: 0.1, ease: "easeOut" }],
+      [front, 0, { duration: 0.12, ease: "easeOut", at: 0.06 }],
       [back, 1, { duration: 0.12, ease: "easeOut", at: 0.16 }],
       [letter, 0, { duration: 0.3, ease: [0.22, 1, 0.36, 1], at: 0.24 }],
     ]);

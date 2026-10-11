@@ -246,15 +246,6 @@ export function ClockWidget() {
         className="app-home-widget-hit"
         aria-label={`${label} ${fill(w.open, { app: t.shell.apps.now })}`}
       />
-      {offset !== 0 && (
-        <span className="app-home-clock-you" aria-hidden>
-          <span className="app-home-clock-you-k">
-            <i />
-            {w.you}
-          </span>
-          <span className="tabular">{fmtOffset(offset)}</span>
-        </span>
-      )}
       <div className="app-home-clock-face" aria-hidden>
         <SkyDial hour={hour} phase={phase} glyphPhase={shown} visitorHour={visitorHour} />
         <span className="app-home-clock-center">

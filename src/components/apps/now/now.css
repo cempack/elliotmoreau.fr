@@ -679,6 +679,11 @@ a.app-now-tok:hover {
     rotate: 1turn;
   }
 }
+@media (prefers-reduced-motion: reduce) {
+  .app-now-vinyl {
+    transition: none;
+  }
+}
 .app-now-art {
   position: relative;
   display: block;
@@ -702,6 +707,10 @@ a.app-now-tok:hover {
 }
 .app-now-art--round {
   border-radius: 999px;
+}
+/* an artist with no photo gets a small sleeve, not a disc */
+.app-now-art--sleeve {
+  border-radius: 8px;
 }
 /* nothing from Spotify at all: a still life where the music goes. The
    planet sits where the art would, the eq lies flat (one cell a column) */
@@ -825,8 +834,10 @@ a.app-now-tok:hover {
   max-width: 4rem;
   transition: transform 0.35s var(--ease-out-quint);
 }
-a.app-now-artist:hover .app-now-artist-face {
-  transform: translateY(-2px);
+@media (hover: hover) and (pointer: fine) {
+  a.app-now-artist:hover .app-now-artist-face {
+    transform: translateY(-2px);
+  }
 }
 .app-now-artist-rank {
   position: absolute;
@@ -1533,8 +1544,10 @@ li:first-child .app-now-artist-rank {
   image-rendering: pixelated;
   transition: transform 0.35s var(--ease-out-quint);
 }
-a.app-now-book:hover .app-now-spine {
-  transform: translateY(-3px);
+@media (hover: hover) and (pointer: fine) {
+  a.app-now-book:hover .app-now-spine {
+    transform: translateY(-3px);
+  }
 }
 .app-now-book-text {
   display: flex;
@@ -1841,10 +1854,18 @@ a.app-now-book:hover .app-now-spine {
   color: var(--color-ion);
   font-size: var(--text-footnote);
   font-weight: 500;
-  transition: gap 0.3s var(--ease-out-quint), color 0.2s;
+  transition: color 0.2s;
+}
+.app-now-more svg {
+  transition: translate 0.2s var(--ease-out-quint);
 }
 .app-now-more:hover {
   color: var(--color-label);
+}
+@media (hover: hover) and (pointer: fine) {
+  .app-now-more:hover svg {
+    translate: 2px 0;
+  }
 }
 
 /* in the grid, tiles have fixed heights: real-length content is held to

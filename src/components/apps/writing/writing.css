@@ -81,8 +81,10 @@
   color: var(--os-win-accent);
   transition: transform 0.25s var(--ease-out-quint);
 }
-.app-writing-tool:hover .app-writing-tool-glyph {
-  transform: translate(1px, -1px);
+@media (hover: hover) and (pointer: fine) {
+  .app-writing-tool:hover .app-writing-tool-glyph {
+    transform: translate(1px, -1px);
+  }
 }
 
 /* ── folders column (≥1280) ── */
@@ -789,8 +791,10 @@
   display: inline-block;
   transition: transform 0.3s var(--ease-out-quint);
 }
-.app-writing-cta:hover .app-writing-cta-arrow {
-  transform: translate(2px, -2px);
+@media (hover: hover) and (pointer: fine) {
+  .app-writing-cta:hover .app-writing-cta-arrow {
+    transform: translate(2px, -2px);
+  }
 }
 .app-writing-iconbtn {
   display: grid;

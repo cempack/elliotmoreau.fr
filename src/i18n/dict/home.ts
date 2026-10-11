@@ -36,8 +36,6 @@ const en = {
       /** …and the second line keeps the real phase in Paris */
       real: "Paris: {phase}",
       ariaPinned: "Paris time {time}. The sky is pinned to {pinned}; in Paris it is {phase}.",
-      /** the badge by the visitor's tick on the dial */
-      you: "you",
       open: "Open {app}.",
     },
     post: {
@@ -99,7 +97,6 @@ const fr: typeof en = {
       pinned: "épinglé",
       real: "Paris : {phase}",
       ariaPinned: "Heure de Paris {time}. Le ciel est épinglé sur {pinned} ; à Paris, c’est {phase}.",
-      you: "vous",
       open: "Ouvrir {app}.",
     },
     post: {

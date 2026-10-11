@@ -559,9 +559,9 @@ html[data-intro="done"] .em-intro {
 }
 
 /* RepoArt: a repo's code as a pixel minimap */
+/* the file itself is unframed: tiles and stages draw their own frame */
 .em-repo {
-  border-radius: 14%;
-  box-shadow: 0 0 0 1px rgba(196, 206, 194, 0.14);
+  display: block;
 }
 .em-repo-caret {
   animation: em-repo-caret 1.06s steps(1, end) infinite;

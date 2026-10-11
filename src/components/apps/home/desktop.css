@@ -64,7 +64,7 @@ html[data-sky="dusk"] .app-home-scene {
 /* ── widgets: top right, beside the icon column ── */
 .app-home-widgets {
   position: absolute;
-  top: calc(var(--app-home-grid-t) + 4px);
+  top: var(--app-home-grid-t);
   right: calc(var(--app-home-grid-r) + var(--app-home-cell-w) + 14px);
   z-index: 2;
   display: grid;
@@ -209,29 +209,6 @@ html[data-sky="dusk"] .app-home-scene {
 }
 /* the legend for the ion tick on the dial: "■ you" over "−6 h", tucked
    in the corner the ring leaves free */
-.app-home-clock-you {
-  position: absolute !important;
-  top: 9px;
-  right: 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 3px;
-  color: var(--color-ion);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  line-height: 1;
-}
-.app-home-clock-you-k {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.app-home-clock-you i {
-  width: 8px;
-  height: 4px;
-  background: currentColor;
-}
 .app-home-clock-pin {
   flex: none;
   align-self: center;
@@ -551,8 +528,10 @@ html[data-sky="dusk"] .app-home-scene {
 .app-home-btn-arrow {
   transition: translate 0.35s var(--ease-spring);
 }
-.app-home-btn--primary:hover .app-home-btn-arrow {
-  translate: 2px 0;
+@media (hover: hover) and (pointer: fine) {
+  .app-home-btn--primary:hover .app-home-btn-arrow {
+    translate: 2px 0;
+  }
 }
 .app-home-btn--ghost {
   background: transparent;
@@ -986,9 +965,6 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
     align-items: flex-start;
     margin-top: 0;
     text-align: left;
-  }
-  .app-home-clock-you {
-    display: none !important;
   }
   .app-home-post-title {
     -webkit-line-clamp: 2;

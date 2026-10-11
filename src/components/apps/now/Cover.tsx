@@ -149,7 +149,8 @@ const DISC = (() => {
         if (d <= VN / 2 && d > 4.6) {
           const a = Math.atan2(y - c, x - c);
           const sheen = Math.abs(Math.sin(a * 2 + 0.6)) > 0.94 && d > 6;
-          ink = sheen ? "#2b322d" : Math.floor(d) % 2 ? "#0c0e0d" : "#161a17";
+          const rim = d > VN / 2 - 1;
+          ink = rim ? "#3f4842" : sheen ? "#4a544d" : Math.floor(d) % 2 ? "#141816" : "#232925";
         }
       }
       if (run && ink !== run.c) {

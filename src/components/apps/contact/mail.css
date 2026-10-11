@@ -936,8 +936,10 @@
   inset: 0;
   transition: scale 0.25s var(--ease-spring);
 }
-.app-contact-slot[data-throwable]:hover .app-contact-slot-env {
-  scale: 1.025;
+@media (hover: hover) and (pointer: fine) {
+  .app-contact-slot[data-throwable]:hover .app-contact-slot-env {
+    scale: 1.025;
+  }
 }
 .app-contact-stage[data-held] .app-contact-slot-env {
   scale: 1.045;
@@ -1275,8 +1277,10 @@
   color: var(--app-contact-net);
   transition: scale 0.3s var(--ease-spring);
 }
-.app-contact-net:hover .app-contact-net-tile {
-  scale: 1.06;
+@media (hover: hover) and (pointer: fine) {
+  .app-contact-net:hover .app-contact-net-tile {
+    scale: 1.06;
+  }
 }
 .app-contact-net-main {
   display: grid;
@@ -1332,11 +1336,13 @@
     color 0.25s,
     translate 0.3s var(--ease-spring);
 }
-.app-contact-net:hover .app-contact-net-go {
-  background: var(--color-signal);
-  box-shadow: none;
-  color: var(--color-ink-950);
-  translate: 2px -2px;
+@media (hover: hover) and (pointer: fine) {
+  .app-contact-net:hover .app-contact-net-go {
+    background: var(--color-signal);
+    box-shadow: none;
+    color: var(--color-ink-950);
+    translate: 2px -2px;
+  }
 }
 @container app-contact (max-width: 640px) {
   .app-contact-net {

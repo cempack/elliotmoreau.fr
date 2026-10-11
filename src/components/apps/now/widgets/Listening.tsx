@@ -149,7 +149,7 @@ export function Listening({ status, track, playing }: Listen) {
               const body = (
                 <>
                   <span className="app-now-artist-face">
-                    <Art image={a.image} seed={`artist · ${a.name}`} n={12} className="app-now-art--round" />
+                    <Art image={a.image} seed={`artist · ${a.name}`} n={12} className={a.image ? "app-now-art--round" : "app-now-art--sleeve"} />
                     {/* the <ol> carries the rank for assistive tech */}
                     <span className="app-now-artist-rank tabular" aria-hidden>
                       {i + 1}
