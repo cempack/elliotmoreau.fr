@@ -9,6 +9,7 @@ import { useI18n } from "@/i18n/client";
 import { spring } from "@/lib/motion";
 import { Collection } from "./Collection";
 import { Featured } from "./Featured";
+import { Lid } from "./Lid";
 import { Overview } from "./Overview";
 import { EmptyState, StatusBar } from "./Parts";
 import { QuickLook, QuickLookSheetBody } from "./QuickLook";
@@ -84,6 +85,8 @@ function WorkContent() {
   const h = t.work.heading;
   const w = useWork();
   const { filter, terms, query, visible } = w;
+  const lidView = w.effView === "icons";
+  const visibleSet = new Set(visible.map((r) => r.name));
 
   const short = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
   const folder =
@@ -116,8 +119,25 @@ function WorkContent() {
         <EmptyState kind="offline" />
       ) : (
         <LayoutGroup id="app-work">
+          {/* icons: the sticker lid (every repo, the non-matching dimmed) */}
+          {lidView && (
+            <div className="app-work-lid-wrap">
+              <Lid
+                repos={w.repos}
+                visible={visibleSet}
+                selected={w.selected}
+                phone={w.phone}
+                onSelect={w.setSelected}
+                onOpen={(name) => w.openQL(name)}
+                title={heading}
+                label={(r) => fmt(t.work.lid.sticker, { name: r.name, stars: r.stars, lang: r.language || "" })}
+              />
+              <p className="app-work-lid-legend">{t.work.lid.legend}</p>
+            </div>
+          )}
+
           <AnimatePresence initial={false} mode="popLayout">
-            {w.showHero && w.featured && (
+            {!lidView && w.showHero && w.featured && (
               <m.div
                 key="hero"
                 className="app-work-hero-wrap"
@@ -139,7 +159,7 @@ function WorkContent() {
             <Overview repos={w.repos} hydrated={w.hydrated} onLang={(lang) => w.setFilter({ kind: "lang", value: lang })} />
           )}
 
-          {visible.length > 0 && (
+          {visible.length > 0 && !lidView && (
             <m.div layout="position" transition={{ layout: spring.default }} className="app-work-head">
               <h2 className="app-work-head-title">{heading}</h2>
               <span className="app-work-head-count tabular" aria-hidden>
@@ -148,7 +168,7 @@ function WorkContent() {
             </m.div>
           )}
 
-          {visible.length > 0 ? (
+          {lidView ? null : visible.length > 0 ? (
             <Collection
               repos={visible}
               view={w.view}

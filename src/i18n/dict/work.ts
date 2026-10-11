@@ -77,6 +77,11 @@ const en = {
     starsOther: "{n} stars",
     listbox: "Projects",
   },
+  /** the sticker lid (the icons view) */
+  lid: {
+    legend: "Bigger: more stars. Shiny: pushed this week. Faded: untouched for a year.",
+    sticker: "{name}, {lang}, {stars} stars. Peel to open.",
+  },
   ql: {
     label: "Quick Look: {name}",
     close: "Close Quick Look",
@@ -199,6 +204,10 @@ const fr: typeof en = {
     starsOne: "{n} étoile",
     starsOther: "{n} étoiles",
     listbox: "Projets",
+  },
+  lid: {
+    legend: "Plus grand : plus d’étoiles. Brillant : poussé cette semaine. Délavé : intouché depuis un an.",
+    sticker: "{name}, {lang}, {stars} étoiles. Décollez pour ouvrir.",
   },
   ql: {
     label: "Coup d’œil : {name}",
