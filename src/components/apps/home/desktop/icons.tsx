@@ -31,9 +31,10 @@ export const G_PLANE: Cells = [
   [3, 6],
 ];
 
-/** The six things on the desktop: five apps and the README that is hello.txt. */
+/** What can sit on the desktop. The apps live in the Dock, so only the
+    README (it opens hello.txt) is out on the desk. */
 export type DesktopIconId = Exclude<AppId, "home"> | "readme";
-export const DESKTOP_ICONS: DesktopIconId[] = ["work", "writing", "atlas", "now", "contact", "readme"];
+export const DESKTOP_ICONS: DesktopIconId[] = ["readme"];
 
 const C = {
   paper: "#ebe9e1",

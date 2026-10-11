@@ -113,6 +113,11 @@ html[data-sky="dusk"] .app-home-widget-glass {
   z-index: 0;
   border-radius: inherit;
   pointer-events: none;
+  --os-glass-tint: rgba(13, 16, 14, 0.9);
+}
+/* tiles wear the windows' 2px border */
+.app-home-widget-glass::after {
+  box-shadow: inset 0 0 0 2px rgba(196, 206, 194, 0.26);
 }
 .app-home-widget .app-home-widget-hit {
   position: absolute;
@@ -373,7 +378,9 @@ html[data-sky="dusk"] .app-home-widget-glass {
   font-size: 0.8125rem;
 }
 
-/* ───────────────────────────── hello.txt ───────────────────────────── */
+/* ───────────────────────────── README.md ─────────────────────────────
+   hello.txt, as a tiled window like the apps: a dark pane, a 2px border, a
+   mono title row with flat controls, a markdown-ish body and a statusline. */
 .app-home-hello {
   position: relative;
   width: 100%;
@@ -381,10 +388,8 @@ html[data-sky="dusk"] .app-home-widget-glass {
   color: var(--color-label);
   outline: none;
   box-shadow:
-    0 0 0 0.5px rgba(176, 204, 134, 0.16),
-    0 -18px 60px -40px rgba(176, 204, 134, 0.45),
-    0 56px 110px -46px rgba(0, 0, 0, 0.85),
-    0 22px 44px -26px rgba(0, 0, 0, 0.6);
+    0 30px 70px -36px rgba(0, 0, 0, 0.85),
+    0 12px 26px -18px rgba(0, 0, 0, 0.6);
 }
 .app-home-hello[data-closed] {
   visibility: hidden;
@@ -392,8 +397,7 @@ html[data-sky="dusk"] .app-home-widget-glass {
 .app-home-hello[data-dragging] {
   will-change: transform;
 }
-/* picked up: a longer, softer shadow fades in under it (opacity only),
-   the light source unchanged, so it reads as height, not as a new window */
+/* picked up: a longer, softer shadow fades in under it (opacity only) */
 .app-home-hello::before {
   content: "";
   position: absolute;
@@ -411,6 +415,20 @@ html[data-sky="dusk"] .app-home-widget-glass {
   opacity: 1;
   transition-duration: 0.18s;
 }
+/* the border: Hyprland's, brighter while held */
+.app-home-hello::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 2px rgba(196, 206, 194, 0.34);
+  pointer-events: none;
+  transition: box-shadow 0.25s var(--ease-out-quint);
+}
+.app-home-hello[data-grabbed]::after {
+  box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--color-signal) 70%, transparent);
+}
 .app-home-hello:focus-visible {
   outline: 2px solid var(--color-signal);
   outline-offset: 4px;
@@ -421,48 +439,57 @@ html[data-sky="dusk"] .app-home-widget-glass {
   z-index: 0;
   border-radius: inherit;
   pointer-events: none;
+  --os-glass-tint: rgba(13, 16, 14, 0.93);
 }
 .app-home-hello-bar {
   position: relative;
   z-index: 1;
   display: flex;
   align-items: center;
-  gap: 12px;
-  height: 44px;
-  padding: 0 14px 0 16px;
+  gap: 10px;
+  height: 40px;
+  padding: 0 8px 0 14px;
+  border-bottom: 1px solid var(--hairline);
   cursor: grab;
   touch-action: none;
-}
-.app-home-hello-bar::after {
-  content: "";
-  position: absolute;
-  inset: auto 16px 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--hairline) 14%, var(--hairline) 86%, transparent);
-  pointer-events: none;
 }
 .app-home-hello[data-grabbed] .app-home-hello-bar {
   cursor: grabbing;
 }
-/* window controls: monochrome squares on the right, like the app windows */
+.app-home-hello-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-label);
+  font: 600 0.8125rem/1 var(--font-mono);
+  pointer-events: none;
+}
+.app-home-hello-file-glyph {
+  color: var(--color-signal);
+}
+.app-home-hello-path {
+  color: var(--color-label-3);
+  font: 500 0.75rem/1 var(--font-mono);
+}
+/* window controls: flat squares on the right, like the app windows */
 .app-home-hello-lights {
   display: flex;
   flex: none;
   align-items: center;
   gap: 2px;
-  margin-right: -6px;
+  margin-left: auto;
 }
 .app-home-hello-light {
   position: relative;
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   padding: 0;
   border: 0;
   border-radius: 6px;
   background: none;
-  color: var(--color-label-3);
+  color: var(--color-label-2);
   cursor: pointer;
   transition:
     background-color 0.15s,
@@ -480,67 +507,43 @@ html[data-sky="dusk"] .app-home-widget-glass {
   outline-offset: 1px;
   border-radius: 6px;
 }
-.app-home-hello-file {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  color: var(--color-label);
-  font-family: var(--font-mono);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  line-height: 1;
-  pointer-events: none;
-}
-.app-home-hello-file-glyph {
-  color: var(--color-signal);
-}
-.app-home-hello-path {
-  margin-left: auto;
-  margin-right: 6px;
-  color: var(--app-home-l3);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  line-height: 1;
-}
 .app-home-hello-body {
   position: relative;
   z-index: 1;
-  padding: 20px 22px 20px;
+  padding: 18px 20px 0;
   user-select: text;
   -webkit-user-select: text;
 }
+/* a markdown heading: the # stays, in moss */
 .app-home-hello-greeting {
-  font-size: 1.375rem;
-  font-weight: 650;
-  line-height: 1.15;
-  letter-spacing: -0.024em;
+  font: 600 1.25rem/1.25 var(--font-mono);
+  letter-spacing: -0.02em;
+}
+.app-home-hello-hash {
+  color: var(--color-signal);
 }
 .app-home-hello-lead {
-  margin-top: 8px;
+  margin-top: 10px;
   color: var(--color-label-2);
   font-size: 0.9375rem;
-  line-height: 1.52;
-  letter-spacing: -0.004em;
-  text-wrap: pretty; /* no one-word last line */
+  line-height: 1.55;
+  text-wrap: pretty;
 }
 .app-home-hello-ctas {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 18px;
+  gap: 8px;
+  margin-top: 16px;
 }
 .app-home-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  height: 42px;
-  padding: 0 18px;
-  border-radius: 999px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: -0.006em;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font: 600 0.8125rem/1 var(--font-mono);
   white-space: nowrap;
   transition:
     scale 0.4s var(--ease-spring),
@@ -555,10 +558,6 @@ html[data-sky="dusk"] .app-home-widget-glass {
 .app-home-btn--primary {
   background: var(--color-signal);
   color: var(--color-ink-950);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
-    0 10px 26px -12px rgba(176, 204, 134, 0.7);
 }
 .app-home-btn--primary:hover {
   background: #c2db9c;
@@ -570,111 +569,80 @@ html[data-sky="dusk"] .app-home-widget-glass {
   translate: 2px 0;
 }
 .app-home-btn--ghost {
-  background: rgba(255, 255, 255, 0.08);
+  background: transparent;
   color: var(--color-label);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(196, 206, 194, 0.3);
 }
 .app-home-btn--ghost:hover {
-  background: rgba(255, 255, 255, 0.13);
+  background: rgba(255, 255, 255, 0.06);
 }
 .app-home-btn:focus-visible {
   outline: 2px solid var(--color-signal);
   outline-offset: 3px;
-  border-radius: 999px;
+  border-radius: 8px;
 }
 
+/* the statusline: like vim's, at the foot of the window */
 .app-home-chips {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 18px;
-  padding-top: 14px;
+  align-items: center;
+  gap: 12px;
+  margin: 18px -20px 0;
+  padding: 0 14px;
+  height: 32px;
   border-top: 1px solid var(--hairline);
+  border-radius: 0 0 var(--radius-window) var(--radius-window);
+  background: rgba(6, 8, 7, 0.4);
+  color: var(--color-label-3);
+  font: 500 0.75rem/1 var(--font-mono);
 }
 .app-home-chips > li {
   display: flex;
   min-width: 0;
-  max-width: 100%;
+}
+.app-home-chips::before {
+  content: "NORMAL";
+  padding: 3px 6px;
+  border-radius: 3px;
+  background: var(--color-signal);
+  color: var(--color-ink-950);
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
 .app-home-chip {
   display: inline-flex;
   align-items: center;
   gap: 7px;
   min-width: 0;
-  max-width: 100%;
-  height: 28px;
-  padding: 0 11px 0 9px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.055);
-  box-shadow: inset 0 0 0 1px var(--hairline);
   color: var(--color-label-2);
-  font-size: 0.75rem;
-  line-height: 1;
   white-space: nowrap;
   -webkit-tap-highlight-color: transparent;
 }
-.app-home-chip--link {
-  transition:
-    background-color 0.2s,
-    scale 0.35s var(--ease-spring);
-}
-.app-home-chip--link:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-.app-home-chip--link:active {
-  scale: 0.97;
+.app-home-chip--link:hover .app-home-chip-v {
+  color: var(--color-signal);
 }
 .app-home-chip--link:focus-visible {
   outline: 2px solid var(--color-signal);
-  outline-offset: 2px;
-  border-radius: 999px;
+  outline-offset: 3px;
+  border-radius: 4px;
 }
 .app-home-chip-k {
   flex: none;
-  /* secondary, not tertiary: the chip's own fill already lifts the
-     backdrop; weight and colour (paper white, 500) mark the value */
-  color: var(--color-label-2);
+  color: var(--color-label-3);
 }
 .app-home-chip-v {
   min-width: 0;
   overflow: hidden;
   color: var(--color-label);
-  font-weight: 500;
   text-overflow: ellipsis;
-}
-.app-home-chip-eq {
-  flex: none;
-  height: 13px;
-  scale: 0.72;
-  transform-origin: 50% 100%;
-  margin: 0 -2px;
-}
-.app-home-chip-sun {
-  flex: none;
-  color: var(--color-ember);
-}
-.app-home-chip-moon {
-  flex: none;
-  color: var(--color-label);
-}
-.app-home-chip-commit {
-  flex: none;
-  color: var(--color-signal);
-}
-.app-home-chip-note {
-  flex: none;
-  color: var(--color-ember);
+  transition: color 0.15s;
 }
 .app-home-chip-plane {
   flex: none;
   color: var(--color-ion);
 }
 .app-home-chip-arrow {
-  color: var(--app-home-l3);
-}
-.app-home-chip-ext {
-  flex: none;
-  color: var(--app-home-l3);
+  color: var(--color-label-3);
 }
 
 /* ───────────────────────────── icons ───────────────────────────── */
@@ -1132,4 +1100,9 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   .app-home-marquee {
     border-color: var(--color-signal);
   }
+}
+.app-home-chips::after {
+  content: "md · utf-8";
+  margin-left: auto;
+  white-space: nowrap;
 }

@@ -317,6 +317,9 @@ export function HelloWindow({
 
       <div className="app-home-hello-body">
         <h2 id="app-home-hello-title" className="app-home-hello-greeting">
+          <span className="app-home-hello-hash" aria-hidden>
+            #{" "}
+          </span>
           {h.greeting}
         </h2>
         <p className="app-home-hello-lead">{h.lead}</p>

@@ -25,14 +25,14 @@ const HOLD_SLOP = 8;
 /** event-time clock (only ever read from handlers) */
 const clock = () => performance.now();
 
-/* Phones get an iOS home screen: the tab bar already holds Projects,
-   Writing, Atlas and Mail, so the grid keeps only what it doesn't: Now,
-   and Terminal and Search, which otherwise hide behind More. (No README:
-   hello.txt is already on the screen.)
-   Desk-only icons are hidden on phones in CSS and the phone-only ones on
-   desks, so the server render is the same for both. */
-type PhoneOnly = "terminal" | "search";
-const DESK_ONLY = new Set<DesktopIconId>(["work", "writing", "atlas", "contact", "readme"]);
+/* Desks show only the README (the apps are in the Dock). Phones get a home
+   screen row of what the tab bar doesn't hold: Now, and Terminal and
+   Search, which otherwise hide behind More (no README: hello.txt is
+   already on the screen). Desk icons are hidden on phones in CSS and the
+   phone ones on desks, so the server render is the same for both. */
+type PhoneOnly = "now" | "terminal" | "search";
+const DESK_ONLY = new Set<DesktopIconId>(["work", "writing", "atlas", "now", "contact", "readme"]);
+const PHONE_ROW: PhoneOnly[] = ["now", "terminal", "search"];
 
 /* ───────────────────────────── grid geometry ─────────────────────────────
    An invisible grid anchored to the top-right of the desktop, like Finder's
@@ -656,7 +656,7 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
 
   const phoneIcon = (id: PhoneOnly) => (
     <button
-      key={id}
+      key={`p-${id}`}
       type="button"
       data-phone-icon={id}
       className="app-home-icon app-home-icon--phone"
@@ -665,9 +665,11 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
       onClick={onClick(id)}
     >
       <span className="app-home-icon-tile">
-        <AppIcon app={id === "search" ? "spotlight" : "terminal"} size={ICON} />
+        <AppIcon app={id === "search" ? "spotlight" : id} size={ICON} />
       </span>
-      <span className="app-home-icon-label">{id === "search" ? t.home.icons.search : t.shell.apps.terminal}</span>
+      <span className="app-home-icon-label">
+        {id === "search" ? t.home.icons.search : id === "now" ? t.shell.apps.now : t.shell.apps.terminal}
+      </span>
     </button>
   );
 
@@ -729,8 +731,9 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
             </a>
           );
         // phones: Terminal and Search follow Now
-        return id === "now" ? [node, phoneIcon("terminal"), phoneIcon("search")] : [node];
+        return [node];
       })}
+      {PHONE_ROW.map(phoneIcon)}
     </div>
   );
 }
