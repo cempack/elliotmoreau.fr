@@ -1,8 +1,8 @@
 /* ───────────────────────── emOS wallpaper ─────────────────────────
-   Fixed pixel landscape at z-index 0. Until the canvas paints, a CSS
-   gradient keyed on html[data-sky] (set before first paint) shows the
-   right sky with a suggestion of the ridges, so the very first frame is
-   already correct. */
+   Fixed pixel city at z-index 0. Until the canvas paints, a CSS gradient
+   keyed on html[data-sky] (set before first paint) shows the right sky
+   with a suggestion of the bridge and the river, so the very first frame
+   is already close. */
 
 .os-wallpaper {
   position: fixed;
@@ -14,63 +14,60 @@
   overflow: hidden;
   pointer-events: none;
   contain: strict;
+  /* night: sky, the far bank on the horizon, the Pont Neuf, the Garonne */
   background: linear-gradient(
     180deg,
     #040607 0%,
-    #060a0b 26%,
-    #0a1314 44%,
-    #111d1d 58%,
-    #152626 66%,
-    #111d1d 69%,
-    #0c1716 74%,
-    #081210 79%,
-    #060d0d 82%,
+    #060a0c 24%,
+    #0a1214 44%,
+    #101a1d 56%,
+    #14100f 60%,
+    #1a1210 66%,
+    #05090a 68%,
+    #070b0b 84%,
     #020303 100%
   );
 }
 html[data-sky="dawn"] .os-wallpaper {
   background: linear-gradient(
     180deg,
-    #0a1213 0%,
-    #20302f 22%,
-    #5e6a62 44%,
-    #b39a80 60%,
-    #d6b48c 67%,
-    #5b6660 69%,
-    #26332e 74%,
-    #1a2822 79%,
-    #1f2c2a 82%,
-    #0b130f 100%
+    #0a1014 0%,
+    #22303a 20%,
+    #55606a 40%,
+    #c8a092 56%,
+    #6a4a44 60%,
+    #5a3e38 66%,
+    #3a3a3c 68%,
+    #2a2e30 84%,
+    #0e1212 100%
   );
 }
 html[data-sky="day"] .os-wallpaper {
   background: linear-gradient(
     180deg,
-    #16252a 0%,
-    #2b4249 20%,
-    #557379 45%,
-    #86a1a2 60%,
-    #a9bdb9 67%,
-    #6d8786 69%,
-    #2c4a44 74%,
-    #1f3d2e 79%,
-    #26443f 82%,
-    #0e2116 100%
+    #142429 0%,
+    #29424a 20%,
+    #547379 40%,
+    #a9bdb9 57%,
+    #6a5a52 60%,
+    #6a4a40 66%,
+    #3c5654 68%,
+    #2c4644 84%,
+    #0e1a18 100%
   );
 }
 html[data-sky="dusk"] .os-wallpaper {
   background: linear-gradient(
     180deg,
-    #07090c 0%,
-    #1b2228 22%,
-    #4b4a4f 44%,
-    #a36f5c 60%,
-    #c98762 67%,
-    #4b4144 69%,
-    #1d2425 74%,
-    #131c1a 79%,
-    #151b1c 82%,
-    #070c0a 100%
+    #0b0f16 0%,
+    #1f2a36 20%,
+    #4b4e5c 40%,
+    #d88d68 57%,
+    #5a3a34 60%,
+    #4a2e2a 66%,
+    #3a3030 68%,
+    #2a2426 84%,
+    #0a0808 100%
   );
 }
 

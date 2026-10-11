@@ -21,7 +21,7 @@ const RISE = -0.833;
 const CIVIL = -6;
 const BAND = 6;
 
-type Orbit = { decl: number; eqTime: number };
+type Orbit = { decl: number; eqTime: number; lambda: number; eps: number };
 
 /** Declination (radians) and the equation of time (minutes) at an instant. */
 function orbit(ms: number): Orbit {
@@ -48,7 +48,7 @@ function orbit(ms: number): Orbit {
       4 * e * y * Math.sin(Mr) * Math.cos(2 * L) -
       0.5 * y * y * Math.sin(4 * L) -
       1.25 * e * e * Math.sin(2 * Mr));
-  return { decl, eqTime };
+  return { decl, eqTime, lambda, eps };
 }
 
 export type SunPos = {
@@ -228,6 +228,27 @@ export function moonPhase(d: Date) {
   const ref = Date.UTC(2000, 0, 6, 18, 14);
   const p = ((d.getTime() - ref) / 86400000 / 29.530588853) % 1;
   return p < 0 ? p + 1 : p;
+}
+
+/**
+ * Where the moon is, near enough for a sky: placed on the ecliptic at its
+ * phase angle from the sun (its ~5° orbital tilt ignored), then turned into
+ * elevation and azimuth with the sidereal clock. A few degrees off at most.
+ */
+export function moonAt(d: Date | number, lat: number = TOULOUSE.lat, lon: number = TOULOUSE.lon) {
+  const ms = typeof d === "number" ? d : d.getTime();
+  const phase = moonPhase(new Date(ms));
+  const { lambda, eps } = orbit(ms);
+  const lm = lambda + 2 * Math.PI * phase;
+  const decl = Math.asin(Math.sin(eps) * Math.sin(lm));
+  const ra = Math.atan2(Math.cos(eps) * Math.sin(lm), Math.cos(lm)) / R;
+  const gmst = 280.46061837 + 360.98564736629 * (ms / 86400000 + 2440587.5 - 2451545);
+  const ha = ((((gmst + lon - ra) % 360) + 540) % 360) - 180;
+  const la = lat * R;
+  const sinEl = Math.sin(la) * Math.sin(decl) + Math.cos(la) * Math.cos(decl) * Math.cos(ha * R);
+  const elevation = Math.asin(Math.max(-1, Math.min(1, sinEl))) / R;
+  const az = Math.atan2(Math.sin(ha * R), Math.cos(ha * R) * Math.sin(la) - Math.tan(decl) * Math.cos(la)) / R + 180;
+  return { elevation, azimuth: ((az % 360) + 360) % 360, phase, lit: (1 - Math.cos(2 * Math.PI * phase)) / 2 };
 }
 
 /** "19:13" from a fractional hour. */
