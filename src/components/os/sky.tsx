@@ -1,50 +1,49 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { localHour, phaseAtHour, phaseOf, sunAt, type SkyPhase } from "@/lib/sun";
 
 /**
- * The sky follows the real time in Toulouse: dawn, day, dusk, night. The
- * wallpaper, glass tints and a few accents read `html[data-sky]`. A head
- * script (SKY_SCRIPT) sets it before first paint so there is no flash;
- * Control Center can pin a phase ("mode"), persisted in localStorage.
+ * The sky follows the real sun over Toulouse: dawn, day, dusk, night, set
+ * by the sun's elevation (see lib/sun), not by clock bands. The wallpaper,
+ * glass tints and a few accents read `html[data-sky]`. A head script
+ * (SKY_SCRIPT) sets it before first paint so there is no flash; Control
+ * Center can pin a phase ("mode"), persisted in localStorage.
  */
-export type SkyPhase = "dawn" | "day" | "dusk" | "night";
+export type { SkyPhase };
 export type SkyMode = "auto" | SkyPhase;
 
 export const SKY_PHASES: SkyPhase[] = ["dawn", "day", "dusk", "night"];
 
-/** Toulouse hour (0–23, fractional) → phase. */
-export function phaseForHour(h: number): SkyPhase {
-  if (h >= 5.5 && h < 8.5) return "dawn";
-  if (h >= 8.5 && h < 17.5) return "day";
-  if (h >= 17.5 && h < 21) return "dusk";
-  return "night";
-}
+/** The phase at a Toulouse hour (0–24, fractional) today. */
+export const phaseForHour = (h: number) => phaseAtHour(h);
 
-export function parisHour(d = new Date()) {
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Europe/Paris",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).formatToParts(d);
-  const h = Number(parts.find((p) => p.type === "hour")?.value ?? 0);
-  const m = Number(parts.find((p) => p.type === "minute")?.value ?? 0);
-  return (h % 24) + m / 60;
-}
+/** The current Toulouse hour, fractional. */
+export const toulouseHour = (d = new Date()) => localHour(d);
 
 // the pre-paint SKY_SCRIPT lives in ./sky-script (plain module: a server
 // layout can't read string constants out of a "use client" file)
 
-
-type SkyCtx = { phase: SkyPhase; mode: SkyMode; setMode: (m: SkyMode) => void; hour: number | null };
-const Ctx = createContext<SkyCtx>({ phase: "night", mode: "auto", setMode: () => {}, hour: null });
+type SkyCtx = {
+  phase: SkyPhase;
+  mode: SkyMode;
+  setMode: (m: SkyMode) => void;
+  /** the Toulouse hour, refreshed each minute; null until mounted */
+  hour: number | null;
+  /** the real phase in Toulouse right now, whatever is pinned */
+  live: SkyPhase | null;
+};
+const Ctx = createContext<SkyCtx>({ phase: "night", mode: "auto", setMode: () => {}, hour: null, live: null });
 
 export function SkyProvider({ children }: { children: React.ReactNode }) {
   const [mode, setModeState] = useState<SkyMode>("auto");
-  const [hour, setHour] = useState<number | null>(null);
+  const [now, setNow] = useState<{ hour: number; live: SkyPhase } | null>(null);
 
   useEffect(() => {
+    const tick = () => {
+      const d = new Date();
+      setNow({ hour: localHour(d), live: phaseOf(sunAt(d)) });
+    };
     const read = () => {
       let m: SkyMode = "auto";
       try {
@@ -52,23 +51,25 @@ export function SkyProvider({ children }: { children: React.ReactNode }) {
         if (saved) m = saved;
       } catch {}
       setModeState(m);
-      setHour(parisHour());
+      tick();
     };
     const first = window.setTimeout(read, 0);
-    const id = window.setInterval(() => setHour(parisHour()), 60_000);
+    const id = window.setInterval(tick, 60_000);
     return () => {
       window.clearTimeout(first);
       window.clearInterval(id);
     };
   }, []);
 
-  const phase: SkyPhase = mode === "auto" ? (hour == null ? "night" : phaseForHour(hour)) : mode;
+  const hour = now?.hour ?? null;
+  const live = now?.live ?? null;
+  const phase: SkyPhase = mode === "auto" ? (live ?? "night") : mode;
 
   useEffect(() => {
-    if (hour == null && mode === "auto") return;
+    if (live == null && mode === "auto") return;
     document.documentElement.dataset.sky = phase;
     document.documentElement.dataset.skyMode = mode;
-  }, [phase, mode, hour]);
+  }, [phase, mode, live]);
 
   const setMode = useCallback((m: SkyMode) => {
     setModeState(m);
@@ -77,7 +78,7 @@ export function SkyProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   }, []);
 
-  const value = useMemo(() => ({ phase, mode, setMode, hour }), [phase, mode, setMode, hour]);
+  const value = useMemo(() => ({ phase, mode, setMode, hour, live }), [phase, mode, setMode, hour, live]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

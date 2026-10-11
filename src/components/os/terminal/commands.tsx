@@ -8,7 +8,8 @@ import { timeAgo } from "@/lib/format";
 import { LANG_COLORS, LANG_FALLBACK } from "@/lib/langColors";
 import { PLACES, SOCIALS, fmtCoords } from "@/lib/places";
 import { APPS, type AppDef, type AppId } from "../apps";
-import { parisHour, phaseForHour, type SkyMode, type SkyPhase } from "../sky";
+import { type SkyMode, type SkyPhase } from "../sky";
+import { phaseOf, sunAt } from "@/lib/sun";
 import { EmosLogo } from "../EmosLogo";
 import { Cmd, Ext, Swatch, fill, nodes } from "./ui";
 
@@ -611,7 +612,7 @@ const COMMANDS: Command[] = [
       if (!mode) return <Line tone="err">{t.usage}</Line>;
       ctx.sky.setMode(mode);
       ctx.sound.blip("toggle");
-      if (mode === "auto") return <Line>{fill(t.live, { phase: phaseName(ctx, phaseForHour(parisHour())) })}</Line>;
+      if (mode === "auto") return <Line>{fill(t.live, { phase: phaseName(ctx, phaseOf(sunAt(new Date()))) })}</Line>;
       return <Line>{fill(t.pinned, { phase: phaseName(ctx, mode) })}</Line>;
     },
   },

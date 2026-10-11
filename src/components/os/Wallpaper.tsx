@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { parisHour, phaseForHour, SKY_PHASES, useSky, type SkyPhase } from "./sky";
+import { phaseForHour, SKY_PHASES, toulouseHour, useSky, type SkyPhase } from "./sky";
 import { moonPhase, paintPixels, type Life, type PaintOpts } from "./wallpaper/paint";
 import "./wallpaper.css";
 
@@ -50,7 +50,7 @@ function gridFor(w: number, h: number): Grid {
 /** The light for a phase: the Toulouse clock when it agrees with the phase, a
     representative hour when the phase is pinned. Quarter-hour buckets. */
 function lightFor(phase: SkyPhase, hour: number | null) {
-  const h = Math.round((hour ?? parisHour()) * 4) / 4;
+  const h = Math.round((hour ?? toulouseHour()) * 4) / 4;
   return phaseForHour(h) === phase ? h : DEFAULT_HOUR[phase];
 }
 const keyFor = (phase: SkyPhase, g: Grid, hour: number) => `${phase}:${g.W}x${g.H}@${g.cell}:${hour}`;
