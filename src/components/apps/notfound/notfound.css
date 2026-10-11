@@ -16,7 +16,7 @@
   min-height: 100svh;
   /* the end clears the Dock */
   --nf-foot: calc(var(--dock-h) + 1.5rem);
-  padding: calc(var(--menubar-h) + 1.5rem) 1rem var(--nf-foot);
+  padding: calc(var(--menubar-bottom) + 1.5rem) 1rem var(--nf-foot);
   overflow: clip;
 }
 
@@ -567,7 +567,7 @@ html[data-sky="day"] .app-nf-alert .os-glass {
 }
 @media (max-width: 767px) {
   .app-nf {
-    padding-top: calc(var(--menubar-h) + 1rem);
+    padding-top: calc(var(--menubar-bottom) + 1rem);
   }
   .app-nf-alert {
     width: min(22rem, calc(100vw - 2rem));
@@ -578,7 +578,7 @@ html[data-sky="day"] .app-nf-alert .os-glass {
 @media (max-width: 767px) and (max-height: 760px) {
   .app-nf {
     --nf-cell: calc((100vw - 1.5rem) / 40);
-    padding-top: calc(var(--menubar-h) + 0.25rem);
+    padding-top: calc(var(--menubar-bottom) + 0.25rem);
     --nf-foot: calc(var(--dock-h) + 1rem);
     row-gap: 0;
   }

@@ -78,6 +78,12 @@
   --glass-shadow-thick: 0 40px 120px -40px rgba(0, 0, 0, 0.8);
   --hairline: rgba(255, 255, 255, 0.1);
   --menubar-h: 2.75rem;
+  /* the top inset (the status bar or a notch: viewport-fit is cover, and
+     installed to the home screen the page runs under it) and where the menu
+     bar really ends. Anything laid out below the bar clears --menubar-bottom,
+     never --menubar-h alone, or the bar covers its top edge. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --menubar-bottom: calc(var(--menubar-h) + var(--safe-top));
   --dock-h: 4.75rem; /* 76px desktop dock */
 
   /* foundation component defaults (palette, sheet, segmented) */

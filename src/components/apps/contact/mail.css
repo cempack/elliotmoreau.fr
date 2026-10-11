@@ -456,7 +456,7 @@
 }
 /* keyboard focus and scrollIntoView keep fields clear of the title bar and the Dock */
 .app-contact-card :is(input, textarea, button, a) {
-  scroll-margin-top: calc(var(--menubar-h) + 5rem);
+  scroll-margin-top: calc(var(--menubar-bottom) + 5rem);
   scroll-margin-bottom: 1.5rem;
 }
 .app-contact-row {

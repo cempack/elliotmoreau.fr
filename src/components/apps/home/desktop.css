@@ -12,7 +12,9 @@
   --app-home-pad: 32px;
   --app-home-cell-w: 96px;
   --app-home-cell-h: 102px;
-  --app-home-grid-t: 64px; /* menu bar + 20 */
+  --app-home-grid-t: 64px; /* menu bar + 20 (DesktopIcons adds the top inset itself) */
+  /* where the grid really starts: clear of the bar plus any top inset */
+  --app-home-top: calc(var(--app-home-grid-t) + var(--safe-top));
   --app-home-grid-r: 18px;
   --app-home-grid-l: 18px;
   --app-home-grid-b: 96px; /* dock + 20 */
@@ -50,7 +52,7 @@ html[data-sky="dusk"] .app-home-scene {
 /* ── hello.txt: top left ── */
 .app-home-hello-slot {
   position: absolute;
-  top: var(--app-home-grid-t);
+  top: var(--app-home-top);
   left: var(--app-home-pad);
   z-index: 2;
   width: var(--app-home-hello-w);
@@ -63,7 +65,7 @@ html[data-sky="dusk"] .app-home-scene {
 /* ── widgets: top right, beside the icon column ── */
 .app-home-widgets {
   position: absolute;
-  top: var(--app-home-grid-t);
+  top: var(--app-home-top);
   right: calc(var(--app-home-grid-r) + var(--app-home-cell-w) + 14px);
   z-index: 2;
   display: grid;
@@ -781,7 +783,7 @@ html[data-sky="night"] .app-home-sundial svg {
 .app-home-icon {
   position: absolute;
   left: calc(100% - var(--app-home-grid-r) - (var(--c) + 1) * var(--app-home-cell-w));
-  top: calc(var(--app-home-grid-t) + var(--r) * var(--app-home-cell-h));
+  top: calc(var(--app-home-top) + var(--r) * var(--app-home-cell-h));
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -977,7 +979,7 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
     align-items: center;
     gap: 14px;
     min-height: 0;
-    padding: calc(var(--menubar-h) + 4px) 16px calc(var(--dock-h) + 12px);
+    padding: calc(var(--menubar-bottom) + 4px) 16px calc(var(--dock-h) + 12px);
   }
   .app-home-hello-slot,
   .app-home-widgets,
@@ -988,14 +990,17 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
     position: static;
   }
 
+  /* two equal columns that never grow past the screen: a square widget's
+     content would otherwise set its minimum width (and so its height) */
   .app-home-widgets {
     position: static;
     grid-auto-flow: row;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 14px;
   }
   .app-home-widget {
     width: auto;
+    min-width: 0;
     height: auto;
     aspect-ratio: 1;
   }
@@ -1013,9 +1018,11 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   .app-home-hello-path {
     display: none;
   }
+  /* the title bar: the name centred between the window's top edge and
+     the rule under it, never sitting on the rule */
   .app-home-hello-bar {
-    height: auto;
-    padding: 14px 16px 0;
+    height: 38px;
+    padding: 2px 16px 0;
     cursor: default;
     touch-action: auto;
   }
@@ -1030,7 +1037,7 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
     font-weight: 500;
   }
   .app-home-hello-body {
-    padding: 6px 16px 16px;
+    padding: 12px 16px 16px;
   }
   .app-home-hello-greeting {
     font-size: 1.1875rem;
@@ -1223,4 +1230,17 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   content: "md · utf-8";
   margin-left: auto;
   white-space: nowrap;
+}
+
+/* tall phones: the two widgets are square, unless one needs more height;
+   then both take the row's, side by side (never wider than their column) */
+@media (max-width: 767px) and (min-height: 761px) {
+  .app-home-widgets {
+    container-type: inline-size;
+  }
+  .app-home-widget:not(.app-home-widget--push) {
+    align-self: stretch;
+    aspect-ratio: auto;
+    min-height: calc((100cqi - 14px) / 2);
+  }
 }

@@ -26,8 +26,8 @@
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: 8px;
-  height: calc(var(--menubar-h) + env(safe-area-inset-top));
-  padding: env(safe-area-inset-top) max(6px, env(safe-area-inset-right)) 0 max(6px, env(safe-area-inset-left));
+  height: var(--menubar-bottom);
+  padding: var(--safe-top) max(6px, env(safe-area-inset-right)) 0 max(6px, env(safe-area-inset-left));
   color: var(--color-label);
   font: 500 13px/1 var(--font-mono);
   letter-spacing: 0;
@@ -510,7 +510,7 @@ html:active-view-transition .os-menubar {
 }
 .os-menubar-scrim {
   position: fixed;
-  inset: calc(var(--menubar-h) + env(safe-area-inset-top)) 0 0;
+  inset: var(--menubar-bottom) 0 0;
   z-index: 1;
   background: rgba(10, 12, 11, 0.5);
   -webkit-tap-highlight-color: transparent;
@@ -1568,7 +1568,7 @@ html:active-view-transition .os-menubar {
 
 .os-toast-stack {
   position: fixed;
-  top: calc(var(--menubar-h) + env(safe-area-inset-top) + 10px);
+  top: calc(var(--menubar-bottom) + 10px);
   right: calc(1rem + env(safe-area-inset-right));
   z-index: 80;
   display: flex;
@@ -1677,7 +1677,7 @@ html:active-view-transition .os-menubar {
 }
 @media (max-width: 767px) {
   .os-toast-stack {
-    top: calc(var(--menubar-h) + env(safe-area-inset-top) + 6px);
+    top: calc(var(--menubar-bottom) + 6px);
     right: 8px;
     width: calc(100vw - 16px);
   }

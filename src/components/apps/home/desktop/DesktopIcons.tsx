@@ -15,7 +15,7 @@ import { usePalette } from "@/components/ui/CommandPalette";
 import { DESKTOP_ICONS, DesktopGlyph, type DesktopIconId } from "./icons";
 import { desktopMemory, type Cell } from "./store";
 import { FLING, band, intersects, pushSample, releaseVelocity, type Rect, type Sample } from "./physics";
-import { PHONE, isPhone } from "./layout";
+import { PHONE, isPhone, safeTopPx } from "./layout";
 
 const ICON = 60;
 /** touch: how long a finger rests on an icon before it lifts to move */
@@ -65,7 +65,8 @@ function readMetrics(scene: HTMLElement): Metrics {
   const cw = px("--app-home-cell-w", 96);
   const ch = px("--app-home-cell-h", 100);
   const right = px("--app-home-grid-r", 16);
-  const top = px("--app-home-grid-t", 60);
+  // the grid clears the bar plus any top inset, as desktop.css's --app-home-top does
+  const top = px("--app-home-grid-t", 60) + safeTopPx();
   const left = px("--app-home-grid-l", 16);
   const bottom = px("--app-home-grid-b", 96);
   const cols = Math.max(1, Math.floor((W - right - left) / cw));
