@@ -8,8 +8,8 @@ import type { ArtPalette } from "@/lib/theme";
 /**
  * CONTRACT (owner: dock agent)
  * Pixel app icons: hand-drawn 16×16 cell maps rendered as crisp SVG rects
- * (shapeRendering crispEdges), on a flat dark tile with a thin border,
- * barely tinted by the app accent. `size` in CSS px. Decorative
+ * (shapeRendering crispEdges), on a dark tile lit from above by the app
+ * accent, with a hairline rim and a top highlight. `size` in CSS px. Decorative
  * (aria-hidden): labels live on the button/link.
  *
  * The cell size snaps to whole or half CSS px for the tile size you ask
@@ -71,7 +71,7 @@ const GLYPHS: Record<IconId, Glyph> = {
       "................",
     ],
   },
-  // Projects: a folder, a sheet peeking out, </> on the front
+  // Projects: a folder, a sheet peeking out, </> on the front in ink
   work: {
     pal: { d: "ionDeep", I: "ion", J: "ionLight", w: "paper", k: "ink900" },
     rows: [
@@ -80,14 +80,14 @@ const GLYPHS: Record<IconId, Glyph> = {
       ".ddddd..........",
       ".dddddddddddddd.",
       ".ddwwwwwwwwwwdd.",
+      ".IIIIIIIIIIIIII.",
       ".JJJJJJJJJJJJJJ.",
-      ".IIIIIIIIIIIIII.",
-      ".IIIIkIIIkIkIII.",
-      ".IIIkIIIIkIIkII.",
-      ".IIkIIIIkIIIIkI.",
-      ".IIIkIIkIIIIkII.",
-      ".IIIIkIkIIIkIII.",
-      ".IIIIIIIIIIIIII.",
+      ".JJJJkJJJkJkJJJ.",
+      ".JJJkJJJJkJJkJJ.",
+      ".JJkJJJJkJJJJkJ.",
+      ".JJJkJJkJJJJkJJ.",
+      ".JJJJkJkJJJkJJJ.",
+      ".JJJJJJJJJJJJJJ.",
       ".dddddddddddddd.",
       "................",
       "................",
@@ -115,24 +115,24 @@ const GLYPHS: Record<IconId, Glyph> = {
       "................",
     ],
   },
-  // Atlas: a folded map, a dashed route, a pin where it ends
+  // Atlas: the pixel globe, a pin stuck in it
   atlas: {
-    pal: { A: "paper2", B: "paper3", r: "signalDeep", F: "flare", W: "paper" },
+    pal: { d: "lilacDeep", L: "lilac", l: "lilacLight", F: "flare", W: "paper" },
     rows: [
-      "..........FFF...",
-      ".........FWFFF..",
-      ".........FFFFF..",
-      "..........FFF...",
-      ".AAAA......F....",
-      ".AAAABBBBBAAAAA.",
-      ".AAAABBBBBArAAA.",
-      ".AAAABBBBBrAAAA.",
-      ".AAAABBBrBAAAAA.",
-      ".AAAABBrBBAAAAA.",
-      ".AAArBBBBBAAAAA.",
-      ".ArAABBBBBAAAAA.",
-      ".AAAABBBBBAAAAA.",
-      ".....BBBBB......",
+      "...........FFF..",
+      "..........FFWFF.",
+      "......ddddFFFFF.",
+      "....ddLLdddFFF..",
+      "...ddlLLddLLF...",
+      "...dllLLddLLL...",
+      "..dddLLdddLLLd..",
+      "..ddddLdddLLdd..",
+      "..dddddLLddLdd..",
+      "..ddddLLLLddLd..",
+      "...dddLLLLdLd...",
+      "...ddddLLdddd...",
+      "....dddLdddd....",
+      "......dddd......",
       "................",
       "................",
     ],
@@ -404,9 +404,15 @@ export function AppIcon({
         flex: "none",
         width: size,
         height: size,
-        borderRadius: Math.round(size * 0.2),
-        background: `color-mix(in srgb, var(--color-ink-800), ${accent} ${neutral ? 3 : 8}%)`,
-        boxShadow: `inset 0 0 0 1px color-mix(in srgb, var(--color-border-active) 16%, transparent), 0 ${(size / 10).toFixed(1)}px ${(size / 5).toFixed(1)}px -${(size / 10).toFixed(1)}px rgb(0 0 0 / 0.6)`,
+        borderRadius: Math.round(size * 0.22),
+        // lit from above: the accent glows in at the top and sinks into ink at the bottom
+        background: `linear-gradient(180deg, color-mix(in srgb, var(--color-ink-700), ${accent} ${neutral ? 5 : 16}%) 0%, color-mix(in srgb, var(--color-ink-900), ${accent} ${neutral ? 2 : 6}%) 100%)`,
+        boxShadow: [
+          "inset 0 1px 0 rgb(255 255 255 / 0.09)",
+          `inset 0 0 0 1px color-mix(in srgb, var(--color-border-active) 14%, transparent)`,
+          `inset 0 -${Math.max(1, Math.round(size / 24))}px 0 rgb(0 0 0 / 0.22)`,
+          `0 ${(size / 10).toFixed(1)}px ${(size / 5).toFixed(1)}px -${(size / 10).toFixed(1)}px rgb(0 0 0 / 0.6)`,
+        ].join(", "),
       }}
     >
       <svg
