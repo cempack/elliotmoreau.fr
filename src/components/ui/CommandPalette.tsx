@@ -17,8 +17,13 @@ export type Command = {
   keywords?: string;
   /** the leading glyph: an app's pixel icon, or the kind of thing it is */
   icon?: React.ReactNode;
-  /** a row of the departures board (shown, before everything, when nothing is typed) */
-  board?: Omit<BoardRow, "id" | "label">;
+  /** a row of the departures board (shown, before everything, when nothing is typed);
+      `arrival` rows go on the arrivals board beneath it (where you've been this visit) */
+  board?: Omit<BoardRow, "id" | "label"> & { arrival?: boolean };
+  /** a small picture of the thing (a post's sky, a repo's minimap), in place of the icon */
+  thumb?: React.ReactNode;
+  /** what the preview pane shows while this row is highlighted (wide screens) */
+  preview?: { art?: React.ReactNode; title: string; body?: string; meta?: string };
   /** an option drawn by its owner (the dead letter); `post` runs it */
   option?: React.ComponentType<{ active: boolean; launching: boolean; post: () => void }>;
   /** ms its own exit plays before the palette closes (Enter waits for it) */
@@ -55,6 +60,8 @@ export function CommandPalette({
   empty = "Nothing found",
   board,
   fallback,
+  answers,
+  arrivals,
   children,
 }: {
   commands: Command[];
@@ -64,6 +71,10 @@ export function CommandPalette({
   board?: { title: string; code: string; clock: string };
   /** what to offer when nothing matches (a "did you mean", the dead letter) */
   fallback?: (query: string) => Command[];
+  /** answers to the query itself ("time", "playing", a place), above the results */
+  answers?: (query: string) => Command[];
+  /** the arrivals board's title, under the departures (rows: board.arrival) */
+  arrivals?: string;
   children: React.ReactNode;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -78,7 +89,9 @@ export function CommandPalette({
   const { blip } = useSound();
   const listId = useId();
   const reduced = useReduced();
-  const boardCmds = useMemo(() => commands.filter((c) => c.board), [commands]);
+  const departCmds = useMemo(() => commands.filter((c) => c.board && !c.board.arrival), [commands]);
+  const arriveCmds = useMemo(() => commands.filter((c) => c.board?.arrival), [commands]);
+  const boardCmds = useMemo(() => [...departCmds, ...arriveCmds], [departCmds, arriveCmds]);
 
   const found = useMemo(() => {
     const scored = commands.filter((c) => !c.board).map((c) => ({ c, s: score(c, query) })).filter((r) => r.s > 0);
@@ -98,7 +111,11 @@ export function CommandPalette({
   // nothing typed: the board's rows come first, real options before Apps
   const showBoard = !!board && visible && !query.trim() && boardCmds.length > 0;
   const spare = useMemo(() => (found.length === 0 && fallback ? fallback(query) : []), [found.length, fallback, query]);
-  const results = useMemo(() => (showBoard ? [...boardCmds, ...found] : found.length ? found : spare), [showBoard, boardCmds, found, spare]);
+  const asked = useMemo(() => (answers && query.trim() ? answers(query) : []), [answers, query]);
+  const results = useMemo(
+    () => (showBoard ? [...boardCmds, ...found] : found.length ? [...asked, ...found] : [...asked, ...spare]),
+    [showBoard, boardCmds, found, spare, asked]
+  );
   const [launching, setLaunching] = useState<string | null>(null);
   const nBoard = showBoard ? boardCmds.length : 0;
 
@@ -194,6 +211,9 @@ export function CommandPalette({
     return { c, i, header: k === 0 || results[i - 1].group !== c.group ? c.group : null };
   });
   const value = useMemo(() => ({ open, close, isOpen: visible }), [open, close, visible]);
+  // the highlighted result's preview pane (typed queries, wide screens: the boards fill an empty one)
+  const typed = !showBoard && query.trim().length > 0;
+  const preview = typed ? results[active]?.preview : undefined;
 
   return (
     <PaletteCtx.Provider value={value}>
@@ -213,6 +233,7 @@ export function CommandPalette({
       >
         <m.div
           className="em-palette-panel"
+          data-typed={typed || undefined}
           initial={false}
           animate={visible ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: -8, scale: 0.98 }}
           // in on a spring, out quickly: a chosen command shouldn't wait
@@ -246,18 +267,33 @@ export function CommandPalette({
           </div>
           <ul id={listId} role="listbox" className="em-palette-list" data-lenis-prevent>
             {results.length === 0 && <li className="em-palette-empty">{empty}</li>}
-            {showBoard && board && (
+            {showBoard && board && departCmds.length > 0 && (
               <li role="presentation" className="em-palette-board">
                 <DeparturesBoard
                   title={board.title}
                   code={board.code}
                   clock={board.clock}
-                  rows={boardCmds.map((c) => ({ ...c.board!, id: c.id, label: c.label }))}
-                  active={active < nBoard ? active : -1}
+                  rows={departCmds.map((c) => ({ ...c.board!, id: c.id, label: c.label }))}
+                  active={active < departCmds.length ? active : -1}
                   reduced={reduced}
                   optionId={(r) => `${listId}-${r.id}`}
                   onHover={(i) => setActive(i)}
-                  onPick={(i) => run(boardCmds[i])}
+                  onPick={(i) => run(departCmds[i])}
+                />
+              </li>
+            )}
+            {showBoard && board && arriveCmds.length > 0 && (
+              <li role="presentation" className="em-palette-board em-palette-board--arrivals">
+                <DeparturesBoard
+                  title={arrivals ?? "ARRIVALS"}
+                  code={board.code}
+                  clock=""
+                  rows={arriveCmds.map((c) => ({ ...c.board!, id: c.id, label: c.label }))}
+                  active={active >= departCmds.length && active < nBoard ? active - departCmds.length : -1}
+                  reduced={reduced}
+                  optionId={(r) => `${listId}-${r.id}`}
+                  onHover={(i) => setActive(departCmds.length + i)}
+                  onPick={(i) => run(arriveCmds[i])}
                 />
               </li>
             )}
@@ -284,8 +320,8 @@ export function CommandPalette({
                         {i === active && (
                           <m.span layoutId={`${listId}-hl`} className="em-palette-hl" transition={spring.snappy} />
                         )}
-                        <span className="em-palette-icon" aria-hidden>
-                          {c.icon}
+                        <span className="em-palette-icon" data-thumb={c.thumb ? "" : undefined} aria-hidden>
+                          {c.thumb ?? c.icon}
                         </span>
                         <span className="em-palette-label">{c.label}</span>
                         {c.hint && <span className="em-palette-hint">{c.hint}</span>}
@@ -296,6 +332,20 @@ export function CommandPalette({
               );
             })}
           </ul>
+          {typed && (
+            <aside className="em-palette-preview" aria-hidden data-empty={preview ? undefined : ""}>
+              {preview ? (
+                <>
+                  {preview.art && <div className="em-palette-preview-art">{preview.art}</div>}
+                  <p className="em-palette-preview-title">{preview.title}</p>
+                  {preview.meta && <p className="em-palette-preview-meta">{preview.meta}</p>}
+                  {preview.body && <p className="em-palette-preview-body">{preview.body}</p>}
+                </>
+              ) : (
+                <span className="em-palette-preview-none">❯</span>
+              )}
+            </aside>
+          )}
           <div className="em-palette-foot" aria-hidden>
             <span>
               <kbd>↑</kbd>

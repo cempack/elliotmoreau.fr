@@ -24,6 +24,11 @@ import { useSpotifyStatus } from "@/hooks/useSpotifyStatus";
 import { DeadLetter } from "./DeadLetter";
 import { loadDraft, saveDraft } from "@/components/apps/contact/mail";
 import { suggest } from "@/components/apps/notfound/suggest";
+import { PlateThumb } from "@/components/apps/writing/PlateThumb";
+import { RepoArt } from "@/components/apps/work/RepoArt";
+import { loc } from "@/lib/content";
+import { trail } from "./trail";
+import { useSyncExternalStore } from "react";
 
 /* Intl formatters are costly to build: build them once */
 let FMTS: { day: (d: Date) => string; dm: (d: Date) => string; hm: (d: Date) => string } | null = null;
@@ -62,7 +67,8 @@ export function useSpotlightCommands(): Command[] {
   const { notify } = useToast();
   const { mode, setMode } = useSky();
   const { setOpen: setTerminal } = useTerminal();
-  const { posts, repos, activity, spotify, now } = useSiteData();
+  const { posts, repos, activity, spotify, now, places } = useSiteData();
+  const stops = useSyncExternalStore(trail.subscribe, trail.get, trail.server);
   const music = useSpotifyStatus(spotify);
   const phone = useMedia("(max-width: 767px)");
 
@@ -166,6 +172,8 @@ export function useSpotlightCommands(): Command[] {
       { id: "restart", group: sp.actions, label: sp.restart, keywords: "restart reboot boot redémarrer", perform: restartOS },
     ];
 
+    const fm = fmts();
+    // each result shows its real picture: a post's sky, a repo's minimap, a place's stamp
     const writing: Command[] = posts.map((p) => ({
       id: `post-${p.slug}`,
       group: sp.posts,
@@ -173,7 +181,15 @@ export function useSpotlightCommands(): Command[] {
       hint: p.reading_time ? fill(sp.minRead, { n: p.reading_time }) : undefined,
       keywords: `${p.excerpt} ${p.tags.map((x) => x.name).join(" ")} blog post article`,
       icon: glyph(G_PEN),
-      perform: ext(p.url),
+      thumb: createElement(PlateThumb, { seed: p.slug, cols: 34, rows: 24 }),
+      preview: {
+        art: createElement(PlateThumb, { seed: p.slug, cols: 96, rows: 60 }),
+        title: p.title,
+        meta: [fm.dm(new Date(p.published_at)), p.reading_time ? fill(sp.minRead, { n: p.reading_time }) : "", p.tags[0]?.name ?? ""].filter(Boolean).join(" · "),
+        body: p.excerpt,
+      },
+      // posts read in full on the site now
+      perform: () => router.push(path(`/writing/${p.slug}`), { transitionTypes: ["app-open"] } as never),
     }));
 
     const projects: Command[] = repos.slice(0, 10).map((r) => ({
@@ -183,8 +199,33 @@ export function useSpotlightCommands(): Command[] {
       hint: [r.language, r.stars ? `★ ${r.stars}` : ""].filter(Boolean).join(" · ") || undefined,
       keywords: `${r.description} ${r.topics.join(" ")} repo github`,
       icon: glyph(G_COMMIT),
-      perform: ext(r.url),
+      thumb: createElement(RepoArt, { name: r.name, language: r.language }),
+      preview: {
+        art: createElement(RepoArt, { name: r.name, language: r.language, caret: true }),
+        title: r.name,
+        meta: [r.language, r.stars ? `★ ${r.stars}` : "", r.pushedAt ? fm.dm(new Date(r.pushedAt)) : ""].filter(Boolean).join(" · "),
+        body: r.description,
+      },
+      perform: () => router.push(`${path("/work")}?repo=${encodeURIComponent(r.name)}`, { transitionTypes: ["app-open"] } as never),
     }));
+
+    const atlas: Command[] = places
+      .filter((pl) => !pl.home)
+      .map((pl) => ({
+        id: `place-${pl.id}`,
+        group: sp.places,
+        label: loc(pl.name, lang),
+        hint: pl.status === "been" ? sp.been : sp.want,
+        keywords: `${pl.id} ${pl.name.en} ${pl.name.fr} ${pl.region.en} ${pl.region.fr} ${pl.iso} atlas travel voyage`,
+        thumb: createElement("span", { className: "em-stamp", "data-tone": pl.status }, pl.iso),
+        preview: {
+          art: createElement("span", { className: "em-stamp em-stamp--lg", "data-tone": pl.status }, pl.iso),
+          title: loc(pl.name, lang),
+          meta: [loc(pl.region, lang), pl.status === "been" ? sp.been : sp.want, pl.visited ?? ""].filter(Boolean).join(" · "),
+          body: pl.note ? loc(pl.note, lang) : pl.tripFrom && pl.tripTo ? fill(sp.trip, { from: pl.tripFrom, to: pl.tripTo }) : undefined,
+        },
+        perform: () => router.push(`${path("/atlas")}#${pl.id}`, { transitionTypes: ["app-open"] } as never),
+      }));
 
     const links: Command[] = [
       { id: "ln-github", label: "GitHub", hint: "@cempack", href: SOCIALS.github, k: "code repos" },
@@ -266,8 +307,42 @@ export function useSpotlightCommands(): Command[] {
       });
     }
 
-    return [...board, ...apps, ...act, ...writing, ...projects, ...links];
-  }, [t, other, path, router, pathname, muted, toggle, blip, notify, mode, setMode, setTerminal, posts, repos, activity, music, phone, lang, now]);
+    // arrivals: where you've been this visit, newest first (not the page you're on)
+    const here = typeof window === "undefined" ? "" : `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    const appName = (id: string) => {
+      const app = APPS.find((x) => x.id === id);
+      return app ? s.apps[app.label] : "";
+    };
+    const itemName = (st: (typeof stops)[number]) => {
+      if (!st.item) return appName(st.app);
+      if (st.app === "writing") return posts.find((p) => p.slug === st.item)?.title ?? st.item;
+      if (st.app === "atlas") {
+        const pl = places.find((x) => x.id === st.item);
+        return pl ? loc(pl.name, lang) : st.item;
+      }
+      return st.item;
+    };
+    const arrivals: Command[] = stops
+      .filter((st) => st.href !== here)
+      .slice(0, phone ? 3 : 5)
+      .map((st) => ({
+        id: `arrival-${st.app}-${st.item}`,
+        group: sp.arrivals,
+        label: `${itemName(st)}, ${appName(st.app)}`,
+        board: {
+          arrival: true,
+          time: fmts().hm(new Date(st.at)),
+          dest: itemName(st),
+          via: st.item ? appName(st.app) : "",
+          status: sp.arrived,
+          key: `${st.href}|${st.at}`,
+          remember: false,
+        },
+        perform: () => router.push(st.href),
+      }));
+
+    return [...board, ...arrivals, ...apps, ...act, ...writing, ...projects, ...atlas, ...links];
+  }, [t, other, path, router, pathname, muted, toggle, blip, notify, mode, setMode, setTerminal, posts, repos, activity, music, phone, lang, now, places, stops]);
 }
 
 /**

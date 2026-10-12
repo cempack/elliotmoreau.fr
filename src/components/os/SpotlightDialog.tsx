@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useI18n } from "@/i18n/client";
 import { CommandPalette, usePalette as useInner } from "@/components/ui/CommandPalette";
 import { useSpotlightCommands, useSpotlightFallback } from "./commands";
+import { useSpotlightAnswers } from "./answers";
 import { useNow } from "./menubar/util";
 
 type Api = { open: () => void; close: () => void; isOpen: boolean };
@@ -25,6 +26,7 @@ export default function SpotlightDialog(props: { register: (a: Api) => void; onS
   const { t } = useI18n();
   const commands = useSpotlightCommands();
   const fallback = useSpotlightFallback();
+  const answers = useSpotlightAnswers();
   const now = useNow("minute");
   const clock = now ? new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit", hour12: false }).format(now) : "--:--";
   return (
@@ -34,6 +36,8 @@ export default function SpotlightDialog(props: { register: (a: Api) => void; onS
       empty={t.shell.spotlight.empty}
       board={{ title: t.shell.spotlight.board.title, code: "TLS", clock }}
       fallback={fallback}
+      answers={answers}
+      arrivals={t.shell.spotlight.arrivals}
     >
       <Bridge {...props} />
     </CommandPalette>

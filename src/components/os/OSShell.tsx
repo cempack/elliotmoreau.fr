@@ -11,6 +11,8 @@ import { MenuBar } from "./MenuBar";
 import { Dock } from "./Dock";
 import { Intro } from "./Intro";
 import { IdlePrefetch } from "./IdlePrefetch";
+import { Suspense } from "react";
+import { TrailRecorder } from "./trail";
 
 /**
  * emOS: the persistent chrome around every app. Order matters for
@@ -25,6 +27,10 @@ export function OSShell({ data, children }: { data: SiteData; children: React.Re
           <PaletteProvider>
             <SmoothScroll />
             <IdlePrefetch />
+            {/* useSearchParams: kept out of the static render's way */}
+            <Suspense fallback={null}>
+              <TrailRecorder />
+            </Suspense>
             <Wallpaper />
             <MenuBar />
             <div className="relative z-10 flex min-h-svh flex-col overflow-x-clip">{children}</div>
