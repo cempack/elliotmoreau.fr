@@ -36,8 +36,8 @@ export const G_PLANE: Cells = [
 ];
 
 /** What can sit on the desktop. The apps live in the Dock, so only the
-    README (it opens hello.txt) is out on the desk, and a Mail draft while
-    one is waiting to be sent. */
+    README (the terminal opens on it) is out on the desk, and a Mail draft
+    while one is waiting to be sent. */
 export type DesktopIconId = Exclude<AppId, "home" | "admin"> | "readme" | "draft";
 export const DESKTOP_ICONS: DesktopIconId[] = ["readme", "draft"];
 

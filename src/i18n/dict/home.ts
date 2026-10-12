@@ -3,15 +3,11 @@
 // in `fr`. Plain strings only (the dict crosses the server → client
 // boundary); templates use {placeholders}.
 const en = {
-  /** the page heading (the pixel wordmark is decorative) */
+  /** the page heading: the caption on the wallpaper, bottom left */
   name: "Elliot Moreau",
+  /** …and the caption's second line */
+  role: "Student at Epitech, Toulouse",
   desktop: "Desktop",
-  hello: {
-    greeting: "Hi, I’m Elliot.",
-    lead: "Student at Epitech, in Toulouse. I build web apps, small tools and Omarchy themes, and write about how they’re made.",
-    work: "See my projects",
-    contact: "Say hello",
-  },
   widgets: {
     label: "Widgets",
     clock: {
@@ -79,14 +75,8 @@ const en = {
 
 const fr: typeof en = {
   name: "Elliot Moreau",
+  role: "Étudiant à Epitech, Toulouse",
   desktop: "Bureau",
-  hello: {
-    greeting: "Salut, moi c’est Elliot.",
-    lead: "Étudiant à Epitech, à Toulouse. Je fais des applis web, de petits outils et des thèmes Omarchy, et j’écris sur leur fabrication.",
-    work: "Voir mes projets",
-    contact: "Dire bonjour",
-  },
-
   widgets: {
     label: "Widgets",
     clock: {

@@ -26,12 +26,12 @@ const HOLD_SLOP = 8;
 const clock = () => performance.now();
 
 /* Desks show only the README (the apps are in the Dock). Phones get a home
-   screen row of what the tab bar doesn't hold: Now, and Terminal and
-   Search, which otherwise hide behind More (no README: hello.txt is
-   already on the screen). Desk icons are hidden on phones in CSS and the
-   phone ones on desks, so the server render is the same for both. */
+   screen row of the README and what the tab bar doesn't hold: Now, and
+   Terminal and Search, which otherwise hide behind More. Desk icons are
+   hidden on phones in CSS and the phone ones on desks, so the server
+   render is the same for both. */
 type PhoneOnly = "now" | "terminal" | "search";
-const DESK_ONLY = new Set<DesktopIconId>(["work", "writing", "atlas", "now", "contact", "readme", "draft"]);
+const DESK_ONLY = new Set<DesktopIconId>(["work", "writing", "atlas", "now", "contact", "draft"]);
 const PHONE_ROW: PhoneOnly[] = ["now", "terminal", "search"];
 
 /* ───────────────────────────── grid geometry ─────────────────────────────
@@ -116,7 +116,7 @@ export type IconsProps = {
   sceneRef: React.RefObject<HTMLElement | null>;
   selected: ReadonlySet<DesktopIconId>;
   setSelected: (s: Set<DesktopIconId>) => void;
-  /** rects (scene coordinates) icons may not land on: the widgets, hello.txt */
+  /** rects (scene coordinates) icons may not land on: the widgets, the caption */
   blockers: () => Rect[];
   onReadme: () => void;
   reduced: boolean;
@@ -133,7 +133,7 @@ export type IconsProps = {
  *   and the icons spring into the nearest free grid cells with the release
  *   velocity, a selection keeping its formation. Touch: hold to lift, then
  *   drag. Reduced motion: no projection, instant snap.
- * - Nothing lands on hello.txt or the widgets.
+ * - Nothing lands on the caption or the widgets.
  */
 export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onReadme, reduced, fine }: IconsProps) {
   const { t, path } = useI18n();

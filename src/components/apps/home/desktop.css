@@ -1,8 +1,9 @@
 /* ─────────────────────────── emOS · the Desktop ───────────────────────────
-   `/` is one screen and nothing scrolls. On a desk the name and hello.txt
-   sit top left; the widgets sit top right beside the app icons, which line
-   the right edge on an invisible snap grid. Phones get an iOS home screen
-   that fits above the tab bar.
+   `/` is one screen and nothing scrolls. On a desk the widgets sit top
+   right beside the app icons, which line the right edge on an invisible
+   snap grid; the name and one line are written small on the wallpaper,
+   bottom left, level with the dock. Phones get an iOS home screen that
+   fits above the tab bar, the same caption at its foot.
 
    Grid variables are plain px: DesktopIcons reads them back to snap.
    "Phone" means narrow, or short and touch (a phone held sideways): the
@@ -19,8 +20,6 @@
   --app-home-grid-l: 18px;
   --app-home-grid-b: 96px; /* dock + 20 */
   --app-home-widget: 148px;
-  /* the intro card: two tiles wide plus its padding */
-  --app-home-hello-w: calc(var(--app-home-widget) * 2 + 40px);
   /* the sky dial: 25 cells of 3 px */
   /* tertiary text; promoted to secondary under the bright skies */
   --app-home-l3: var(--color-label-3);
@@ -50,13 +49,43 @@ html[data-sky="dusk"] .app-home-scene {
   --app-home-l3: var(--color-label-2);
 }
 
-/* ── hello.txt: top left ── */
-.app-home-hello-slot {
+/* ── the caption: who this is, bottom left on the wallpaper ──
+   Plain words on the city, the way conky writes on a desktop: no card,
+   no buttons (the Dock opens every app). Its box is the dock shelf's
+   height, so the two lines sit level with the dock. The page's h1. */
+.app-home-caption {
   position: absolute;
-  top: var(--app-home-top);
   left: var(--app-home-pad);
+  bottom: 8px;
   z-index: 2;
-  width: var(--app-home-hello-w);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  height: calc(var(--dock-h) - 8px);
+  color: var(--color-label);
+  text-shadow:
+    0 1px 2px color-mix(in srgb, var(--color-ink-950) 85%, transparent),
+    0 0 16px color-mix(in srgb, var(--color-ink-950) 60%, transparent);
+  pointer-events: none;
+}
+.app-home-caption-name {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+.app-home-caption-role {
+  color: var(--color-label-2);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+/* the river goes pale under the bright skies: the second line steps up */
+html[data-sky="day"] .app-home-caption-role,
+html[data-sky="dawn"] .app-home-caption-role,
+html[data-sky="dusk"] .app-home-caption-role {
+  color: var(--color-label);
 }
 
 /* ── widgets: top right, beside the icon column ── */
@@ -521,107 +550,6 @@ html[data-sky="night"] .app-home-sundial svg {
   }
 }
 
-/* ───────────────────────────── the intro ─────────────────────────────
-   A chromeless card in the widgets' glass and border, two tiles wide,
-   across from them. Clouds drift behind it, softened by the glass; the
-   words sit on its tint. */
-.app-home-hello {
-  position: relative;
-  width: 100%;
-  max-width: var(--app-home-hello-w);
-  padding: 18px 20px;
-  border-radius: var(--radius-window);
-  color: var(--color-label);
-  box-shadow:
-    0 1px 1px rgba(0, 0, 0, 0.2),
-    0 22px 44px -22px rgba(0, 0, 0, 0.72);
-  user-select: text;
-  -webkit-user-select: text;
-}
-.app-home-hello > :not(.app-home-hello-glass) {
-  position: relative;
-  z-index: 1;
-}
-.app-home-hello-glass {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  --os-glass-tint: color-mix(in srgb, var(--color-ink-900) 80%, transparent);
-  --os-glass-rim: 2px;
-  --os-glass-border: color-mix(in srgb, var(--color-border-active) 26%, transparent);
-}
-.app-home-hello-greeting {
-  font-size: 1.5rem;
-  font-weight: 650;
-  line-height: 1.15;
-  letter-spacing: -0.025em;
-}
-.app-home-hello-lead {
-  margin-top: 8px;
-  color: var(--color-label-2);
-  font-size: 0.875rem;
-  line-height: 1.5;
-  text-wrap: pretty;
-}
-.app-home-hello-ctas {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  margin-top: 16px;
-}
-.app-home-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  height: 34px;
-  padding: 0 14px;
-  border-radius: 999px;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  line-height: 1;
-  white-space: nowrap;
-  transition:
-    scale 0.4s var(--ease-spring),
-    background-color 0.2s,
-    color 0.2s;
-  -webkit-tap-highlight-color: transparent;
-}
-.app-home-btn:active {
-  scale: 0.97;
-  transition-duration: 0.12s, 0.2s, 0.2s;
-}
-/* the way in: a cream pill, the moss arrow */
-.app-home-btn--primary {
-  background: var(--color-label);
-  color: var(--color-ink-950);
-}
-.app-home-btn--primary:hover {
-  background: color-mix(in srgb, var(--color-label) 82%, #fff);
-}
-.app-home-btn-arrow {
-  color: var(--color-signal-deep);
-  transition: translate 0.35s var(--ease-spring);
-}
-@media (hover: hover) and (pointer: fine) {
-  .app-home-btn--primary:hover .app-home-btn-arrow {
-    translate: 2px 0;
-  }
-}
-.app-home-btn--ghost {
-  color: var(--color-label);
-}
-.app-home-btn--ghost:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-.app-home-btn:focus-visible {
-  outline: 2px solid var(--color-signal);
-  outline-offset: 3px;
-}
-
 /* ───────────────────────────── icons ───────────────────────────── */
 .app-home-icons {
   position: absolute;
@@ -754,6 +682,12 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
     --app-home-grid-r: 30px;
     --app-home-widget: 168px;
   }
+  .app-home-caption-name {
+    font-size: 1.125rem;
+  }
+  .app-home-caption-role {
+    font-size: 0.875rem;
+  }
 }
 
 /* narrower desks (small laptops, tablets): the widgets stack in a column
@@ -763,18 +697,17 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
     grid-auto-flow: row;
   }
 }
-/* portrait tablets: one column of widgets, or they would sit on hello.txt */
-@media (min-width: 768px) and (not ((pointer: coarse) and (max-height: 520px))) and (max-width: 899px) {
-  .app-home-widgets {
-    grid-template-columns: var(--app-home-widget);
-  }
-  .app-home-widget--push {
-    display: none;
+/* desks under 1024 wide: the dock reaches into the caption's corner, so
+   the caption sits just above it */
+@media (min-width: 768px) and (not ((pointer: coarse) and (max-height: 520px))) and (max-width: 1023px) {
+  .app-home-caption {
+    bottom: calc(var(--dock-h) + 14px);
+    height: auto;
   }
 }
 
 /* short desks (1280 × 720, 1366 × 768 and the like, browser chrome
-   included): a tighter hello.txt and icon grid */
+   included): a tighter icon grid */
 @media (min-width: 768px) and (not ((pointer: coarse) and (max-height: 520px))) and (max-height: 820px) {
   .app-home-scene {
     --app-home-cell-h: 84px;
@@ -794,19 +727,6 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
     font-size: 0.75rem;
     line-height: 1.15;
   }
-  .app-home-hello {
-    padding: 16px 18px;
-  }
-  .app-home-hello-greeting {
-    font-size: 1.375rem;
-  }
-  .app-home-hello-lead {
-    margin-top: 6px;
-    font-size: 0.8125rem;
-  }
-  .app-home-hello-ctas {
-    margin-top: 14px;
-  }
 }
 /* …and short and narrow (a laptop window, 1024 × 700): the widget column
    would run past the dock, so it keeps two */
@@ -824,15 +744,21 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
     align-items: center;
     gap: 14px;
     min-height: 0;
-    padding: calc(var(--menubar-bottom) + 4px) 16px calc(var(--dock-h) + 12px);
+    padding: calc(var(--menubar-bottom) + 12px) 16px calc(var(--dock-h) + 14px);
   }
-  .app-home-hello-slot,
+  .app-home-caption,
   .app-home-widgets,
   .app-home-icons {
     width: min(100%, 560px);
   }
-  .app-home-hello-slot {
+  /* the caption: last on screen (first in the page), at the foot of the
+     wallpaper over the tab bar */
+  .app-home-caption {
     position: static;
+    order: 1;
+    height: auto;
+    margin-top: auto;
+    padding: 0 4px;
   }
 
   /* two equal columns that never grow past the screen: a square widget's
@@ -854,27 +780,6 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   }
   .app-home-kiosk-head {
     font-size: 0.9375rem;
-  }
-
-  .app-home-hello {
-    max-width: none;
-    padding: 18px 16px;
-    text-align: center;
-  }
-  .app-home-hello-greeting {
-    font-size: 1.375rem;
-  }
-  .app-home-hello-lead {
-    margin: 6px auto 0;
-    max-width: 36ch;
-    line-height: 1.45;
-  }
-  .app-home-hello-ctas {
-    justify-content: center;
-    margin-top: 14px;
-  }
-  .app-home-btn {
-    height: 44px;
   }
 
   /* the app grid: what the tab bar doesn't already hold */
@@ -929,14 +834,6 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
     display: none;
   }
 }
-/* tall phones: the wall comes back under the clock, at 2px cells */
-@media (max-width: 767px) and (min-height: 860px) {
-  .app-home-widget--push {
-    display: flex;
-    aspect-ratio: auto;
-    --app-home-wall-cell: 2px;
-  }
-}
 /* shorter phones (Safari with its toolbars): smaller widgets */
 @media (max-width: 767px) and (max-height: 760px) {
   .app-home-scene {
@@ -955,21 +852,19 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
     -webkit-line-clamp: 1;
   }
 }
-/* very short (an SE with toolbars): the widgets give way */
-@media (max-width: 767px) and (max-height: 620px) {
-  .app-home-widgets {
-    display: none;
-  }
-  .app-home-hello-lead {
-    display: -webkit-box;
-    overflow: hidden;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
+/* all but the shortest phones (an SE with toolbars): the wall comes back
+   under the clock, at 2px cells */
+@media (max-width: 767px) and (min-height: 640px) {
+  .app-home-widget--push {
+    display: flex;
+    height: auto;
+    aspect-ratio: auto;
+    --app-home-wall-cell: 2px;
   }
 }
 
-/* a phone held sideways: hello.txt on the left, the widgets and the icons
-   on the right */
+/* a phone held sideways: the widgets and the icons on the right, the
+   caption bottom left, as on a desk */
 @media (pointer: coarse) and (max-height: 520px) and (min-width: 600px) {
   .app-home-scene {
     display: grid;
@@ -982,9 +877,10 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
     padding-left: max(20px, env(safe-area-inset-left));
     padding-right: max(20px, env(safe-area-inset-right));
   }
-  .app-home-hello-slot {
+  .app-home-caption {
     grid-column: 1;
-    grid-row: 1 / span 2;
+    grid-row: 2;
+    align-self: end;
   }
   .app-home-widgets {
     grid-column: 2;
@@ -1013,19 +909,11 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
     grid-column: 2;
     grid-row: 2;
   }
-  .app-home-hello-lead {
-    display: -webkit-box;
-    overflow: hidden;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .app-home-widget,
-  .app-home-btn,
-  .app-home-icon-tile,
-  .app-home-btn-arrow {
+  .app-home-icon-tile {
     transition: none;
   }
 }
@@ -1035,8 +923,18 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
     background: var(--color-ink-950);
     text-shadow: none;
   }
-  .app-home-hello-glass {
-    --os-glass-border: rgba(255, 255, 255, 0.6);
+  /* the caption's lines on solid ink, like the icon labels */
+  .app-home-caption {
+    align-items: flex-start;
+    text-shadow: none;
+  }
+  .app-home-caption > * {
+    padding: 0 6px;
+    border-radius: 6px;
+    background: var(--color-ink-950);
+  }
+  .app-home-caption-role {
+    color: var(--color-label);
   }
 
   .app-home-marquee {

@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useI18n } from "@/i18n/client";
 import { useFinePointer, useReduced } from "@/hooks/env";
 import { DesktopIcons } from "./DesktopIcons";
-import { Hello } from "./Hello";
 import { useTerminal } from "@/components/os/Terminal";
 import { termQueue } from "@/components/os/terminal/queue";
 import { ClockWidget } from "./Sundial";
@@ -25,10 +24,12 @@ type Marquee = {
 };
 
 /**
- * `/`: one screen, nothing scrolls. On a desk, the intro sits top left,
- * the widgets top right beside the app icons, which line the right edge
- * on a snap grid; drag on empty desktop for a marquee. Phones get a home
- * screen that fits above the tab bar. (The name plays in the boot.)
+ * `/`: one screen, nothing scrolls. On a desk, the widgets sit top right
+ * beside the app icons, which line the right edge on a snap grid; drag on
+ * empty desktop for a marquee. The name and one line are written small on
+ * the wallpaper, bottom left, like a conky caption (the page's h1).
+ * Phones get a home screen that fits above the tab bar, the caption at
+ * its foot. (The name plays in the boot.)
  */
 export function DesktopScene() {
   const { t } = useI18n();
@@ -37,7 +38,7 @@ export function DesktopScene() {
   const fine = useFinePointer();
   const sceneRef = useRef<HTMLElement>(null);
   const widgetsRef = useRef<HTMLDivElement>(null);
-  const helloSlotRef = useRef<HTMLDivElement>(null);
+  const captionRef = useRef<HTMLDivElement>(null);
   const marqueeRef = useRef<HTMLDivElement>(null);
   const mq = useRef<Marquee | null>(null);
   const suppressClick = useRef(false);
@@ -69,7 +70,7 @@ export function DesktopScene() {
       const scene = sceneRef.current;
       if (!scene) return;
       const ease = "linear(0, 0.157 4.6%, 0.452 11%, 0.703 18.2%, 0.86 25.2%, 0.946 32.3%, 0.985 40%, 0.998 50%, 1)";
-      const desk = Array.from(scene.querySelectorAll<HTMLElement>(".app-home-hello-slot, .app-home-widget")).filter(
+      const desk = Array.from(scene.querySelectorAll<HTMLElement>(".app-home-widget, .app-home-caption")).filter(
         (el) => el.getClientRects().length
       );
       desk.forEach((el, i) =>
@@ -93,13 +94,13 @@ export function DesktopScene() {
     return () => window.removeEventListener("em:intro-done", play);
   }, []);
 
-  /* ── icons never land on the widgets or hello.txt ── */
+  /* ── icons never land on the widgets or the caption ── */
   const blockers = useCallback((): Rect[] => {
     const scene = sceneRef.current;
     if (!scene) return [];
     const s = scene.getBoundingClientRect();
     const out: Rect[] = [];
-    for (const el of [widgetsRef.current, helloSlotRef.current]) {
+    for (const el of [widgetsRef.current, captionRef.current]) {
       if (!el || !el.getClientRects().length) continue;
       const r = el.getBoundingClientRect();
       if (r.width === 0) continue;
@@ -125,7 +126,7 @@ export function DesktopScene() {
   const onPointerDown = (e: React.PointerEvent<HTMLElement>) => {
     if (e.pointerType === "touch" || e.button !== 0) return;
     const target = e.target as Element;
-    if (target.closest(`${INTERACTIVE},.app-home-icon,.app-home-hello,.app-home-widgets`)) return;
+    if (target.closest(`${INTERACTIVE},.app-home-icon,.app-home-widgets`)) return;
     if (isPhone()) return;
     const additive = e.shiftKey || e.metaKey || e.ctrlKey;
     mq.current = { pid: e.pointerId, sx: e.clientX, sy: e.clientY, moved: false, additive, base: additive ? new Set(selected) : new Set() };
@@ -194,13 +195,12 @@ export function DesktopScene() {
         }
       }}
     >
-      <h1 className="sr-only">{t.home.name}</h1>
-
       {/* the wallpaper's sun, held with a mouse or trackpad (the sundial is the handle on touch) */}
       {fine && <SunHandle />}
 
-      <div ref={helloSlotRef} className="app-home-hello-slot">
-        <Hello />
+      <div ref={captionRef} className="app-home-caption">
+        <h1 className="app-home-caption-name">{t.home.name}</h1>
+        <p className="app-home-caption-role">{t.home.role}</p>
       </div>
 
       <div ref={widgetsRef} className="app-home-widgets" role="group" aria-label={t.home.widgets.label}>
