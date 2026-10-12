@@ -21,6 +21,8 @@ const en = {
   openRepo: "Open {name} on GitHub",
   /** the hint pill beside the pointer when it rests on the alert */
   drag: "Drag me",
+  going: "Taking you to {target} in {n}…",
+  stay: "Stay",
   /** the little zsh transcript */
   console: "Terminal",
   /** the [nyae] keys, as one keyboard stop (arrows move between them) */
@@ -52,6 +54,8 @@ const fr: typeof en = {
   read: "Lire « {name} »",
   openRepo: "Ouvrir {name} sur GitHub",
   drag: "Déplacez-moi",
+  going: "Direction {target} dans {n}…",
+  stay: "Rester",
   console: "Terminal",
   answerGroup: "Répondre à zsh",
   answers: {

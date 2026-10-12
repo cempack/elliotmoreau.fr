@@ -31,11 +31,14 @@ const CANONICAL: Record<PublicAppId, string> = {
 
 export type Suggestion =
   /** one of emOS's apps: opens in place */
-  | { kind: "app"; app: AppId; to: string }
-  /** a post on the blog (external): `to` is where it lives now */
-  | { kind: "post"; app: "writing"; to: string; name: string; href: string }
+  | { kind: "app"; app: AppId; to: string; certain?: boolean }
+  /** a post, read in Writing: `href` is its path on the site (unlocalized) */
+  | { kind: "post"; app: "writing"; to: string; name: string; href: string; certain?: boolean }
   /** a repository on GitHub (external) */
-  | { kind: "repo"; app: "work"; to: string; name: string; href: string };
+  | { kind: "repo"; app: "work"; to: string; name: string; href: string; certain?: undefined };
+
+/** the site's real top-level paths: one letter off one of these is a typo, near-certainly */
+const ROUTES: Partial<Record<PublicAppId, string>> = { work: "work", writing: "writing", atlas: "atlas", now: "now", contact: "contact" };
 
 export type Candidates = {
   posts: readonly { slug: string; title: string; url: string }[];
@@ -147,7 +150,9 @@ export function suggest(command: string, data?: Candidates): Suggestion | null {
       if (token.length < 4) continue;
       for (const p of data.posts) {
         const s = closeness(token, p.slug);
-        if (s != null) hits.push({ s, hit: { kind: "post", app: "writing", to: bare(p.url), name: p.title, href: p.url } });
+        // "/writing/ricng-a-laptop": one letter off a post's real path
+        const certain = segments.length === 2 && segments[0] === "writing" && token === segments[1] && distance(token, p.slug) === 1;
+        if (s != null) hits.push({ s, hit: { kind: "post", app: "writing", to: `writing/${p.slug}`, name: p.title, href: `/writing/${p.slug}`, certain } });
       }
       for (const r of data.repos) {
         const s = closeness(token, r.name);
@@ -169,7 +174,11 @@ export function suggest(command: string, data?: Candidates): Suggestion | null {
     }
   }
   if (!best) return null;
+  // one letter off a real path ("/wrting") is a typo for sure: Writing
+  // opens by itself after a moment (the alert can still be stopped)
+  const route = ROUTES[best.app];
+  const certain = segments.length === 1 && route != null && distance(token, route) === 1;
   // a typo is corrected to the word it misspells ("blgo" → "blog"); a
   // known word, or a deeper path under a real app, to the app itself
-  return { kind: "app", app: best.app, to: best.s === 0 ? CANONICAL[best.app] : best.alias };
+  return { kind: "app", app: best.app, to: best.s === 0 ? CANONICAL[best.app] : best.alias, certain };
 }

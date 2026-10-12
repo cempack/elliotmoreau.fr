@@ -43,6 +43,8 @@ const introOver = () =>
   document.documentElement.dataset.intro === "done" || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const NUDGED = "em-nf-nudged";
+/** how long a near-certain typo waits before it goes */
+const AUTO_MS = 2200;
 
 export function NotFoundApp({ standalone = false }: {
   /** its own document (global-not-found): every way out is a full page
@@ -75,7 +77,7 @@ export function NotFoundApp({ standalone = false }: {
     suggestBody = s.bodySuggest.replace("{app}", target);
   } else if (suggestion) {
     target = middleTruncate(suggestion.name, 26);
-    suggestHref = suggestion.href;
+    suggestHref = suggestion.kind === "post" ? path(suggestion.href) : suggestion.href;
     if (suggestion.kind === "post") {
       openLabel = s.read.replace("{name}", target);
       suggestBody = s.bodyPost.replace("{name}", middleTruncate(suggestion.name, 56));
@@ -189,9 +191,43 @@ export function NotFoundApp({ standalone = false }: {
 
   const openSuggestion = useCallback(() => {
     if (!suggestion) return;
-    if (suggestion.kind === "app") go(suggestHref);
-    else window.location.assign(suggestHref);
+    if (suggestion.kind === "repo") window.location.assign(suggestHref);
+    else go(suggestHref);
   }, [suggestion, suggestHref, go]);
+
+  // typo forgiveness: one letter off a real path goes there by itself after
+  // a short countdown, once the boot/lock screen is out of the way; Stay
+  // (or any answer) stops it
+  const [armed, setArmed] = useState(false);
+  const [stayed, setStayed] = useState(false);
+  const [left, setLeft] = useState(2);
+  const certain = Boolean(suggestion?.certain);
+  useEffect(() => {
+    if (!certain) return;
+    let t = 0;
+    const arm = () => {
+      t = window.setTimeout(() => setArmed(true), 0);
+    };
+    if (introOver()) arm();
+    else window.addEventListener("em:intro-done", arm, { once: true });
+    return () => {
+      window.removeEventListener("em:intro-done", arm);
+      window.clearTimeout(t);
+    };
+  }, [certain]);
+  const counting = certain && armed && !stayed && answer == null;
+  useEffect(() => {
+    if (!counting) return;
+    const start = performance.now();
+    const id = window.setInterval(() => {
+      const ms = AUTO_MS - (performance.now() - start);
+      if (ms <= 0) {
+        window.clearInterval(id);
+        openSuggestion();
+      } else setLeft(Math.ceil(ms / 1000));
+    }, 100);
+    return () => window.clearInterval(id);
+  }, [counting, openSuggestion]);
 
   // macOS: clicking outside a modal alert gets a shake of the head (and
   // the alert keeps the focus)
@@ -324,6 +360,7 @@ export function NotFoundApp({ standalone = false }: {
           onAnswer={onAnswer}
           onSearch={palette.open}
           onDesktop={dismiss}
+          countdown={counting ? { left, total: AUTO_MS, onStay: () => (setStayed(true), blip("select")) } : null}
         />
       </div>
     </div>

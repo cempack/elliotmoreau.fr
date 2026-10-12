@@ -647,3 +647,64 @@ html[data-sky="day"] .app-nf-alert .os-glass {
     margin-top: 0.75rem;
   }
 }
+
+/* typo forgiveness: one letter off a real path goes there by itself */
+.app-nf-auto {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  align-self: stretch;
+  margin-top: 1rem;
+  text-align: left;
+}
+.app-nf-auto-text {
+  color: var(--color-label);
+  font-size: var(--text-footnote);
+  font-weight: 500;
+}
+.app-nf-auto-bar {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.08);
+}
+.app-nf-auto-bar::after {
+  content: "";
+  display: block;
+  height: 100%;
+  background: var(--color-signal);
+  transform-origin: left;
+  animation: app-nf-auto var(--nf-auto, 2s) linear both;
+}
+@keyframes app-nf-auto {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-nf-auto-bar::after {
+    animation-timing-function: steps(2, end);
+  }
+}
+.app-nf-auto-stay {
+  padding: 0.375rem 0.75rem;
+  border-radius: 999px;
+  color: var(--color-label);
+  font-size: var(--text-footnote);
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+}
+.app-nf-auto-stay:hover {
+  background: rgba(255, 255, 255, 0.13);
+}
+.app-nf-auto-stay:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 2px;
+}

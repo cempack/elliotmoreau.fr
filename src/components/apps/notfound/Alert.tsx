@@ -47,6 +47,7 @@ export function Alert({
   onAnswer,
   onSearch,
   onDesktop,
+  countdown,
 }: {
   tether: ReturnType<typeof useTether>;
   shake: MotionValue<number>;
@@ -68,6 +69,8 @@ export function Alert({
   onSearch: () => void;
   /** the Desktop buttons: the alert flies into the Dock, then navigates */
   onDesktop: () => void;
+  /** a near-certain typo, going by itself: seconds left, and Stay */
+  countdown?: { left: number; total: number; onStay: () => void } | null;
 }) {
   const { t, path: href } = useI18n();
   const s = t.notfound;
@@ -114,7 +117,7 @@ export function Alert({
     </PressButton>
   );
   const open =
-    suggestion?.kind === "app" ? (
+    suggestion?.kind !== "repo" ? (
       <PressLink
         href={suggestHref}
         transitionTypes={["app-open"]}
@@ -166,6 +169,16 @@ export function Alert({
             </p>
 
             <Zsh command={command} suggestion={suggestion} target={target} answer={answer} onAnswer={onAnswer} />
+
+            {countdown && (
+              <div className="app-nf-auto app-nf-swap" role="status">
+                <p className="app-nf-auto-text">{s.going.replace("{target}", target).replace("{n}", String(countdown.left))}</p>
+                <span className="app-nf-auto-bar" style={{ "--nf-auto": `${countdown.total}ms` } as React.CSSProperties} aria-hidden />
+                <PressButton className="app-nf-auto-stay" onClick={countdown.onStay}>
+                  {s.stay}
+                </PressButton>
+              </div>
+            )}
 
             {offering ? (
               <div key="offer" className="app-nf-actions app-nf-actions--stack app-nf-swap">
