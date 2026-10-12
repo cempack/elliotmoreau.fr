@@ -15,6 +15,7 @@ export type GhostPost = {
   slug: string;
   excerpt: string;
   published_at: string;
+  /** whole minutes, at least 1: Ghost's own figure, or our estimate when it has none */
   reading_time: number;
   feature_image: string | null;
   url: string;
@@ -23,6 +24,38 @@ export type GhostPost = {
 
 export function ghostConfigured() {
   return Boolean(API_URL && CONTENT_KEY);
+}
+
+/** reading speed for the estimate: a little under Ghost's 275, for prose on a screen */
+const WORDS_PER_MINUTE = 230;
+
+/** Words in a post's HTML or plain text (markup and entities don't count). */
+export function wordCount(text: string | null | undefined): number {
+  if (!text) return 0;
+  const plain = text
+    .replace(/<(script|style)\b[\s\S]*?<\/\1>/gi, " ")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&(?:rsquo|apos|#39|#x27|#8217);/gi, "’")
+    .replace(/&#?\w+;/g, " ");
+  return plain.match(/[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*/gu)?.length ?? 0;
+}
+
+/**
+ * A post's reading time in whole minutes, never 0: Ghost's `reading_time`
+ * when it gave one, else estimated from the body (or, in a list fetched
+ * without bodies, the excerpt). Ghost leaves the field out when it has no
+ * HTML to count and rounds a short post down to 0, which printed " min".
+ */
+export function readingMinutes(post: { reading_time?: unknown; html?: string | null; excerpt?: string | null }): number {
+  const given = Number(post.reading_time);
+  if (Number.isFinite(given) && given > 0) return Math.max(1, Math.round(given));
+  const words = Math.max(wordCount(post.html), wordCount(post.excerpt));
+  return Math.max(1, Math.round(words / WORDS_PER_MINUTE));
+}
+
+/** Ghost's post as the site reads it: every field the UI prints is there. */
+export function normalisePost<T extends GhostPost>(post: T): T {
+  return { ...post, reading_time: readingMinutes(post) };
 }
 
 export async function getLatestPosts(limit = 3): Promise<GhostPost[] | null> {
@@ -36,7 +69,7 @@ export async function getLatestPosts(limit = 3): Promise<GhostPost[] | null> {
     const res = await fetch(u, { next: { revalidate: 3600 } });
     if (!res.ok) return null;
     const json = (await res.json()) as { posts?: GhostPost[] };
-    return json.posts ?? [];
+    return (json.posts ?? []).map(normalisePost);
   } catch {
     return null;
   }
@@ -58,7 +91,8 @@ export async function getPost(slug: string): Promise<GhostFullPost | null | unde
     if (res.status === 404) return null;
     if (!res.ok) return undefined;
     const json = (await res.json()) as { posts?: GhostFullPost[] };
-    return json.posts?.[0] ?? null;
+    const post = json.posts?.[0];
+    return post ? normalisePost(post) : null;
   } catch {
     return undefined;
   }
