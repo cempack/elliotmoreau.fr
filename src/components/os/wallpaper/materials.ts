@@ -26,6 +26,8 @@ export const MAT = {
   /** the Pont Neuf's downstream face; shade = height (3 at the water) */
   BRIDGE: 18,
   LAMP: 19,
+  /** the one window that is always lit: Elliot's room (a door into it on the Desktop) */
+  HOME: 20,
 } as const;
 
 export const WATER = 1 << 10;
@@ -57,6 +59,8 @@ export type City = {
   S: number;
   twinkles: Twinkle[];
   plane: { y: number };
+  /** the always-lit window, in art pixels (null when no quay is wide enough to hold it) */
+  home: { x: number; y: number; w: number; h: number } | null;
 };
 
 /* ───────────────────────────── helpers ───────────────────────────── */

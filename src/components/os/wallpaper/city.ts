@@ -275,6 +275,19 @@ export function buildCity(W: number, H: number): City {
     }
   }
 
+  /* every window as it is painted, so one can be kept lit (Elliot's room) */
+  const wins = new Map<string, { bank: "L" | "R"; storey: number; x0: number; y0: number; x1: number; y1: number }>();
+  const noteWin = (key: string, bank: "L" | "R", storey: number, x: number, y: number) => {
+    const w = wins.get(key);
+    if (!w) wins.set(key, { bank, storey, x0: x, y0: y, x1: x, y1: y });
+    else {
+      w.x0 = Math.min(w.x0, x);
+      w.y0 = Math.min(w.y0, y);
+      w.x1 = Math.max(w.x1, x);
+      w.y1 = Math.max(w.y1, y);
+    }
+  };
+
   /* ── the banks (drawn far to near, so nearer things cover farther) ── */
   // left: f grows from 1 at the bridge to vx/(vx - xa) at the frame's edge
   const fL = (x: number) => (vx - x) / Math.max(1, vx - xa);
@@ -354,6 +367,7 @@ export function buildCity(W: number, H: number): City {
           const isWin = winCol && inStorey > 0.25 && inStorey < 0.8 && hAbove > quayH + storeyH * 0.3;
           if (isWin) {
             idx[y * W + x] = code(MAT.WINDOW, Math.floor(hash2(Math.floor(colU), Math.floor(fromTop) + Math.round(bd.z0 * 100), 9) * 15));
+            noteWin(`L${blds.indexOf(bd)}:${Math.floor(colU)}:${Math.floor(fromTop)}`, "L", bd.storeys - Math.floor(fromTop), x, y);
             continue;
           }
           // a stone band between ground floor and the rest
@@ -435,6 +449,7 @@ export function buildCity(W: number, H: number): City {
         const isWin = ground ? winCol && hAbove < quayH + storeyH * 0.75 : winCol && inStorey > 0.25 && inStorey < 0.78;
         if (isWin) {
           idx[y * W + x] = ground ? code(MAT.DARK, 0) : code(MAT.WINDOW, Math.floor(hash2(Math.floor(colU), Math.floor(fromTop), 19) * 15));
+          if (!ground) noteWin(`R:${Math.floor(colU)}:${Math.floor(fromTop)}`, "R", storeys - Math.floor(fromTop), x, y);
           continue;
         }
         idx[y * W + x] = code(MAT.FACADE_E, q4(c01(fromTop / (storeys + 0.5)) * 0.7, x, y, 2));
@@ -592,6 +607,38 @@ export function buildCity(W: number, H: number): City {
     put(b, l.x, l.y, code(MAT.LAMP, 1));
   }
 
+  /* ── Elliot's room: one window on the wider quay that stays lit day and
+     night. A big one (near), an upper floor (above the plane trees), and
+     clear of the screen's edge and of anything painted over it since ── */
+  let home: City["home"] = null;
+  {
+    const bank = xa >= W - xb ? "L" : "R";
+    let best: { x0: number; y0: number; x1: number; y1: number } | null = null;
+    let bestScore = -1;
+    for (const w of wins.values()) {
+      if (w.bank !== bank || w.storey < 2) continue;
+      const ww = w.x1 - w.x0 + 1;
+      const wh = w.y1 - w.y0 + 1;
+      // phones paint small windows: one pixel wide is still a window
+      if (ww * wh < 3 || w.x0 < 3 || w.x1 > W - 4 || w.y0 < top + 4) continue;
+      let clear = 0;
+      for (let y = w.y0; y <= w.y1; y++) for (let x = w.x0; x <= w.x1; x++) if (((idx[y * W + x] >> 4) & 63) === MAT.WINDOW) clear++;
+      if (clear < ww * wh * 0.8) continue;
+      // big and toward the middle of its quay, on the second or third floor
+      const mid = bank === "L" ? xa * 0.55 : xb + (W - xb) * 0.35;
+      const score = ww * wh - Math.abs((w.x0 + w.x1) / 2 - mid) * 0.15 - Math.abs(w.storey - 2.5) * 2;
+      if (score > bestScore) {
+        bestScore = score;
+        best = w;
+      }
+    }
+    if (best) {
+      for (let y = best.y0; y <= best.y1; y++)
+        for (let x = best.x0; x <= best.x1; x++) if (((idx[y * W + x] >> 4) & 63) === MAT.WINDOW) idx[y * W + x] = code(MAT.HOME, (x + y) & 1);
+      home = { x: best.x0, y: best.y0, w: best.x1 - best.x0 + 1, h: best.y1 - best.y0 + 1 };
+    }
+  }
+
   /* ── the Garonne: every column mirrors what stands above its edge ── */
   for (let x = 0; x < W; x++) {
     const edge = yw[x];
@@ -667,5 +714,6 @@ export function buildCity(W: number, H: number): City {
     S,
     twinkles,
     plane: { y: Math.round(H * (0.12 + hash2(W, H, 3) * 0.05)) },
+    home,
   };
 }

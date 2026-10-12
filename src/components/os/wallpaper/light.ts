@@ -334,6 +334,9 @@ function colourOf(code: number, L: Light): RGB {
       c = mix(shadeLit(GLASS, N_NORTH, L), L.horizon, 0.18);
       break;
     }
+    // Elliot's room: the lamp is always on
+    case MAT.HOME:
+      return s & 1 ? WARM : WARM2;
     case MAT.DARK:
       c = shadeLit(DARK, N_NORTH, L, s ? 1.3 : 1);
       break;

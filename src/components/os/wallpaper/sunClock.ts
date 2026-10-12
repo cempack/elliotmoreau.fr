@@ -55,6 +55,10 @@ export type SunSpot = {
 
 export const sunSpot = store<SunSpot | null>(null);
 
+/** Elliot's lit window on the wallpaper, in CSS px (the Desktop puts a door on it) */
+export type HomeSpot = { x: number; y: number; w: number; h: number; cell: number };
+export const homeSpot = store<HomeSpot | null>(null);
+
 /** A body's place on screen in art pixels (shared with ./light). Height is
     eased so a low sun still clears the rooftops for its last hour. */
 export function project(view: Pick<SunView, "W" | "hz" | "top" | "fov">, elevation: number, azimuth: number) {

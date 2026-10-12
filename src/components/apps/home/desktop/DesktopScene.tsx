@@ -8,6 +8,7 @@ import { useTerminal } from "@/components/os/Terminal";
 import { termQueue } from "@/components/os/terminal/queue";
 import { ClockWidget } from "./Clock";
 import { SunHandle } from "./SunHandle";
+import { LitWindow, Room } from "../room/Room";
 import { PushWidget } from "./BrickWall";
 import { LatestPostWidget } from "./Kiosk";
 import { type DesktopIconId } from "./icons";
@@ -197,6 +198,9 @@ export function DesktopScene() {
     >
       {/* the wallpaper's sun, held with a mouse or trackpad (on touch, Control Center's sky holds it) */}
       {fine && <SunHandle />}
+      {/* the always-lit window on the quay, and the room behind it */}
+      <LitWindow />
+      <Room />
 
       <div ref={captionRef} className="app-home-caption">
         <h1 className="app-home-caption-name">{t.home.name}</h1>

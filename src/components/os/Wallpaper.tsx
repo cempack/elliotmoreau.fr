@@ -5,7 +5,7 @@ import { sunAt } from "@/lib/sun";
 import { SKY_PHASES, useSky, type SkyMode, type SkyPhase } from "./sky";
 import type { City } from "./wallpaper/materials";
 import { lampsAt, relight } from "./wallpaper/light";
-import { pinnedMs, project, sunScrub, sunSpot } from "./wallpaper/sunClock";
+import { homeSpot, pinnedMs, project, sunScrub, sunSpot } from "./wallpaper/sunClock";
 import { WeatherLayer } from "./wallpaper/Weather";
 import { useWeather } from "./weather";
 import "./wallpaper.css";
@@ -273,6 +273,14 @@ export function Wallpaper() {
   }, [city, known, mode, minute]);
 
   useEffect(() => () => sunSpot.set(null), []);
+
+  // where Elliot's lit window landed on this viewport's city
+  useEffect(() => {
+    const h = city?.city.home;
+    const cell = city?.grid.cell ?? 0;
+    homeSpot.set(h ? { x: h.x * cell, y: h.y * cell, w: h.w * cell, h: h.h * cell, cell } : null);
+  }, [city]);
+  useEffect(() => () => homeSpot.set(null), []);
 
   return (
     <div ref={rootRef} aria-hidden className="os-wallpaper">
