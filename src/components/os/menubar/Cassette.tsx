@@ -24,9 +24,9 @@ import { mix, type ArtPalette } from "@/lib/theme";
  * opening. Paused, everything holds still; last played, the tape is wound
  * to the end. The shell is the theme's own colour, lit from above.
  *
- * Side B is "On repeat lately": the top artists as a B-side tracklist.
- * Turn it over by dragging it sideways (1:1, the release projected), a
- * tap, Space/Enter or the A/B switch: a real half-turn in 3D about the
+ * Side B is the artists on repeat lately, as a numbered tracklist. Turn
+ * it over by dragging it sideways (1:1, the release projected), a tap,
+ * Space/Enter or the switch under it ("This song" / "On repeat"): a real half-turn in 3D about the
  * cassette's own middle, lifted off the panel while it turns, its edges
  * catching the light, its shadow narrowing under it. Both faces rest at
  * z = 0, so at rest the pixels sit exactly on the grid.
@@ -539,7 +539,7 @@ export function Cassette({
   status: SpotifyStatus | null;
   /** the kicker, left of the counter */
   head: React.ReactNode;
-  /** beside the A/B switch (Open in Spotify) */
+  /** beside the side switch (Open in Spotify) */
   foot?: React.ReactNode;
   labels: Labels;
 }) {
@@ -776,7 +776,7 @@ export function Cassette({
                 <ol className="os-tape-list">
                   {artists.map((a, i) => (
                     <li key={a.name}>
-                      <span className="os-tape-list-k">B{i + 1}</span>
+                      <span className="os-tape-list-k">{i + 1}</span>
                       <span className="os-tape-list-name">{a.name}</span>
                     </li>
                   ))}
@@ -799,11 +799,11 @@ export function Cassette({
       <div className="os-tape-foot">
         {canFlip && (
           <div className="os-tape-sides" role="group" aria-label={labels.sides}>
-            <button type="button" aria-pressed={side === "A"} aria-label={labels.sideA} onClick={() => show("A")}>
-              A
+            <button type="button" aria-pressed={side === "A"} onClick={() => show("A")}>
+              {labels.sideA}
             </button>
-            <button type="button" aria-pressed={side === "B"} aria-label={labels.sideB} onClick={() => show("B")}>
-              B
+            <button type="button" aria-pressed={side === "B"} onClick={() => show("B")}>
+              {labels.sideB}
             </button>
           </div>
         )}
