@@ -128,12 +128,12 @@
 
 @media (max-width: 767px) {
   :root {
-    /* the dock becomes a solid tab bar along the bottom edge: an 8px band
-       for its handle, 56px of labelled tabs, then the home indicator's
+    /* the dock becomes a solid tab bar along the bottom edge: a 14px band
+       for its handle, 60px of labelled tabs, then the home indicator's
        inset. --dock-h is everything it occupies; windows end where it
        begins. */
     --os-tabbar-gap: 0px;
-    --dock-h: calc(64px + env(safe-area-inset-bottom, 0px));
+    --dock-h: calc(74px + env(safe-area-inset-bottom, 0px));
   }
 }
 /* short landscape screens (phones on their side): every pixel of height

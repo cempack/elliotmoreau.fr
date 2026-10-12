@@ -86,7 +86,6 @@ const en = {
   icons: {
     label: "Desktop icons",
     readme: "README",
-    search: "Search",
     untitled: "Untitled",
     draftHint: "Your unsent letter: open it in Mail",
     hint: "Double-click or press Enter to open. Drag to rearrange.",
@@ -171,7 +170,6 @@ const fr: typeof en = {
   icons: {
     label: "Icônes du bureau",
     readme: "README",
-    search: "Recherche",
     untitled: "Sans titre",
     draftHint: "Votre lettre pas encore envoyée : l’ouvrir dans Mail",
     hint: "Double-cliquez ou appuyez sur Entrée pour ouvrir. Faites glisser pour ranger.",

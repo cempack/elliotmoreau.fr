@@ -15,9 +15,12 @@ import { useTerminal } from "../Terminal";
 import { openOverview } from "../overview";
 import { bounce, isPlainClick, pressHandlers, scrollToTop } from "./launch";
 
-/** The five apps that earn a tab; the rest live behind More. */
-const PRIMARY: AppId[] = ["home", "work", "writing", "atlas", "contact"];
-const TAB_ICON = 30;
+/** Four apps and More: what a visitor comes for (the Desktop, the work, the writing, a way to write
+    to me). Four tabs and More leave each one room to breathe; the rest live behind More. */
+const PRIMARY: AppId[] = ["home", "work", "writing", "contact"];
+/** the apps in More, before its tools */
+const MORE_APPS: AppId[] = ["atlas", "now"];
+const TAB_ICON = 32;
 
 function Lens({ reduced }: { reduced: boolean }) {
   // the bar is hidden (not unmounted) on wider screens: there its lens must
@@ -56,10 +59,10 @@ function Chevron() {
 }
 
 /**
- * The phone dock (<768px): a solid bar along the bottom edge. Five apps
+ * The phone dock (<768px): a solid bar along the bottom edge. Four apps
  * get a tab (each icon with its name under it) and a moss bar slides to
- * the current one; More opens a flingable sheet with Now, Terminal, the
- * open windows and Search.
+ * the current one; More opens a flingable sheet with Atlas, Now, the
+ * Terminal, the open windows and Search.
  */
 /** fields that bring up the on-screen keyboard */
 const KBD_FIELDS =
@@ -202,7 +205,6 @@ function MoreList({ active, afterRef }: { active: AppId; afterRef: React.RefObje
   const term = useTerminal();
   const palette = usePalette();
   const dismiss = useSheetDismiss();
-  const now = APPS.find((a) => a.id === "now")!;
 
   /** close the sheet, then run `fn` once it has left */
   const thenClose = (fn: () => void) => {
@@ -214,32 +216,38 @@ function MoreList({ active, afterRef }: { active: AppId; afterRef: React.RefObje
     <>
       <h2 className="os-more-title">{t.dock.moreTitle}</h2>
       <ul className="os-more-list">
-        <li data-dock-launch="now">
-          <Link prefetch={false}
-            href={path(now.path)}
-            transitionTypes={["app-open"]}
-            className="os-more-row"
-            aria-current={active === "now" ? "page" : undefined}
-            onClick={(e) => {
-              if (!isPlainClick(e)) return;
-              if (active === "now") {
-                e.preventDefault();
-                thenClose(scrollToTop);
-                return;
-              }
-              dismiss();
-            }}
-          >
-            <span data-dock-bounce>
-              <AppIcon app="now" size={44} />
-            </span>
-            <span className="os-more-text">
-              <span className="os-more-name">{t.shell.apps.now}</span>
-              <span className="os-more-hint">{t.dock.nowHint}</span>
-            </span>
-            <Chevron />
-          </Link>
-        </li>
+        {MORE_APPS.map((id) => {
+          const app = APPS.find((a) => a.id === id)!;
+          return (
+            <li key={id} data-dock-launch={id}>
+              <Link
+                prefetch={false}
+                href={path(app.path)}
+                transitionTypes={["app-open"]}
+                className="os-more-row"
+                aria-current={active === id ? "page" : undefined}
+                onClick={(e) => {
+                  if (!isPlainClick(e)) return;
+                  if (active === id) {
+                    e.preventDefault();
+                    thenClose(scrollToTop);
+                    return;
+                  }
+                  dismiss();
+                }}
+              >
+                <span data-dock-bounce>
+                  <AppIcon app={id} size={44} />
+                </span>
+                <span className="os-more-text">
+                  <span className="os-more-name">{t.shell.apps[app.label]}</span>
+                  <span className="os-more-hint">{id === "atlas" ? t.dock.atlasHint : t.dock.nowHint}</span>
+                </span>
+                <Chevron />
+              </Link>
+            </li>
+          );
+        })}
         <li>
           <button
             type="button"

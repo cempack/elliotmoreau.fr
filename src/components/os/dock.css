@@ -218,7 +218,7 @@ html:active-view-transition .os-dock-solid {
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 8px max(6px, env(safe-area-inset-right)) env(safe-area-inset-bottom, 0px) max(6px, env(safe-area-inset-left));
+  padding: 14px max(10px, env(safe-area-inset-right)) env(safe-area-inset-bottom, 0px) max(10px, env(safe-area-inset-left));
   background: var(--color-ink-950);
   box-shadow: inset 0 2px 0 color-mix(in srgb, var(--color-border-active) 18%, transparent);
   transition: transform 0.3s var(--ease-out-quint);
@@ -228,11 +228,11 @@ html:active-view-transition .os-dock-solid {
 .os-tabbar-list {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  height: 56px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  height: 60px;
   margin: 0 auto;
   padding: 0;
-  max-width: 34rem;
+  max-width: 30rem;
   list-style: none;
 }
 .os-tabbar-item {
@@ -258,7 +258,7 @@ html:active-view-transition .os-dock-solid {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: 5px;
   min-width: 0;
   max-width: 100%;
 }
@@ -278,8 +278,8 @@ html:active-view-transition .os-dock-solid {
 .os-tabbar-icon,
 .os-tabbar-press {
   display: block;
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
 }
 .os-tabbar-press {
   opacity: 0.74;
@@ -291,7 +291,7 @@ html:active-view-transition .os-dock-solid {
   max-width: 100%;
   overflow: hidden;
   color: var(--color-label-2);
-  font: 500 0.75rem/0.875rem var(--font-sans);
+  font: 500 0.75rem/1rem var(--font-sans);
   letter-spacing: 0;
   text-overflow: ellipsis;
   white-space: nowrap;

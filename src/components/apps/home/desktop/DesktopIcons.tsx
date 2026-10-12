@@ -10,7 +10,6 @@ import { useSound } from "@/lib/sound";
 import { APPS } from "@/components/os/apps";
 import { AppIcon } from "@/components/os/icons";
 import { useTerminal } from "@/components/os/Terminal";
-import { usePalette } from "@/components/ui/palette";
 import { DESKTOP_ICONS, DesktopGlyph, type DesktopIconId } from "./icons";
 import { desktopMemory, type Cell } from "./store";
 import { FLING, band, intersects, pushSample, releaseVelocity, type Rect, type Sample } from "./physics";
@@ -25,14 +24,14 @@ const HOLD_SLOP = 8;
 /** event-time clock (only ever read from handlers) */
 const clock = () => performance.now();
 
-/* Desks show only the README (the apps are in the Dock). Phones get a home
-   screen row of the README and what the tab bar doesn't hold: Now, and
-   Terminal and Search, which otherwise hide behind More. Desk icons are
-   hidden on phones in CSS and the phone ones on desks, so the server
-   render is the same for both. */
-type PhoneOnly = "now" | "terminal" | "search";
+/* Desks show only the README (the apps are in the Dock). Phones get one
+   home screen row of the README and what the tab bar doesn't hold: Atlas,
+   Now and Terminal, which otherwise hide behind More (Search is the menu
+   bar's magnifier). Desk icons are hidden on phones in CSS and the phone
+   ones on desks, so the server render is the same for both. */
+type PhoneOnly = "atlas" | "now" | "terminal";
 const DESK_ONLY = new Set<DesktopIconId>(["work", "writing", "atlas", "now", "contact", "draft"]);
-const PHONE_ROW: PhoneOnly[] = ["now", "terminal", "search"];
+const PHONE_ROW: PhoneOnly[] = ["atlas", "now", "terminal"];
 
 /* ───────────────────────────── grid geometry ─────────────────────────────
    An invisible grid anchored to the top-right of the desktop, like Finder's
@@ -140,7 +139,6 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
   const router = useRouter();
   const { blip } = useSound();
   const terminal = useTerminal();
-  const palette = usePalette();
   const phone = useMedia(PHONE);
   const hintId = useId();
   const gridRef = useRef<HTMLDivElement>(null);
@@ -373,10 +371,6 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
     }
     if (id === "terminal") {
       terminal.setOpen(true);
-      return;
-    }
-    if (id === "search") {
-      palette.open();
       return;
     }
     if (id === "draft") {
@@ -672,10 +666,10 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
       onClick={onClick(id)}
     >
       <span className="app-home-icon-tile">
-        <AppIcon app={id === "search" ? "spotlight" : id} size={ICON} />
+        <AppIcon app={id} size={ICON} />
       </span>
       <span className="app-home-icon-label">
-        {id === "search" ? t.home.icons.search : id === "now" ? t.shell.apps.now : t.shell.apps.terminal}
+        {t.shell.apps[id]}
       </span>
     </button>
   );
