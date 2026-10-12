@@ -134,7 +134,23 @@ function filesIn(ctx: RunCtx, all = false): { name: string; dir?: boolean; dim?:
       return [{ name: "now.md" }];
     case "contact":
       return [{ name: "hello.eml" }];
+    case "admin":
+      return [{ name: "sudoers", dim: true }];
   }
+}
+
+/** `sudo -i`, `admin`, `login`: the admin panel, behind its passkey */
+function openAdmin(ctx: RunCtx) {
+  const t = ctx.d.system.term.sudo;
+  window.setTimeout(() => ctx.navigate(ctx.path("/admin")), 700);
+  return (
+    <div className="os-term-block os-term-stagger">
+      <p style={{ "--i": 0 } as React.CSSProperties}>{t.passkey}</p>
+      <p style={{ "--i": 1 } as React.CSSProperties} className="os-term-dim">
+        {t.openingAdmin}
+      </p>
+    </div>
+  );
 }
 
 /* ───────────── the commands ───────────── */
@@ -736,6 +752,9 @@ const COMMANDS: Command[] = [
     run: (args, ctx, rest) => {
       const t = ctx.d.system.term.sudo;
       const what = fold(rest).replace(/\s+/g, " ");
+      if (!what) return <Line tone="dim">{t.usage}</Line>;
+      // Elliot's way in: a root shell opens the admin panel (a passkey guards it)
+      if (/^(-i|-s|su|admin|login)$/.test(what)) return openAdmin(ctx);
       if (/^hire( elliot( moreau)?)?$/.test(what)) {
         window.setTimeout(() => ctx.navigate(ctx.path("/contact")), 1400);
         return (
@@ -764,6 +783,7 @@ const COMMANDS: Command[] = [
       );
     },
   },
+  { name: "admin", aliases: ["login", "su"], hidden: true, run: (_a, ctx) => openAdmin(ctx) },
   {
     name: "hire",
     hidden: true,

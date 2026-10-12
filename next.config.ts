@@ -6,6 +6,20 @@ const nextConfig: NextConfig = {
     // layout + not-found: app/global-not-found.tsx renders it, server-side
     globalNotFound: true,
   },
+  async headers() {
+    // the admin panel: never framed (clickjacking), never indexed, never referred
+    const admin = [
+      { key: "X-Frame-Options", value: "DENY" },
+      { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+      { key: "X-Robots-Tag", value: "noindex, nofollow" },
+      { key: "Referrer-Policy", value: "no-referrer" },
+    ];
+    return [
+      { source: "/admin", headers: admin },
+      { source: "/:lang(en|fr)/admin", headers: admin },
+      { source: "/api/admin/:path*", headers: admin },
+    ];
+  },
   async rewrites() {
     return {
       beforeFiles: [],

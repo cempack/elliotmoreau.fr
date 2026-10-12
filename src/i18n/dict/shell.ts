@@ -12,6 +12,7 @@ const en = {
     atlas: "Atlas",
     now: "Now",
     contact: "Mail",
+    admin: "Admin",
     terminal: "Terminal",
   },
   menu: {
@@ -214,6 +215,7 @@ const fr: typeof en = {
     atlas: "Atlas",
     now: "En ce moment",
     contact: "Mail",
+    admin: "Admin",
     terminal: "Terminal",
   },
   menu: {

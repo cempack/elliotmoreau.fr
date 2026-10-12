@@ -136,7 +136,7 @@ openssl rand -base64 24   # ADMIN_SETUP_TOKEN
 | --- | --- | --- |
 | `DATABASE_PATH` | everything | Must sit on the volume: `/data/emos.db`. |
 | `SITE_URL` | admin, mail links | The public origin, exactly `https://elliotmoreau.fr` (no trailing slash). Passkeys are bound to it, so the admin panel only works on that domain (not on `*.up.railway.app`). |
-| `SESSION_SECRET` | admin | Signs admin sessions. Changing it signs everyone out. |
+| `SESSION_SECRET` | mail, admin | The root key for visitors' private thread links and the salted IP hashes in rate limits and the audit log. Keep it stable: a new one means older replies can't repeat a visitor's link. (Admin sessions are random tokens stored hashed; they don't depend on it.) |
 | `INTERNAL_SECRET` | boot refresh | Lets the server tell itself to refresh pages at boot (and lets you do it by hand, see "Day to day"). Falls back to `SESSION_SECRET` if unset. |
 | `ADMIN_SETUP_TOKEN` | first passkey | Asked once, when you register the first passkey. You can delete it afterwards. |
 | `GITHUB_TOKEN` | Projects, pushes | Optional: lifts GitHub's 60 requests/hour anonymous limit. A fine-grained token with **public repositories, read-only** access is enough. |
@@ -225,9 +225,10 @@ curl -sI https://elliotmoreau.fr/atlas | grep -i -E "^(server|x-nextjs-cache)"
 
 Expect `server: cloudflare` and an `x-nextjs-cache` header (`HIT`, `MISS` or
 `STALE`): that's Next answering from Railway. Then open the site, then the
-admin panel (terminal → `sudo`) and register your passkey with
-`ADMIN_SETUP_TOKEN`. Edit something (a place's note), save, and reload the
-Atlas: it shows at once.
+admin panel (open the Terminal with the backtick key, type `sudo -i`, or
+`admin`) and register your passkey with `ADMIN_SETUP_TOKEN`. Save the ten
+recovery codes it shows (once). Edit something (a place's note), save, and
+reload the Atlas: it shows at once.
 
 When you're happy:
 

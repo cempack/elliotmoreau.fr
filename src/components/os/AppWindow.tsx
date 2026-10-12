@@ -9,7 +9,7 @@ import { useI18n } from "@/i18n/client";
 import { useSound } from "@/lib/sound";
 import { spring } from "@/lib/motion";
 import { useReduced } from "@/hooks/env";
-import { APPS, type AppId } from "./apps";
+import { appDef, type AppId } from "./apps";
 import { AppIcon } from "./icons";
 import { Glass } from "./Glass";
 import { useWindowDrag } from "./window/useWindowDrag";
@@ -71,7 +71,7 @@ export function AppWindow({
 }) {
   const { t, path } = useI18n();
   const w = t.windowing.window;
-  const def = APPS.find((a) => a.id === app) ?? APPS[0];
+  const def = appDef(app);
   const label = title ?? t.shell.apps[def.label];
   const home = path("/");
   const appHref = path(def.path);

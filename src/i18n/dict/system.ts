@@ -183,6 +183,9 @@ const en = {
       sandwich: "Okay.",
       noSandwich: "What? Make it yourself.",
       needSudo: "hire: permission denied (try sudo)",
+      usage: "usage: sudo <command>",
+      passkey: "[sudo] elliot: authenticate with a passkey",
+      openingAdmin: "Opening Admin…",
     },
     eggs: {
       rm: "rm: permission denied",
@@ -377,6 +380,9 @@ const fr: typeof en = {
       sandwich: "D’accord.",
       noSandwich: "Quoi ? Faites-le vous-même.",
       needSudo: "hire : permission refusée (essayez sudo)",
+      usage: "usage : sudo <commande>",
+      passkey: "[sudo] elliot : authentification par clé d’accès",
+      openingAdmin: "Ouverture d’Admin…",
     },
     eggs: {
       rm: "rm : permission refusée",

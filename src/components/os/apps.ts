@@ -6,7 +6,10 @@ import { stripLocale } from "@/i18n/config";
  * and window chrome all read this registry. `accent` tints the app's
  * icon tile and window glow.
  */
-export type AppId = "home" | "work" | "writing" | "atlas" | "now" | "contact";
+export type AppId = "home" | "work" | "writing" | "atlas" | "now" | "contact" | "admin";
+
+/** the apps visitors can find (everything but the admin panel) */
+export type PublicAppId = Exclude<AppId, "admin">;
 
 export type AppDef = {
   id: AppId;
@@ -18,6 +21,8 @@ export type AppDef = {
   key: string;
 };
 
+/** The dock's apps (and the workspaces, Spotlight, sitemap). */
+
 export const APPS: AppDef[] = [
   { id: "home", path: "/", label: "home", accent: "var(--color-signal)", key: "1" },
   { id: "work", path: "/work", label: "work", accent: "var(--color-ion)", key: "2" },
@@ -27,9 +32,22 @@ export const APPS: AppDef[] = [
   { id: "contact", path: "/contact", label: "contact", accent: "var(--color-signal)", key: "6" },
 ];
 
+/**
+ * Elliot's admin panel: a window like the others, opened only from the
+ * Terminal (`sudo`). Never in the Dock, Spotlight, workspaces or sitemap.
+ */
+export const ADMIN_APP: AppDef = { id: "admin", path: "/admin", label: "admin", accent: "var(--color-ember)", key: "" };
+
+const ALL_APPS = [...APPS, ADMIN_APP];
+
+/** any app's definition, the hidden admin included */
+export function appDef(id: AppId): AppDef {
+  return ALL_APPS.find((a) => a.id === id) ?? APPS[0];
+}
+
 export function appForPath(pathname: string): AppDef {
   const p = stripLocale(pathname);
-  return APPS.find((a) => a.path !== "/" && (p === a.path || p.startsWith(`${a.path}/`))) ?? APPS[0];
+  return ALL_APPS.find((a) => a.path !== "/" && (p === a.path || p.startsWith(`${a.path}/`))) ?? APPS[0];
 }
 
 export type { Locale };

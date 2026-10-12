@@ -1,4 +1,4 @@
-import type { AppId } from "@/components/os/apps";
+import type { AppId, PublicAppId } from "@/components/os/apps";
 
 /**
  * zsh's CORRECT option for URLs: given the address that failed, find what
@@ -10,7 +10,7 @@ import type { AppId } from "@/components/os/apps";
  */
 
 /** Words people type for each app, in both languages (accents stripped). */
-const ALIASES: Record<AppId, readonly string[]> = {
+const ALIASES: Record<PublicAppId, readonly string[]> = {
   home: ["desktop", "home", "index", "bureau", "accueil", "start", "about", "readme"],
   work: ["work", "projects", "project", "projets", "projet", "repos", "code", "portfolio", "github"],
   writing: ["writing", "blog", "posts", "post", "notes", "ecrits", "articles", "journal", "essays", "newsletter"],
@@ -20,7 +20,7 @@ const ALIASES: Record<AppId, readonly string[]> = {
 };
 
 /** The name zsh offers as the correction (the route's own segment). */
-const CANONICAL: Record<AppId, string> = {
+const CANONICAL: Record<PublicAppId, string> = {
   home: "desktop",
   work: "work",
   writing: "writing",
@@ -161,8 +161,8 @@ export function suggest(command: string, data?: Candidates): Suggestion | null {
 
   const token = segments[0];
   if (token.length < 2) return null;
-  let best: { app: AppId; alias: string; s: number } | null = null;
-  for (const app of Object.keys(ALIASES) as AppId[]) {
+  let best: { app: PublicAppId; alias: string; s: number } | null = null;
+  for (const app of Object.keys(ALIASES) as PublicAppId[]) {
     for (const alias of ALIASES[app]) {
       const s = score(token, alias);
       if (s != null && (!best || s < best.s)) best = { app, alias, s };
