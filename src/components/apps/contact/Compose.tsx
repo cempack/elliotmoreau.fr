@@ -45,7 +45,7 @@ export type Mode = "send" | "mailto";
 const CHIPS = [
   { id: "project", chip: "chipProject", subject: "subjectProject", prompt: "bodyProject" },
   { id: "collab", chip: "chipCollab", subject: "subjectCollab", prompt: "bodyCollab" },
-  { id: "hiring", chip: "chipHiring", subject: "subjectHiring", prompt: "bodyHiring" },
+  { id: "question", chip: "chipQuestion", subject: "subjectQuestion", prompt: "bodyQuestion" },
   { id: "hi", chip: "chipHi", subject: "subjectHi", prompt: "bodyHi" },
 ] as const;
 

@@ -19,9 +19,9 @@ const en = {
   day: {
     label: "Elliot’s day",
     asleep: "Probably asleep, {time} in Toulouse. A message now gets read {read}.",
-    morning: "Morning in Toulouse, {time}. At the desk from {start}.",
-    desk: "At the desk, {time} in Toulouse.",
-    deskMusic: "At the desk with music on, {time} in Toulouse.",
+    morning: "Morning in Toulouse, {time}. Online from {start}.",
+    desk: "Online, {time} in Toulouse.",
+    deskMusic: "Online with music on, {time} in Toulouse.",
     evening: "Evening in Toulouse, {time}. A message now gets read {read}.",
     weekend: "Weekend, {time} in Toulouse. A message now gets read {read}.",
     away: "Away in {city}: {local} there, {time} in Toulouse.",
@@ -112,7 +112,7 @@ const en = {
     language: "Language",
     languageName: "English",
     focus: "Focus",
-    available: "Available for work",
+    available: "Studying at Epitech",
     availableCta: "Say hello",
   },
   clock: {
@@ -269,9 +269,9 @@ const fr: typeof en = {
   day: {
     label: "La journée d’Elliot",
     asleep: "Sans doute endormi, {time} à Toulouse. Un message envoyé maintenant est lu {read}.",
-    morning: "Le matin à Toulouse, {time}. Au bureau dès {start}.",
-    desk: "Au bureau, {time} à Toulouse.",
-    deskMusic: "Au bureau en musique, {time} à Toulouse.",
+    morning: "Le matin à Toulouse, {time}. En ligne dès {start}.",
+    desk: "En ligne, {time} à Toulouse.",
+    deskMusic: "En ligne, en musique, {time} à Toulouse.",
     evening: "Le soir à Toulouse, {time}. Un message envoyé maintenant est lu {read}.",
     weekend: "Le week-end, {time} à Toulouse. Un message envoyé maintenant est lu {read}.",
     away: "En voyage à {city} : {local} là-bas, {time} à Toulouse.",
@@ -361,7 +361,7 @@ const fr: typeof en = {
     language: "Langue",
     languageName: "Français",
     focus: "Concentration",
-    available: "Disponible pour des missions",
+    available: "Études à Epitech",
     availableCta: "Écrire",
   },
   clock: {

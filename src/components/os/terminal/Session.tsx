@@ -16,7 +16,7 @@ import { ActionsCtx, Prompt, fill, type Actions } from "./ui";
 import { termQueue } from "./queue";
 
 /** One-tap commands for the phone sheet, where typing is the slow path. */
-const CHIPS = ["help", "whoami", "projects", "posts", "now", "neofetch", "theme", "contact", "sudo hire elliot"];
+const CHIPS = ["help", "whoami", "projects", "posts", "now", "neofetch", "theme", "contact", "moulinette"];
 
 /**
  * The live terminal: scrollback (an aria-live log) and the prompt line.

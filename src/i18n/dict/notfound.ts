@@ -52,8 +52,6 @@ const en = {
     /** share-image alt text */
     homeAlt: "“Elliot Moreau” in pixel letters: {tagline}",
     appAlt: "{app}, by Elliot Moreau: the app’s pixel icon. {description}",
-    /** Person structured data */
-    jobTitle: "Software developer",
   },
 };
 
@@ -96,7 +94,6 @@ const fr: typeof en = {
   seo: {
     homeAlt: "« Elliot Moreau » en lettres de pixels sur un ciel de nuit étoilé : {tagline}",
     appAlt: "{app}, par Elliot Moreau : l’icône de l’app en pixels. {description}",
-    jobTitle: "Développeur logiciel",
   },
 };
 

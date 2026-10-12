@@ -26,7 +26,8 @@ export function PersonJsonLd({ lang }: { lang: Locale }) {
         "@id": person,
         name: "Elliot Moreau",
         url: SITE_URL,
-        jobTitle: t.notfound.seo.jobTitle,
+        // a student: his school, not a job title
+        affiliation: { "@type": "EducationalOrganization", name: "Epitech", url: "https://www.epitech.eu" },
         description: t.meta.description,
         address: { "@type": "PostalAddress", addressCountry: country },
         knowsLanguage: ["fr", "en"],

@@ -30,8 +30,8 @@ export const PLACES: Place[] = [
     iso: "FR",
     continent: "europe",
     note: {
-      en: "Home. Where I work, and where every trip starts and ends.",
-      fr: "Chez moi. Là où je travaille, et où chaque voyage commence et finit.",
+      en: "Home. Where I study, and where every trip starts and ends.",
+      fr: "Chez moi. Là où j’étudie, et où chaque voyage commence et finit.",
     },
   },
   {

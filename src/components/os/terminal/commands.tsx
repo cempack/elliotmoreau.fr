@@ -180,7 +180,7 @@ const HELP: { cmd: string; label: string; key: keyof Dict["system"]["term"]["hel
   { cmd: "lock", label: "lock", key: "lock" },
   { cmd: "clear", label: "clear", key: "clear" },
   { cmd: "exit", label: "exit", key: "exit" },
-  { cmd: "sudo hire elliot", label: "sudo hire elliot", key: "hire" },
+  { cmd: "moulinette", label: "moulinette", key: "moulinette" },
 ];
 
 /** the interface's roles, read from the live Dos Moos theme */
@@ -820,7 +820,7 @@ const COMMANDS: Command[] = [
   },
   {
     name: "sudo",
-    args: () => ["hire elliot", "make me a sandwich"],
+    args: () => ["make me a sandwich"],
     run: (args, ctx, rest) => {
       const t = ctx.d.system.term.sudo;
       const what = fold(rest).replace(/\s+/g, " ");
@@ -877,6 +877,31 @@ const COMMANDS: Command[] = [
     },
   },
   { name: "metro", aliases: ["tig"], run: () => <Metro /> },
+  {
+    // Epitech's grading robot, run on this site
+    name: "moulinette",
+    run: (_a, ctx) => {
+      const t = ctx.d.system.term.moulinette;
+      const pass = (i: number, text: string) => (
+        <p style={{ "--i": i } as React.CSSProperties}>
+          <span className="os-term-ok">✓</span> {text}
+        </p>
+      );
+      return (
+        <div className="os-term-block os-term-stagger">
+          <p style={{ "--i": 0 } as React.CSSProperties} className="os-term-dim">
+            {t.running}
+          </p>
+          {pass(1, t.build)}
+          {pass(2, t.style)}
+          {pass(3, fill(t.tests, { n: APPS.length }))}
+          <p style={{ "--i": 4 } as React.CSSProperties} className="os-term-ok">
+            {t.grade}
+          </p>
+        </div>
+      );
+    },
+  },
   {
     name: "hire",
     hidden: true,

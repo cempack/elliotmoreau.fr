@@ -1,6 +1,6 @@
 # elliotmoreau.fr — emOS
 
-Personal site of Elliot Moreau, built as **emOS**: the site works like my
+Personal site of Elliot Moreau, a student at Epitech in Toulouse, built as **emOS**: the site works like my
 Omarchy desktop. A waybar-style top bar whose workspaces appear as you open apps, bordered tiled
 windows over a pixel-art valley whose sky follows the time in Toulouse, every
 page an app, Spotlight, a Terminal, a boot that plays the pixel name and a

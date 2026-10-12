@@ -8,8 +8,8 @@ const en = {
   desktop: "Desktop",
   hello: {
     greeting: "Hi, I’m Elliot.",
-    lead: "Developer in Toulouse. I build web apps, small tools and Omarchy themes, and write about how they’re made.",
-    work: "See the work",
+    lead: "Student at Epitech, in Toulouse. I build web apps, small tools and Omarchy themes, and write about how they’re made.",
+    work: "See my projects",
     contact: "Say hello",
   },
   widgets: {
@@ -82,7 +82,7 @@ const fr: typeof en = {
   desktop: "Bureau",
   hello: {
     greeting: "Salut, moi c’est Elliot.",
-    lead: "Développeur à Toulouse. Je fais des applis web, de petits outils et des thèmes Omarchy, et j’écris sur leur fabrication.",
+    lead: "Étudiant à Epitech, à Toulouse. Je fais des applis web, de petits outils et des thèmes Omarchy, et j’écris sur leur fabrication.",
     work: "Voir mes projets",
     contact: "Dire bonjour",
   },
