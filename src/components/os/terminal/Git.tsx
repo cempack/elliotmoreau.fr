@@ -13,7 +13,7 @@ import { Cmd, Ext, fill } from "./ui";
 
 type State<T> = { status: "loading" } | { status: "ok"; value: T } | { status: "error"; notFound?: boolean };
 
-function useGit<T>(url: string, pick: (j: Record<string, unknown>) => T | undefined): State<T> {
+export function useGit<T>(url: string, pick: (j: Record<string, unknown>) => T | undefined): State<T> {
   const [state, setState] = useState<State<T>>({ status: "loading" });
   useEffect(() => {
     const ctrl = new AbortController();

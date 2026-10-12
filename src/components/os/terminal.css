@@ -777,3 +777,123 @@ html[data-term-focus] .os-win .os-win-lights:not(:hover) .os-win-light {
 .os-term-git-del {
   color: var(--color-flare);
 }
+
+/* ───────── git log: the metro map (terminal/Metro.tsx) ───────── */
+
+.os-metro {
+  gap: 8px;
+}
+.os-metro > * + * {
+  margin-top: 0;
+}
+/* the next-stop board: an LED dot matrix in its housing */
+.os-metro-led {
+  width: 100%;
+  max-width: 40rem;
+  padding: 6px;
+  border-radius: 6px;
+  background: var(--color-ink-950);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+}
+.os-metro-led canvas {
+  display: block;
+}
+.os-metro-sub {
+  font-size: 12px;
+}
+.os-metro-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  list-style: none;
+  font-size: 11px;
+}
+.os-metro-map {
+  position: relative;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 4px;
+  border-radius: 6px;
+  scrollbar-width: thin;
+  overscroll-behavior-x: contain;
+}
+.os-metro-map[data-narrow] {
+  overflow-x: hidden;
+}
+.os-metro-map:focus-visible {
+  outline-offset: 2px;
+}
+.os-metro-canvas {
+  position: relative;
+  flex: none;
+}
+.os-metro-canvas svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: visible;
+}
+.os-metro-gap line {
+  stroke: var(--hairline);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+}
+.os-metro-transfer {
+  stroke: color-mix(in srgb, var(--color-label) 55%, transparent);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+.os-metro-stop {
+  cursor: pointer;
+}
+.os-metro-train {
+  cursor: grab;
+  touch-action: none;
+}
+.os-metro-train:active {
+  cursor: grabbing;
+}
+.os-metro-labels > span {
+  position: absolute;
+  color: var(--color-label-3);
+  font-size: 11px;
+  line-height: 14px;
+  white-space: nowrap;
+}
+.os-metro-label {
+  translate: -50% 0;
+  cursor: pointer;
+  /* transfers pass behind the names */
+  text-shadow: 0 0 2px var(--color-ink-950), 0 0 4px var(--color-ink-950), 0 0 6px var(--color-ink-950);
+}
+.os-metro-label[data-on],
+.os-metro-row[data-on] {
+  color: var(--color-label);
+}
+.os-metro-dir {
+  font-weight: 600;
+}
+.os-metro-gaplabel {
+  font-size: 10px;
+}
+.os-metro-map:not([data-narrow]) .os-metro-gaplabel {
+  translate: -50% 0;
+}
+.os-metro-row {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+/* no commits: the line is closed */
+.os-metro-closed {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-label-3);
+}
+.os-metro-closed-line {
+  width: 72px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-ink-600);
+}

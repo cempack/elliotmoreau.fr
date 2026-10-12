@@ -301,6 +301,49 @@ export async function getSiteCommit(name: string): Promise<CommitDetail | null> 
   }
 }
 
+/* ───────────────────────── recent commits, repo by repo (Terminal: the metro map) ───────────────────────── */
+
+/** one repo's line on the map: its commits of the last 30 days, newest first */
+export type MetroLine = { repo: string; language: string; url: string; commits: CommitInfo[] };
+
+const METRO_TTL = 10 * 60_000;
+const METRO_REPOS = 6;
+let metroCache: { at: number; data: MetroLine[] } | null = null;
+
+/**
+ * The most recently pushed repos' own commits (Elliot's, the last 30 days,
+ * up to 20 each), straight from each repo: the public events feed no
+ * longer carries commit lists. Cached 10 minutes; repos without a commit
+ * in the window are left out. `skip` drops repos hidden from the admin.
+ */
+export async function getMetro(skip?: (repo: string) => boolean): Promise<MetroLine[] | null> {
+  const fresh = metroCache && Date.now() - metroCache.at < METRO_TTL;
+  if (!fresh) {
+    const repos = await getRepos();
+    if (!repos) return metroCache ? metroCache.data.filter((l) => !skip?.(l.repo)) : null;
+    // a day-rounded window keeps the fetch cache's key stable
+    const since = new Date(Math.floor(Date.now() / 86_400_000) * 86_400_000 - 30 * 86_400_000).toISOString();
+    const top = repos.slice(0, METRO_REPOS);
+    const lines = await Promise.all(
+      top.map(async (r): Promise<MetroLine | null> => {
+        try {
+          const res = await fetch(`${API}/repos/${USER}/${encodeURIComponent(r.name)}/commits?author=${USER}&since=${since}&per_page=20`, {
+            headers: headers(),
+            next: { revalidate: 600 },
+          });
+          if (!res.ok) return null;
+          const commits = ((await res.json()) as GhCommit[]).map(toInfo).filter((c) => c.date);
+          return commits.length ? { repo: r.name, language: r.language, url: r.url, commits } : null;
+        } catch {
+          return null;
+        }
+      })
+    );
+    metroCache = { at: Date.now(), data: lines.filter((l): l is MetroLine => l !== null) };
+  }
+  return metroCache!.data.filter((l) => !skip?.(l.repo));
+}
+
 /* ───────────────────────── one repo, turned over (Projects: Quick Look's back, Green light) ───────────────────────── */
 
 export type CiState = "passing" | "failing" | "running" | "none";

@@ -15,6 +15,7 @@ import { phaseOf, sunAt } from "@/lib/sun";
 import { EmosLogo } from "../EmosLogo";
 import { Cmd, Ext, Swatch, fill, nodes } from "./ui";
 import { GitLog, GitShow } from "./Git";
+import { Metro } from "./Metro";
 
 /**
  * The Terminal's commands. Each one takes its arguments and a context of
@@ -166,7 +167,8 @@ const HELP: { cmd: string; label: string; key: keyof Dict["system"]["term"]["hel
   { cmd: "posts", label: "posts", key: "posts" },
   { cmd: "now", label: "now", key: "now" },
   { cmd: "neofetch", label: "neofetch", key: "neofetch" },
-  { cmd: "git log --oneline", label: "git log", key: "git" },
+  { cmd: "git log", label: "git log", key: "metro" },
+  { cmd: "git log --oneline", label: "git log --oneline", key: "git" },
   { cmd: "contact", label: "contact", key: "contact" },
   { cmd: "sky", label: "sky <phase>", key: "sky", fill: true },
   { cmd: "lang", label: "lang <en|fr>", key: "lang", fill: true },
@@ -856,11 +858,12 @@ const COMMANDS: Command[] = [
   { name: "admin", aliases: ["login", "su"], hidden: true, run: (_a, ctx) => openAdmin(ctx) },
   {
     name: "git",
-    args: () => ["log --oneline", "show", "status"],
+    args: () => ["log", "log --oneline", "show", "status"],
     run: (args, ctx) => {
       const g = ctx.d.system.term.git;
       const [sub, ref] = args;
-      if (sub === "log" || sub === "lg") return <GitLog />;
+      // the site's own history as a list; everything else is the metro map
+      if (sub === "log" || sub === "lg") return args.includes("--oneline") ? <GitLog /> : <Metro />;
       if (sub === "show") return <GitShow refName={ref?.replace(/^HEAD$/i, "") || "HEAD"} />;
       if (sub === "status")
         return (
@@ -873,6 +876,7 @@ const COMMANDS: Command[] = [
       return <Line tone="dim">{g.usage}</Line>;
     },
   },
+  { name: "metro", aliases: ["tig"], run: () => <Metro /> },
   {
     name: "hire",
     hidden: true,
