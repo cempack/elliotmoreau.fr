@@ -30,7 +30,7 @@ export type SiteData = {
   live: PublicLive;
   /** who's away today (hand-set, or a trip whose dates include today), resolved at render */
   away: CurrentAway | null;
-  /** Toulouse's weather now (the wallpaper's sky, the sundial's caption); null when unknown */
+  /** Toulouse's weather now (the wallpaper's sky, the clock widget); null when unknown */
   weather: Weather | null;
   /** the Dos Moos palette, live from its repo (the snapshot when GitHub is out of reach) */
   theme: Theme;

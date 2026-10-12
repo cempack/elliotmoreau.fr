@@ -6,7 +6,7 @@ import { useFinePointer, useReduced } from "@/hooks/env";
 import { DesktopIcons } from "./DesktopIcons";
 import { useTerminal } from "@/components/os/Terminal";
 import { termQueue } from "@/components/os/terminal/queue";
-import { ClockWidget } from "./Sundial";
+import { ClockWidget } from "./Clock";
 import { SunHandle } from "./SunHandle";
 import { PushWidget } from "./BrickWall";
 import { LatestPostWidget } from "./Kiosk";
@@ -195,7 +195,7 @@ export function DesktopScene() {
         }
       }}
     >
-      {/* the wallpaper's sun, held with a mouse or trackpad (the sundial is the handle on touch) */}
+      {/* the wallpaper's sun, held with a mouse or trackpad (on touch, Control Center's sky holds it) */}
       {fine && <SunHandle />}
 
       <div ref={captionRef} className="app-home-caption">

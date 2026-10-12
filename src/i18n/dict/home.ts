@@ -16,19 +16,17 @@ const en = {
       /** the next change of light, Toulouse time */
       events: { sunrise: "Sunrise {time}", sunset: "Sunset {time}", night: "Nightfall {time}" },
       /** the visitor's own time, when it differs */
-      you: "you {time}",
+      you: "Your time {time}",
       /** the sky pinned in Control Center */
       pinnedLine: "Sky pinned: {phase}",
-      /** Toulouse's weather now (the wallpaper shows it too) */
+      /** beside the weather glyph */
+      temp: "{temp}°",
+      /** Toulouse's weather now (the wallpaper shows it too), spoken */
       weather: { clear: "Clear, {temp}°", cloudy: "Cloudy, {temp}°", rain: "Rain, {temp}°", fog: "Fog, {temp}°", autan: "Autan, {wind} km/h" },
       weatherAria: "Weather in Toulouse: {weather}.",
       aria: "Toulouse time {time}, {phase}. {next}.",
       ariaYou: "Your time {time}, {offset} from Toulouse.",
       open: "Open {app}.",
-      /** the sundial is a slider over today's sun */
-      slider: "Sun over Toulouse",
-      valueText: "{time}, {phase} in Toulouse",
-      hint: "Drag the shadow, or use the arrow keys, to move the sun across today. Page keys jump to sunrise, noon, sunset and nightfall; Home comes back to now.",
     },
     post: {
       title: "Latest post",
@@ -83,16 +81,14 @@ const fr: typeof en = {
       title: "Toulouse",
       phase: { dawn: "Aube", day: "Jour", dusk: "Crépuscule", night: "Nuit" },
       events: { sunrise: "Lever {time}", sunset: "Coucher {time}", night: "Nuit à {time}" },
-      you: "chez vous {time}",
-      pinnedLine: "Ciel épinglé : {phase}",
+      you: "Chez vous {time}",
+      pinnedLine: "Ciel fixé : {phase}",
+      temp: "{temp}°",
       weather: { clear: "Dégagé, {temp}°", cloudy: "Nuageux, {temp}°", rain: "Pluie, {temp}°", fog: "Brouillard, {temp}°", autan: "Autan, {wind} km/h" },
       weatherAria: "Météo à Toulouse : {weather}.",
       aria: "Heure de Toulouse {time}, {phase}. {next}.",
       ariaYou: "Chez vous {time}, {offset} par rapport à Toulouse.",
       open: "Ouvrir {app}.",
-      slider: "Soleil sur Toulouse",
-      valueText: "{time}, {phase} à Toulouse",
-      hint: "Faites glisser l’ombre, ou utilisez les flèches, pour déplacer le soleil sur la journée. Les touches Page sautent au lever, à midi, au coucher et à la nuit ; Début revient à maintenant.",
     },
     post: {
       title: "Dernier article",

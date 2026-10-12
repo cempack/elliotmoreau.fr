@@ -5,12 +5,12 @@ import { rubberband, springFrom } from "@/lib/motion";
 import { sunScrub } from "./sunClock";
 
 /**
- * Holding the sun: the shared gesture behind the desktop's sun handle and
- * the sundial. While held, the hour follows the hand (sunScrub, so the
- * whole city relights); past sunrise or sunset it resists (rubber band);
- * on release it springs back to now carrying the hand's speed, and can be
- * caught again mid-flight. Values are minutes from now, so the spring
- * works on small numbers.
+ * Holding the sun: the gesture behind the desktop's sun handle. While
+ * held, the hour follows the hand (sunScrub, so the whole city relights
+ * and the clock widget reads that hour); past sunrise or sunset it
+ * resists (rubber band); on release it springs back to now carrying the
+ * hand's speed, and can be caught again mid-flight. Values are minutes
+ * from now, so the spring works on small numbers.
  */
 
 const MIN = 60_000;

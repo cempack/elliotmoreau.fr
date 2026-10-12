@@ -7,13 +7,14 @@ import { grabSun, holdSun, releaseSun } from "@/components/os/wallpaper/hold";
 import { FLING, pushSample, releaseVelocity, type Sample } from "./physics";
 
 /**
- * The wallpaper's sun as a handle (fine pointers; on touch the sundial is
- * the handle). A 44px hit area over wherever the wallpaper drew the sun:
- * press it and today's real path appears as a dotted track with a notch at
- * now, drag and the sun follows the arc 1:1 from where you took it, the
- * city relighting under it; past first light or nightfall it resists, and
- * on release it springs back to now. Not focusable: the sundial is the
- * accessible control for the same hour.
+ * The wallpaper's sun as a handle (fine pointers; on touch, Control
+ * Center's sky holds it). A 44px hit area over wherever the wallpaper
+ * drew the sun: press it and today's real path appears as a dotted track
+ * with a notch at now, drag and the sun follows the arc 1:1 from where you
+ * took it, the city relighting under it and the clock widget reading the
+ * hour held; past first light or nightfall it resists, and on release it
+ * springs back to now. Not focusable: Control Center's sky chips are the
+ * accessible control for the sky.
  */
 
 const STEP = 3 * 60_000;

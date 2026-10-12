@@ -20,7 +20,6 @@
   --app-home-grid-l: 18px;
   --app-home-grid-b: 96px; /* dock + 20 */
   --app-home-widget: 148px;
-  /* the sky dial: 25 cells of 3 px */
   /* tertiary text; promoted to secondary under the bright skies */
   --app-home-l3: var(--color-label-3);
   position: relative;
@@ -156,97 +155,92 @@ html[data-sky="dusk"] .app-home-caption-role {
   letter-spacing: 0.01em;
 }
 
-/* the sundial: the plaster dial on top, Toulouse time under it */
+/* the clock: the city and its weather, Toulouse time in pixel numerals,
+   the next sunrise or sunset under them. The numerals take the biggest
+   whole-pixel cell the tile's width allows (so they stay crisp), up to
+   --app-home-clock-max. */
 .app-home-widget--clock {
+  --app-home-clock-max: 5px;
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
+  padding: 11px 10px 10px;
+}
+.app-home-clock-head {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 8px;
-}
-.app-home-widget .app-home-sundial {
-  position: relative;
-  z-index: 4; /* over the tile's link: the dial is its own control */
-  flex: none;
-  width: calc(60 * var(--app-home-sundial-cell, 2px));
-  aspect-ratio: 60 / 34;
-  border-radius: 2px;
-  box-shadow: 0 6px 14px -8px rgba(0, 0, 0, 0.75);
-  cursor: grab;
-  touch-action: none;
-  -webkit-tap-highlight-color: transparent;
-}
-.app-home-sundial[data-held] {
-  cursor: grabbing;
-}
-.app-home-sundial svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-.app-home-sundial:focus-visible {
-  outline: 2px solid var(--color-signal);
-  outline-offset: 3px;
-}
-/* at night the plaster sits in the dark with the rest of the city */
-html[data-sky="night"] .app-home-sundial svg {
-  filter: brightness(0.7);
-}
-.app-home-clock-time {
-  margin-top: 6px;
-  font-family: var(--font-mono);
-  font-size: 1.25rem;
+  justify-content: space-between;
+  gap: 6px;
+  height: 18px;
+  font-size: 0.8125rem;
   font-weight: 600;
   line-height: 1;
-  letter-spacing: -0.03em;
-  transition: color 0.2s var(--ease-out-quint);
-}
-/* someone is holding the sun: the readout is that hour, not now */
-.app-home-clock-time[data-scrub] {
-  color: var(--color-ember);
-}
-.app-home-clock-line {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  margin-top: 5px;
-  font-size: 0.75rem;
-  line-height: 1.15;
   white-space: nowrap;
 }
-.app-home-clock-phase-name {
-  font-weight: 600;
-}
-.app-home-clock-next {
-  color: var(--color-label-2);
-}
-.app-home-clock-extra {
-  display: flex;
-  align-items: center;
-  max-width: 100%;
-  gap: 4px;
-  margin-top: 3px;
-  color: var(--color-ion);
-  font-size: 0.75rem;
-  line-height: 1.1;
-  white-space: nowrap;
-}
-.app-home-clock-pin {
-  flex: none;
-  color: var(--color-label-2);
-}
-/* long lines ("Ciel épinglé : Crépuscule") end in an ellipsis, inside the tile */
-.app-home-clock-extra-text {
-  min-width: 0;
+.app-home-clock-city {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* Toulouse's weather, the same the wallpaper shows; the autan in ember */
-.app-home-clock-weather {
+.app-home-clock-wx {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
   color: var(--color-label-2);
 }
-.app-home-clock-weather[data-kind="autan"] {
+.app-home-clock-wx-glyph {
+  display: block;
+  flex: none;
+  width: 22px;
+  height: 18px;
+}
+.app-home-clock-digits {
+  --app-home-clock-cell: min(var(--app-home-clock-max), 4px);
+  display: block;
+  flex: none;
+  width: calc(32 * var(--app-home-clock-cell));
+  height: calc(10 * var(--app-home-clock-cell));
+  margin-block: auto;
+}
+@supports (width: round(down, 4.5px, 1px)) {
+  .app-home-clock-digits {
+    --app-home-clock-cell: min(var(--app-home-clock-max), round(down, 100cqi / 32, 1px));
+  }
+}
+.app-home-clock-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.app-home-clock-next,
+.app-home-clock-extra {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.app-home-clock-next {
+  color: var(--color-label-2);
+  font-size: 0.8125rem;
+  line-height: 1.15;
+}
+.app-home-clock-next-time {
+  color: var(--color-label);
+  font-weight: 600;
+}
+.app-home-clock-extra {
+  color: var(--app-home-l3);
+  font-size: 0.75rem;
+  line-height: 1.15;
+}
+/* the autan, Toulouse's own wind, in ember */
+.app-home-clock-extra[data-kind="autan"] {
   color: var(--color-ember);
+}
+@media (prefers-contrast: more) {
+  .app-home-clock-ink {
+    fill: var(--color-label);
+  }
 }
 
 /* the wallpaper's sun as a handle: under everything on the desk */
@@ -844,7 +838,7 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
     height: 128px;
   }
   .app-home-widget--clock {
-    --app-home-sundial-cell: 1.5px;
+    --app-home-clock-max: 3px;
   }
   /* one whole line with an ellipsis, not a squeezed second one cut mid-word */
   .app-home-kiosk-head {
@@ -893,10 +887,9 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   .app-home-scene {
     padding-top: calc(var(--menubar-bottom) + 8px);
   }
-  /* the sundial steps down a size and stays inside its tile */
+  /* the numerals step down a size */
   .app-home-widget--clock {
-    --app-home-sundial-cell: 1.5px;
-    justify-content: safe center;
+    --app-home-clock-max: 3px;
   }
   .app-home-kiosk-kicker {
     display: none;

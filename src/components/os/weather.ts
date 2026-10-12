@@ -6,7 +6,7 @@ import { skyOf } from "@/lib/sky";
 import { useSiteData } from "./SiteData";
 
 /**
- * Toulouse's weather for the wallpaper and the sundial: the server's
+ * Toulouse's weather for the wallpaper and the clock widget: the server's
  * reading (Open-Meteo, 15 minutes old at most), or `?weather=autan|rain|
  * fog|cloudy|clear` to see a sky that isn't today's.
  */
