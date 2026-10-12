@@ -16,9 +16,11 @@ import { fill, useNow } from "./lib";
  * moment under your finger, on its real path, in the wallpaper's light for
  * that minute (the moon and stars take over at night), above a row of
  * Toulouse roofs, Saint-Sernin, the Grave's dome and the Pont Neuf. Drag
- * it back and the line underneath says what was playing and what got
- * pushed then; let go and it springs back to now. The strip below holds
- * the day's listening sessions and pushes on the same clock.
+ * it back (on the sky or the strip under it) and the line underneath says
+ * what was playing and what got pushed then; let go and it stays there,
+ * so the day can be read at leisure. Earlier and later step from one
+ * moment that happened to the next; "Back to now" springs it home. The
+ * strip holds the day's listening sessions and pushes on the same clock.
  *
  * Painted into a small raster of 3 px cells, only when the moment changes.
  * Keyboard: it's a slider (arrows, Page Up/Down, Home/End, Escape for now).
@@ -30,6 +32,8 @@ const TZ = "Europe/Paris";
 const PLAY_MS = 5 * 60_000;
 /** a push is "what I was pushing" for the hour before it lands */
 const PUSH_MS = 60 * 60_000;
+/** a glide through the day settles once it's within half a minute (its values are milliseconds) */
+const REST = { restDelta: 30_000, restSpeed: 60_000 };
 
 type RGB = readonly [number, number, number];
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
@@ -262,8 +266,30 @@ export function TodaySky({ day }: { day: DayData }) {
   const goNow = (from: number | null) => {
     back.current?.stop();
     if (from == null || reduced) return setAt(null);
-    back.current = animate(from, nowMs, { ...spring.gentle, onUpdate: (v) => setAt(v), onComplete: () => setAt(null) });
+    // it travels in milliseconds: it has arrived within half a minute
+    const home = (v: number) => {
+      // close enough to read as now: it is now
+      if (nowMs - v < 60_000) {
+        back.current?.stop();
+        setAt(null);
+      } else setAt(v);
+    };
+    back.current = animate(from, nowMs, { ...spring.gentle, ...REST, onUpdate: home, onComplete: () => setAt(null) });
   };
+  /** glide to another moment of the day */
+  const travel = (to: number) => {
+    back.current?.stop();
+    setTouched(true);
+    if (reduced) return setAt(to);
+    back.current = animate(shown, to, { ...spring.default, ...REST, onUpdate: (v) => setAt(v), onComplete: () => setAt(to) });
+  };
+  // the moments that happened today (a song started, a push landed), a few minutes apart at least
+  const moments = useMemo(() => {
+    const all = [...plays.map((p) => p.t), ...pushes.map((p) => p.t)].sort((a, b) => a - b);
+    return all.filter((m, i) => i === 0 || m - all[i - 1] > 3 * 60_000);
+  }, [plays, pushes]);
+  const earlier = [...moments].reverse().find((m) => m < shown - 60_000);
+  const later = at == null ? undefined : moments.find((m) => m > shown + 60_000);
   const onDown = (e: React.PointerEvent) => {
     if (!nowMs) return;
     back.current?.stop();
@@ -275,9 +301,9 @@ export function TodaySky({ day }: { day: DayData }) {
     if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
     setAt(timeAt(e.clientX));
   };
+  // letting go (or a scroll taking over the finger) keeps the moment: the day is read at leisure
   const onUp = (e: React.PointerEvent) => {
     if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
-    goNow(at);
   };
   const onKey = (e: React.KeyboardEvent) => {
     if (!nowMs) return;
@@ -303,6 +329,7 @@ export function TodaySky({ day }: { day: DayData }) {
 
   return (
     <section className="app-now-day" aria-label={d.label}>
+      <div className="app-now-day-stage">
       <div
         ref={skyRef}
         className="app-now-day-sky"
@@ -318,7 +345,6 @@ export function TodaySky({ day }: { day: DayData }) {
         onPointerUp={onUp}
         onPointerCancel={onUp}
         onKeyDown={onKey}
-        onBlur={() => at != null && goNow(at)}
       >
         <canvas ref={cvRef} className="app-now-day-canvas" aria-hidden />
         <span className="app-now-day-k" aria-hidden>
@@ -335,6 +361,13 @@ export function TodaySky({ day }: { day: DayData }) {
           </span>
         )}
       </div>
+      {at != null && (
+        <button type="button" className="app-now-day-back" onClick={() => goNow(at)}>
+          {d.back}
+        </button>
+      )}
+      </div>
+      <div className="app-now-day-row">
       <p className="app-now-day-line" aria-hidden>
         {track && at != null && track.image ? (
           // a 64 px Spotify sleeve, shown at 28: nothing for the image optimizer to do
@@ -343,7 +376,32 @@ export function TodaySky({ day }: { day: DayData }) {
         ) : null}
         <span>{line}</span>
       </p>
-      <div className="app-now-day-strip" aria-hidden>
+      {moments.length > 0 && (
+        <div className="app-now-day-steps">
+          <button type="button" className="app-now-day-step" aria-label={d.earlier} title={d.earlier} disabled={earlier == null} onClick={() => earlier != null && travel(earlier)}>
+            <span aria-hidden>‹</span>
+          </button>
+          <button
+            type="button"
+            className="app-now-day-step"
+            aria-label={d.later}
+            title={d.later}
+            disabled={at == null}
+            onClick={() => (later != null ? travel(later) : goNow(at))}
+          >
+            <span aria-hidden>›</span>
+          </button>
+        </div>
+      )}
+      </div>
+      <div
+        className="app-now-day-strip"
+        aria-hidden
+        onPointerDown={onDown}
+        onPointerMove={onMove}
+        onPointerUp={onUp}
+        onPointerCancel={onUp}
+      >
         <div className="app-now-day-track">
           {rise > 0 && set > 0 && <span className="app-now-day-light" style={{ left: pct(rise), width: `calc(${pct(set)} - ${pct(rise)})` }} />}
           {sessions.map((s, i) => (
