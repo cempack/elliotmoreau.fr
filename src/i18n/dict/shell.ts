@@ -138,7 +138,6 @@ const en = {
   },
   window: {
     close: "Close",
-    minimize: "Minimize",
     zoom: "Zoom",
   },
   player: {
@@ -388,7 +387,6 @@ const fr: typeof en = {
   },
   window: {
     close: "Fermer",
-    minimize: "Réduire",
     zoom: "Agrandir",
   },
   player: {

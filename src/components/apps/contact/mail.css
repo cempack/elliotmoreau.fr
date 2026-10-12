@@ -265,7 +265,6 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
   border-radius: var(--radius-card);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.022) 9rem);
   box-shadow:
-    inset 0 0 0 1px var(--hairline),
     inset 0 1px 0 rgba(255, 255, 255, 0.07),
     0 34px 70px -46px rgba(0, 0, 0, 0.75);
 }
@@ -829,7 +828,6 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
   padding: 0.75rem 1rem;
   border-radius: var(--radius-control);
   background: color-mix(in srgb, var(--color-ink-950) 32%, transparent);
-  box-shadow: inset 0 0 0 1px var(--hairline);
   color: var(--color-label-2);
   font: 500 0.8125rem/1.3 var(--font-mono);
 }
@@ -1827,7 +1825,6 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
   margin-top: 1.25rem;
   border-radius: var(--radius-control);
   background: color-mix(in srgb, var(--color-ink-950) 50%, transparent);
-  box-shadow: inset 0 0 0 1px var(--hairline);
 }
 .app-contact-armor-head {
   display: flex;
@@ -1881,7 +1878,6 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
   padding: 0.375rem 0.375rem 0.375rem 1rem;
   border-radius: var(--radius-control);
   background: color-mix(in srgb, var(--color-ink-950) 45%, transparent);
-  box-shadow: inset 0 0 0 1px var(--hairline);
 }
 .app-contact-cmd-prompt {
   display: grid;
@@ -2100,7 +2096,6 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
   padding: 0.875rem 1rem 1rem;
   border-radius: var(--radius-control);
   background: color-mix(in srgb, var(--color-ink-950) 32%, transparent);
-  box-shadow: inset 0 0 0 1px var(--hairline);
 }
 .app-contact-when-head {
   display: flex;
@@ -2200,7 +2195,6 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
   padding: 0.625rem 0.875rem 0.625rem 0.625rem;
   border-radius: var(--radius-card);
   background: rgba(255, 255, 255, 0.03);
-  box-shadow: inset 0 0 0 1px var(--hairline);
   text-align: left;
   transition: background-color 0.2s var(--ease-out-quint);
 }
@@ -2350,7 +2344,6 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
   padding: 1rem 1.25rem 1.125rem;
   border-radius: var(--radius-card);
   background: rgba(255, 255, 255, 0.035);
-  box-shadow: inset 0 0 0 1px var(--hairline);
 }
 /* Elliot's replies: the accent along their edge */
 .app-contact-msg[data-dir="out"] {

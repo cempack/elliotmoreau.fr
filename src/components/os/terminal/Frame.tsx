@@ -268,14 +268,6 @@ export function DesktopWindow({
               <div className="os-win-lights os-term-lights">
                 <button
                   type="button"
-                  className="os-win-light"
-                  aria-label={t.system.term.minimize}
-                  onClick={close}
-                >
-                  <WinIcon kind="min" />
-                </button>
-                <button
-                  type="button"
                   className="os-win-light os-win-light--zoom"
                   aria-label={t.system.term.zoom}
                   aria-pressed={zoomed}

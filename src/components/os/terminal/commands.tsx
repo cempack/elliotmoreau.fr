@@ -143,7 +143,7 @@ function filesIn(ctx: RunCtx, all = false): { name: string; dir?: boolean; dim?:
 /** `sudo -i`, `admin`, `login`: the admin panel, behind its passkey */
 function openAdmin(ctx: RunCtx) {
   const t = ctx.d.system.term.sudo;
-  window.setTimeout(() => ctx.navigate(ctx.path("/admin")), 700);
+  window.setTimeout(() => ctx.navigate(ctx.path("/admin")), 320);
   return (
     <div className="os-term-block os-term-stagger">
       <p style={{ "--i": 0 } as React.CSSProperties}>{t.passkey}</p>

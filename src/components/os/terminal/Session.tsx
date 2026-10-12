@@ -71,8 +71,9 @@ export function Session({
     history: session.history,
     navigate: (href) => {
       router.push(href, { transitionTypes: ["app-open"] });
-      // the sheet covers most of a phone: get out of the way of the app
-      if (mobile) window.setTimeout(() => term.setOpen(false), 280);
+      // a launcher: the app it opened comes forward and the terminal tucks
+      // back into the Dock (its session stays; ` or the Dock brings it back)
+      window.setTimeout(() => term.setOpen(false), mobile ? 240 : 120);
     },
     close: () => term.setOpen(false),
     exit: () => session.reset(),

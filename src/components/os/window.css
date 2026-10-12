@@ -56,13 +56,14 @@
   display: none;
 }
 /* the border: Hyprland's active border, its colour and width from the
-   theme (hyprland.conf border_size, colors.toml hyprland_active_border) */
+   theme (hyprland.conf border_size, colors.toml hyprland_active_border),
+   kept faint: the glass and the shadow carry the edge */
 .os-win-rim {
   position: absolute;
   inset: 0;
   z-index: 4;
   box-sizing: border-box;
-  border: var(--win-border) solid color-mix(in srgb, var(--color-border-active) 72%, transparent);
+  border: var(--win-border) solid color-mix(in srgb, var(--color-border-active) 20%, transparent);
   border-radius: inherit;
   pointer-events: none;
   transition: border-color 0.25s var(--ease-out-quint);

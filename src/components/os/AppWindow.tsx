@@ -36,9 +36,9 @@ const EXIT = { "app-close": "app-close", "app-open": "app-leave", default: "app-
  * `className` (on the <section>), optional `subtitle` (replaces the mono
  * "~/path" next to the title).
  *
- * - Traffic lights: close and minimize go home with the "app-close"
- *   transition, zoom toggles full width on a layout spring (double-click
- *   the title bar too). Glyphs show on hover/focus.
+ * - Lights: zoom toggles full width on a layout spring (double-click the
+ *   title bar too); close goes home with the "app-close" transition. No
+ *   minimize: an app is open or it isn't. Glyphs show on hover/focus.
  * - The title bar is sticky under the menu bar; content scrolls with the
  *   page (no nested scroller). Descendants can stick below it with
  *   `top: var(--os-win-sticky-top)`.
@@ -198,15 +198,6 @@ export function AppWindow({
         >
           <span className="os-win-grabber" aria-hidden />
           <div className="os-win-lights">
-            <Link
-              href={home}
-              transitionTypes={["app-close"]}
-              onClick={onCloseClick}
-              aria-label={w.minimize}
-              className="os-win-light"
-            >
-              <WinIcon kind="min" />
-            </Link>
             <button
               type="button"
               onClick={toggleZoom}
