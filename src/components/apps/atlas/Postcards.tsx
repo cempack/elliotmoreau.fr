@@ -193,7 +193,11 @@ export function Postcards({
     const to =
       e.key === "Home" ? 0 : e.key === "End" ? items.length - 1 : Math.max(0, Math.min(items.length - 1, at + (e.key === next ? 1 : -1)));
     items.forEach((b, i) => (b.tabIndex = i === to ? 0 : -1));
-    items[to].focus();
+    if (stack) {
+      // the column scrolls with its panel: glide the card in at the nearest edge
+      items[to].focus({ preventScroll: true });
+      items[to].scrollIntoView({ block: "nearest", behavior: reduced ? "instant" : "smooth" });
+    } else items[to].focus();
   };
 
   // keyboard focus brings its card fully into view, on the nearest snap

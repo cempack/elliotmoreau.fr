@@ -12,7 +12,7 @@ import { fmtAxis } from "./fmt";
 /**
  * A perforated postage stamp. `lg`: the place card's stamp, a monogram
  * seeded by the place id over a value strip, with a circular postmark
- * cancelling one corner. `sm`: the postcard's airmail stamp, the ISO code
+ * beside it whose waves cancel the stamp. `sm`: the postcard's airmail stamp, the ISO code
  * in pixel letters. Perforations are a CSS mask on a 12px (lg) or 8px (sm)
  * grid; the drop shadow follows the cut-out.
  */
@@ -47,10 +47,6 @@ export function Stamp({
       aria-label={label}
       aria-hidden={label ? undefined : true}
     >
-      {/* the postmark is inked twice: in pale ink where it lands on the
-          card, and in dark ink inside the paper's cut-out where it lands
-          on the stamp, as a real cancellation would */}
-      {mark}
       <span className="app-atlas-stamp-sheet">
         <span className="app-atlas-stamp-paper">
           <span className="app-atlas-stamp-art">
@@ -70,9 +66,12 @@ export function Stamp({
               </span>
             )}
           </span>
-          {mark && <span className="app-atlas-stamp-ink">{mark}</span>}
         </span>
       </span>
+      {/* one strike, over everything: its ink inverts against what it
+          lands on (dark on the paper, light on the card and the art), so
+          the whole mark reads in one piece */}
+      {mark}
     </span>
   );
 }
@@ -127,13 +126,15 @@ function Postmark({ place, name, lang }: { place: PlaceRow; name: string; lang: 
         <path id={bottom} d="M 7.5,44 A 36.5,36.5 0 0 0 80.5,44" />
       </defs>
       <g fill="none" stroke="currentColor" strokeWidth="1.5">
-        <circle cx="44" cy="44" r="41" />
-        <circle cx="44" cy="44" r="18" />
+        <g className="app-atlas-postmark-ring">
+          <circle cx="44" cy="44" r="41" />
+          <circle cx="44" cy="44" r="18" />
+        </g>
         {[0, 1, 2, 3].map((i) => (
           <path key={i} d={`M 90 ${23 + i * 14} q 10.5 -6 21 0 t 21 0 t 21 0 t 21 0`} />
         ))}
       </g>
-      <g className="app-atlas-postmark-text">
+      <g className="app-atlas-postmark-text app-atlas-postmark-ring">
         <text>
           <textPath href={`#${top}`} startOffset="50%" textAnchor="middle" textLength={fitA} lengthAdjust="spacingAndGlyphs">
             {a}

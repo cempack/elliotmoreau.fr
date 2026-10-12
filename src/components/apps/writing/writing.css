@@ -506,7 +506,6 @@
 }
 .app-writing-source[data-source="live"] .app-writing-source-dot {
   background: var(--color-ion);
-  box-shadow: 0 0 8px var(--color-ion);
 }
 .app-writing-keys {
   display: none;

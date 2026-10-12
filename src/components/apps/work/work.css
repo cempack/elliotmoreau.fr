@@ -380,7 +380,6 @@
 }
 .app-work-source[data-source="live"] .app-work-source-dot {
   background: var(--color-ion);
-  box-shadow: 0 0 8px var(--color-ion);
 }
 .app-work-source[data-source="sample"] .app-work-source-dot {
   background: var(--color-ember);
@@ -1904,23 +1903,12 @@ a.app-work-ci:hover .app-work-ci-text {
 }
 .app-work-ci-lamps[data-state="running"] i[data-lamp="amber"] {
   background: var(--color-ember);
-  animation: app-work-ci-blink 1.2s steps(2, end) infinite;
 }
 .app-work-ci-lamps[data-state="passing"] i[data-lamp="green"] {
   background: var(--color-signal);
 }
 .app-work-ci[data-state="none"] {
   opacity: 0.55;
-}
-@keyframes app-work-ci-blink {
-  50% {
-    background: var(--color-ink-600);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .app-work-ci-lamps i {
-    animation: none !important;
-  }
 }
 
 /* new since you last looked: a small stamp, this visit only */

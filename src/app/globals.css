@@ -456,12 +456,13 @@ p {
 .em-dead-mark {
   position: absolute;
   top: 50px;
-  right: 58px;
+  right: 80px;
   display: grid;
   place-items: center;
   width: 40px;
   height: 40px;
-  color: rgba(63, 72, 66, 0.3);
+  /* not yet inked: a light impression, still legible on the paper */
+  color: color-mix(in srgb, var(--color-ink-700) 45%, transparent);
   pointer-events: none;
 }
 .em-dead-mark-ring {
@@ -476,11 +477,13 @@ p {
   gap: 2px;
   rotate: -12deg;
 }
+/* inked in two strikes, in dark ink: it lands on the cream paper beside
+   the stamp, never on the stamp's dark art where no ink would read */
 .em-dead-mark[data-inked] {
-  color: color-mix(in srgb, var(--color-ember) 55%, transparent);
+  color: color-mix(in srgb, var(--color-ink-800) 72%, transparent);
 }
 .em-dead-mark[data-full] {
-  color: var(--color-ember);
+  color: var(--color-ink-800);
 }
 .em-dead-note {
   color: var(--color-label-2);
@@ -900,25 +903,56 @@ html[data-intro="done"] .em-intro {
   }
 }
 
-/* a place's stamp: its country code in a dashed frame, toned by status */
-.em-stamp {
-  display: grid !important;
-  place-items: center;
+/* a place in Spotlight: its Atlas postcard map, and (in the preview) its
+   perforated stamp in the corner, as on the postcards */
+.em-place-art {
+  position: relative;
+  display: block;
+  background: #0d1233;
+}
+.em-place-map {
+  display: block;
   width: 100%;
   height: 100%;
-  color: var(--color-ink-950);
-  font: 700 10px/1 var(--font-mono);
-  letter-spacing: 0.04em;
-  background: var(--color-ion);
-  outline: 1px dashed color-mix(in srgb, var(--color-ink-950) 45%, transparent);
-  outline-offset: -3px;
+  object-fit: cover;
+  image-rendering: pixelated;
 }
-.em-stamp[data-tone="been"] {
+.em-place-art-stamp {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 44px;
+  height: 52px;
+  rotate: 4deg;
+}
+/* perforated paper (a hole on every tile corner along the edge), a tile in
+   the place's tone, the country code in ink */
+.em-stamp {
+  --tile: 8px;
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--color-label);
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
+  mask:
+    linear-gradient(#000 0 0) center / calc(100% - var(--tile)) calc(100% - var(--tile)) no-repeat,
+    radial-gradient(circle at center, #0000 calc(var(--tile) * 0.28), #000 calc(var(--tile) * 0.3)) calc(var(--tile) / -2)
+      calc(var(--tile) / -2) / var(--tile) var(--tile);
+}
+.em-stamp-art {
+  position: absolute;
+  inset: calc(var(--tile) * 0.75);
+  display: grid;
+  place-items: center;
+  background: var(--color-ion);
+  color: var(--color-ink-950);
+  font: 700 13px/1 var(--font-mono);
+  letter-spacing: 0.04em;
+}
+.em-stamp[data-tone="been"] .em-stamp-art {
   background: var(--color-ember);
 }
-.em-stamp--lg {
-  font-size: 44px;
-  letter-spacing: 0.06em;
-  outline-width: 2px;
-  outline-offset: -8px;
+.em-stamp[data-tone="home"] .em-stamp-art {
+  background: var(--color-signal);
 }

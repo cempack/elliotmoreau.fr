@@ -463,16 +463,6 @@ html[data-term-focus] .os-win .os-win-lights:not(:hover) .os-win-light {
   white-space: pre-wrap;
   color: var(--color-label);
 }
-.os-term-live {
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  margin-right: 1ch;
-  border-radius: 999px;
-  background: var(--color-flare);
-  box-shadow: 0 0 8px color-mix(in srgb, var(--color-flare) 70%, transparent);
-  vertical-align: 1px;
-}
 
 /* neofetch */
 .os-term-fetch {

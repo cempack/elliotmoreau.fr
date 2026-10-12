@@ -271,6 +271,10 @@ export function MapSheet({
   useEffect(() => {
     if (shownPlace.current === place.id) return;
     shownPlace.current = place.id;
+    // walking the list with the keys: stay with the row (it keeps itself
+    // in view), don't fly back up to the card on every step
+    const a = document.activeElement;
+    if (a instanceof HTMLElement && scrollRef.current?.contains(a) && a.matches(":focus-visible")) return;
     if (detentRef.current !== open) goTo(open);
     else scrollRef.current?.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
   }, [place.id, goTo, open, reduced]);

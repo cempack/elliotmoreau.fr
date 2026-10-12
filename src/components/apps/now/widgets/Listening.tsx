@@ -24,7 +24,7 @@ export function ListeningMeta({ status, track, playing }: Listen) {
   const ago = last && mounted && track.playedAt ? timeAgo(track.playedAt, lang) : "";
   return (
     <span className="app-now-status" data-live={playing || undefined}>
-      <LiveDot live={playing} still />
+      <LiveDot live={playing} />
       {playing ? l.playing : last ? l.last : l.paused}
       {ago && <span className="app-now-status-ago tabular">{ago}</span>}
     </span>

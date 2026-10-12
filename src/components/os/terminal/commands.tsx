@@ -334,7 +334,6 @@ function now(ctx: RunCtx) {
       t.playing,
       track ? (
         <>
-          {playing && <i className="os-term-live" aria-hidden />}
           <Ext href={track.url}>{track.title}</Ext> <Dim>· {track.artist}</Dim>
           {!playing && <Dim> ({t.lastPlayed})</Dim>}
         </>

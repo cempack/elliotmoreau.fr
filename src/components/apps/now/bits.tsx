@@ -92,13 +92,9 @@ export const G_CHECK: Cells = [
   [2, 5],
 ];
 
-/**
- * The flare live dot. Lit only when `live`; it breathes unless `still`
- * (one breathing dot per screen: the headline's; the rest hold a steady
- * lit pixel).
- */
-export function LiveDot({ live = true, still = false, className = "" }: { live?: boolean; still?: boolean; className?: string }) {
-  return <span aria-hidden className={`app-now-dot ${className}`} data-live={live || undefined} data-still={still || undefined} />;
+/** The status dot: one steady pixel, flare when `live`. */
+export function LiveDot({ live = true, className = "" }: { live?: boolean; className?: string }) {
+  return <span aria-hidden className={`app-now-dot ${className}`} data-live={live || undefined} />;
 }
 
 /**

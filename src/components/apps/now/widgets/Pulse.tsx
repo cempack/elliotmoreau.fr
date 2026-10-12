@@ -279,13 +279,6 @@ export function Pulse({ repos, posts, activity }: { repos: RepoInfo[]; posts: Gh
         <span className="app-now-pulse-scan" aria-hidden>
           <span />
         </span>
-        {data && (
-          <span
-            className="app-now-pulse-nowdot"
-            style={{ left: (data.nowCol + 0.5) * cell, top: (data.base + 0.5) * cell }}
-            aria-hidden
-          />
-        )}
         {/* hit targets: real links, readable by everyone */}
         {data && (
           <ul className="app-now-pulse-hits">

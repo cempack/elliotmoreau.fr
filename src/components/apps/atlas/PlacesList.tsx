@@ -2,6 +2,7 @@
 
 import { m } from "motion/react";
 import { useI18n } from "@/i18n/client";
+import { useReduced } from "@/hooks/env";
 import { spring } from "@/lib/motion";
 import type { PlaceRow } from "@/lib/content";
 import { distanceKm } from "./geo";
@@ -31,6 +32,7 @@ export function PlacesList({
   const a = t.atlas;
   const fmt = useKm();
   const { home, been, next } = useAtlas();
+  const reduced = useReduced();
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
     const keys = ["ArrowDown", "ArrowUp", "Home", "End"];
@@ -41,7 +43,9 @@ export function PlacesList({
     e.preventDefault();
     const to =
       e.key === "Home" ? 0 : e.key === "End" ? items.length - 1 : (at + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
-    items[to].focus();
+    // the row glides into view at the nearest edge (focus alone would jump it to the middle)
+    items[to].focus({ preventScroll: true });
+    items[to].scrollIntoView({ block: "nearest", behavior: reduced ? "instant" : "smooth" });
     const id = items[to].dataset.place;
     if (id) onSelect(id);
   };

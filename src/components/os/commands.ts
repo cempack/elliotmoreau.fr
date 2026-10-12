@@ -22,6 +22,7 @@ import { lockOS } from "./Intro";
 import { useMedia } from "@/hooks/env";
 import { useSpotifyStatus } from "@/hooks/useSpotifyStatus";
 import { DeadLetter } from "./DeadLetter";
+import { PlaceArt } from "./PlaceArt";
 import { loadDraft, saveDraft } from "@/components/apps/contact/mail";
 import { suggest } from "@/components/apps/notfound/suggest";
 import { PlateThumb } from "@/components/apps/writing/PlateThumb";
@@ -173,7 +174,7 @@ export function useSpotlightCommands(): Command[] {
     ];
 
     const fm = fmts();
-    // each result shows its real picture: a post's sky, a repo's minimap, a place's stamp
+    // each result shows its real picture: a post's sky, a repo's minimap, a place's postcard
     const writing: Command[] = posts.map((p) => ({
       id: `post-${p.slug}`,
       group: sp.posts,
@@ -217,9 +218,9 @@ export function useSpotlightCommands(): Command[] {
         label: loc(pl.name, lang),
         hint: pl.status === "been" ? sp.been : sp.want,
         keywords: `${pl.id} ${pl.name.en} ${pl.name.fr} ${pl.region.en} ${pl.region.fr} ${pl.iso} atlas travel voyage`,
-        thumb: createElement("span", { className: "em-stamp", "data-tone": pl.status }, pl.iso),
+        thumb: createElement(PlaceArt, { place: pl }),
         preview: {
-          art: createElement("span", { className: "em-stamp em-stamp--lg", "data-tone": pl.status }, pl.iso),
+          art: createElement(PlaceArt, { place: pl, stamp: true }),
           title: loc(pl.name, lang),
           meta: [loc(pl.region, lang), pl.status === "been" ? sp.been : sp.want, pl.visited ?? ""].filter(Boolean).join(" · "),
           body: pl.note ? loc(pl.note, lang) : pl.tripFrom && pl.tripTo ? fill(sp.trip, { from: pl.tripFrom, to: pl.tripTo }) : undefined,

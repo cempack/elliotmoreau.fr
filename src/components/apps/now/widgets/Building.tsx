@@ -85,7 +85,7 @@ export function Building({ activity, repos }: { activity: ActivityInfo | null; r
             }
           >
             <span className="app-now-push-repo">
-              <LiveDot live={fresh} still />
+              <LiveDot live={fresh} />
               {activity.repo}
             </span>
             {activity.message && <span className="app-now-push-msg">{activity.message}</span>}

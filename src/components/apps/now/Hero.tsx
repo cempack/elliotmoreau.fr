@@ -5,7 +5,7 @@ import { useI18n } from "@/i18n/client";
 import { SOCIALS } from "@/lib/socials";
 import { loc } from "@/lib/content";
 import { useNowContent } from "@/components/os/SiteData";
-import { LiveDot, PixelCava, RollText } from "./bits";
+import { PixelCava, RollText } from "./bits";
 import { fill, parisHM, useClock } from "./lib";
 import type { Listen } from "./widgets/Listening";
 
@@ -125,10 +125,7 @@ export function NowHero({ listen, updated }: { listen: Listen; updated: string }
   return (
     <header className="app-now-hero">
       <p className="app-now-kicker">
-        <span className="app-now-kicker-live">
-          <LiveDot />
-          {n.live}
-        </span>
+        <span className="app-now-kicker-live">{n.live}</span>
         <span aria-hidden>·</span>
         <span>{n.kicker}</span>
       </p>

@@ -64,7 +64,7 @@
   font-size: var(--text-footnote);
 }
 
-/* the live dot: a square pixel, breathing only when live */
+/* the status dot: one steady square pixel, lit when live */
 .app-now-dot {
   flex: none;
   width: 6px;
@@ -73,21 +73,6 @@
 }
 .app-now-dot[data-live] {
   background: var(--color-flare);
-  box-shadow: 0 0 10px color-mix(in oklab, var(--color-flare) 70%, transparent);
-  animation: app-now-breathe 2.4s var(--ease-out-quint) infinite;
-}
-.app-now-dot[data-live][data-still] {
-  box-shadow: 0 0 6px color-mix(in oklab, var(--color-flare) 55%, transparent);
-  animation: none;
-}
-@keyframes app-now-breathe {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  55% {
-    opacity: 0.35;
-  }
 }
 
 .app-now-status {
@@ -1425,29 +1410,6 @@ a.app-now-tok:hover {
 .app-now-pulse-now {
   fill: var(--color-flare);
 }
-.app-now-pulse-nowdot {
-  position: absolute;
-  width: 15px;
-  height: 15px;
-  border: 1px solid var(--color-flare);
-  opacity: 0;
-  translate: -50% -50%;
-  pointer-events: none;
-}
-.app-now-pulse-plot[data-run] .app-now-pulse-nowdot {
-  animation: app-now-ping 2.4s var(--ease-out-quint) infinite;
-}
-@keyframes app-now-ping {
-  0% {
-    opacity: 0.9;
-    transform: scale(0.4);
-  }
-  70%,
-  100% {
-    opacity: 0;
-    transform: scale(1.6);
-  }
-}
 .app-now-pulse-scan {
   position: absolute;
   inset: 0;
@@ -2173,11 +2135,6 @@ a.app-now-tok:hover {
 
 /* ───────────────────────── preferences ───────────────────────── */
 
-@media (prefers-reduced-motion: reduce) {
-  .app-now-dot[data-live] {
-    animation: none;
-  }
-}
 @media (prefers-contrast: more) {
   .app-now-w-card {
     background: var(--color-ink-900);

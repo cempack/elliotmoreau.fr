@@ -6,7 +6,7 @@ import { useI18n } from "@/i18n/client";
 import { useIsMac, useReduced } from "@/hooks/env";
 import { useSound } from "@/lib/sound";
 import { spring } from "@/lib/motion";
-import { contentTop, scrollToY, scrollTop, scrollerBottom, scrollerTop } from "@/lib/scroller";
+import { contentTop, scrollToY, scrollTop, scroller, scrollerBottom, scrollerTop } from "@/lib/scroller";
 import { SOCIALS } from "@/lib/places";
 import { SITE_MAILTO } from "@/lib/socials";
 import { PixelGlyph } from "@/components/glyphs";
@@ -327,7 +327,9 @@ export function Compose({
           if (!en.isIntersecting && en.rootBounds && en.boundingClientRect.top > en.rootBounds.bottom) foot.dataset.stuck = "";
           else delete foot.dataset.stuck;
         },
-        { rootMargin: `0px 0px ${-Math.round(pin) - 1}px 0px`, threshold: 0 }
+        // the window's own scroller, not the viewport: a window ends above the Dock, so
+        // against the viewport the footer never reads as pinned and sits bare over the text
+        { root: scroller(), rootMargin: `0px 0px ${-Math.round(pin) - 1}px 0px`, threshold: 0 }
       );
       io.observe(end);
     };
