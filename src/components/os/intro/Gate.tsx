@@ -14,11 +14,14 @@ import { useSiteData } from "../SiteData";
 import { Wordmark } from "./Wordmark";
 import { playStartupChord } from "./chime";
 import { Skyline } from "./Skyline";
+import { Arrival } from "./Arrival";
 import { loc } from "@/lib/content";
 import { clockIn, tzForAway } from "@/lib/tz";
 
 /** The lock screen takes over from the boot here (ms from first paint). */
 const BOOT_MS = 3800;
+/** Hydrated by then, a first visit arrives from space instead of reading the boot's text. */
+const ARRIVE_BEFORE_MS = 2400;
 /** The unlock: the UI rises away and the veil clears. */
 const OUT_MS = 560;
 /** The name's boxes (8 px cells; CSS scales them, see intro.css). */
@@ -55,18 +58,32 @@ export default function Gate({ mode, onDone }: { mode: Mode; onDone: () => void 
   const { muted } = useSound();
   const [phase, setPhase] = useState<Phase>(mode === "first" ? "boot" : "lock");
   const [skipped, setSkipped] = useState(false);
+  // the arrival from space: "on" while it plays, "done" once it has faded
+  const [arrival, setArrival] = useState<"off" | "on" | "done">("off");
   const rootRef = useRef<HTMLDivElement>(null);
+
+  // a first visit that hydrates early enough arrives from space (Arrival.tsx);
+  // late, or with reduced motion, the boot plays as it always has
+  useEffect(() => {
+    if (mode !== "first" || !hydrated) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (performance.now() - sequenceStart() > ARRIVE_BEFORE_MS) return;
+    const id = requestAnimationFrame(() => setArrival((a) => (a === "off" ? "on" : a)));
+    return () => cancelAnimationFrame(id);
+  }, [mode, hydrated]);
 
   // the boot runs on the clock of its own keyframes: the lock takes over
   // when the boot screen's fade-out actually ends (what the visitor sees,
   // in every engine), with a timer only as a fallback; any input skips it
   useEffect(() => {
     if (phase !== "boot") return;
+    // the arrival holds the lock back until it lands (or is skipped)
+    const arriving = arrival === "on";
     const elapsed = performance.now() - sequenceStart();
-    const id = window.setTimeout(() => setPhase("lock"), Math.max(0, BOOT_MS - elapsed) + 1200);
+    const id = arriving ? 0 : window.setTimeout(() => setPhase("lock"), Math.max(0, BOOT_MS - elapsed) + 1200);
     const boot = rootRef.current?.querySelector(".os-intro-boot");
     const ended = (e: Event) => {
-      if ((e as AnimationEvent).animationName === "os-boot-out") setPhase("lock");
+      if (!arriving && (e as AnimationEvent).animationName === "os-boot-out") setPhase("lock");
     };
     boot?.addEventListener("animationend", ended);
     const skip = (e: Event) => {
@@ -82,7 +99,7 @@ export default function Gate({ mode, onDone }: { mode: Mode; onDone: () => void 
       window.removeEventListener("keydown", skip, true);
       window.removeEventListener("pointerdown", skip, true);
     };
-  }, [phase]);
+  }, [phase, arrival]);
 
   // while it's up, the menu bar and the dock step away (intro.css); the
   // layout's pre-paint script already set this for a boot on the Desktop
@@ -139,10 +156,12 @@ export default function Gate({ mode, onDone }: { mode: Mode; onDone: () => void 
       data-phase={phase}
       data-skip={skipped || undefined}
       data-live={hydrated || undefined}
+      data-arrival={arrival === "on" || undefined}
     >
       {!hydrated && mode === "first" && <script dangerouslySetInnerHTML={{ __html: PREPAINT }} />}
       <LockScreen phase={phase} onUnlock={unlock} />
       {mode === "first" && <BootScreen />}
+      {arrival === "on" && <Arrival skipped={skipped} onLand={() => setPhase("lock")} onGone={() => setArrival("done")} />}
     </div>
   );
 }
