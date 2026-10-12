@@ -17,173 +17,324 @@ html[data-overview] .os-stage {
   inset: 0;
   /* over the windows, under the menu bar and the Dock */
   z-index: 45;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: calc(var(--menubar-bottom, 2.25rem) + 18vh) 1.5rem 7.5rem;
-  /* the river stays in view: darker up top for the words, lighter over the water */
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--color-ink-950) 62%, transparent) 0%,
-    color-mix(in srgb, var(--color-ink-950) 22%, transparent) 55%,
-    color-mix(in srgb, var(--color-ink-950) 40%, transparent) 100%
-  );
+  overflow: hidden;
+  /* the river stays in view, a little dimmed: every word on it sits on its own solid plate */
+  background: color-mix(in srgb, var(--color-ink-950) 30%, transparent);
 }
-.os-ov-title {
-  margin: 0 0 1.75rem;
+
+/* ── the workspaces ── */
+.os-ov-desks {
+  position: absolute;
+  top: calc(var(--menubar-bottom, 2.25rem) + 1rem);
+  left: 50%;
+  z-index: 6;
+  display: flex;
+  gap: 0.5rem;
+  max-width: calc(100vw - 2rem);
+  padding: 4px;
+  overflow-x: auto;
+  translate: -50% 0;
+  scrollbar-width: none;
+}
+.os-ov-desks::-webkit-scrollbar {
+  display: none;
+}
+.os-ov-desk {
+  flex: none;
+  height: 2.375rem;
+  padding: 0 1.0625rem;
+  border-radius: 11px;
   color: var(--color-label);
-  font-size: var(--text-callout);
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font: 500 0.875rem/1 var(--font-mono);
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--color-ink-950) 92%, transparent);
+  box-shadow:
+    inset 0 0 0 1px var(--hairline),
+    0 10px 22px -12px rgba(0, 0, 0, 0.75);
+  transition:
+    background-color 0.2s,
+    color 0.2s,
+    scale 0.3s var(--ease-out-quint);
 }
-.os-ov-row {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 1.75rem 1.5rem;
-  max-width: 100%;
+.os-ov-desk[aria-pressed="true"] {
+  color: var(--color-ink-950);
+  background: var(--color-label);
+  box-shadow: 0 10px 22px -12px rgba(0, 0, 0, 0.75);
+}
+.os-ov-desk--new {
+  color: var(--color-label-2);
+}
+/* a window held over a workspace: it opens up to take it */
+.os-ov-desk[data-drop] {
+  color: var(--color-ink-950);
+  background: var(--color-label);
+  scale: 1.08;
+}
+.os-ov-desk:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 2px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .os-ov-desk:not([aria-pressed="true"]):hover {
+    background: var(--color-ink-800, #1b1e1f);
+  }
+}
+
+/* ── the windows, set down over the river ── */
+.os-ov-scatter {
+  position: absolute;
+  inset: 0;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 .os-ov-slot {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.625rem;
+  position: absolute;
 }
-
-/* a window, small: its bar, its icon (live), what's in it */
+.os-ov-fly {
+  position: absolute;
+  inset: 0;
+}
 .os-ov-card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  /* every window on one row while they fit */
-  width: clamp(10rem, calc((100vw - 5rem - (var(--n, 4) - 1) * 1.5rem) / var(--n, 4)), 15rem);
-  aspect-ratio: 4 / 3;
-  overflow: hidden;
-  border-radius: var(--radius-window);
-  color: var(--color-label);
-  text-align: left;
-  background:
-    radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--os-ov-accent) 14%, transparent), transparent 70%),
-    color-mix(in srgb, var(--color-ink-900) 94%, transparent);
-  box-shadow:
-    inset 0 1px 0 var(--glass-rim, rgba(255, 255, 255, 0.08)),
-    inset 0 0 0 1px var(--hairline),
-    0 26px 50px -22px rgba(0, 0, 0, 0.75);
+  position: absolute;
+  inset: 0;
+  display: block;
+  padding: 0;
+  border-radius: 12px;
   cursor: pointer;
-  touch-action: pan-x;
+  touch-action: none;
   -webkit-tap-highlight-color: transparent;
 }
-.os-ov-card[aria-current="page"] {
-  outline: 1.5px solid color-mix(in oklab, var(--color-label) 55%, transparent);
-  outline-offset: 4px;
-}
 .os-ov-card:focus-visible {
-  outline: 2px solid var(--color-signal);
-  outline-offset: 4px;
+  outline: none;
 }
-.os-ov-bar {
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: 0.5rem;
-  height: 1.875rem;
-  padding: 0 0.75rem;
-  border-bottom: 1px solid var(--hairline);
-  color: var(--color-label-2);
-  font: 500 0.75rem/1 var(--font-mono);
+.os-ov-inner {
+  position: absolute;
+  inset: 0;
+  display: block;
+  border-radius: inherit;
 }
-.os-ov-name {
-  color: var(--color-label);
+@media (hover: hover) and (pointer: fine) {
+  .os-ov-card:not([data-held]):active .os-ov-face {
+    scale: 0.985;
+  }
 }
-.os-ov-path {
+/* the window itself: its own pixels, on its own pane */
+.os-ov-face {
+  position: absolute;
+  inset: 0;
   overflow: hidden;
-  color: var(--color-label-3);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  border-radius: inherit;
+  background: var(--color-ink-900);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.09),
+    0 30px 60px -28px rgba(0, 0, 0, 0.85),
+    0 12px 24px -16px rgba(0, 0, 0, 0.6);
+  transition: box-shadow 0.2s;
 }
-.os-ov-body {
+.os-ov-card[aria-current="page"] .os-ov-face {
+  box-shadow:
+    0 0 0 2px var(--color-label),
+    0 30px 60px -28px rgba(0, 0, 0, 0.85),
+    0 12px 24px -16px rgba(0, 0, 0, 0.6);
+}
+.os-ov-card:focus-visible .os-ov-face {
+  box-shadow:
+    0 0 0 3px var(--color-signal),
+    0 30px 60px -28px rgba(0, 0, 0, 0.85);
+}
+.os-ov-card[data-held] .os-ov-face {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.14),
+    0 44px 80px -30px rgba(0, 0, 0, 0.9),
+    0 18px 30px -18px rgba(0, 0, 0, 0.7);
+}
+
+/* its name and what's in it, on a plate above the window */
+.os-ov-label {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 8%;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  max-width: 92%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 9px;
+  font: 500 0.8125rem/1 var(--font-mono);
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--color-ink-950) 94%, transparent);
+  box-shadow:
+    inset 0 0 0 1px var(--hairline),
+    0 8px 18px -10px rgba(0, 0, 0, 0.75);
+  pointer-events: none;
+}
+.os-ov-label-name {
+  flex: none;
+  color: var(--color-label);
+  font-weight: 600;
+}
+.os-ov-label-detail {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-label-2);
+  text-overflow: ellipsis;
+}
+.os-ov-label-detail::before {
+  content: "· ";
+}
+
+/* the miniature: the window's cloned DOM at its own size, scaled down, inert */
+.os-ov-shot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  transform-origin: 0 0;
+  pointer-events: none;
+  contain: strict;
+}
+.os-ov-shot > .os-win {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  box-shadow: none;
+  transform: none;
+  translate: none;
+  opacity: 1;
+}
+/* a still picture: nothing moves, nothing blurs what's behind it, nothing joins a page transition */
+.os-ov-shot,
+.os-ov-shot * {
+  view-transition-name: none !important;
+  transition: none !important;
+  animation-duration: 0.001ms !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+.os-ov-shot .os-glass-pane {
+  background: var(--color-ink-900);
+}
+.os-ov-fit {
+  position: absolute;
+  inset: 0;
+}
+
+/* a window from before a reload: no picture yet, its icon */
+.os-ov-blank {
+  position: absolute;
+  inset: 0;
   display: flex;
-  flex: 1;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
-  min-height: 0;
-  padding: 0.75rem 1rem 0.875rem;
-}
-.os-ov-line {
-  display: -webkit-box;
-  max-width: 100%;
-  overflow: hidden;
   color: var(--color-label-2);
-  font-size: var(--text-footnote);
-  line-height: 1.3;
-  text-align: center;
-  text-wrap: balance;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-.os-ov-key {
-  min-width: 1.25rem;
-  padding: 0.1875rem 0.375rem;
-  border-radius: 5px;
-  color: var(--color-label-3);
-  font: 500 0.6875rem/1 var(--font-mono);
-  text-align: center;
-  background: color-mix(in srgb, var(--color-ink-950) 55%, transparent);
-  box-shadow: inset 0 0 0 1px var(--hairline);
-}
-.os-ov-hint {
-  margin: 2.25rem 0 0;
-  color: var(--color-label-2);
-  font-size: var(--text-footnote);
-  text-align: center;
+  font: 500 0.8125rem/1 var(--font-mono);
 }
 
-/* phones: a row of tall cards over the river, swiped across, swiped up to close */
-@media (max-width: 767px) {
-  .os-ov {
-    justify-content: center;
-    padding: calc(var(--menubar-bottom, 2.25rem) + 1.5rem) 0 calc(var(--tabbar-h, 4.5rem) + 1.5rem);
-  }
-  .os-ov-title {
-    margin-bottom: 1.25rem;
-  }
-  .os-ov-row {
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    gap: 1rem;
-    width: 100%;
-    max-width: none;
-    padding: 1.5rem 19vw 0.5rem;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
-  }
-  .os-ov-row::-webkit-scrollbar {
-    display: none;
-  }
-  .os-ov-slot {
-    flex: none;
-    scroll-snap-align: center;
-  }
-  .os-ov-card {
-    width: 62vw;
-    aspect-ratio: 4 / 5;
-    max-height: 48svh;
-  }
-  .os-ov-line {
-    -webkit-line-clamp: 3;
-  }
-  .os-ov-hint {
-    margin-top: 1.25rem;
-    padding: 0 1.5rem;
-  }
+/* where a held window was: drop it back, or throw it */
+.os-ov-ghost {
+  position: absolute;
+  inset: 0;
+  border: 2px dashed color-mix(in srgb, var(--color-label) 60%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-ink-950) 22%, transparent);
+  pointer-events: none;
+}
+
+/* diving into a window: it rises over everything, the rest steps aside */
+.os-ov-fly,
+.os-ov-desks,
+.os-ov-hint {
+  transition: opacity 0.2s var(--ease-out-quint);
+}
+.os-ov[data-diving] .os-ov-slot:not([data-diving]) .os-ov-fly,
+.os-ov[data-diving] .os-ov-desks,
+.os-ov[data-diving] .os-ov-hint {
+  opacity: 0;
+}
+
+/* ── words on the river: always on a solid plate ── */
+.os-ov-hint,
+.os-ov-empty {
+  position: absolute;
+  left: 50%;
+  z-index: 6;
+  max-width: calc(100vw - 2rem);
+  margin: 0;
+  padding: 0.6875rem 1.125rem;
+  border-radius: 12px;
+  color: var(--color-label);
+  font: 500 0.8125rem/1.35 var(--font-mono);
+  text-align: center;
+  text-wrap: balance;
+  background: color-mix(in srgb, var(--color-ink-950) 94%, transparent);
+  box-shadow:
+    inset 0 0 0 1px var(--hairline),
+    0 10px 24px -12px rgba(0, 0, 0, 0.8);
+  translate: -50% 0;
+  pointer-events: none;
+}
+.os-ov-hint {
+  bottom: calc(var(--dock-h) + 2.25rem);
+}
+.os-ov-hint-part {
+  white-space: nowrap;
+}
+.os-ov-empty {
+  top: 45%;
+}
+
+/* phones: a row of windows swiped across, swiped up to close */
+.os-ov[data-phone] .os-ov-desks {
+  top: calc(var(--menubar-bottom, 2.25rem) + 0.75rem);
+}
+.os-ov[data-phone] .os-ov-desk {
+  height: 2.25rem;
+  padding: 0 0.875rem;
+  font-size: 0.8125rem;
+}
+.os-ov[data-phone] .os-ov-scatter {
+  top: calc(var(--menubar-bottom, 2.25rem) + 4rem);
+  bottom: calc(var(--dock-h) + 4.5rem);
+  display: flex;
+  align-items: center;
+  gap: 1.125rem;
+  padding: 2.75rem 18vw 0.5rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.os-ov[data-phone] .os-ov-scatter::-webkit-scrollbar {
+  display: none;
+}
+.os-ov[data-phone] .os-ov-slot {
+  position: relative;
+  flex: none;
+  width: min(64vw, calc((100svh - var(--menubar-bottom, 2.25rem) - var(--dock-h) - 12rem) * var(--ar, 0.52)));
+  aspect-ratio: var(--ar, 0.52);
+  scroll-snap-align: center;
+}
+.os-ov[data-phone] .os-ov-card {
+  touch-action: pan-x;
+}
+.os-ov[data-phone] .os-ov-label {
+  left: 0;
+  max-width: 100%;
+  padding: 0.4375rem 0.625rem;
+  font-size: 0.75rem;
+}
+.os-ov[data-phone] .os-ov-hint {
+  bottom: calc(var(--dock-h) + 1rem);
+  font-size: 0.75rem;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -196,9 +347,6 @@ html[data-overview] .os-stage {
 }
 @media (prefers-reduced-transparency: reduce) {
   .os-ov {
-    background: color-mix(in srgb, var(--color-ink-950) 88%, transparent);
-  }
-  .os-ov-card {
-    background: var(--color-ink-900);
+    background: color-mix(in srgb, var(--color-ink-950) 80%, transparent);
   }
 }

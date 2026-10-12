@@ -18,6 +18,7 @@ import { getZoomPref, setZoomPref } from "./window/zoomPref";
 import { WinIcon } from "./window/WinIcon";
 import { PathBar, type Crumb } from "./window/PathBar";
 import { closeWorkspace } from "./workspaces";
+import { captureWindow } from "./windowShots";
 
 export { WinNav, WinNavItem } from "./window/WinNav";
 export { PathBar, type Crumb } from "./window/PathBar";
@@ -123,6 +124,8 @@ export function AppWindow({
     return () => {
       cancelAnimationFrame(raf);
       setExitOrigin(el, app, appHref);
+      // the overview's miniature: the window as it was left (still in the DOM here)
+      if (app !== "admin") captureWindow(app, el);
     };
   }, [app, appHref]);
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { captureCurrent } from "./windowShots";
 
 /**
  * Whether the overview (every open window, over the river) is showing.
@@ -13,6 +14,8 @@ const emit = () => listeners.forEach((l) => l());
 
 export function setOverview(v: boolean) {
   if (open === v) return;
+  // the window on screen, as it is this instant, before it steps back
+  if (v) captureCurrent();
   open = v;
   emit();
 }

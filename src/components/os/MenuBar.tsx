@@ -12,7 +12,7 @@ import { useHomeTime } from "@/hooks/useHomeTime";
 import { usePalette } from "@/components/ui/palette";
 import { APPS, appForPath, type AppDef } from "./apps";
 import { AppGlyph } from "./icons";
-import { openWorkspace, useWorkspaces } from "./workspaces";
+import { deskOf, getHomeDesk, openWorkspace, useDesks, useWorkspaces } from "./workspaces";
 import { useSiteData } from "./SiteData";
 import { MenuItem, MenuProvider, useMenu, type Align, type PanelId } from "./menubar/Panel";
 import dynamic from "next/dynamic";
@@ -78,7 +78,11 @@ function AppName({ id, label }: { id: string; label: string }) {
     and leaves when you close its window. */
 function Workspaces({ current }: { current: AppDef }) {
   const { t, path } = useI18n();
-  const ids = useWorkspaces(current.id);
+  const all = useWorkspaces(current.id);
+  // with more than one desk (the overview's workspaces), only this desk's windows
+  const desks = useDesks();
+  const desk = current.id === "home" ? getHomeDesk() : deskOf(desks, current.id);
+  const ids = desks.length > 1 ? all.filter((id) => id === "home" || id === current.id || deskOf(desks, id) === desk) : all;
   // the server knows only the current app; the rest come back from this
   // tab's storage on hydration. Remounting the group then shows them as
   // they were (no "just opened" entrance on every reload); only apps
