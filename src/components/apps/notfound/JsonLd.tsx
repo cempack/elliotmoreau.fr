@@ -1,6 +1,8 @@
 import { getDict, type Locale } from "@/i18n";
 import { SITE_URL, localePath } from "@/i18n/config";
-import { SOCIALS } from "@/lib/places";
+import { SOCIALS } from "@/lib/socials";
+import { homeOf } from "@/lib/content";
+import { getPlaces } from "@/server/content";
 
 const BLOG_URL = process.env.NEXT_PUBLIC_BLOG_URL || "https://blog.elliotmoreau.fr";
 
@@ -8,11 +10,13 @@ const BLOG_URL = process.env.NEXT_PUBLIC_BLOG_URL || "https://blog.elliotmoreau.
  * Structured data for the home page (server component: render it from a
  * page or layout, never from a client component). One graph: Elliot as a
  * Person, with his profiles as sameAs, and the site as a WebSite he
- * publishes, in the page's language. Sanitized per Next's JSON-LD guide
- * (`<` escaped so no string can close the script).
+ * publishes, in the page's language; his country is the home place's.
+ * Sanitized per Next's JSON-LD guide (`<` escaped so no string can close
+ * the script).
  */
 export function PersonJsonLd({ lang }: { lang: Locale }) {
   const t = getDict(lang);
+  const country = homeOf(getPlaces())?.iso ?? "FR";
   const person = `${SITE_URL}/#person`;
   const data = {
     "@context": "https://schema.org",
@@ -24,7 +28,7 @@ export function PersonJsonLd({ lang }: { lang: Locale }) {
         url: SITE_URL,
         jobTitle: t.notfound.seo.jobTitle,
         description: t.meta.description,
-        address: { "@type": "PostalAddress", addressCountry: "FR" },
+        address: { "@type": "PostalAddress", addressCountry: country },
         knowsLanguage: ["fr", "en"],
         sameAs: [SOCIALS.github, SOCIALS.mastodon, SOCIALS.youtube, SOCIALS.x, SOCIALS.spotifyUser, BLOG_URL],
       },

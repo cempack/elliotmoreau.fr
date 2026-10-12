@@ -2,8 +2,9 @@
 
 import { Fragment, useState } from "react";
 import { useI18n } from "@/i18n/client";
-import { SOCIALS } from "@/lib/places";
-import { NOW, loc } from "@/content/now";
+import { SOCIALS } from "@/lib/socials";
+import { loc } from "@/lib/content";
+import { useNowContent } from "@/components/os/SiteData";
 import { LiveDot, PixelCava, RollText } from "./bits";
 import { fill, parisHM, useClock } from "./lib";
 import type { Listen } from "./widgets/Listening";
@@ -36,6 +37,7 @@ type Word = { id: string; parts: React.ReactNode[] };
 export function NowHero({ listen, updated }: { listen: Listen; updated: string }) {
   const { t, lang } = useI18n();
   const n = t.now;
+  const content = useNowContent();
   // checked every second, but the hero renders only when the minute turns
   const time = useClock(parisHM) ?? "--:--";
 
@@ -49,7 +51,7 @@ export function NowHero({ listen, updated }: { listen: Listen; updated: string }
 
   // the plain sentence for assistive tech
   const plain = fill(template, {
-    doing: fill(loc(NOW.focus.doing, lang), { name: NOW.focus.name }),
+    doing: fill(loc(content.focus.doing, lang), { name: content.focus.name }),
     track: live ? `${live.title} (${live.artist})` : "",
     time,
   });
@@ -57,7 +59,7 @@ export function NowHero({ listen, updated }: { listen: Listen; updated: string }
   // words: live tokens get their own look; a track title becomes one masked
   // word per word so long ones wrap. Each word carries a stable identity
   // (the clock is "{time}", not its digits) so only real changes remount.
-  const expanded = template.replace("{doing}", fill(loc(NOW.focus.doing, lang), { name: "{focus}" }));
+  const expanded = template.replace("{doing}", fill(loc(content.focus.doing, lang), { name: "{focus}" }));
   const words: Word[] = [];
   for (const word of expanded.split(/\s+/)) {
     const parts = word.split(/(\{\w+\})/g).filter(Boolean);
@@ -91,8 +93,8 @@ export function NowHero({ listen, updated }: { listen: Listen; updated: string }
       parts: parts.map((part) => {
         if (part === "{focus}")
           return (
-            <a key="f" href={NOW.focus.url} target="_blank" rel="noopener noreferrer" className="app-now-tok app-now-tok--focus" tabIndex={-1}>
-              {NOW.focus.name}
+            <a key="f" href={content.focus.url} target="_blank" rel="noopener noreferrer" className="app-now-tok app-now-tok--focus" tabIndex={-1}>
+              {content.focus.name}
             </a>
           );
         if (part === "{time}")
@@ -152,7 +154,7 @@ export function NowHero({ listen, updated }: { listen: Listen; updated: string }
         </span>
       </h2>
       <p className="app-now-intro">
-        {loc(NOW.intro, lang)}{" "}
+        {loc(content.intro, lang)}{" "}
         <a href="https://nownownow.com/about" target="_blank" rel="noopener noreferrer" className="app-now-link">
           {n.whatIs}
         </a>

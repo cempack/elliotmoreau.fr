@@ -2,7 +2,7 @@
 
 import type { Source } from "@/lib/data";
 import { useI18n } from "@/i18n/client";
-import { SOCIALS } from "@/lib/places";
+import { SOCIALS } from "@/lib/socials";
 import { PixelGlyph } from "@/components/glyphs";
 import { PressAnchor, PressButton } from "@/components/ui/Pressable";
 import { ART_FOLDER, ART_OFFLINE, ART_SEARCH, G_ARROW, PixelArt } from "./glyphs";

@@ -8,7 +8,6 @@ import { useI18n } from "@/i18n/client";
 import { useSound } from "@/lib/sound";
 import { useFinePointer, useHydrated } from "@/hooks/env";
 import { useSpotifyStatus } from "@/hooks/useSpotifyStatus";
-import { NOW } from "@/content/now";
 import { Board, useBoard, type BoardWidget } from "./board/Board";
 import { NowHero } from "./Hero";
 import { G_BOOK, G_BUILD, G_CHECK, G_CLOCK, G_FETCH, G_NOTE, G_PEN, G_PULSE, G_RESET } from "./bits";
@@ -22,13 +21,10 @@ import { Reading } from "./widgets/Reading";
 import { Writing } from "./widgets/Writing";
 import { useSiteData } from "@/components/os/SiteData";
 
-/** the reading tile only exists once there is something on the nightstand */
-const HAS_READING = NOW.reading.length > 0 || NOW.learning.length > 0;
-/** default arrangement: it packs the 4-column grid with no holes (without
-    the reading tile, Writing widens to fill its row) */
-const DEFAULT_ORDER: readonly string[] = HAS_READING
-  ? ["listening", "here", "building", "pulse", "setup", "reading", "writing"]
-  : ["listening", "here", "building", "pulse", "setup", "writing"];
+/** default arrangements: each packs the 4-column grid with no holes
+    (without the reading tile, Writing widens to fill its row) */
+const ORDER_READING: readonly string[] = ["listening", "here", "building", "pulse", "setup", "reading", "writing"];
+const ORDER: readonly string[] = ["listening", "here", "building", "pulse", "setup", "writing"];
 
 /** "2026-10-10" → a long date in the page language (UTC: no off-by-one). */
 function longDate(iso: string, lang: "en" | "fr") {
@@ -44,8 +40,8 @@ function longDate(iso: string, lang: "en" | "fr") {
  * Now (Activity): a /now page as a live dashboard. A live headline on
  * top, then widgets you can rearrange by hand (the signature: lift, throw,
  * reflow, snap, persisted on this device), each fed by real data or by
- * hand-written content (src/content/now.ts). Nothing here is a made-up
- * metric.
+ * hand-written content (the database, edited in the admin panel). Nothing
+ * here is a made-up metric.
  */
 export function NowApp() {
   const data = useSiteData();
@@ -55,7 +51,10 @@ export function NowApp() {
   const fine = useFinePointer();
   const mounted = useHydrated();
   const listen = useSpotifyStatus(data.spotify);
-  const board = useBoard(DEFAULT_ORDER);
+  const content = data.now;
+  // the reading tile only exists once there is something on the nightstand
+  const hasReading = content.reading.length > 0 || content.learning.length > 0;
+  const board = useBoard(hasReading ? ORDER_READING : ORDER);
   const { arrange, setArrange } = board;
   const arrangeRef = useRef<HTMLButtonElement>(null);
   const [said, setSaid] = useState("");
@@ -81,10 +80,10 @@ export function NowApp() {
   let updatedAgo = "";
   if (now) {
     const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(now);
-    const days = Math.round((Date.parse(today) - Date.parse(NOW.updated)) / 86_400_000);
+    const days = Math.round((Date.parse(today) - Date.parse(content.updated)) / 86_400_000);
     updatedAgo = days <= 0 ? n.today : days === 1 ? n.yesterday : fill(n.daysAgo, { n: days });
   }
-  const updated = fill(n.updated, { date: longDate(NOW.updated, lang) });
+  const updated = fill(n.updated, { date: longDate(content.updated, lang) });
 
   const widgets: BoardWidget[] = [
     {
@@ -132,7 +131,7 @@ export function NowApp() {
       meta: <SetupMeta />,
       children: <Setup repos={data.repos} />,
     },
-    ...(HAS_READING
+    ...(hasReading
       ? [
           {
             id: "reading",
@@ -146,7 +145,7 @@ export function NowApp() {
       : []),
     {
       id: "writing",
-      size: HAS_READING ? "T" : "L",
+      size: hasReading ? "T" : "L",
       label: n.widgets.writing,
       accent: "var(--color-ion)",
       glyph: G_PEN,

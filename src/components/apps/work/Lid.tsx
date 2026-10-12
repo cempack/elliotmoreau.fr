@@ -6,14 +6,15 @@ import type { RepoInfo } from "@/lib/github";
 import { PIXEL_GLYPHS } from "@/components/PixelLabel";
 import { cellPaths } from "@/lib/pxpath";
 import { project, spring } from "@/lib/motion";
-import { PINNED, itemId, langColor } from "./model";
+import { itemId, langColor } from "./model";
 
 /**
  * The Sticker Lid: the repos as die-cut vinyl stickers on a laptop lid.
  * Every visual is a fact: size is stars (three steps on a log scale),
  * colour is the language, the shine and the wear are the time since the
  * last push (glossy this week, matte, faded, then a corner lifting after a
- * year). The pinned repo is the big one in the middle. The layout is a
+ * year). The pinned repo (featured in the admin panel) is the big one in
+ * the middle. The layout is a
  * packing seeded by the names: it looks hand-placed but is the same on
  * every visit.
  *
@@ -145,11 +146,11 @@ function paintSticker(s: Sticker) {
   return { W, H, out };
 }
 
-function layout(repos: RepoInfo[], width: number, phone: boolean, now: number) {
+function layout(repos: RepoInfo[], width: number, phone: boolean, now: number, pinnedName?: string) {
   const maxStars = Math.max(1, ...repos.map((r) => r.stars));
   const base = repos.map((repo) => {
     const lines = linesOf(repo.name);
-    const pinned = PINNED.includes(repo.name);
+    const pinned = !!pinnedName && repo.name.toLowerCase() === pinnedName.toLowerCase();
     const step = pinned ? 2 : repo.stars <= 0 ? 0 : Math.min(2, Math.floor((Math.log1p(repo.stars) / Math.log1p(maxStars)) * 2.999));
     const shape: Shape = lines.length === 1 && lines[0].length <= 6 ? "hex" : lines.length === 1 ? "pill" : "rect";
     const tw = Math.max(...lines.map(textW));
@@ -263,6 +264,7 @@ export function Lid({
   onOpen,
   label,
   title,
+  pinned,
 }: {
   repos: RepoInfo[];
   /** what matches the search and folder: the rest is dimmed, not removed */
@@ -274,6 +276,8 @@ export function Lid({
   label: (r: RepoInfo) => string;
   /** the listbox's name */
   title: string;
+  /** the featured repo's name: the big sticker in the middle */
+  pinned?: string;
 }) {
   const wrap = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
@@ -295,7 +299,7 @@ export function Lid({
     };
   }, []);
 
-  const lid = useMemo(() => (width && now ? layout(repos, width, phone, now) : null), [repos, width, phone, now]);
+  const lid = useMemo(() => (width && now ? layout(repos, width, phone, now, pinned) : null), [repos, width, phone, now, pinned]);
   const byName = useMemo(() => new Map(lid?.stickers.map((s) => [s.repo.name, s]) ?? []), [lid]);
 
   const stop = () => {

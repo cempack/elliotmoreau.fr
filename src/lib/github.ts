@@ -186,8 +186,14 @@ const firstLine = (m: string | undefined) => {
   return msg.length > 72 ? msg.slice(0, 72) + "…" : msg;
 };
 
-export async function getActivity(): Promise<ActivityInfo | null> {
-  const events = await getEvents();
+/** "cempack/dotfiles" → is "dotfiles" one of the repos hidden from the site? */
+type Skip = (repo: string) => boolean;
+const shown = (skip?: Skip) => (e: GhEvent) => !skip || !e.repo?.name || !skip(e.repo.name.replace(`${USER}/`, ""));
+
+/** The latest push (or event), leaving out repos `skip` hides. */
+export async function getActivity(skip?: Skip): Promise<ActivityInfo | null> {
+  const all = await getEvents();
+  const events = all?.filter(shown(skip));
   if (!events?.length) return null;
   const push = events.find((e) => e.type === "PushEvent") ?? events[0];
   if (!push?.repo?.name || !push.created_at) return null;
@@ -202,10 +208,12 @@ export async function getActivity(): Promise<ActivityInfo | null> {
 
 const toulouseDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" });
 
-/** Public pushes grouped by Toulouse day, newest first. */
-export async function getPushes(): Promise<PushHistory | null> {
-  const events = await getEvents();
-  if (!events?.length) return null;
+/** Public pushes grouped by Toulouse day, newest first (hidden repos left out). */
+export async function getPushes(skip?: Skip): Promise<PushHistory | null> {
+  const all = await getEvents();
+  if (!all?.length) return null;
+  const events = all.filter(shown(skip));
+  if (!events.length) return null;
   const byDay = new Map<string, { n: number; repos: Map<string, number>; msg: string }>();
   for (const e of events) {
     if (e.type !== "PushEvent" || !e.created_at || !e.repo?.name) continue;

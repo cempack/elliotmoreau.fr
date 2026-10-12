@@ -7,7 +7,7 @@ import { useSound } from "@/lib/sound";
 import { nearest, project, rubberband, spring } from "@/lib/motion";
 import { useReduced } from "@/hooks/env";
 import { Glass } from "@/components/os/Glass";
-import type { Place } from "@/lib/places";
+import type { PlaceRow } from "@/lib/content";
 
 export type Detent = "peek" | "half" | "full";
 
@@ -76,7 +76,7 @@ export function MapSheet({
 }: {
   y: MotionValue<number>;
   metrics: SheetMetrics;
-  place: Place;
+  place: PlaceRow;
   /** the sheet sits beside the globe instead of over its lower part */
   beside?: boolean;
   onDetent: (d: Detent) => void;

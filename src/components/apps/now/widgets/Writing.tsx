@@ -6,7 +6,8 @@ import { useHydrated } from "@/hooks/env";
 import { useI18n } from "@/i18n/client";
 import { timeAgo } from "@/lib/format";
 import type { GhostPost } from "@/lib/ghost";
-import { NOW, loc } from "@/content/now";
+import { loc } from "@/lib/content";
+import { useNowContent } from "@/components/os/SiteData";
 import { PlateThumb } from "@/components/apps/writing/PlateThumb";
 import { plateSeed } from "@/components/apps/writing/plate";
 import { G_ARROW, G_NEXT } from "../bits";
@@ -39,6 +40,7 @@ function cadence(posts: GhostPost[], end: Date) {
 export function Writing({ posts }: { posts: GhostPost[] }) {
   const { t, lang, path } = useI18n();
   const w = t.now.writing;
+  const { drafting } = useNowContent();
   const mounted = useHydrated();
   const now = useNow(3_600_000);
   const latest = posts[0];
@@ -53,11 +55,11 @@ export function Writing({ posts }: { posts: GhostPost[] }) {
 
   return (
     <div className="app-now-write">
-      {NOW.drafting.length > 0 && (
+      {drafting.length > 0 && (
         <div className="app-now-write-drafts">
           <h3 className="app-now-label">{w.drafting}</h3>
           <ul className="app-now-drafts">
-            {NOW.drafting.map((d) => (
+            {drafting.map((d) => (
               <li key={d.title.en}>
                 {/* the section label says "drafting"; a dashed, unfinished pixel marks each */}
                 <span className="app-now-draft-title">{loc(d.title, lang)}</span>

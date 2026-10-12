@@ -16,7 +16,7 @@ import { Sidebar } from "./Sidebar";
 import { Toolbar } from "./Toolbar";
 import { WorkProvider, useWork, visibleSearch } from "./store";
 import { fmt, pathFor } from "./model";
-import { useSiteData } from "@/components/os/SiteData";
+import { useLive, useSiteData } from "@/components/os/SiteData";
 
 /**
  * Projects: a Finder for Elliot's GitHub repos. Source list of smart
@@ -86,6 +86,7 @@ function WorkContent() {
   const h = t.work.heading;
   const w = useWork();
   const { filter, terms, query, visible } = w;
+  const { featuredRepo } = useLive();
   const lidView = w.effView === "icons";
   const visibleSet = new Set(visible.map((r) => r.name));
 
@@ -127,6 +128,7 @@ function WorkContent() {
                 onSelect={w.setSelected}
                 onOpen={(name) => w.openQL(name)}
                 title={heading}
+                pinned={featuredRepo}
                 label={(r) => fmt(t.work.lid.sticker, { name: r.name, stars: r.stars, lang: r.language || "" })}
               />
               <p className="app-work-lid-legend">{t.work.lid.legend}</p>

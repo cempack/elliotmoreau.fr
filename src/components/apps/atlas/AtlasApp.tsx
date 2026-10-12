@@ -9,8 +9,7 @@ import { useI18n } from "@/i18n/client";
 import { useSound } from "@/lib/sound";
 import { useMedia } from "@/hooks/env";
 import { PressButton } from "@/components/ui/Pressable";
-import { HOME, PLACES } from "@/lib/places";
-import { placeById } from "./geo";
+import { useAtlas } from "./useAtlas";
 import { AtlasGlobe } from "./AtlasGlobe";
 import { PlaceCard } from "./PlaceCard";
 import { PlacesList } from "./PlacesList";
@@ -18,7 +17,6 @@ import { Stats } from "./Stats";
 import { Postcards } from "./Postcards";
 import { MapSheet, type Detent } from "./MapSheet";
 import { fmtCoordsL } from "./fmt";
-import { useSiteData } from "@/components/os/SiteData";
 
 /** Layout switch: floating panels around the globe from here up, the
     Maps-style sheet below. Must match the breakpoint in atlas.css. */
@@ -35,11 +33,11 @@ const BESIDE = "(min-width: 768px) and (min-aspect-ratio: 5/4)";
  * panels either side of the globe, the stats sit under it, and a strip of
  * pixel-map postcards you can fling follows below. Phones and tablets: a
  * three-detent bottom sheet holds it all. The selection lives in the URL
- * hash (/atlas#japan), so a place can be shared.
+ * hash (/atlas#japan), so a place can be shared. The places come from the
+ * database (edited in the admin panel), through SiteData.
  */
 export function AtlasApp() {
-  const data = useSiteData();
-  void data; // the Atlas is drawn from lib/places, not from live site data
+  const { ordered, home, byId } = useAtlas();
   const { t, lang } = useI18n();
   const a = t.atlas;
   const { blip } = useSound();
@@ -47,38 +45,44 @@ export function AtlasApp() {
   // small screens until the sheet mounts
   const wide = useMedia(WIDE, true);
   const beside = useMedia(BESIDE, false);
-  const [selectedId, setSelectedId] = useState(HOME.id);
+  const [selectedId, setSelectedId] = useState(home.id);
   const [recenter, setRecenter] = useState(0);
   const [detent, setDetent] = useState<Detent>("peek");
   const readoutRef = useRef<HTMLSpanElement>(null);
   const stageRef = useRef<HTMLElement>(null);
-  const place = placeById(selectedId) ?? HOME;
+  const place = byId(selectedId) ?? home;
+  // the globe bakes home and the routes in when it mounts: new geometry
+  // (an edit in the admin panel) mounts a fresh one
+  const globeKey = useMemo(
+    () => ordered.map((p) => `${p.id}:${p.lat}:${p.lon}:${p.status}:${p.home ? 1 : 0}`).join("|"),
+    [ordered]
+  );
 
   const select = useCallback(
     (id: string) => {
-      if (!placeById(id)) return;
+      if (!byId(id)) return;
       if (id === selectedId) setRecenter((n) => n + 1);
       else setSelectedId(id);
       blip("select");
       try {
         const url = new URL(window.location.href);
-        url.hash = id === HOME.id ? "" : id;
+        url.hash = id === home.id ? "" : id;
         window.history.replaceState(window.history.state, "", url);
       } catch {}
     },
-    [blip, selectedId]
+    [blip, selectedId, byId, home.id]
   );
 
   // deep link: /atlas#japan
   useEffect(() => {
     const read = () => {
       const id = decodeURIComponent(window.location.hash.slice(1));
-      if (placeById(id)) setSelectedId(id);
+      if (byId(id)) setSelectedId(id);
     };
     queueMicrotask(read);
     window.addEventListener("hashchange", read);
     return () => window.removeEventListener("hashchange", read);
-  }, []);
+  }, [byId]);
 
   // picking a postcard below the fold: glide back up to the globe first
   const onCamera = useCallback(
@@ -110,7 +114,7 @@ export function AtlasApp() {
           <path d="M6 0v3M6 9v3M0 6h3M9 6h3" stroke="currentColor" strokeWidth="1.2" />
         </svg>
         <span ref={readoutRef} className="tabular">
-          {fmtCoordsL(HOME.lat, HOME.lon, lang)}
+          {fmtCoordsL(home.lat, home.lon, lang)}
         </span>
       </span>
       <PressButton className="app-atlas-tool" onClick={() => setRecenter((n) => n + 1)} aria-label={a.recenterLabel}>
@@ -147,7 +151,9 @@ export function AtlasApp() {
           )}
           <div className="app-atlas-globe-slot">
             <AtlasGlobe
-              places={PLACES}
+              key={globeKey}
+              places={ordered}
+              home={home}
               selectedId={selectedId}
               onSelect={select}
               ambient={wide || beside || detent === "peek"}

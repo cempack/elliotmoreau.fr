@@ -7,7 +7,7 @@ import type { Source } from "@/lib/data";
 import { useI18n } from "@/i18n/client";
 import { WinNav, WinNavItem } from "@/components/os/AppWindow";
 import { GLYPH_STAR, PixelGlyph } from "@/components/glyphs";
-import { SOCIALS } from "@/lib/places";
+import { SOCIALS } from "@/lib/socials";
 import { G_ALL, G_ARROW, G_HASH } from "./glyphs";
 import { type Filter, fmt, langColor, languagesOf, sameFilter, tagsOf } from "./model";
 

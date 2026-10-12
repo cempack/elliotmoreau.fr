@@ -6,9 +6,10 @@ import { useHydrated } from "@/hooks/env";
 import { useI18n } from "@/i18n/client";
 import { timeAgo } from "@/lib/format";
 import { LANG_COLORS, LANG_FALLBACK } from "@/lib/langColors";
-import { SOCIALS } from "@/lib/places";
+import { SOCIALS } from "@/lib/socials";
 import type { ActivityInfo, RepoInfo } from "@/lib/github";
-import { NOW, loc } from "@/content/now";
+import { loc } from "@/lib/content";
+import { useNowContent } from "@/components/os/SiteData";
 import { G_ARROW, LiveDot } from "../bits";
 import { fill, useNow } from "../lib";
 
@@ -37,7 +38,7 @@ export function Building({ activity, repos }: { activity: ActivityInfo | null; r
   const recent = [...repos].sort((a, z) => at(z) - at(a)).slice(0, 3);
   const now = useNow(60_000);
   const fresh = now && activity ? now.getTime() - +new Date(activity.createdAt) < 86_400_000 : false;
-  const f = NOW.focus;
+  const f = useNowContent().focus;
 
   return (
     <div className="app-now-build">

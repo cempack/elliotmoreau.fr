@@ -7,7 +7,7 @@ import { useToast } from "@/components/Toasts";
 import { rememberLocale, switchLocaleHref, useI18n } from "@/i18n/client";
 import { useSound } from "@/lib/sound";
 import { scrollToY } from "@/lib/scroller";
-import { SOCIALS } from "@/lib/places";
+import { SOCIALS } from "@/lib/socials";
 import { PixelGlyph, type Cells } from "@/components/glyphs";
 import { G_COMMIT, G_PEN } from "@/components/apps/home/desktop/icons";
 import { APPS } from "./apps";
@@ -21,7 +21,6 @@ import { BLOG_URL, fill, restartOS } from "./menubar/util";
 import { lockOS } from "./Intro";
 import { useMedia } from "@/hooks/env";
 import { useSpotifyStatus } from "@/hooks/useSpotifyStatus";
-import { NOW } from "@/content/now";
 import { DeadLetter } from "./DeadLetter";
 import { loadDraft, saveDraft } from "@/components/apps/contact/mail";
 import { suggest } from "@/components/apps/notfound/suggest";
@@ -63,7 +62,7 @@ export function useSpotlightCommands(): Command[] {
   const { notify } = useToast();
   const { mode, setMode } = useSky();
   const { setOpen: setTerminal } = useTerminal();
-  const { posts, repos, activity, spotify } = useSiteData();
+  const { posts, repos, activity, spotify, now } = useSiteData();
   const music = useSpotifyStatus(spotify);
   const phone = useMedia("(max-width: 767px)");
 
@@ -261,14 +260,14 @@ export function useSpotlightCommands(): Command[] {
       board.push({
         id: "board-focus",
         group: b.title,
-        label: fill(b.focus, { name: NOW.focus.name, title: NOW.focus.title[lang] }),
-        board: { time: dm(new Date(NOW.updated)), dest: NOW.focus.name, via: NOW.focus.title[lang], status: b.building, key: `${NOW.focus.name}|${NOW.focus.title.en}`, remember: true },
+        label: fill(b.focus, { name: now.focus.name, title: now.focus.title[lang] }),
+        board: { time: dm(new Date(now.updated)), dest: now.focus.name, via: now.focus.title[lang], status: b.building, key: `${now.focus.name}|${now.focus.title.en}`, remember: true },
         perform: () => router.push(path("/now"), { transitionTypes: ["app-open"] } as never),
       });
     }
 
     return [...board, ...apps, ...act, ...writing, ...projects, ...links];
-  }, [t, other, path, router, pathname, muted, toggle, blip, notify, mode, setMode, setTerminal, posts, repos, activity, music, phone, lang]);
+  }, [t, other, path, router, pathname, muted, toggle, blip, notify, mode, setMode, setTerminal, posts, repos, activity, music, phone, lang, now]);
 }
 
 /**
