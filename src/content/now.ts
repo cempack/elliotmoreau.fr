@@ -55,6 +55,8 @@ export const NOW: NowContent = {
 
   /**
    * The "uses" sheet, fastfetch style. Rows with `todo: true` stay hidden.
+   * Not on the Now dashboard at the moment (the menu bar's About panel is
+   * the site's fastfetch); kept in the content and the admin panel.
    * Known from public work: Omarchy, Hyprland, Neovim, Ghostty, Dos Moos,
    * JetBrains Mono, Spotify, Ghost, Next.js on Railway.
    */

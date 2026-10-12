@@ -10,21 +10,23 @@ import { useFinePointer, useHydrated } from "@/hooks/env";
 import { useSpotifyStatus } from "@/hooks/useSpotifyStatus";
 import { Board, useBoard, type BoardWidget } from "./board/Board";
 import { NowHero } from "./Hero";
-import { G_BOOK, G_BUILD, G_CHECK, G_CLOCK, G_FETCH, G_NOTE, G_PEN, G_PULSE, G_RESET } from "./bits";
+import { G_BOOK, G_BUILD, G_CHECK, G_CLOCK, G_NOTE, G_PEN, G_PULSE, G_RESET } from "./bits";
 import { fill, useNow } from "./lib";
 import { Listening, ListeningMeta } from "./widgets/Listening";
 import { HereMeta, HereNow } from "./widgets/HereNow";
 import { Building, BuildingMeta } from "./widgets/Building";
-import { Pulse, PulseMeta } from "./widgets/Pulse";
-import { Setup, SetupMeta } from "./widgets/Setup";
+import { Pulse } from "./widgets/Pulse";
 import { Reading } from "./widgets/Reading";
 import { Writing } from "./widgets/Writing";
 import { useSiteData } from "@/components/os/SiteData";
+import type { PushHistory } from "@/lib/github";
 
-/** default arrangements: each packs the 4-column grid with no holes
-    (without the reading tile, Writing widens to fill its row) */
-const ORDER_READING: readonly string[] = ["listening", "here", "building", "pulse", "setup", "reading", "writing"];
-const ORDER: readonly string[] = ["listening", "here", "building", "pulse", "setup", "writing"];
+/** default arrangements: each packs the 4-column grid, and the 2-column
+    one, with no holes: Listening, Here and Building on top, then Pulse
+    beside Writing (or beside Reading and a narrower Writing). A saved
+    layout that still lists a widget that's gone simply drops it. */
+const ORDER_READING: readonly string[] = ["listening", "here", "building", "pulse", "reading", "writing"];
+const ORDER: readonly string[] = ["listening", "here", "building", "pulse", "writing"];
 
 /** "2026-10-10" → a long date in the page language (UTC: no off-by-one). */
 function longDate(iso: string, lang: "en" | "fr") {
@@ -41,9 +43,10 @@ function longDate(iso: string, lang: "en" | "fr") {
  * top, then widgets you can rearrange by hand (the signature: lift, throw,
  * reflow, snap, persisted on this device), each fed by real data or by
  * hand-written content (the database, edited in the admin panel). Nothing
- * here is a made-up metric.
+ * here is a made-up metric. The push history comes from the page itself
+ * (the shell's data leaves it out).
  */
-export function NowApp() {
+export function NowApp({ pushes }: { pushes: PushHistory | null }) {
   const data = useSiteData();
   const { t, lang } = useI18n();
   const n = t.now;
@@ -111,25 +114,16 @@ export function NowApp() {
       accent: "var(--color-signal)",
       glyph: G_BUILD,
       meta: <BuildingMeta />,
-      children: <Building activity={data.activity} repos={data.repos} />,
+      children: <Building activity={data.activity} />,
     },
     {
       id: "pulse",
-      size: "W",
+      size: "L",
       label: n.widgets.pulse,
       accent: "var(--color-flare)",
       glyph: G_PULSE,
-      meta: <PulseMeta />,
-      children: <Pulse repos={data.repos} posts={data.posts} activity={data.activity} />,
-    },
-    {
-      id: "setup",
-      size: "L",
-      label: n.widgets.setup,
-      accent: "var(--color-lilac)",
-      glyph: G_FETCH,
-      meta: <SetupMeta />,
-      children: <Setup repos={data.repos} />,
+      meta: <span className="app-now-status app-now-status--mono">GitHub</span>,
+      children: <Pulse pushes={pushes} />,
     },
     ...(hasReading
       ? [

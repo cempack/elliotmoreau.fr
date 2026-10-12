@@ -1,13 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { PixelGlyph } from "@/components/glyphs";
 import { useHydrated } from "@/hooks/env";
 import { useI18n } from "@/i18n/client";
 import { timeAgo } from "@/lib/format";
-import { LANG_COLORS, LANG_FALLBACK } from "@/lib/langColors";
 import { SOCIALS } from "@/lib/socials";
-import type { ActivityInfo, RepoInfo } from "@/lib/github";
+import type { ActivityInfo } from "@/lib/github";
 import { loc } from "@/lib/content";
 import { useNowContent } from "@/components/os/SiteData";
 import { G_ARROW } from "../bits";
@@ -23,52 +21,44 @@ export function BuildingMeta() {
 }
 
 /**
- * The current focus (hand-written), the last public push (live, with its
- * commit message) and the most recently pushed repos.
+ * Two things, in order of weight: what I'm building (hand-written: its
+ * name, opening its source, what it is and why), then the last public push
+ * (live: its commit message when GitHub still sends one, the repo, how long
+ * ago). The repos list lives in Projects.
  */
-export function Building({ activity, repos }: { activity: ActivityInfo | null; repos: RepoInfo[] }) {
-  const { t, lang, path } = useI18n();
+export function Building({ activity }: { activity: ActivityInfo | null }) {
+  const { t, lang } = useI18n();
   const b = t.now.building;
   const mounted = useHydrated();
-  const ago = (iso: string) => (mounted ? timeAgo(iso, lang) : " ");
-  // one clock per repo: the live push event can be newer than the repo
-  // listing's pushedAt (the Pulse reconciles them the same way)
-  const at = (r: RepoInfo) =>
-    Math.max(Date.parse(r.pushedAt) || 0, activity && activity.repo === r.name ? Date.parse(activity.createdAt) || 0 : 0);
-  const recent = [...repos].sort((a, z) => at(z) - at(a)).slice(0, 3);
   const f = useNowContent().focus;
+  const title = loc(f.title, lang);
+  const body = loc(f.body, lang);
 
   return (
     <div className="app-now-build">
       <div className="app-now-build-focus">
-        <p className="app-now-label">
-          {b.focus}
-          {f.url && (
-            <a
-              href={f.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="app-now-label-aside app-now-label-link"
-              aria-label={fill(b.sourceOf, { name: f.name })}
-            >
-              {b.source}
-              <PixelGlyph cells={G_ARROW} size={7} />
-            </a>
-          )}
-        </p>
-        <p className="app-now-build-name">{f.name}</p>
-        <p className="app-now-build-title">{loc(f.title, lang)}</p>
-        <p className="app-now-build-body">{loc(f.body, lang)}</p>
+        {f.url ? (
+          <a
+            href={f.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="app-now-build-name"
+            aria-label={fill(b.sourceOf, { name: f.name })}
+          >
+            {f.name}
+            <PixelGlyph cells={G_ARROW} size={9} />
+          </a>
+        ) : (
+          <p className="app-now-build-name">{f.name}</p>
+        )}
+        {title && <p className="app-now-build-title">{title}</p>}
+        {body && <p className="app-now-build-body">{body}</p>}
       </div>
 
       <div className="app-now-build-push">
         <p className="app-now-label">
           {b.lastPush}
-          {activity && (
-            <span className="app-now-label-aside tabular">
-              {ago(activity.createdAt)}
-            </span>
-          )}
+          {activity && <span className="app-now-label-aside tabular">{mounted ? timeAgo(activity.createdAt, lang) : " "}</span>}
         </p>
         {activity ? (
           <a
@@ -82,38 +72,13 @@ export function Building({ activity, repos }: { activity: ActivityInfo | null; r
                 : fill(b.pushedTo, { repo: activity.repo })
             }
           >
-            <span className="app-now-push-repo">
-              {activity.repo}
-            </span>
             {activity.message && <span className="app-now-push-msg">{activity.message}</span>}
+            <span className="app-now-push-repo">{activity.repo}</span>
           </a>
         ) : (
           <p className="app-now-muted">{b.none}</p>
         )}
       </div>
-
-      {recent.length > 0 && (
-        <div className="app-now-build-repos">
-          <p className="app-now-label">
-            {b.recent}
-            <Link prefetch={false} href={path("/work")} transitionTypes={["app-open"]} className="app-now-label-aside app-now-label-link">
-              {b.all}
-              <PixelGlyph cells={G_ARROW} size={7} />
-            </Link>
-          </p>
-          <ul className="app-now-repos">
-            {recent.map((r) => (
-              <li key={r.name}>
-                <a href={r.url} target="_blank" rel="noopener noreferrer" className="app-now-repo">
-                  <i style={{ background: LANG_COLORS[r.language] ?? LANG_FALLBACK }} aria-hidden />
-                  <span className="app-now-repo-name">{r.name}</span>
-                  <span className="app-now-repo-ago tabular">{ago(new Date(at(r)).toISOString())}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 }

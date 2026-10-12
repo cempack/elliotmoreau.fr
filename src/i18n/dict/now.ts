@@ -41,7 +41,6 @@ const en = {
     here: "Here & now",
     building: "Building",
     pulse: "Pulse",
-    setup: "Setup",
     reading: "Reading & learning",
     writing: "Writing",
   },
@@ -74,33 +73,28 @@ const en = {
   },
 
   building: {
-    focus: "Focus",
-    source: "Source",
     sourceOf: "{name} source code on GitHub",
     lastPush: "Last push",
-    recent: "Recent repos",
     pushedTo: "Pushed to {repo}",
     /** the last push, read aloud */
     pushLabel: "Pushed to {repo}: {message}",
     none: "No public pushes lately.",
-    all: "All projects",
   },
 
   pulse: {
-    caption: "Each blip is a real, timestamped event: the latest push to each repo, and every post. Newest on the right.",
-    push: "Push",
-    post: "Post",
-    now: "Now",
-    pushTo: "Pushed to {name}",
-    published: "Published “{name}”",
-    ticks: { day: "1 day", week: "1 wk", month: "1 mo", quarter: "3 mo", half: "6 mo", year: "1 yr" },
+    unit: "pushes",
+    unitOne: "push",
+    /** under the big number: "214 pushes since 14 July" */
+    since: "{unit} since {date}",
+    /** a day picked on the chart: "3 pushes on Tue 7 Oct" */
+    on: "{unit} on {date}",
+    busiest: "Busiest day",
+    longest: "Longest run",
+    days: "{n} days",
+    dayOne: "1 day",
+    today: "Today",
+    label: "Public pushes per day since {date}. The arrow keys read each day.",
     empty: "Nothing public to show yet.",
-  },
-
-  setup: {
-    caption: "Copied by hand from my machine.",
-    langs: "Languages",
-    palette: "Moss palette",
   },
 
   reading: {
@@ -167,7 +161,6 @@ const fr: typeof en = {
     here: "Ici et maintenant",
     building: "En chantier",
     pulse: "Pouls",
-    setup: "Ma config",
     reading: "Lire, apprendre",
     writing: "Écriture",
   },
@@ -200,32 +193,25 @@ const fr: typeof en = {
   },
 
   building: {
-    focus: "Priorité",
-    source: "Code source",
     sourceOf: "{name} : code source sur GitHub",
     lastPush: "Dernier push",
-    recent: "Dépôts récents",
     pushedTo: "Push sur {repo}",
     pushLabel: "Push sur {repo} : {message}",
     none: "Aucun push public récemment.",
-    all: "Tous les projets",
   },
 
   pulse: {
-    caption: "Chaque pic est un vrai événement daté : le dernier push de chaque dépôt, et chaque article. Le plus récent à droite.",
-    push: "Push",
-    post: "Article",
-    now: "Maintenant",
-    pushTo: "Push sur {name}",
-    published: "Publié : « {name} »",
-    ticks: { day: "1 jour", week: "1 sem.", month: "1 mois", quarter: "3 mois", half: "6 mois", year: "1 an" },
+    unit: "pushs",
+    unitOne: "push",
+    since: "{unit} depuis le {date}",
+    on: "{unit} le {date}",
+    busiest: "Jour le plus actif",
+    longest: "Plus longue série",
+    days: "{n} jours",
+    dayOne: "1 jour",
+    today: "Aujourd’hui",
+    label: "Pushs publics par jour depuis le {date}. Les flèches lisent chaque jour.",
     empty: "Rien de public à montrer pour l’instant.",
-  },
-
-  setup: {
-    caption: "Recopié à la main depuis ma machine.",
-    langs: "Langages",
-    palette: "Palette Moss",
   },
 
   reading: {
