@@ -298,9 +298,11 @@ html[data-overview] .os-stage {
   top: calc(var(--menubar-bottom, 2.25rem) + 0.75rem);
 }
 .os-ov[data-phone] .os-ov-desk {
-  height: 2.25rem;
-  padding: 0 0.875rem;
+  height: 2.75rem;
+  padding: 0 1rem;
   font-size: 0.8125rem;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .os-ov[data-phone] .os-ov-scatter {
   top: calc(var(--menubar-bottom, 2.25rem) + 4rem);
@@ -330,12 +332,24 @@ html[data-overview] .os-stage {
 .os-ov[data-phone] .os-ov-label {
   left: 0;
   max-width: 100%;
-  padding: 0.4375rem 0.625rem;
-  font-size: 0.75rem;
+  padding: 0.5rem 0.6875rem;
+  font-size: 0.8125rem;
+}
+/* the press lands at once under the finger, before any drag decides */
+.os-ov[data-phone] .os-ov-card:not([data-held]):active .os-ov-face {
+  scale: 0.97;
+}
+.os-ov[data-phone] .os-ov-face {
+  transition:
+    box-shadow 0.2s,
+    scale 0.3s var(--ease-spring);
 }
 .os-ov[data-phone] .os-ov-hint {
+  right: 1.25rem;
+  left: 1.25rem;
   bottom: calc(var(--dock-h) + 1rem);
-  font-size: 0.75rem;
+  padding: 0.75rem 1.125rem;
+  font-size: 0.8125rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

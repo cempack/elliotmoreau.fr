@@ -303,20 +303,91 @@ function Panel({
   // downward. At release the throw is projected: past the threshold it
   // leaves upward carrying the finger's velocity (the exit variant only
   // fades, so nothing re-targets the flight); otherwise it springs home
+  const onFlick = (v: number, at: number) => {
+    const h = ref.current?.offsetHeight ?? 400;
+    if (at + project(v, 0.99) < -Math.min(160, h * 0.3)) {
+      animate(y, -(h + 80), { ...spring.default, velocity: Math.min(v, -400) });
+      menu.close({ fling: true });
+    } else {
+      animate(y, 0, { ...spring.default, velocity: v });
+    }
+  };
   const flick = useFlick({
     axis: "y",
     value: y,
     resist: (raw) => (raw > 0 ? rubberband(raw, ref.current?.offsetHeight ?? 400, 0.35) : raw),
-    onRelease: (v, at) => {
-      const h = ref.current?.offsetHeight ?? 400;
-      if (at + project(v, 0.99) < -Math.min(160, h * 0.3)) {
-        animate(y, -(h + 80), { ...spring.default, velocity: Math.min(v, -400) });
-        menu.close({ fling: true });
-      } else {
-        animate(y, 0, { ...spring.default, velocity: v });
-      }
-    },
+    onRelease: onFlick,
   });
+
+  // phones: a swipe up anywhere on the sheet puts it away, as Notification
+  // Center does (not only from its grabber). Content that scrolls keeps the
+  // finger until it is at its end; sideways drags (the tape, the sun) and
+  // anything marked data-no-flick keep theirs
+  const sheet = anchor.sheet;
+  const releaseRef = useRef(onFlick);
+  useEffect(() => {
+    releaseRef.current = onFlick;
+  });
+  useEffect(() => {
+    const panel = ref.current;
+    if (!sheet || !panel) return;
+    type T = { x: number; y: number; origin: number; mode: "wait" | "drag" | "off"; samples: { t: number; p: number }[] };
+    let st: T | null = null;
+    const onStart = (e: TouchEvent) => {
+      const target = e.target as HTMLElement;
+      const off =
+        e.touches.length !== 1 ||
+        !!target.closest?.(".os-menubar-grabber,input,textarea,select,[data-no-flick]") ||
+        getComputedStyle(target).touchAction === "none";
+      const t = e.touches[0];
+      st = { x: t.clientX, y: t.clientY, origin: t.clientY - y.get(), mode: off ? "off" : "wait", samples: [{ t: e.timeStamp, p: t.clientY }] };
+    };
+    const onMove = (e: TouchEvent) => {
+      if (!st || st.mode === "off") return;
+      const t = e.touches[0];
+      if (!t) return;
+      const dx = t.clientX - st.x;
+      const dy = t.clientY - st.y;
+      if (st.mode === "wait") {
+        if (Math.hypot(dx, dy) < 6) return;
+        const sc = panel.querySelector<HTMLElement>(".os-menubar-scroll");
+        const scrolls = !!sc && sc.scrollHeight > sc.clientHeight + 1;
+        const atEnd = !sc || sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 1;
+        if (Math.abs(dx) > Math.abs(dy) || (scrolls && !(dy < 0 && atEnd))) {
+          st.mode = "off";
+          return;
+        }
+        st.mode = "drag";
+        st.origin = t.clientY - y.get();
+        y.stop();
+      }
+      if (e.cancelable) e.preventDefault();
+      const raw = t.clientY - st.origin;
+      y.set(raw > 0 ? rubberband(raw, panel.offsetHeight || 400, 0.35) : raw);
+      st.samples.push({ t: e.timeStamp, p: t.clientY });
+      if (st.samples.length > 8) st.samples.shift();
+    };
+    const onEnd = (e: TouchEvent) => {
+      const s = st;
+      st = null;
+      if (s?.mode !== "drag") return;
+      const last = s.samples[s.samples.length - 1];
+      const recent = s.samples.filter((x) => last.t - x.t <= 100);
+      const a = recent.length > 1 ? recent[0] : s.samples[s.samples.length - 2];
+      const v = a && last.t > a.t && e.timeStamp - last.t < 160 ? ((last.p - a.p) / (last.t - a.t)) * 1000 : 0;
+      releaseRef.current(v, y.get());
+    };
+    panel.addEventListener("touchstart", onStart, { passive: true });
+    panel.addEventListener("touchmove", onMove, { passive: false });
+    panel.addEventListener("touchend", onEnd);
+    panel.addEventListener("touchcancel", onEnd);
+    return () => {
+      panel.removeEventListener("touchstart", onStart);
+      panel.removeEventListener("touchmove", onMove);
+      panel.removeEventListener("touchend", onEnd);
+      panel.removeEventListener("touchcancel", onEnd);
+    };
+  }, [sheet, y]);
 
   return (
     <>

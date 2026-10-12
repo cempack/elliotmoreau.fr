@@ -480,6 +480,9 @@
     --os-win-bar-h: 3.875rem;
     --os-win-gap: 0.5rem;
     --os-win-gutter: 0px;
+    /* the sheet's side gutter (iOS's 20px): the title bar and the section
+       strip sit on it, and app content can align to it */
+    --os-win-pad: max(1.25rem, env(safe-area-inset-left), env(safe-area-inset-right));
     /* the window ends where the tab bar begins: nothing scrolls under it */
     --os-win-dock-room: var(--dock-h);
     --os-win-view-h: calc(100svh - var(--menubar-bottom) - var(--os-win-gap) - var(--dock-h) - var(--os-win-bar-h));
@@ -498,15 +501,26 @@
     border-right-width: 0;
   }
   .os-win-main {
-    padding-bottom: 1.25rem;
+    padding-bottom: 1.5rem;
   }
   .os-win-bar {
     gap: 0.75rem;
-    padding: 0.625rem 0.75rem 0 1rem;
+    /* the close chip (30px in a 44px target) ends on the gutter too */
+    padding: 0.625rem calc(var(--os-win-pad) - 0.4375rem) 0 var(--os-win-pad);
     cursor: default;
   }
   .os-win-bar::after {
-    inset-inline: 1rem;
+    inset-inline: var(--os-win-pad);
+  }
+  .os-win-x {
+    margin-right: 0;
+  }
+  .os-win-side {
+    padding-inline: var(--os-win-pad);
+    scroll-padding-inline: var(--os-win-pad);
+  }
+  .os-win-side :is(ul, ol, [role="list"], [role="tablist"]) {
+    gap: 0.5rem;
   }
   /* phones: just the app's name, like a native title (no path, no subtitle) */
   .os-win-lights,

@@ -294,11 +294,15 @@
   }
 }
 @media (max-width: 767px) {
+  /* a status bar: the mark on the left, status icons and the clock on the
+     right, each a full 44px target, the outer glyphs ~20px in from the
+     screen's edges like iOS's */
   .os-menubar {
     display: flex;
     justify-content: space-between;
-    padding-left: max(2px, env(safe-area-inset-left));
-    padding-right: max(4px, env(safe-area-inset-right));
+    gap: 4px;
+    padding-left: max(6px, env(safe-area-inset-left));
+    padding-right: max(6px, env(safe-area-inset-right));
   }
   .os-menubar-ws {
     display: none;
@@ -327,8 +331,8 @@
   /* now playing comes down to its equalizer (the cassette opens as a
      sheet), and steps aside where the bar has no room for it */
   .os-menubar-music-btn {
-    width: 36px;
-    min-width: 36px;
+    width: 44px;
+    min-width: 44px;
     padding: 0;
   }
   .os-menubar-music-title {
@@ -338,10 +342,14 @@
     width: 44px;
   }
   .os-menubar-clock {
-    padding: 0 8px;
+    gap: 8px;
+    padding: 0 10px;
   }
   .os-menubar-app {
-    padding-left: 2px;
+    padding-left: 4px;
+  }
+  .os-menubar-right {
+    gap: 0;
   }
   /* a window sheet carries its own large title: the bar becomes a status
      bar (mark, status icons, clock) instead of repeating it */
@@ -509,6 +517,11 @@ html:active-view-transition .os-menubar {
 .os-menubar-panel[data-sheet] {
   border-radius: var(--radius-window);
 }
+/* phones: the sheet's content gets room to breathe, and the sheet is the
+   only thing the finger moves (no scroll chaining to the page) */
+.os-menubar-panel[data-sheet] .os-menubar-scroll {
+  padding: 14px 14px 6px;
+}
 .os-menubar-grabber {
   display: grid;
   place-items: center;
@@ -661,9 +674,16 @@ html:active-view-transition .os-menubar {
 }
 @media (max-width: 767px) {
   .os-toast-stack {
-    top: calc(var(--menubar-bottom) + 6px);
-    right: 8px;
-    width: calc(100vw - 16px);
+    top: calc(var(--menubar-bottom) + 8px);
+    right: max(12px, env(safe-area-inset-right));
+    width: calc(100vw - 24px);
+  }
+  .os-toast-surface {
+    padding: 14px 16px 15px 14px;
+  }
+  /* swiped up to dismiss, as on iOS (the page under it doesn't scroll) */
+  .os-toast {
+    touch-action: none;
   }
 }
 /* reduced transparency / more contrast: solid surfaces, visible edges */
@@ -760,6 +780,11 @@ html:active-view-transition .os-menubar {
   }
 }
 @media (max-width: 767px) {
+  .os-menubar-away {
+    margin-left: 0;
+    padding: 3px 8px;
+    font-size: 0.75rem;
+  }
   .os-menubar-away-city {
     display: none;
   }

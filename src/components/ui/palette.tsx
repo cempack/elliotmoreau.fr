@@ -16,8 +16,21 @@ export function PaletteProvider({ children }: { children: React.ReactNode }) {
   const api = useRef<Ctx | null>(null);
   const open = useCallback(() => {
     setWant(true);
-    if (api.current) api.current.open();
-    else setIsOpen(true);
+    if (api.current) return api.current.open();
+    // first open on a touch screen: the real field arrives a moment later,
+    // but iOS raises its keyboard only for a focus inside the tap itself. A
+    // stand-in field takes that focus and hands it on (the keyboard stays up
+    // as focus moves from field to field)
+    if (window.matchMedia("(pointer: coarse)").matches) {
+      const stand = document.createElement("input");
+      stand.setAttribute("aria-hidden", "true");
+      stand.tabIndex = -1;
+      stand.style.cssText = "position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;border:0;padding:0;font-size:16px";
+      document.body.appendChild(stand);
+      stand.focus({ preventScroll: true });
+      window.setTimeout(() => stand.remove(), 2500);
+    }
+    setIsOpen(true);
   }, []);
   const close = useCallback(() => api.current?.close(), []);
   const setApi = useCallback((a: Ctx) => {

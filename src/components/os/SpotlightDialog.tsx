@@ -33,6 +33,8 @@ export default function SpotlightDialog(props: { register: (a: Api) => void; onS
     <CommandPalette
       commands={commands}
       placeholder={t.shell.spotlight.placeholder}
+      placeholderShort={t.shell.spotlight.placeholderShort}
+      cancel={t.shell.spotlight.cancel}
       empty={t.shell.spotlight.empty}
       board={{ title: t.shell.spotlight.board.title, code: "TLS", clock }}
       fallback={fallback}

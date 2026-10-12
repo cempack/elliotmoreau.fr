@@ -204,10 +204,13 @@ html:active-view-transition .os-dock-solid {
 
 /* ── phone tab bar ────────────────────────────────────────────────── */
 
-/* a solid panel along the bottom edge, like a bar in Hyprland: icons
-   only (each link keeps its name for assistive tech), the current app
-   marked by a moss bar that slides between them. Nothing scrolls under
-   it: windows end where it begins. --dock-h (globals.css) is its height. */
+/* a solid panel along the bottom edge, like a bar in Hyprland, laid out
+   like an iOS tab bar: each app's icon with its name under it, the
+   current one lit (its name brighter, a short moss bar under it). A slim
+   handle rides the top edge: tap it, or swipe up anywhere on the bar, for
+   every open window. Nothing scrolls under it: windows end where it
+   begins. --dock-h (globals.css) is its height: 8px for the handle, 56px
+   of tabs, then the home indicator's inset. */
 .os-tabbar {
   display: none;
   position: fixed;
@@ -215,7 +218,7 @@ html:active-view-transition .os-dock-solid {
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 0 max(4px, env(safe-area-inset-right)) env(safe-area-inset-bottom, 0px) max(4px, env(safe-area-inset-left));
+  padding: 8px max(6px, env(safe-area-inset-right)) env(safe-area-inset-bottom, 0px) max(6px, env(safe-area-inset-left));
   background: var(--color-ink-950);
   box-shadow: inset 0 2px 0 color-mix(in srgb, var(--color-border-active) 18%, transparent);
   transition: transform 0.3s var(--ease-out-quint);
@@ -226,9 +229,10 @@ html:active-view-transition .os-dock-solid {
   position: relative;
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  height: 52px;
-  margin: 0;
-  padding: 2px 0 0;
+  height: 56px;
+  margin: 0 auto;
+  padding: 0;
+  max-width: 34rem;
   list-style: none;
 }
 .os-tabbar-item {
@@ -242,17 +246,26 @@ html:active-view-transition .os-dock-solid {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0 2px 5px;
   border-radius: var(--radius-control);
-  outline-offset: -4px;
+  outline-offset: -3px;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
   user-select: none;
 }
-/* the current app: a short moss bar under its icon */
+.os-tabbar-face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  max-width: 100%;
+}
+/* the current app: a short moss bar under its name */
 .os-tabbar-lens {
   position: absolute;
-  bottom: 5px;
+  bottom: 1px;
   left: 50%;
   width: 18px;
   height: 2px;
@@ -269,16 +282,36 @@ html:active-view-transition .os-dock-solid {
   height: 30px;
 }
 .os-tabbar-press {
-  opacity: 0.72;
+  opacity: 0.74;
   transition:
     transform 0.32s var(--ease-spring),
     opacity 0.2s ease-out;
 }
+.os-tabbar-label {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--color-label-2);
+  font: 500 0.75rem/0.875rem var(--font-sans);
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.2s ease-out;
+}
 .os-tabbar-link[aria-current="page"] .os-tabbar-press {
   opacity: 1;
 }
+.os-tabbar-link[aria-current="page"] .os-tabbar-label {
+  color: var(--color-label);
+  font-weight: 600;
+}
+/* press: the icon gives under the finger at once, its name lights with it */
 .os-tabbar-link[data-pressed] .os-tabbar-press {
-  transform: scale(0.86);
+  transform: scale(0.88);
+  opacity: 1;
+  transition-duration: 0.06s;
+}
+.os-tabbar-link[data-pressed] .os-tabbar-label {
+  color: var(--color-label);
   transition-duration: 0.06s;
 }
 
@@ -302,8 +335,7 @@ html:active-view-transition .os-dock-solid {
    The dock compacts to 0.8 (icons ~38px, 61px in all; --dock-h follows in
    globals.css). Tooltips counter-scale so their text stays 13px; on touch
    each icon's target reaches over the gaps and the shelf padding (~43 ×
-   54px). The phone tab bar narrows into a centred capsule, icon beside
-   label, 50px tall. */
+   54px). The phone tab bar sets each icon beside its name, 50px tall. */
 @media (min-width: 768px) and (max-height: 500px) {
   .os-dock {
     scale: 0.8;
@@ -325,15 +357,23 @@ html:active-view-transition .os-dock-solid {
   }
 }
 @media (max-width: 767px) and (max-height: 500px) {
+  /* phones on their side: icon beside its name, one short row */
+  .os-tabbar {
+    padding-top: 6px;
+  }
   .os-tabbar-list {
     height: 44px;
-    max-width: 37.5rem;
-    margin-inline: auto;
+    max-width: 40rem;
   }
-  .os-tabbar-icon,
-  .os-tabbar-press {
-    width: 26px;
-    height: 26px;
+  .os-tabbar-link {
+    padding-bottom: 3px;
+  }
+  .os-tabbar-face {
+    flex-direction: row;
+    gap: 8px;
+  }
+  .os-tabbar-lens {
+    bottom: 0;
   }
 }
 
@@ -379,14 +419,14 @@ html:active-view-transition .os-tabbar {
   background: var(--color-ink-900);
   border: 2px solid color-mix(in srgb, var(--color-border-active) 30%, transparent);
   border-bottom: 0;
-  backdrop-filter: none;
   -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 .os-more .em-sheet-content {
-  padding: 4px 12px calc(16px + env(safe-area-inset-bottom));
+  padding: 6px 16px calc(20px + env(safe-area-inset-bottom));
 }
 .os-more-title {
-  margin: 0 8px 8px;
+  margin: 0 12px 12px;
   color: var(--color-label-3);
   font: 500 12px/1 var(--font-mono);
   letter-spacing: 0.08em;
@@ -394,7 +434,7 @@ html:active-view-transition .os-tabbar {
 }
 .os-more-list {
   display: grid;
-  gap: 2px;
+  gap: 4px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -403,22 +443,31 @@ html:active-view-transition .os-tabbar {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   width: 100%;
-  min-height: 64px;
-  padding: 8px 10px;
+  min-height: 68px;
+  padding: 10px 14px 10px 12px;
   border: 0;
   border-radius: var(--radius-card);
   background: transparent;
   color: var(--color-label);
   font: inherit;
   text-align: left;
+  touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  transition: background-color 0.15s;
+  -webkit-touch-callout: none;
+  transition:
+    background-color 0.15s,
+    scale 0.3s var(--ease-spring);
 }
-.os-more-row:active,
 .os-more-row[aria-current="page"] {
   background: color-mix(in srgb, var(--color-border-active) 8%, transparent);
+}
+/* press lands at once (no :active delay on iOS: the sheet listens for touches) */
+.os-more-row:active {
+  background: color-mix(in srgb, var(--color-border-active) 12%, transparent);
+  scale: 0.98;
+  transition-duration: 0.06s;
 }
 .os-more-text {
   display: grid;
@@ -426,15 +475,16 @@ html:active-view-transition .os-tabbar {
   min-width: 0;
 }
 .os-more-name {
-  font-size: 1rem;
+  font-size: 1.0625rem;
   font-weight: 600;
+  line-height: 1.3;
 }
 /* a second line when it needs one, never cut mid-sentence */
 .os-more-hint {
   display: -webkit-box;
   overflow: hidden;
-  color: var(--color-label-3);
-  font-size: 0.8125rem;
+  color: var(--color-label-2);
+  font-size: 0.875rem;
   line-height: 1.35;
   text-wrap: pretty;
   -webkit-box-orient: vertical;
@@ -498,31 +548,36 @@ html:active-view-transition .os-tabbar {
   }
 }
 
-/* the tab bar's handle (like a phone's home indicator): every open window */
+/* the tab bar's handle (like a phone's home indicator, on the bar's top
+   edge): every open window. The pill sits in the bar's 8px top band; its
+   target reaches a little above the bar, never over the tabs' icons */
 .os-tabbar-handle {
   position: absolute;
-  top: -1.375rem;
+  top: -10px;
   left: 50%;
   display: grid;
-  place-items: center;
-  width: 4.5rem;
-  height: 1.375rem;
+  justify-items: center;
+  align-items: start;
+  width: 5.5rem;
+  height: 20px;
+  padding-top: 13px;
   translate: -50% 0;
+  touch-action: none;
   -webkit-tap-highlight-color: transparent;
 }
 .os-tabbar-handle > span {
-  width: 2.5rem;
-  height: 0.3125rem;
+  width: 2.25rem;
+  height: 4px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--color-label) 55%, transparent);
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+  background: color-mix(in srgb, var(--color-label) 42%, transparent);
   transition:
     width 0.2s var(--ease-out-quint),
     background-color 0.2s;
 }
 .os-tabbar-handle:active > span {
-  width: 3rem;
+  width: 2.75rem;
   background: var(--color-label);
+  transition-duration: 0.06s;
 }
 .os-tabbar-handle:focus-visible {
   outline: none;
@@ -533,4 +588,10 @@ html:active-view-transition .os-tabbar {
 }
 .os-tabbar[data-kbd] .os-tabbar-handle {
   display: none;
+}
+@media (max-height: 500px) {
+  .os-tabbar-handle {
+    height: 16px;
+    padding-top: 11px;
+  }
 }

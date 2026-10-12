@@ -256,8 +256,10 @@
   background:
     radial-gradient(120% 70% at 50% 30%, color-mix(in srgb, var(--color-ink-950) 50%, transparent), color-mix(in srgb, var(--color-ink-950) 82%, transparent)),
     rgba(8, 11, 10, 0.5);
-  backdrop-filter: blur(22px) saturate(1.1);
+  /* prefixed first: the build keeps only the last of the pair, and
+     Chromium reads only the unprefixed one */
   -webkit-backdrop-filter: blur(22px) saturate(1.1);
+  backdrop-filter: blur(22px) saturate(1.1);
   animation: os-lock-in 620ms var(--ease-out-quint) 3700ms both;
 }
 .os-intro[data-skip] .os-lock-veil,

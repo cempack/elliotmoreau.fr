@@ -166,6 +166,8 @@ const en = {
   },
   spotlight: {
     placeholder: "Search apps, posts, projects, commands…",
+    placeholderShort: "Search",
+    cancel: "Cancel",
     empty: "No results",
     apps: "Applications",
     actions: "Actions",
@@ -424,6 +426,8 @@ const fr: typeof en = {
   },
   spotlight: {
     placeholder: "Apps, articles, projets, commandes…",
+    placeholderShort: "Rechercher",
+    cancel: "Annuler",
     empty: "Aucun résultat",
     apps: "Applications",
     actions: "Actions",

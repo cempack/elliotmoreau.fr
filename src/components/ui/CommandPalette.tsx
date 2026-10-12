@@ -6,7 +6,7 @@ import { useSound } from "@/lib/sound";
 import { lenisRef } from "@/lib/lenisRef";
 import { spring } from "@/lib/motion";
 import { claimSurface } from "@/components/os/surface";
-import { useReduced } from "@/hooks/env";
+import { useMedia, useReduced } from "@/hooks/env";
 import { DeparturesBoard, type BoardRow } from "./Departures";
 
 export type Command = {
@@ -57,6 +57,8 @@ function score(c: Command, q: string) {
 export function CommandPalette({
   commands,
   placeholder = "Type a command or search…",
+  placeholderShort,
+  cancel,
   empty = "Nothing found",
   board,
   fallback,
@@ -66,6 +68,10 @@ export function CommandPalette({
 }: {
   commands: Command[];
   placeholder?: string;
+  /** phones: a placeholder that fits the narrow field */
+  placeholderShort?: string;
+  /** touch: the label of the button that closes it (where Esc means nothing) */
+  cancel?: string;
   empty?: string;
   /** the departures board's header: its title, the airport code, the clock */
   board?: { title: string; code: string; clock: string };
@@ -89,6 +95,7 @@ export function CommandPalette({
   const { blip } = useSound();
   const listId = useId();
   const reduced = useReduced();
+  const narrow = useMedia("(max-width: 767px)");
   const departCmds = useMemo(() => commands.filter((c) => c.board && !c.board.arrival), [commands]);
   const arriveCmds = useMemo(() => commands.filter((c) => c.board?.arrival), [commands]);
   const boardCmds = useMemo(() => [...departCmds, ...arriveCmds], [departCmds, arriveCmds]);
@@ -131,7 +138,9 @@ export function CommandPalette({
     lenisRef.current?.stop();
     blip("open");
     claimSurface("palette");
-    requestAnimationFrame(() => inputRef.current?.focus());
+    // focus inside the tap itself, or iOS keeps its keyboard down
+    inputRef.current?.focus({ preventScroll: true });
+    requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }));
   }, [blip]);
 
   const close = useCallback(() => {
@@ -191,6 +200,21 @@ export function CommandPalette({
     pendingTimer.current = window.setTimeout(finish, 320);
   };
   useEffect(() => () => window.clearTimeout(pendingTimer.current), []);
+
+  // phones: the on-screen keyboard covers the bottom of the layout viewport
+  // (iOS never resizes it), so the list is sized to what is really visible
+  useEffect(() => {
+    const vv = window.visualViewport;
+    const d = dialogRef.current;
+    if (!visible || !vv || !d) return;
+    const sync = () => d.style.setProperty("--em-vvh", `${Math.round(vv.height)}px`);
+    sync();
+    vv.addEventListener("resize", sync);
+    return () => {
+      vv.removeEventListener("resize", sync);
+      d.style.removeProperty("--em-vvh");
+    };
+  }, [visible]);
 
   // the keyboard moves the highlight: the list follows it (the pointer
   // highlights what it's already over, so hovering never scrolls)
@@ -288,11 +312,19 @@ export function CommandPalette({
                 setActive(0);
               }}
               onKeyDown={onInputKey}
-              placeholder={placeholder}
+              placeholder={narrow && placeholderShort ? placeholderShort : placeholder}
               spellCheck={false}
               autoComplete="off"
+              autoCapitalize="none"
+              autoCorrect="off"
+              enterKeyHint="go"
             />
-            <kbd>esc</kbd>
+            <kbd className="em-palette-esc">esc</kbd>
+            {cancel && (
+              <button type="button" className="em-palette-cancel" onClick={close}>
+                {cancel}
+              </button>
+            )}
           </div>
           <ul ref={listRef} id={listId} role="listbox" className="em-palette-list" data-lenis-prevent>
             {results.length === 0 && <li className="em-palette-empty">{empty}</li>}

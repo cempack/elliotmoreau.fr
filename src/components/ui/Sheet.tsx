@@ -33,6 +33,12 @@ function velocityOf(history: Sample[]) {
  * there's no seam between drag and animation. Enters and exits along the
  * same path (from/to the bottom). Portaled to <body>: no transformed
  * ancestor can capture its fixed positioning.
+ *
+ * Touch (as on iOS): a vertical drag anywhere moves the sheet, rows and
+ * buttons included (a tap still taps; a drag never clicks), unless the
+ * content scrolls: then the content scrolls, and pulling down once it is
+ * back at its top takes the sheet with it. Sideways drags are left to the
+ * content; `data-sheet-nodrag` opts an element out entirely.
  */
 export function Sheet({
   open,
@@ -79,6 +85,8 @@ function SheetBody({
   const height = useRef(600);
   const drag = useRef<{ startY: number; base: number; history: Sample[]; id: number } | null>(null);
   const closing = useRef(false);
+  /** when a touch drag last let go: the click it would leave behind is swallowed */
+  const draggedAt = useRef(-1);
   const scrim = useTransform(y, (v) => Math.max(0, 1 - v / Math.max(1, height.current)));
   const { blip } = useSound();
 
@@ -122,8 +130,94 @@ function SheetBody({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // the hand moves the sheet 1:1 from where it took hold (rubber band past the top)
+  const follow = (clientY: number, t: number) => {
+    const d = drag.current;
+    if (!d) return;
+    const raw = d.base + (clientY - d.startY);
+    y.set(raw >= 0 ? raw : -rubberband(-raw, height.current));
+    d.history.push({ y: clientY, t });
+    if (d.history.length > 12) d.history.shift();
+  };
+  const release = () => {
+    const d = drag.current;
+    if (!d) return;
+    drag.current = null;
+    const v = velocityOf(d.history);
+    const projected = y.get() + project(v);
+    if (projected > height.current * 0.45) dismiss(v);
+    else animate(y, 0, { ...(Math.abs(v) > 300 ? spring.flick : spring.default), velocity: v });
+  };
+  const followRef = useRef(follow);
+  const releaseRef = useRef(release);
+  useEffect(() => {
+    followRef.current = follow;
+    releaseRef.current = release;
+  });
+
+  // touch: native listeners, so a pull can claim the gesture (preventDefault)
+  // before the browser starts scrolling
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (!panel) return;
+    type Touch0 = { x: number; y: number; scroller: HTMLElement | null; mode: "wait" | "drag" | "off" };
+    let st: Touch0 | null = null;
+    const scrolls = (el: HTMLElement | null) => !!el && el.scrollHeight > el.clientHeight + 1;
+    const onStart = (e: TouchEvent) => {
+      if (closing.current || e.touches.length !== 1) {
+        st = null;
+        return;
+      }
+      const target = e.target as HTMLElement;
+      const t = e.touches[0];
+      const off = !!target.closest?.("input,textarea,select,[contenteditable='true'],[data-sheet-nodrag]");
+      st = { x: t.clientX, y: t.clientY, scroller: target.closest?.<HTMLElement>("[data-sheet-scroll]") ?? null, mode: off ? "off" : "wait" };
+    };
+    const onMove = (e: TouchEvent) => {
+      if (!st || st.mode === "off") return;
+      const t = e.touches[0];
+      if (!t) return;
+      const dx = t.clientX - st.x;
+      const dy = t.clientY - st.y;
+      if (st.mode === "wait") {
+        const inScroll = scrolls(st.scroller);
+        const atTop = !st.scroller || st.scroller.scrollTop <= 0;
+        // a pull down from the top is ours from its first pixel (no bounce to fight)
+        if (inScroll && dy > 0 && atTop && e.cancelable) e.preventDefault();
+        if (Math.hypot(dx, dy) < 6) return;
+        if (Math.abs(dx) > Math.abs(dy) || (inScroll && !(dy > 0 && atTop))) {
+          st.mode = "off";
+          return;
+        }
+        st.mode = "drag";
+        y.stop();
+        drag.current = { startY: t.clientY, base: y.get(), history: [{ y: t.clientY, t: e.timeStamp }], id: -1 };
+      }
+      if (e.cancelable) e.preventDefault();
+      followRef.current(t.clientY, e.timeStamp);
+    };
+    const onEnd = () => {
+      if (st?.mode === "drag") {
+        draggedAt.current = performance.now();
+        releaseRef.current();
+      }
+      st = null;
+    };
+    panel.addEventListener("touchstart", onStart, { passive: true });
+    panel.addEventListener("touchmove", onMove, { passive: false });
+    panel.addEventListener("touchend", onEnd);
+    panel.addEventListener("touchcancel", onEnd);
+    return () => {
+      panel.removeEventListener("touchstart", onStart);
+      panel.removeEventListener("touchmove", onMove);
+      panel.removeEventListener("touchend", onEnd);
+      panel.removeEventListener("touchcancel", onEnd);
+    };
+  }, [y]);
+
+  // mouse and pen: from the grabber, or anywhere but a control once the content is at its top
   const onPointerDown = (e: React.PointerEvent) => {
-    // only start a drag from the grabber/header, or anywhere when content is at the top
+    if (e.pointerType === "touch") return;
     const target = e.target as HTMLElement;
     const scroller = target.closest("[data-sheet-scroll]") as HTMLElement | null;
     if (scroller && scroller.scrollTop > 0) return;
@@ -135,19 +229,12 @@ function SheetBody({
   const onPointerMove = (e: React.PointerEvent) => {
     const d = drag.current;
     if (!d || d.id !== e.pointerId) return;
-    const raw = d.base + (e.clientY - d.startY);
-    y.set(raw >= 0 ? raw : -rubberband(-raw, height.current));
-    d.history.push({ y: e.clientY, t: e.timeStamp });
-    if (d.history.length > 12) d.history.shift();
+    follow(e.clientY, e.timeStamp);
   };
   const onPointerUp = (e: React.PointerEvent) => {
     const d = drag.current;
     if (!d || d.id !== e.pointerId) return;
-    drag.current = null;
-    const v = velocityOf(d.history);
-    const projected = y.get() + project(v);
-    if (projected > height.current * 0.45) dismiss(v);
-    else animate(y, 0, { ...(Math.abs(v) > 300 ? spring.flick : spring.default), velocity: v });
+    release();
   };
 
   return (
@@ -165,6 +252,13 @@ function SheetBody({
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
+        onClickCapture={(e) => {
+          // the finger dragged the sheet: whatever it started on doesn't get a click
+          if (performance.now() - draggedAt.current < 400) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
       >
         <div className="em-sheet-grabber" aria-hidden />
         <div className="em-sheet-content" data-sheet-scroll data-lenis-prevent>

@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { AnimatePresence, animate, m, useMotionValue } from "motion/react";
 import { useI18n } from "@/i18n/client";
+import { useMedia } from "@/hooks/env";
 import { project, rubberband, spring } from "@/lib/motion";
 import { EmosMark } from "@/components/os/menubar/glyphs";
 import { useFlick } from "@/components/os/menubar/flick";
@@ -19,6 +20,9 @@ const LIFETIME = 4600;
 const DISMISS_AT = 120;
 /** where a leaving banner comes to rest, off the right edge */
 const OFF = 440;
+/** phones: banners drop from the top and are swiped back up, as on iOS */
+const DISMISS_UP = -36;
+const OFF_UP = -180;
 
 function subscribeVisibility(cb: () => void) {
   document.addEventListener("visibilitychange", cb);
@@ -30,8 +34,9 @@ function subscribeVisibility(cb: () => void) {
  * the menu bar (newest on top, at most three), spring in from the right
  * edge and leave the same way: on their own after a few seconds, from the
  * close button, or flung right with velocity projection (a short, fast
- * flick is enough; a slow drag has to travel). The timer holds while a
- * banner is hovered, focused, held, or the tab is hidden.
+ * flick is enough; a slow drag has to travel). Phones, as iOS: they drop
+ * in from the top and are swiped back up. The timer holds while a banner
+ * is hovered, focused, held, or the tab is hidden.
  *
  * notify(text) → titled "emOS"; notify(text, title) for a custom title.
  */
@@ -92,6 +97,8 @@ function ToastCard({
   const hold = hover || focus || held || hidden;
   const { id } = toast;
   const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const phone = useMedia("(max-width: 767px)");
 
   useEffect(() => {
     if (hold) return;
@@ -102,7 +109,7 @@ function ToastCard({
   // 1:1 to the right, rubber-banded to the left. At release the throw is
   // projected: far enough and it leaves along it, starting this frame with
   // the finger's velocity; otherwise it springs home from where it is
-  const flick = useFlick({
+  const flickX = useFlick({
     axis: "x",
     value: x,
     resist: (raw) => (raw < 0 ? rubberband(raw, 360, 0.25) : raw),
@@ -117,6 +124,23 @@ function ToastCard({
       }
     },
   });
+  // phones: 1:1 upward, rubber-banded downward; a flick up sends it off the top
+  const flickY = useFlick({
+    axis: "y",
+    value: y,
+    resist: (raw) => (raw > 0 ? rubberband(raw, 240, 0.25) : raw),
+    onStart: () => setHeld(true),
+    onRelease: (v, at) => {
+      setHeld(false);
+      if (at + project(v, 0.99) < DISMISS_UP) {
+        animate(y, OFF_UP, { ...spring.default, velocity: Math.min(v, -400) });
+        onDismiss(id);
+      } else {
+        animate(y, 0, { ...spring.default, velocity: v });
+      }
+    },
+  });
+  const flick = phone ? flickY : flickX;
 
   return (
     <m.li
@@ -124,11 +148,15 @@ function ToastCard({
       // glass on the animated element itself, so the blur holds while it fades
       className="os-toast glass-thick"
      
-      initial={{ opacity: 0, x: OFF }}
-      animate={{ opacity: 1, x: 0, transition: spring.default }}
-      exit={{ opacity: 0, x: OFF, transition: { ...spring.default, opacity: { duration: 0.2, delay: 0.08 } } }}
+      initial={phone ? { opacity: 0, y: -28, scale: 0.96 } : { opacity: 0, x: OFF }}
+      animate={phone ? { opacity: 1, y: 0, scale: 1, transition: spring.default } : { opacity: 1, x: 0, transition: spring.default }}
+      exit={
+        phone
+          ? { opacity: 0, y: OFF_UP / 2, transition: { ...spring.default, opacity: { duration: 0.2, delay: 0.04 } } }
+          : { opacity: 0, x: OFF, transition: { ...spring.default, opacity: { duration: 0.2, delay: 0.08 } } }
+      }
       transition={spring.default}
-      style={{ x }}
+      style={{ x, y }}
       {...flick}
       onPointerEnter={(e) => e.pointerType === "mouse" && setHover(true)}
       onPointerLeave={() => setHover(false)}

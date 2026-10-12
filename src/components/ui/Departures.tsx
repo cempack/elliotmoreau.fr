@@ -53,8 +53,8 @@ const TW = 10;
 const TH = 16;
 const GAP = 1;
 const PITCH = TW + GAP;
-/** row height: 22 px on a desk, a 40 px touch target on phones */
-const rowHeight = (narrow: boolean) => (narrow ? 40 : 22);
+/** row height: 22 px on a desk, a full 44 px touch target on phones */
+const rowHeight = (narrow: boolean) => (narrow ? 44 : 22);
 const STEP = 30;
 const MAX_STEPS = 8;
 

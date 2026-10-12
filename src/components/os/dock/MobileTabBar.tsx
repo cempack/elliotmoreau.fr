@@ -17,7 +17,7 @@ import { bounce, isPlainClick, pressHandlers, scrollToTop } from "./launch";
 
 /** The five apps that earn a tab; the rest live behind More. */
 const PRIMARY: AppId[] = ["home", "work", "writing", "atlas", "contact"];
-const TAB_ICON = 32;
+const TAB_ICON = 30;
 
 function Lens({ reduced }: { reduced: boolean }) {
   // the bar is hidden (not unmounted) on wider screens: there its lens must
@@ -33,17 +33,17 @@ function Lens({ reduced }: { reduced: boolean }) {
   );
 }
 
+/** an app's icon with its name under it, as on an iOS tab bar */
 function TabFace({ app, label }: { app: IconId; label: string }) {
   return (
-    <>
+    <span className="os-tabbar-face">
       <span className="os-tabbar-icon" data-dock-bounce>
         <span className="os-tabbar-press">
           <AppIcon app={app} size={TAB_ICON} />
         </span>
       </span>
-      {/* icons only on the bar; the name stays for assistive tech */}
-      <span className="sr-only">{label}</span>
-    </>
+      <span className="os-tabbar-label">{label}</span>
+    </span>
   );
 }
 
@@ -57,9 +57,9 @@ function Chevron() {
 
 /**
  * The phone dock (<768px): a solid bar along the bottom edge. Five apps
- * get a tab (icons only, each with its name for assistive tech) and a moss
- * bar slides to the current one; More opens a flingable sheet with Now,
- * Terminal and Search.
+ * get a tab (each icon with its name under it) and a moss bar slides to
+ * the current one; More opens a flingable sheet with Now, Terminal, the
+ * open windows and Search.
  */
 /** fields that bring up the on-screen keyboard */
 const KBD_FIELDS =
@@ -266,7 +266,16 @@ function MoreList({ active, afterRef }: { active: AppId; afterRef: React.RefObje
           </button>
         </li>
         <li>
-          <button type="button" className="os-more-row" onClick={() => thenClose(palette.open)}>
+          {/* opened inside the tap (not once the sheet has gone): iOS raises
+              its keyboard only for a field focused by the tap itself */}
+          <button
+            type="button"
+            className="os-more-row"
+            onClick={() => {
+              palette.open();
+              dismiss();
+            }}
+          >
             <AppIcon app="spotlight" size={44} />
             <span className="os-more-text">
               <span className="os-more-name">{t.dock.search}</span>
