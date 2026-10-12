@@ -43,7 +43,7 @@ const PANELS: Record<PanelId, { width: number; align: Align }> = {
   about: { width: 520, align: "start" },
   music: { width: 380, align: "center" },
   control: { width: 344, align: "end" },
-  notifications: { width: 372, align: "center" },
+  notifications: { width: 348, align: "center" },
 };
 
 export function MenuBar() {
