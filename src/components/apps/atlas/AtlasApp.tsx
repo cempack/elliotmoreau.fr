@@ -17,6 +17,7 @@ import { Stats } from "./Stats";
 import { Postcards } from "./Postcards";
 import { MapSheet, type Detent } from "./MapSheet";
 import { fmtCoordsL } from "./fmt";
+import { useContextMenu, useCopy } from "@/components/os/context/ContextMenu";
 
 /** Layout switch: floating panels around the globe from here up, the
     Maps-style sheet below. Must match the breakpoint in atlas.css. */
@@ -38,7 +39,7 @@ const BESIDE = "(min-width: 768px) and (min-aspect-ratio: 5/4)";
  */
 export function AtlasApp() {
   const { ordered, home, byId } = useAtlas();
-  const { t, lang } = useI18n();
+  const { t, lang, path } = useI18n();
   const a = t.atlas;
   const { blip } = useSound();
   // server and hydration render the wide layout; CSS hides its panels on
@@ -49,6 +50,8 @@ export function AtlasApp() {
   const [recenter, setRecenter] = useState(0);
   const [detent, setDetent] = useState<Detent>("peek");
   const readoutRef = useRef<HTMLSpanElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const copy = useCopy();
   const stageRef = useRef<HTMLElement>(null);
   const place = byId(selectedId) ?? home;
   // the globe bakes home and the routes in when it mounts: new geometry
@@ -126,11 +129,31 @@ export function AtlasApp() {
     </div>
   );
 
+  // right-click a place: fly there, its coordinates, a link to it; anywhere
+  // else on the map: back to the selected place, or its coordinates
+  useContextMenu(rootRef, ({ target }) => {
+    const c = t.shell.context;
+    const el = target.closest<HTMLElement>("[data-place],[data-pc]");
+    const p = byId(el?.dataset.place ?? el?.dataset.pc ?? "");
+    const coords = (q: { lat: number; lon: number }) => () => copy(fmtCoordsL(q.lat, q.lon, lang), c.coordsCopied);
+    if (!p) return { items: [{ label: a.recenter, onSelect: () => setRecenter((n) => n + 1) }, { label: c.copyCoords, onSelect: coords(place) }] };
+    return {
+      items: [
+        { label: a.postcards.show, onSelect: () => select(p.id) },
+        { label: c.copyCoords, onSelect: coords(p) },
+        {
+          label: c.copyLink,
+          onSelect: () => copy(`${window.location.origin}${path("/atlas")}${p.id === home.id ? "" : `#${encodeURIComponent(p.id)}`}`, c.linkCopied),
+        },
+      ],
+    };
+  });
+
   const cardTitle = wide ? "app-atlas-card-title" : "app-atlas-sheet-title";
 
   return (
     <AppWindow app="atlas" toolbar={toolbar}>
-      <div className="app-atlas">
+      <div ref={rootRef} className="app-atlas">
         <section ref={stageRef} className="app-atlas-stage" data-layout={wide ? "wide" : beside ? "beside" : "sheet"}>
           {/* source order is the reading order (list, globe, card); the
               grid places them */}

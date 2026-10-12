@@ -20,6 +20,7 @@ import { Pulse } from "./widgets/Pulse";
 import { Reading } from "./widgets/Reading";
 import { Writing } from "./widgets/Writing";
 import { useSiteData } from "@/components/os/SiteData";
+import { useContextMenu, type MenuSection } from "@/components/os/context/ContextMenu";
 import type { PushHistory } from "@/lib/github";
 
 /** default arrangements: each packs the 4-column grid, and the 2-column
@@ -140,6 +141,43 @@ export function NowApp({ pushes, day }: { pushes: PushHistory | null; day: DayDa
     },
   ];
 
+  // right-click: arrange the widgets (or reset them), and open the song
+  const rootRef = useRef<HTMLDivElement>(null);
+  useContextMenu(rootRef, () => {
+    const out: MenuSection[] = [
+      {
+        items: [
+          {
+            label: arrange ? t.shell.context.arrangeDone : t.shell.context.arrange,
+            onSelect: () => {
+              setArrange(!arrange);
+              blip("toggle");
+            },
+          },
+          ...(board.isDefault
+            ? []
+            : [
+                {
+                  label: n.board.reset,
+                  onSelect: () => {
+                    board.reset();
+                    blip("toggle");
+                    setSaid(n.board.resetDone);
+                  },
+                },
+              ]),
+        ],
+      },
+    ];
+    const track = listen.track;
+    if (track?.url) {
+      out.push({
+        items: [{ label: fill(t.shell.context.spotify, { title: track.title }), onSelect: () => window.open(track.url, "_blank", "noopener,noreferrer") }],
+      });
+    }
+    return out;
+  });
+
   const toolbar = (
     <div className="app-now-tools">
       {!board.isDefault && (
@@ -177,7 +215,7 @@ export function NowApp({ pushes, day }: { pushes: PushHistory | null; day: DayDa
 
   return (
     <AppWindow app="now" toolbar={toolbar}>
-      <div className="app-now">
+      <div ref={rootRef} className="app-now">
         <NowHero listen={listen} updated={updatedAgo ? `${updated} · ${updatedAgo}` : updated} />
         <TodaySky day={day} />
 

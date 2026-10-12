@@ -1,7 +1,7 @@
 "use client";
 
 import "./writing.css";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { GhostPost } from "@/lib/ghost";
@@ -14,6 +14,7 @@ import { Plate } from "./Plate";
 import { Letters } from "./Letters";
 import { G_LINK } from "./glyphs";
 import { BLOG_URL, dateLong, fmt, primaryTag } from "./util";
+import { useContextMenu, useCopy } from "@/components/os/context/ContextMenu";
 
 /**
  * Writing: one column, read top to bottom. The newest post (or the one
@@ -30,6 +31,25 @@ export function WritingApp() {
   const lead = posts.find((p) => p.slug === data.live.pinnedPost) ?? posts[0];
   const rest = posts.filter((p) => p !== lead);
   const href = (p: GhostPost) => path(`/writing/${encodeURIComponent(p.slug)}`);
+  const copy = useCopy();
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // right-click a post: read it (here or in a new tab), its link, or the blog's own page
+  useContextMenu(rootRef, ({ link }) => {
+    const slug = link?.pathname.match(/\/writing\/([^/]+)\/?$/)?.[1];
+    const post = slug ? posts.find((p) => p.slug === decodeURIComponent(slug)) : undefined;
+    if (!link || !post) return null;
+    const c = t.shell.context;
+    return {
+      coversLink: true,
+      items: [
+        { label: w.read, onSelect: () => link.click() },
+        { label: c.newTab, onSelect: () => window.open(link.href, "_blank", "noopener,noreferrer") },
+        { label: c.copyLink, onSelect: () => copy(link.href, c.linkCopied) },
+        ...(post.url ? [{ label: c.blogPost, onSelect: () => window.open(post.url, "_blank", "noopener") }] : []),
+      ],
+    };
+  });
 
   // ?p=slug (older links): straight to the post
   useEffect(() => {
@@ -71,7 +91,7 @@ export function WritingApp() {
 
   return (
     <AppWindow app="writing" toolbar={toolbar}>
-      <div className="app-writing app-writing-home">
+      <div ref={rootRef} className="app-writing app-writing-home">
         <header className="app-writing-intro">
           <h2 className="app-writing-h1">{w.title}</h2>
           <p className="app-writing-lede">{w.lede}</p>

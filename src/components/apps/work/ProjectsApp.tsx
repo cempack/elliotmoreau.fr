@@ -1,7 +1,7 @@
 "use client";
 
 import "./work.css";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, m } from "motion/react";
 import { AppWindow } from "@/components/os/AppWindow";
 import { useLive, useSiteData } from "@/components/os/SiteData";
@@ -13,7 +13,8 @@ import { useSound } from "@/lib/sound";
 import { SOCIALS } from "@/lib/socials";
 import { PixelGlyph } from "@/components/glyphs";
 import { ART_OFFLINE, G_ARROW, PixelArt } from "./glyphs";
-import { kindOf, shelves as toShelves, titleOf } from "./kind";
+import { actionOf, kindOf, shelves as toShelves, siteOf, titleOf } from "./kind";
+import { useContextMenu, useCopy, type MenuItem } from "@/components/os/context/ContextMenu";
 import { pickFeatured } from "./model";
 import { ProjectCard, ProjectPicture } from "./ProjectCard";
 import { ProjectList } from "./ProjectList";
@@ -36,9 +37,11 @@ const BESIDE = "(min-width: 768px)";
 export function ProjectsApp() {
   const { repos } = useSiteData();
   const { featuredRepo } = useLive();
-  const { t } = useI18n();
+  const { t, path } = useI18n();
   const w = t.work;
   const { blip } = useSound();
+  const copy = useCopy();
+  const rootRef = useRef<HTMLDivElement>(null);
   const reduced = useReduced();
   const beside = useMedia(BESIDE, true);
   const shelves = useMemo(() => toShelves(repos), [repos]);
@@ -72,6 +75,26 @@ export function ProjectsApp() {
     setPicked(name);
     if (!window.matchMedia(BESIDE).matches) setSheet(name);
   };
+
+  // right-click a project: show it, open what it is, its code, or a link to it
+  useContextMenu(rootRef, ({ target }) => {
+    const name = target.closest<HTMLElement>("button[data-repo]")?.dataset.repo;
+    const repo = name ? ordered.find((r) => r.name === name) : undefined;
+    if (!repo) return null;
+    const c = t.shell.context;
+    const action = actionOf(repo, kindOf(repo));
+    const tab = (href: string) => () => window.open(href, "_blank", "noopener,noreferrer");
+    const items: MenuItem[] = [
+      { label: c.showProject, onSelect: () => pick(repo.name) },
+      { label: w.actions[action], onSelect: tab(action === "code" ? repo.url : siteOf(repo)) },
+    ];
+    if (action !== "code") items.push({ label: w.actions.code, onSelect: tab(repo.url) });
+    items.push({
+      label: c.copyLink,
+      onSelect: () => copy(`${window.location.origin}${path("/work")}?repo=${encodeURIComponent(repo.name)}`, c.linkCopied),
+    });
+    return { items };
+  });
 
   const card = (name: string | undefined, titleId: string) => {
     const repo = ordered.find((r) => r.name === name);
@@ -119,7 +142,7 @@ export function ProjectsApp() {
 
   return (
     <AppWindow app="work">
-      <div className="app-work">
+      <div ref={rootRef} className="app-work">
         <section className="app-work-panel app-work-panel--list" aria-labelledby="app-work-title">
           <div className="app-work-panel-scroll" data-lenis-prevent>
             <header className="app-work-intro">

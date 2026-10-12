@@ -14,6 +14,7 @@ import { useTerminal, useTerminalSession, type Entry } from "../Terminal";
 import { SILENT, complete, cwdLabel, runCommand, type RunCtx } from "./commands";
 import { ActionsCtx, Prompt, fill, type Actions } from "./ui";
 import { termQueue } from "./queue";
+import { shortcut, useContextMenu } from "../context/ContextMenu";
 
 /** One-tap commands for the phone sheet, where typing is the slow path. */
 const CHIPS = ["help", "whoami", "projects", "posts", "now", "neofetch", "theme", "contact", "moulinette"];
@@ -56,6 +57,15 @@ export function Session({
   const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // right-click in the Terminal: clear it, or close it
+  useContextMenu(rootRef, () => ({
+    items: [
+      { label: t.shell.context.clear, shortcut: shortcut("L", "ctrl"), onSelect: session.clear },
+      { label: t.shell.context.closeTerminal, onSelect: () => term.setOpen(false) },
+    ],
+  }));
 
   const ctx: RunCtx = {
     lang,
@@ -296,7 +306,7 @@ export function Session({
 
   return (
     <ActionsCtx.Provider value={actionsValue}>
-      <div className="os-term-session">
+      <div ref={rootRef} className="os-term-session">
         <div ref={scrollRef} className="os-term-scroll" data-lenis-prevent onMouseUp={onBodyUp}>
           <div className="os-term-log" role="log" aria-live="polite" aria-relevant="additions">
             {session.entries.map((e) => (

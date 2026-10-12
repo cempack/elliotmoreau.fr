@@ -19,6 +19,7 @@ import { WinIcon } from "./window/WinIcon";
 import { PathBar, type Crumb } from "./window/PathBar";
 import { closeWorkspace } from "./workspaces";
 import { captureWindow } from "./windowShots";
+import { useContextMenu, useCopy } from "./context/ContextMenu";
 
 export { WinNav, WinNavItem } from "./window/WinNav";
 export { PathBar, type Crumb } from "./window/PathBar";
@@ -171,6 +172,25 @@ export function AppWindow({
       setZoomed(next);
     });
   };
+
+  // right-click anywhere in the window: what the lights do, and its address
+  const copy = useCopy();
+  const ctx = t.shell.context;
+  useContextMenu(winRef, ({ keyboard }) => ({
+    items: [
+      { label: ctx.copyPage, onSelect: () => copy(window.location.href, ctx.linkCopied) },
+      ...(window.matchMedia("(min-width: 768px)").matches ? [{ label: zoomed ? w.unzoom : w.zoom, onSelect: toggleZoom }] : []),
+      {
+        label: ctx.close,
+        onSelect: () => {
+          blip("close");
+          if (keyboard) markKeyboardClose(app);
+          closeWorkspace(app);
+          router.push(home, { scroll: false, transitionTypes: ["app-close"] });
+        },
+      },
+    ],
+  }));
 
   return (
     // the ViewTransition must sit above any DOM node of the page, or React

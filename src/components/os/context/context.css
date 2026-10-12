@@ -1,0 +1,167 @@
+/* ─────────────────────── emOS · the right-click menu ───────────────────────
+   One glass panel at the pointer (a second beside it for a submenu), in the
+   menu bar panels' material. Above windows, the Terminal and banners; under
+   the boot. The pixel check and chevron are its only ornaments. */
+
+.os-ctx-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+}
+
+.os-ctx {
+  --ctx-hl: color-mix(in srgb, var(--color-signal) 20%, transparent);
+  position: fixed;
+  top: 0;
+  left: 0;
+  min-width: 216px;
+  max-width: min(320px, calc(100vw - 16px));
+  max-height: calc(100dvh - 16px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 5px;
+  border: 1.5px solid color-mix(in srgb, var(--color-border-active) 30%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--color-ink-900) 95%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 2px 6px rgba(0, 0, 0, 0.22),
+    0 22px 50px -18px rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(24px) saturate(1.5);
+  color: var(--color-label);
+  font: 450 13.5px/1 var(--font-sans);
+  letter-spacing: -0.003em;
+  outline: none;
+  pointer-events: auto;
+  scrollbar-width: none;
+  user-select: none;
+  -webkit-user-select: none;
+  animation: os-ctx-in 0.16s var(--ease-out-quint);
+}
+.os-ctx::-webkit-scrollbar {
+  display: none;
+}
+.os-ctx--sub {
+  min-width: 168px;
+  animation-duration: 0.12s;
+}
+
+.os-ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 10px 0 9px;
+  border-radius: 6px;
+  white-space: nowrap;
+  cursor: default;
+}
+.os-ctx-check {
+  display: none;
+  flex: none;
+  place-items: center;
+  width: 12px;
+  color: var(--color-label);
+}
+.os-ctx[data-checks] .os-ctx-check {
+  display: grid;
+}
+.os-ctx-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.os-ctx-kbd {
+  flex: none;
+  margin-left: 22px;
+  color: var(--color-label-3);
+  font: 500 11.5px/1 var(--font-mono);
+  letter-spacing: 0.02em;
+}
+.os-ctx-more {
+  flex: none;
+  margin-left: 18px;
+  margin-right: -3px;
+  color: var(--color-label-3);
+}
+
+.os-ctx-item[data-active] {
+  background: var(--ctx-hl);
+}
+.os-ctx-item[data-active] .os-ctx-kbd,
+.os-ctx-item[data-active] .os-ctx-more {
+  color: var(--color-label-2);
+}
+.os-ctx-item[aria-disabled] {
+  color: var(--color-label-3);
+}
+.os-ctx-item[aria-disabled][data-active] {
+  background: none;
+}
+/* the pick: one flash off and back on, then the menu lets go */
+.os-ctx-item[data-blink] {
+  animation: os-ctx-blink 0.15s steps(1, end);
+}
+
+.os-ctx-sep {
+  height: 1px;
+  margin: 5px 9px;
+  background: var(--hairline);
+}
+
+.os-ctx-layer[data-leaving] .os-ctx {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.13s ease-out;
+}
+
+@keyframes os-ctx-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+@keyframes os-ctx-blink {
+  0% {
+    background: transparent;
+  }
+  50% {
+    background: var(--ctx-hl);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .os-ctx {
+    animation: none;
+  }
+  .os-ctx-layer[data-leaving] .os-ctx {
+    transition-duration: 0.06s;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .os-ctx {
+    background: var(--color-ink-900);
+    backdrop-filter: none;
+  }
+}
+@media (prefers-contrast: more) {
+  .os-ctx {
+    border-color: var(--hairline);
+  }
+  .os-ctx-kbd,
+  .os-ctx-more {
+    color: var(--color-label-2);
+  }
+}
+@media (forced-colors: active) {
+  .os-ctx {
+    border: 1px solid CanvasText;
+  }
+  .os-ctx-item[data-active] {
+    background: Highlight;
+    color: HighlightText;
+    forced-color-adjust: none;
+  }
+}

@@ -223,6 +223,7 @@ export function Postcards({
         <button
           type="button"
           className="app-atlas-pc"
+          data-pc={p.id}
           data-active={active || undefined}
           data-tone={p.home ? "home" : p.status}
           aria-current={active || undefined}

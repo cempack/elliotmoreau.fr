@@ -11,6 +11,7 @@ import { MenuBar } from "./MenuBar";
 import { Dock } from "./Dock";
 import { WindowsOverview } from "./WindowsOverview";
 import { Intro } from "./Intro";
+import { ContextMenu } from "./context/ContextMenu";
 import { IdlePrefetch } from "./IdlePrefetch";
 import { Suspense } from "react";
 import { TrailRecorder } from "./trail";
@@ -19,7 +20,7 @@ import { ContentSync } from "@/lib/contentSync";
 /**
  * emOS: the persistent chrome around every app. Order matters for
  * stacking: wallpaper (z0) → app content → the windows overview (z45) → dock/menu bar (z50) →
- * terminal → intro (z100).
+ * terminal → the right-click menu (z90) → intro (z100).
  */
 export function OSShell({ data, children }: { data: SiteData; children: React.ReactNode }) {
   return (
@@ -40,6 +41,7 @@ export function OSShell({ data, children }: { data: SiteData; children: React.Re
             <WindowsOverview />
             <Dock />
             <Terminal />
+            <ContextMenu />
             <Intro />
           </PaletteProvider>
         </TerminalProvider>

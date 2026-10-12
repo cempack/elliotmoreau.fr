@@ -11,6 +11,9 @@ import { useTerminal } from "../Terminal";
 import { openOverview, useOverviewOpen } from "../overview";
 import { DOCK_ICON, useMagnification } from "./useMagnification";
 import { bounce, isPlainClick, pressHandlers } from "./launch";
+import { useSound } from "@/lib/sound";
+import { closeWorkspace, useWorkspaces } from "../workspaces";
+import { useContextMenu, type MenuItem } from "../context/ContextMenu";
 
 /** Icon stack shared by every slot: magnify → bounce → press → tile. */
 function DockIcon({ app }: { app: IconId }) {
@@ -53,6 +56,36 @@ export function DesktopDock() {
   const plateRef = useRef<HTMLDivElement>(null);
   // no macOS magnification: a tiling desktop's bar holds still
   useMagnification(zoneRef, listRef, plateRef, false);
+  const { blip } = useSound();
+  const running = useWorkspaces(active.id);
+
+  // right-click an icon: open it (here or in a new tab), or close its window
+  const c = t.shell.context;
+  useContextMenu(zoneRef, ({ target }) => {
+    const item = target.closest<HTMLElement>("[data-dock-launch]");
+    const id = item?.dataset.dockLaunch;
+    if (!item || !id) return null;
+    if (id === "terminal") return { final: true, items: [{ label: term.open ? c.closeTerminal : c.terminal, onSelect: term.toggle }] };
+    if (id === "overview") return { final: true, items: [{ label: c.overview, onSelect: openOverview }] };
+    const app = APPS.find((a) => a.id === id);
+    if (!app) return null;
+    const here = app.id === active.id;
+    const href = path(app.path);
+    const items: MenuItem[] = [];
+    if (!here) items.push({ label: c.open, onSelect: () => item.querySelector("a")?.click() });
+    items.push({ label: c.newTab, onSelect: () => window.open(href, "_blank", "noopener,noreferrer") });
+    if (app.id !== "home" && running.includes(app.id)) {
+      items.push({
+        label: c.close,
+        onSelect: () => {
+          blip("close");
+          closeWorkspace(app.id);
+          if (here) router.push(path("/"), { scroll: false, transitionTypes: ["app-close"] });
+        },
+      });
+    }
+    return { final: true, coversLink: true, items };
+  });
 
   // roving tabindex: one tab stop, the last focused icon (else the active app)
   const [focusIdx, setFocusIdx] = useState<number | null>(null);

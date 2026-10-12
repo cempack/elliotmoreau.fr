@@ -18,6 +18,7 @@ import { closeOverview, openOverview, setOverview, stayThroughNavigation, takeSt
 import { closeWorkspace, deskOf, deskWindows, getHomeDesk, moveToDesk, setHomeDesk, useDesks, useWorkspaces } from "./workspaces";
 import { attachShot, dropShot, getShot, type Shot } from "./windowShots";
 import { fill } from "./menubar/util";
+import { useContextMenu } from "./context/ContextMenu";
 
 /** a trackpad pinch arrives as ctrl+wheel with fractional deltas (a mouse wheel's are whole) */
 const isPinch = (e: WheelEvent) => e.ctrlKey && !Number.isInteger(e.deltaY);
@@ -322,6 +323,29 @@ function Layer() {
     moveToDesk(id, k);
     notify(fill(o.moved, { app: t.shell.apps[id], n: k + 1 }), o.label);
   };
+
+  // right-click a window: go to it, move it to another workspace, or close it
+  useContextMenu(rootRef, ({ target }) => {
+    const id = target.closest<HTMLElement>("[data-ov]")?.dataset.ov as AppId | undefined;
+    if (!id || !open.includes(id)) return null;
+    const c = t.shell.context;
+    const at = deskOf(desks, id);
+    return {
+      final: true,
+      items: [
+        { label: c.open, onSelect: () => goTo(id) },
+        {
+          label: c.moveTo,
+          submenu: Array.from({ length: desks.length + 1 }, (_, k) => ({
+            label: fill(o.desk, { n: k + 1 }),
+            checked: k === at,
+            onSelect: () => k !== at && moveWin(id, k),
+          })),
+        },
+        { label: c.close, onSelect: () => closeWin(id) },
+      ],
+    };
+  });
 
   /** the workspace under the pointer: a desk, one past the last for "new", or null */
   const deskAt = (x: number, y: number): number | null => {

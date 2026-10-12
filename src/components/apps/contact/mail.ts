@@ -159,28 +159,6 @@ export function letterLines(body: string, max: number, cols = 34, cells = 16) {
   return out.map((n) => (n === 0 ? 0 : Math.max(2, Math.round((n / cols) * cells))));
 }
 
-export async function copyText(text: string): Promise<boolean> {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    try {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.setAttribute("readonly", "");
-      ta.style.position = "fixed";
-      ta.style.opacity = "0";
-      document.body.appendChild(ta);
-      ta.select();
-      const ok = document.execCommand("copy");
-      ta.remove();
-      return ok;
-    } catch {
-      return false;
-    }
-  }
-}
-
 type UA = { userActivation?: { isActive: boolean; hasBeenActive: boolean } };
 
 /**

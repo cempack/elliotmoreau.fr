@@ -10,6 +10,7 @@ import { useSound } from "@/lib/sound";
 import { APPS } from "@/components/os/apps";
 import { AppIcon } from "@/components/os/icons";
 import { useTerminal } from "@/components/os/Terminal";
+import { useContextMenu } from "@/components/os/context/ContextMenu";
 import { DESKTOP_ICONS, DesktopGlyph, type DesktopIconId } from "./icons";
 import { desktopMemory, type Cell } from "./store";
 import { FLING, band, intersects, pushSample, releaseVelocity, type Rect, type Sample } from "./physics";
@@ -383,6 +384,14 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
     blip("open");
     router.push(path(app.path), { transitionTypes: ["app-open"] });
   };
+
+  // right-click an icon: it's selected (Finder), and the menu is about it alone
+  useContextMenu(gridRef, ({ target }) => {
+    const id = target.closest<HTMLElement>("[data-desktop-icon]")?.dataset.desktopIcon as DesktopIconId | undefined;
+    if (!id) return null;
+    setSelected(new Set([id]));
+    return { final: true, coversLink: true, items: [{ label: t.shell.context.open, onSelect: () => open(id) }] };
+  });
 
   /* ── pointer ── */
   const clearHold = () => {

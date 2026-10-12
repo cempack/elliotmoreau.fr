@@ -5,7 +5,7 @@ import { useI18n } from "@/i18n/client";
 import { useToast } from "@/components/Toasts";
 import { useSound } from "@/lib/sound";
 import { PixelGlyph } from "@/components/glyphs";
-import { copyText } from "./mail";
+import { copyText } from "@/lib/clipboard";
 import { G_CHECK, G_COPY } from "./glyphs";
 
 /** Copy to the clipboard with a toast and a blip; `true` on success. */

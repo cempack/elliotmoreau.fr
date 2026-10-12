@@ -3,6 +3,7 @@
 import "./writing.css";
 import { useEffect, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { GhostPost } from "@/lib/ghost";
 import { SITE_URL } from "@/i18n/config";
 import { useI18n } from "@/i18n/client";
@@ -10,6 +11,7 @@ import { useSound } from "@/lib/sound";
 import { useToast } from "@/components/Toasts";
 import { PixelGlyph } from "@/components/glyphs";
 import { AppWindow } from "@/components/os/AppWindow";
+import { useContextMenu } from "@/components/os/context/ContextMenu";
 import { Plate } from "./Plate";
 import { ReadingSky } from "./ReadingSky";
 import { Letters } from "./Letters";
@@ -77,9 +79,19 @@ export function Article({
     }
   };
 
+  // right-click in a post: the blog's page, back to the list (its link is the window's)
+  const articleRef = useRef<HTMLElement>(null);
+  const router = useRouter();
+  useContextMenu(articleRef, () => ({
+    items: [
+      ...(post.url ? [{ label: t.shell.context.blogPost, onSelect: () => window.open(post.url, "_blank", "noopener") }] : []),
+      { label: w.allPosts, onSelect: () => router.push(back) },
+    ],
+  }));
+
   return (
     <AppWindow app="writing" path={[{ label: "writing", href: back }, { label: post.slug }]}>
-      <article className="app-writing-article" aria-labelledby="post-title" data-slug={post.slug}>
+      <article ref={articleRef} className="app-writing-article" aria-labelledby="post-title" data-slug={post.slug}>
         <nav ref={barRef} className="app-writing-navbar app-writing-article-bar" aria-label={w.list}>
           <Link href={back} className="app-writing-back">
             <PixelGlyph cells={G_BACK} size={14} />

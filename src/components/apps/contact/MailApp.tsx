@@ -1,7 +1,7 @@
 "use client";
 
 import "./mail.css";
-import { useEffect, useId, useState, useSyncExternalStore } from "react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { AppWindow, PathBar } from "@/components/os/AppWindow";
 import { useI18n } from "@/i18n/client";
 import { useReduced } from "@/hooks/env";
@@ -22,6 +22,7 @@ import { draftFile, fill } from "./mail";
 import { threadStore } from "./threads";
 import { useSent } from "./useSent";
 import { useSiteData } from "@/components/os/SiteData";
+import { useContextMenu, useCopy } from "@/components/os/context/ContextMenu";
 
 /**
  * runs while the HTML is parsed, before first paint: which mailbox a shared
@@ -108,6 +109,24 @@ export function MailApp({ mailReady = false }: { mailReady?: boolean }) {
   };
 
   const email = SOCIALS.email;
+
+  // right-click in the mail: the address, and the mailboxes (the open one checked)
+  const viewsRef = useRef<HTMLDivElement>(null);
+  const copy = useCopy();
+  useContextMenu(viewsRef, () => {
+    const box = (b: Box, label: string) => ({ label, checked: shown === b, onSelect: () => select(b) });
+    return [
+      { items: [{ label: c.copyAddress, onSelect: () => copy(email, c.copied) }] },
+      {
+        items: [
+          box("compose", c.boxComposeShort),
+          ...(hasSent ? [box("sent", c.boxSent)] : []),
+          box("elsewhere", c.boxElsewhere),
+          box("key", c.boxKey),
+        ],
+      },
+    ];
+  });
   // phones: Send lives in the sheet's header, always in reach (iOS Mail)
   const headerSend = shown === "compose" && (phase === "compose" || phase === "sending");
   // ~/contact/<mailbox>: "contact" goes back to a new message
@@ -148,6 +167,7 @@ export function MailApp({ mailReady = false }: { mailReady?: boolean }) {
     >
       <MailTabs box={shown} onSelect={select} sent={{ show: hasSent, unread: sent.unread }} />
       <div
+        ref={viewsRef}
         className="app-contact-views"
         data-anim={switched || undefined}
         data-ready={ready || undefined}
