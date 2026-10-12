@@ -15,7 +15,7 @@ import type { PlaceRow } from "@/lib/content";
 import { bearingDeg, compassIndex, distanceKm, isoOf } from "./geo";
 import { useAtlas } from "./useAtlas";
 import { fill, useKm } from "./fmt";
-import { angleTo, DEG_PX, HORIZON, HZ_H, HZ_W, paintHorizon, peaksFrom, type PeakAt } from "./horizon";
+import { angleTo, DEG_PX, HORIZON, HZ_H, HZ_W, paintHorizon, peaksFrom, type PeakAt } from "./skyline";
 
 /** the window always shows this much of the circle, whatever its width */
 const VIEW = 120;
