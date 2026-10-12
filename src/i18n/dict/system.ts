@@ -336,7 +336,7 @@ const fr: typeof en = {
     cat: {
       missing: "cat : {file} : fichier introuvable",
       usage: "usage : cat <fichier>",
-      readme: "LISEZMOI.md",
+      readme: "README.md",
       been: "déjà visité",
       want: "sur la liste",
     },

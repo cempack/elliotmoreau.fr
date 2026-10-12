@@ -170,7 +170,7 @@ const fr: typeof en = {
   },
   icons: {
     label: "Icônes du bureau",
-    readme: "LISEZ-MOI",
+    readme: "README",
     search: "Recherche",
     untitled: "Sans titre",
     draftHint: "Votre lettre pas encore envoyée : l’ouvrir dans Mail",

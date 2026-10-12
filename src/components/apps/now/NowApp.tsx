@@ -23,9 +23,9 @@ import { useSiteData } from "@/components/os/SiteData";
 import type { PushHistory } from "@/lib/github";
 
 /** default arrangements: each packs the 4-column grid, and the 2-column
-    one, with no holes: Listening, Building and Writing on top, Pulse as a
+    one, with no holes: Listening, Building and Writing on top, Activity as a
     wide strip below (or Listening, Building and Reading on top, then
-    Writing beside Pulse). A saved layout that still lists a widget that's
+    Writing beside Activity). A saved layout that still lists a widget that's
     gone simply drops it. */
 const ORDER_READING: readonly string[] = ["listening", "building", "reading", "writing", "pulse"];
 const ORDER: readonly string[] = ["listening", "building", "writing", "pulse"];

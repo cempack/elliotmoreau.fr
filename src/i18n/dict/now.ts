@@ -55,7 +55,7 @@ const en = {
   widgets: {
     listening: "Listening",
     building: "Building",
-    pulse: "Pulse",
+    pulse: "Activity",
     reading: "Reading & learning",
     writing: "Writing",
   },
@@ -180,7 +180,7 @@ const fr: typeof en = {
   widgets: {
     listening: "En écoute",
     building: "En chantier",
-    pulse: "Pouls",
+    pulse: "Activité",
     reading: "Lire, apprendre",
     writing: "Écriture",
   },
