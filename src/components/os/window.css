@@ -373,6 +373,18 @@
   border-radius: inherit;
   /* a quiet slab of light, no tint and no edge; the icon carries the accent */
   background: color-mix(in srgb, var(--color-label) 7.5%, transparent);
+  animation: os-win-nav-thumb 0.18s var(--ease-out-quint) both;
+}
+@keyframes os-win-nav-thumb {
+  from {
+    opacity: 0;
+    scale: 0.96;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .os-win-nav-thumb {
+    animation: none;
+  }
 }
 .os-win-nav-icon {
   display: grid;

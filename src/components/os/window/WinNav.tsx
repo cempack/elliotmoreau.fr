@@ -2,14 +2,14 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { m } from "motion/react";
-import { spring } from "@/lib/motion";
 
 /**
  * Sidebar navigation for an AppWindow's `sidebar` slot. One component,
  * two shapes: a vertical source list on ≥lg, and a horizontal, scrollable
  * segmented strip at the top of the window below that. The active item
- * carries a thumb that springs between items (shared layout).
+ * carries a quiet thumb, as a macOS source list does: it lights where it
+ * lands instead of sliding there (a shared-layout slide measured the whole
+ * window on every open and close).
  *
  *   <AppWindow app="writing" sidebar={
  *     <WinNav label={t.writing.filters}>
@@ -80,7 +80,7 @@ export function WinNavItem({
   const body = (
     <>
       {active && (
-        <m.span layoutId="os-win-nav-thumb" className="os-win-nav-thumb" transition={spring.snappy} aria-hidden />
+        <span className="os-win-nav-thumb" aria-hidden />
       )}
       {icon && (
         <span className="os-win-nav-icon" aria-hidden>
