@@ -18,6 +18,26 @@ export function viewTransitionActive() {
   }
 }
 
+/**
+ * Run `fn` now, or, while a view transition plays, in the first frame after
+ * it has finished. For effects: a component mounting with a window renders
+ * before the transition starts (so `useSettled()` still reads true), but
+ * its effects run inside it. Returns a cancel for the effect's cleanup.
+ */
+export function afterTransition(fn: () => void): () => void {
+  if (!viewTransitionActive()) {
+    fn();
+    return () => {};
+  }
+  let raf = 0;
+  const tick = () => {
+    if (viewTransitionActive()) raf = requestAnimationFrame(tick);
+    else fn();
+  };
+  raf = requestAnimationFrame(tick);
+  return () => cancelAnimationFrame(raf);
+}
+
 function subscribe(notify: () => void) {
   let raf = 0;
   let was = viewTransitionActive();

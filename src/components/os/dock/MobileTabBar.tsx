@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useRef, useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { m } from "motion/react";
 import { useI18n } from "@/i18n/client";
-import { useReduced } from "@/hooks/env";
+import { useMedia, useReduced } from "@/hooks/env";
 import { spring } from "@/lib/motion";
 import { usePalette } from "@/components/ui/palette";
 import { Sheet, useSheetDismiss } from "@/components/ui/Sheet";
@@ -20,9 +20,12 @@ const PRIMARY: AppId[] = ["home", "work", "writing", "atlas", "contact"];
 const TAB_ICON = 32;
 
 function Lens({ reduced }: { reduced: boolean }) {
+  // the bar is hidden (not unmounted) on wider screens: there its lens must
+  // not join the shared layout, or every page change measures it
+  const shown = useMedia("(max-width: 767px)");
   return (
     <m.span
-      layoutId="os-tabbar-lens"
+      layoutId={shown ? "os-tabbar-lens" : undefined}
       className="os-tabbar-lens"
       aria-hidden
       transition={reduced ? { duration: 0 } : spring.default}
@@ -64,6 +67,7 @@ const KBD_FIELDS =
 
 export function MobileTabBar() {
   const { t, path } = useI18n();
+  const router = useRouter();
   const active = appForPath(usePathname());
   const reduced = useReduced();
   const [more, setMore] = useState(false);
@@ -136,12 +140,16 @@ export function MobileTabBar() {
             const on = active.id === id;
             return (
               <li key={id} className="os-tabbar-item" data-dock-launch={id}>
-                <Link prefetch={false}
+                <Link
+                  prefetch={false}
                   href={path(app.path)}
+                  scroll={false}
                   transitionTypes={["app-open"]}
                   className="os-tabbar-link"
                   aria-current={on ? "page" : undefined}
                   onClick={(e) => launch(e, on)}
+                  // the finger is down: warm the route before it lifts
+                  onTouchStart={() => !on && router.prefetch(path(app.path))}
                   {...pressHandlers}
                 >
                   {on && <Lens reduced={reduced} />}

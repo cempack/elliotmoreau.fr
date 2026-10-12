@@ -11,6 +11,7 @@ import { spring } from "@/lib/motion";
 import { useSound } from "@/lib/sound";
 import { fmt, itemId } from "./model";
 import { WEEKS, layoutYears, paintYears, rangeAt, weekAt, type YearsLayout } from "./yearsArt";
+import { afterTransition } from "@/hooks/useSettled";
 
 const CELL = 3;
 type Load = { years: YearsInfo; sample: boolean } | "error" | null;
@@ -77,9 +78,18 @@ export function Years({ visible, repos, onOpen }: { visible: Set<string>; repos:
   useEffect(() => {
     const el = stageRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(([e]) => setBox({ W: Math.floor(e.contentRect.width / CELL), H: Math.floor(e.contentRect.height / CELL) }));
+    // the ranges are laid out and painted once the window has opened, never mid transition
+    let cancel = () => {};
+    const ro = new ResizeObserver(([e]) => {
+      const next = { W: Math.floor(e.contentRect.width / CELL), H: Math.floor(e.contentRect.height / CELL) };
+      cancel();
+      cancel = afterTransition(() => setBox(next));
+    });
     ro.observe(el);
-    return () => ro.disconnect();
+    return () => {
+      cancel();
+      ro.disconnect();
+    };
   }, [data]);
 
   const layout = useMemo(() => (box.W > 20 && box.H > 20 && ranges.length ? layoutYears(ranges, box.W, box.H, compact) : null), [ranges, box, compact]);

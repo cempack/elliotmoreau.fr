@@ -13,14 +13,6 @@ import { type Filter, fmt, languagesOf, sameFilter, tagsOf } from "./model";
 
 const TAGS_SHOWN = 8;
 
-/** The nearest ancestor that scrolls vertically on its own (not the page). */
-function scrollParent(el: HTMLElement | null) {
-  for (let p = el?.parentElement; p && p !== document.body; p = p.parentElement) {
-    const oy = getComputedStyle(p).overflowY;
-    if (oy === "auto" || oy === "scroll") return p;
-  }
-  return null;
-}
 
 /**
  * Finder's source list: smart folders (All, Starred, Recent), then every
@@ -68,7 +60,10 @@ export function Sidebar({
   const rootRef = useRef<HTMLDivElement>(null);
   const key = `${filter.kind}:${"value" in filter ? filter.value : ""}`;
   useEffect(() => {
-    const box = scrollParent(rootRef.current);
+    // All sits at the top: nothing to bring into view (and no layout read while the window opens)
+    if (key === "all:") return;
+    // the window's sidebar column is the scroller (AppWindow's .os-win-side)
+    const box = rootRef.current?.closest<HTMLElement>(".os-win-side");
     const item = rootRef.current?.querySelector<HTMLElement>("[aria-pressed='true'], [aria-current]");
     if (!box || !item || box.scrollHeight <= box.clientHeight + 1) return;
     const b = box.getBoundingClientRect();

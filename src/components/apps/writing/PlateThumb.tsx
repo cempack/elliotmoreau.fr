@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { animate } from "motion/react";
-import { useSettled } from "@/hooks/useSettled";
+import { useSettled, viewTransitionActive } from "@/hooks/useSettled";
 import { useReduced } from "@/hooks/env";
 import { spring } from "@/lib/motion";
 import { MAX_SHIFT, composite, layerOffsets, paintPlateLayers, type PlateLayers } from "./plate";
@@ -76,7 +76,8 @@ export function PlateThumb({
 
   useEffect(() => {
     const key = `${seed}:${W}x${H}`;
-    if (!settled || !ref.current || painted.current?.key === key) return;
+    // (settled is read at render, before a window's transition starts: ask again here)
+    if (!settled || viewTransitionActive() || !ref.current || painted.current?.key === key) return;
     // the first paint lands where the lean already is; a later seed keeps the glide's place
     if (!painted.current) shift.current = to;
     const layers = paintPlateLayers(seed, PW, PH);

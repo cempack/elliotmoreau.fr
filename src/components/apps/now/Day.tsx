@@ -9,6 +9,7 @@ import { moonAt, sunAt, sunDay } from "@/lib/sun";
 import { skyLight } from "@/components/os/wallpaper/light";
 import type { DayData } from "@/lib/data";
 import { fill, useNow } from "./lib";
+import { afterTransition } from "@/hooks/useSettled";
 
 /**
  * Today over Toulouse, as a sky you can rewind. The panel is the day from
@@ -237,7 +238,7 @@ export function TodaySky({ day }: { day: DayData }) {
   useEffect(() => {
     const cv = cvRef.current;
     if (!cv || !size.w || !size.h || !shown) return;
-    paint(cv, Math.ceil(size.w / CELL), Math.ceil(size.h / CELL), shown, day0);
+    return afterTransition(() => paint(cv, Math.ceil(size.w / CELL), Math.ceil(size.h / CELL), shown, day0));
   }, [size, shown, day0]);
 
   useEffect(() => () => back.current?.stop(), []);

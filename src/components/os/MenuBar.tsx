@@ -101,15 +101,15 @@ function Workspaces({ current }: { current: AppDef }) {
             <m.span
               key={id}
               className="os-menubar-ws-slot"
-              layout="position"
-              layoutDependency={ids.join()}
               initial={{ opacity: 0, scale: 0.6 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.6 }}
               transition={spring.snappy}
             >
-              <Link prefetch={false}
+              <Link
+                prefetch={false}
                 href={path(a.path)}
+                scroll={false}
                 transitionTypes={["app-open"]}
                 className="os-menubar-ws-btn"
                 aria-current={on ? "page" : undefined}

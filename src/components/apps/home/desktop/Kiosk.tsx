@@ -11,6 +11,7 @@ import { useSiteData } from "@/components/os/SiteData";
 import { composite, paintPlateLayers, plateSeed } from "@/components/apps/writing/plate";
 import type { GhostPost } from "@/lib/ghost";
 import { useMinute } from "./time";
+import { afterTransition } from "@/hooks/useSettled";
 
 const fill = (s: string, v: Record<string, string | number>) => s.replace(/\{(\w+)\}/g, (_, k: string) => String(v[k] ?? ""));
 
@@ -37,7 +38,8 @@ type Pt = { x: number; y: number };
 /** the plate's sky, cropped round its sun and printed in four inks */
 function Newsprint({ seed, w, h }: { seed: string; w: number; h: number }) {
   const ref = useRef<HTMLCanvasElement>(null);
-  useEffect(() => {
+  // printed once the Desktop is in, not in the frames of its transition
+  useEffect(() => afterTransition(() => {
     const c = ref.current;
     const ctx = c?.getContext("2d");
     if (!c || !ctx) return;
@@ -71,7 +73,7 @@ function Newsprint({ seed, w, h }: { seed: string; w: number; h: number }) {
       }
     }
     ctx.putImageData(img, 0, 0);
-  }, [seed, w, h]);
+  }), [seed, w, h]);
   return <canvas ref={ref} width={w} height={h} className="app-home-kiosk-print" aria-hidden />;
 }
 

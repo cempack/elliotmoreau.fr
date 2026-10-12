@@ -284,7 +284,7 @@ function Layer() {
     // the card grows into the window's place and holds there; the overview
     // goes once the new window is in (the navigation closes it), so the
     // window that was on screen never flashes back in between
-    router.push(path(a.path));
+    router.push(path(a.path), { scroll: false });
   };
 
   const closeWin = (id: AppId) => {
@@ -296,7 +296,7 @@ function Layer() {
     // the window on screen was the one thrown away: the Desktop takes its place underneath
     if (id === here) {
       stayThroughNavigation();
-      router.push(path("/"));
+      router.push(path("/"), { scroll: false });
     }
   };
 

@@ -107,6 +107,7 @@ export function DesktopDock() {
                   prefetch={false}
                   onPointerEnter={() => router.prefetch(path(app.path))}
                   href={path(app.path)}
+                  scroll={false}
                   transitionTypes={["app-open"]}
                   className="os-dock-link"
                   aria-label={label}

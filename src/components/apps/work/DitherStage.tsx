@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { afterTransition } from "@/hooks/useSettled";
 
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 const bayer = (x: number, y: number) => (BAYER[((y & 3) << 2) | (x & 3)] + 0.5) / 16;
@@ -87,10 +88,17 @@ export function DitherStage({
       }
       ctx.putImageData(img, 0, 0);
     };
-    paint();
-    const ro = new ResizeObserver(paint);
-    ro.observe(canvas);
-    return () => ro.disconnect();
+    // the first paint waits for the window to finish opening
+    let ro: ResizeObserver | null = null;
+    const cancel = afterTransition(() => {
+      paint();
+      ro = new ResizeObserver(paint);
+      ro.observe(canvas);
+    });
+    return () => {
+      cancel();
+      ro?.disconnect();
+    };
   }, [tone, cell]);
 
   return <canvas ref={ref} aria-hidden className={`app-work-dither ${className}`} />;

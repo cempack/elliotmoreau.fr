@@ -106,7 +106,7 @@ export function AppWindow({
       // a throw is a close: its workspace leaves the bar too
       closeWorkspace(app);
     },
-    onClose: () => router.push(home, { transitionTypes: ["app-close"] }),
+    onClose: () => router.push(home, { scroll: false, transitionTypes: ["app-close"] }),
     target: () => dockIconCenter(app, appHref),
   });
 
@@ -138,9 +138,13 @@ export function AppWindow({
       if (main.scrollTop > 2) bar.dataset.stuck = "";
       else delete bar.dataset.stuck;
     };
-    onScroll();
+    // read once the window is in, not during the frame that opens it
+    const raf = requestAnimationFrame(onScroll);
     main.addEventListener("scroll", onScroll, { passive: true });
-    return () => main.removeEventListener("scroll", onScroll);
+    return () => {
+      cancelAnimationFrame(raf);
+      main.removeEventListener("scroll", onScroll);
+    };
   }, []);
 
   // keyboard activation (detail 0) hands focus to the Dock icon afterwards
@@ -206,6 +210,7 @@ export function AppWindow({
             </button>
             <Link
               href={home}
+              scroll={false}
               transitionTypes={["app-close"]}
               onClick={onCloseWindow}
               aria-label={w.close}
@@ -231,6 +236,7 @@ export function AppWindow({
 
           <Link
             href={home}
+            scroll={false}
             transitionTypes={["app-close"]}
             onClick={onCloseWindow}
             aria-label={w.close}

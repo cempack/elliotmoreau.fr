@@ -7,6 +7,7 @@ import { composite, paintPlateLayers, plateSeed } from "./plate";
 import type { BookFrom } from "./openBook";
 import { useThemeTokens } from "@/hooks/useTheme";
 import { mix, type ThemeTokens } from "@/lib/theme";
+import { afterTransition } from "@/hooks/useSettled";
 
 /**
  * The Shelf of Spines: every post a pixel book standing over the list.
@@ -129,7 +130,13 @@ export function Shelf({
   useEffect(() => {
     const el = wrap.current;
     if (!el) return;
+    // the books are cut and painted once the window has opened, never mid transition
+    let cancel = () => {};
     const measure = () => {
+      cancel();
+      cancel = afterTransition(measureNow);
+    };
+    const measureNow = () => {
       const dpr = Math.min(Math.max(window.devicePixelRatio || 1, 1), 3);
       const cell = Math.max(1, Math.round(3 * dpr)) / dpr;
       const W = Math.max(40, Math.floor(el.clientWidth / cell));
@@ -140,7 +147,10 @@ export function Shelf({
     ro.observe(el);
     measure();
     st.current.reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    return () => ro.disconnect();
+    return () => {
+      cancel();
+      ro.disconnect();
+    };
   }, []);
 
   // the books: sizes, cloth, sky slices (painted once per post)
