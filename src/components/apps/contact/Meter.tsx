@@ -93,14 +93,16 @@ export const Meter = forwardRef<
   {
     /** nothing written: the lever only goes half way */
     empty: boolean;
-    /** mailto length over the safe limit */
+    /** how full: the mailto link against its safe length, or the letter against its limit */
     load: number;
     tooLong: boolean;
+    /** what the scale measures, when it isn't the mail link */
+    scale?: { load: string; full: string };
     reduced: boolean;
     onStrike: (ink: number) => void;
     onRefuse: () => void;
   }
->(function Meter({ empty, load, tooLong, reduced, onStrike, onRefuse }, ref) {
+>(function Meter({ empty, load, tooLong, scale, reduced, onStrike, onRefuse }, ref) {
   const { t, lang } = useI18n();
   const c = t.contact;
   const k = c.meter;
@@ -206,11 +208,11 @@ export const Meter = forwardRef<
           <span
             className="app-contact-meter-scale"
             role="meter"
-            aria-label={k.load}
+            aria-label={scale?.load ?? k.load}
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={pct}
-            aria-valuetext={tooLong ? k.full : `${pct}%`}
+            aria-valuetext={tooLong ? (scale?.full ?? k.full) : `${pct}%`}
           >
             {Array.from({ length: NOTCHES }, (_, i) => (
               <i key={i} data-on={i < lit || undefined} data-cut={(tooLong && i === NOTCHES - 1) || undefined} />

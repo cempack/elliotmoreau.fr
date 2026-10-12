@@ -3,27 +3,30 @@
 import { WinNav, WinNavItem } from "@/components/os/AppWindow";
 import { useI18n } from "@/i18n/client";
 import { PixelGlyph, type Cells } from "@/components/glyphs";
-import { G_AT, G_KEY, G_PEN } from "./glyphs";
+import { G_AT, G_KEY, G_LETTER, G_PEN } from "./glyphs";
 
-export type Box = "compose" | "elsewhere" | "key";
+export type Box = "compose" | "sent" | "elsewhere" | "key";
 
 /** each mailbox's URL fragment ("" = the page itself) */
-export const HASH: Record<Box, string> = { compose: "", elsewhere: "elsewhere", key: "pgp" };
+export const HASH: Record<Box, string> = { compose: "", sent: "sent", elsewhere: "elsewhere", key: "pgp" };
 
 /**
  * Mailboxes: a source list on wide windows, the window's segmented strip
- * on narrow ones. Each is a real link (#elsewhere, #pgp), so it can be
- * copied or opened in a new tab; a plain click switches in place.
+ * on narrow ones. Each is a real link (#sent, #elsewhere, #pgp), so it can
+ * be copied or opened in a new tab; a plain click switches in place. Sent
+ * appears once this browser has a letter in it, with a count of new
+ * replies.
  */
-export function Sidebar({ box, onSelect }: { box: Box; onSelect: (b: Box) => void }) {
+export function Sidebar({ box, onSelect, sent }: { box: Box; onSelect: (b: Box) => void; sent: { show: boolean; unread: number } }) {
   const { t, path } = useI18n();
   const c = t.contact;
 
-  const item = (b: Box, glyph: Cells, label: React.ReactNode) => (
+  const item = (b: Box, glyph: Cells, label: React.ReactNode, count?: number) => (
     <WinNavItem
       href={HASH[b] ? `#${HASH[b]}` : path("/contact")}
       active={box === b}
       icon={<PixelGlyph cells={glyph} size={14} />}
+      count={count}
       // a plain click switches in place; modified clicks keep the browser's own behaviour
       onClick={(e?: React.MouseEvent) => {
         if (!e || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
@@ -49,6 +52,7 @@ export function Sidebar({ box, onSelect }: { box: Box; onSelect: (b: Box) => voi
             <span className="app-contact-nav-short">{c.boxComposeShort}</span>
           </>
         )}
+        {sent.show && item("sent", G_LETTER, c.boxSent, sent.unread || undefined)}
         {item("elsewhere", G_AT, c.boxElsewhere)}
         {item("key", G_KEY, c.boxKey)}
       </WinNav>

@@ -10,16 +10,36 @@ import { contentTop, scrollToY, scrollTop, scrollerBottom, scrollerTop } from "@
 import { SOCIALS } from "@/lib/places";
 import { PixelGlyph } from "@/components/glyphs";
 import { EmosMark } from "@/components/os/menubar/glyphs";
+import { sendLetter, type SendError } from "./api";
 import { CopyButton } from "./Copy";
 import { MAX_LINES, TEXT_CELLS } from "./Envelope";
+import { useMailStatus } from "./hours";
 import { Meter, type MeterHandle } from "./Meter";
 import { markAt, type Mark } from "./postmark";
+import { ReadEstimate } from "./ReadEstimate";
 import { Stage, type StageHandle } from "./Stage";
-import { G_OPEN, G_SEND } from "./glyphs";
-import { MAILTO_SAFE, draftFile, fill, launchMail, letterLines, mailtoHref, plural, slug, wordCount } from "./mail";
+import { G_ARROW, G_OPEN, G_SEND } from "./glyphs";
+import {
+  EMAIL_RE,
+  LETTER_MAX,
+  MAILTO_SAFE,
+  draftFile,
+  fill,
+  launchMail,
+  letterLines,
+  loadFrom,
+  mailtoHref,
+  plural,
+  saveFrom,
+  slug,
+  wordCount,
+  type From,
+} from "./mail";
 import { useDraft } from "./useDraft";
 
 export type Phase = "compose" | "sending" | "sent" | "ready";
+/** "send": the site delivers it (SMTP is set up); "mailto": the visitor's own mail app does */
+export type Mode = "send" | "mailto";
 
 const CHIPS = [
   { id: "project", chip: "chipProject", subject: "subjectProject", prompt: "bodyProject" },
@@ -28,19 +48,11 @@ const CHIPS = [
   { id: "hi", chip: "chipHi", subject: "subjectHi", prompt: "bodyHi" },
 ] as const;
 
-/**
- * New message: a Mail compose sheet (To, Subject with quick ideas, the
- * message) beside the envelope it will travel in. One action, Send (or
- * ⌘↵), and everything around it shows what it does: the envelope is a
- * live miniature of the draft, the franking meter under it strikes a
- * Toulouse postmark on it, it folds and flies into the Dock, and the
- * message is handed to the viewer's own mail app through a mailto: link.
- * Nothing is sent from the page, and the UI says so.
- *
- * The draft lives here, not in MailApp, so typing re-renders this sheet
- * only. `formId` lets a Send button outside the form (the window's
- * toolbar on phones) submit it; `onPhase` tells MailApp when to show it.
- */
+/** a letter written faster than this is refused by the server; an honest quick one just waits the rest */
+const MIN_COMPOSE_MS = 3_100;
+
+type Refusal = "body" | "email" | "badEmail";
+
 /**
  * Windows: once the message box scrolls inside itself, Lenis leaves the
  * wheel to it (`data-lenis-prevent`); phones grow it with the page instead.
@@ -64,16 +76,72 @@ function takeBodyFocus() {
   return bodyFocusPending;
 }
 
-export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phase) => void }) {
+/** who it's from, remembered in this browser (restored after mount, saved shortly after a change) */
+function useFrom() {
+  const [from, setFrom] = useState<From>({ email: "", name: "" });
+  const ready = useRef(false);
+  useEffect(() => {
+    const f = loadFrom();
+    queueMicrotask(() => {
+      if (f) setFrom(f);
+      ready.current = true;
+    });
+  }, []);
+  useEffect(() => {
+    if (!ready.current) return;
+    const id = window.setTimeout(() => saveFrom(from), 400);
+    return () => window.clearTimeout(id);
+  }, [from]);
+  return [from, setFrom] as const;
+}
+
+/**
+ * New message: a Mail compose sheet (To, From, Subject with quick ideas,
+ * the message) beside the envelope it will travel in. One action, Send (or
+ * ⌘↵), and everything around it shows what it does: the envelope is a
+ * live miniature of the draft, the franking meter under it strikes a
+ * Toulouse postmark on it, and it folds and flies into the Dock.
+ *
+ * With mail set up (mode "send"), Send delivers it from the site: the
+ * envelope seals while the server sends, and flies only once Elliot's
+ * mailbox has accepted it; the card then says when it's likely to be
+ * read, and the letter joins the visitor's Sent mailbox. Without it (or if
+ * the server says it can't), the message is handed to the viewer's own
+ * mail app through a mailto: link, and the UI says so.
+ *
+ * The draft lives here, not in MailApp, so typing re-renders this sheet
+ * only. `formId` lets a Send button outside the form (the window's
+ * toolbar on phones) submit it; `onPhase` tells MailApp when to show it.
+ */
+export function Compose({
+  formId,
+  mode,
+  onPhase,
+  onDelivered,
+  onOpenSent,
+  onFallback,
+}: {
+  formId: string;
+  mode: Mode;
+  onPhase: (p: Phase) => void;
+  /** the site delivered it: here is the visitor's key to the thread */
+  onDelivered: (token: string, subject: string) => void;
+  onOpenSent: (token: string) => void;
+  /** the server can't send right now: the rest of the visit uses the mailto path */
+  onFallback: () => void;
+}) {
   const { t, lang } = useI18n();
   const c = t.contact;
   const state = useDraft();
   const { draft, saved, update } = state;
+  const [from, setFrom] = useFrom();
+  const status = useMailStatus();
   const reduced = useReduced();
   const isMac = useIsMac();
   const { blip } = useSound();
   const email = SOCIALS.email;
   const uid = useId();
+  const sending = mode === "send";
 
   const [phase, setPhaseState] = useState<Phase>("compose");
   const [returned, setReturned] = useState(false);
@@ -81,8 +149,14 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
   /** the franking meter's postmark on the letter, once it is franked, and how hard it was struck */
   const [mark, setMark] = useState<Mark | null>(null);
   const [ink, setInk] = useState(1);
-  /** an empty letter was refused: the status says so for a moment */
-  const [refused, setRefused] = useState(false);
+  /** Send was refused (nothing written, no address): the status says why for a moment */
+  const [refused, setRefused] = useState<Refusal | null>(null);
+  /** the server turned the letter down, or couldn't send it */
+  const [sendError, setSendError] = useState<SendError | null>(null);
+  /** delivered by the site: the token for "Open in Sent" */
+  const [delivered, setDelivered] = useState<string | null>(null);
+  /** the server couldn't send, so this one went the mailto way */
+  const [fellBack, setFellBack] = useState(false);
   const liftTimer = useRef(0);
   const refuseTimer = useRef(0);
   const sendTimer = useRef(0);
@@ -104,22 +178,45 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
   const sendRef = useRef<HTMLButtonElement>(null);
   const footRef = useRef<HTMLDivElement>(null);
   const footEndRef = useRef<HTMLSpanElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
   const subjectRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const hpRef = useRef<HTMLInputElement>(null);
   const resultRef = useRef<HTMLHeadingElement>(null);
-  const focusNext = useRef<"subject" | "body" | "result" | null>(null);
+  const focusNext = useRef<"subject" | "body" | "email" | "result" | null>(null);
   /** the subject the visitor typed, kept while a quick idea stands in for it */
   const custom = useRef("");
+  /** when writing started (first keystroke, or the sheet appearing) and the server's answer */
+  const startedAt = useRef<number | null>(null);
+  const mountedAt = useRef(0);
+  const outcome = useRef<Awaited<ReturnType<typeof sendLetter>> | null>(null);
+  useEffect(() => {
+    mountedAt.current = performance.now();
+  }, []);
 
   const href = mailtoHref(email, draft);
   const words = wordCount(draft.body);
   const wordsLabel = plural(lang, words, c.wordOne, c.words);
   const empty = !draft.subject.trim() && !draft.body.trim();
-  const tooLong = href.length > MAILTO_SAFE;
+  const tooLong = !sending && href.length > MAILTO_SAFE;
+  const emailTyped = from.email.trim();
+  /** what stops Send right now, if anything */
+  const blocker: Refusal | null = sending
+    ? !draft.body.trim()
+      ? "body"
+      : !emailTyped
+        ? "email"
+        : !EMAIL_RE.test(emailTyped)
+          ? "badEmail"
+          : null
+    : empty
+      ? "body"
+      : null;
   const activeChip = CHIPS.find((ch) => c[ch.subject] === draft.subject.trim());
   const placeholder = activeChip ? `${c.bodyPlaceholder}\n\n${c[activeChip.prompt]}` : c.bodyPlaceholder;
   const subjectCells = draft.subject.trim() ? Math.max(3, Math.min(10, Math.round(draft.subject.trim().length * 0.36))) : 0;
   const lines = useMemo(() => letterLines(draft.body, MAX_LINES, 34, TEXT_CELLS), [draft.body]);
+  const replyDays = Math.max(1, status.replyDays);
 
   // the window subtitle names the file once the draft is saved
   useEffect(() => {
@@ -148,7 +245,7 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
     if (!f) return;
     focusNext.current = null;
     if (f !== "result") {
-      (f === "subject" ? subjectRef.current : bodyRef.current)?.focus();
+      (f === "subject" ? subjectRef.current : f === "email" ? emailRef.current : bodyRef.current)?.focus();
       return;
     }
     const h = resultRef.current;
@@ -159,7 +256,7 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
     const rTop = card.getBoundingClientRect().top - scrollerTop();
     if (rTop < top || rTop > (scrollerBottom() - scrollerTop()) * 0.55) scrollToY(scrollTop() + rTop - top, !reduced);
     h.focus({ preventScroll: true });
-  }, [phase, reduced]);
+  }, [phase, reduced, sendError]);
 
   /**
    * Windows: the message box takes whatever height is left above the Dock,
@@ -208,7 +305,7 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
       window.removeEventListener("resize", later);
       wide.removeEventListener("change", later);
     };
-  }, [phase]);
+  }, [phase, sending]);
 
   // the footer pins above the Dock while the card runs below the fold; it gets its own material only then
   useEffect(() => {
@@ -246,18 +343,49 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
     };
   }, [phase]);
 
-  const typing = () => {
+  /** `at`: the input event's timestamp (same clock as performance.now()) */
+  const typing = (at: number) => {
+    if (startedAt.current == null) startedAt.current = at;
+    if (sendError) setSendError(null);
     setLifted(true);
     window.clearTimeout(liftTimer.current);
     liftTimer.current = window.setTimeout(() => setLifted(false), 900);
   };
 
   /**
-   * The envelope is nearly in the Dock (or sealed in place): over to the
-   * mail app, unless the browser would refuse (`canOpen` false), in which
-   * case the card offers the click. Returns whether it opened.
+   * The letter is on its way. Sending from the site: delivered (the card
+   * and Sent follow), refused or failed (back to the sheet, saying why), or
+   * unavailable (over to the mail app after all). The mailto path: over to
+   * the mail app, unless the browser would refuse (`canOpen` false), in
+   * which case the card offers the click. Returns whether it went out.
    */
   const land = (canOpen: boolean) => {
+    const r = outcome.current;
+    if (r) {
+      outcome.current = null;
+      if (r.ok) {
+        state.sent();
+        setDelivered(r.token);
+        onDelivered(r.token, draft.subject.trim());
+        focusNext.current = "result";
+        go("sent");
+        return true;
+      }
+      if (r.error === "unavailable") {
+        onFallback();
+        setFellBack(true);
+        state.sent();
+        const opened = launchMail(href);
+        focusNext.current = "result";
+        go(opened ? "sent" : "ready");
+        return opened;
+      }
+      setSendError(r.error);
+      setMark(null);
+      go("compose");
+      stageRef.current?.reset();
+      return false;
+    }
     state.sent();
     const opened = canOpen && launchMail(href);
     focusNext.current = "result";
@@ -283,14 +411,41 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
   };
 
   const onRefuse = () => {
-    setRefused(true);
+    const why = blocker ?? "body";
+    setRefused(why);
+    if (why !== "body" || sending) (why === "body" ? bodyRef : emailRef).current?.focus();
     window.clearTimeout(refuseTimer.current);
-    refuseTimer.current = window.setTimeout(() => setRefused(false), 1800);
+    refuseTimer.current = window.setTimeout(() => setRefused(null), 2400);
+  };
+
+  /** the letter, to the server: an honest quick writer just waits out the minimum */
+  const post = async () => {
+    const elapsed = performance.now() - (startedAt.current ?? mountedAt.current);
+    if (elapsed < MIN_COMPOSE_MS) await new Promise((r) => window.setTimeout(r, MIN_COMPOSE_MS - elapsed));
+    const r = await sendLetter({
+      email: from.email.trim(),
+      name: from.name.trim(),
+      subject: draft.subject.trim(),
+      body: draft.body,
+      lang,
+      elapsed: Math.max(elapsed, MIN_COMPOSE_MS),
+      hp: hpRef.current?.value ?? "",
+    });
+    outcome.current = r;
+    return r.ok;
   };
 
   const leave = () => {
     window.clearTimeout(liftTimer.current);
     setLifted(false);
+    if (sending) {
+      setSendError(null);
+      outcome.current = null;
+      go("sending");
+      if (!reduced) blip("close");
+      stageRef.current?.send(post());
+      return;
+    }
     if (!reduced) {
       go("sending");
       blip("close");
@@ -300,8 +455,12 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
 
   const backToCompose = (clear: boolean) => {
     setMark(null);
+    setDelivered(null);
+    setFellBack(false);
     if (clear) state.clear();
     else state.restore();
+    startedAt.current = null;
+    mountedAt.current = performance.now();
     focusNext.current = clear ? "subject" : "body";
     setReturned(true);
     go("compose");
@@ -309,19 +468,23 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
     blip("open");
   };
 
-  const pickChip = (ch: (typeof CHIPS)[number], viaPointer: boolean) => {
+  const pickChip = (ch: (typeof CHIPS)[number], viaPointer: boolean, at: number) => {
     const on = activeChip?.id === ch.id;
     if (!activeChip) custom.current = draft.subject;
     // off again: whatever the visitor had typed comes back
     update({ subject: on ? custom.current : c[ch.subject] });
     blip("tick");
-    typing();
+    typing(at);
     if (!on && viaPointer && !draft.body.trim()) bodyRef.current?.focus();
   };
 
   const busy = phase === "sending";
   const done = phase === "sent" || phase === "ready";
   const keys = isMac ? "⌘↵" : "Ctrl ↵";
+  const refusal = refused === "email" ? c.needEmail : refused === "badEmail" ? c.badEmail : refused ? c.writeFirst : "";
+  const errorText = sendError === "rate" ? c.errRate : sendError === "invalid" ? c.errInvalid : sendError ? c.errFailed : "";
+  const emailInvalid = (refused === "email" || refused === "badEmail" || sendError === "invalid") && blocker !== null && blocker !== "body";
+  const deliveredHere = phase === "sent" && delivered != null;
 
   return (
     <div className="app-contact-compose">
@@ -330,9 +493,9 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
           <p className="app-contact-eyebrow">{c.composeEyebrow}</p>
           <h2 className="app-contact-title">{c.composeTitle}</h2>
         </header>
-        <p className="app-contact-lead">{c.composeLead}</p>
+        <p className="app-contact-lead">{sending ? c.composeLeadSend : c.composeLead}</p>
         <p className="app-contact-habits">
-          {c.habits}{" "}
+          {replyDays === 1 ? c.habitsOne : fill(c.habits, { n: replyDays })}{" "}
           <a href="#pgp" className="app-contact-habits-key">
             {c.keyLink}
           </a>
@@ -355,12 +518,14 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
             return document.querySelector(`[form="${formId}"]`)?.getBoundingClientRect() ?? null;
           }}
           onLand={land}
+          doneLabel={delivered ? c.delivered : undefined}
         />
         <Meter
           ref={meterRef}
-          empty={empty}
-          load={href.length / MAILTO_SAFE}
-          tooLong={tooLong}
+          empty={blocker !== null}
+          load={sending ? draft.body.length / LETTER_MAX : href.length / MAILTO_SAFE}
+          tooLong={sending ? draft.body.length >= LETTER_MAX : tooLong}
+          scale={sending ? { load: c.meter.letterLoad, full: c.meter.letterFull } : undefined}
           reduced={reduced}
           onStrike={onStrike}
           onRefuse={onRefuse}
@@ -374,6 +539,7 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
           className="app-contact-card app-contact-sheet"
           aria-label={c.composeLabel}
           aria-busy={busy || undefined}
+          noValidate
           initial={returned ? (reduced ? { opacity: 0 } : { opacity: 0, y: 14 }) : false}
           animate={{ opacity: 1, y: 0 }}
           transition={reduced ? { duration: 0.15 } : spring.gentle}
@@ -410,6 +576,69 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
             </div>
           </div>
 
+          {sending && (
+            <div className="app-contact-row app-contact-row--from" data-invalid={emailInvalid || undefined}>
+              <label className="app-contact-row-label" htmlFor={`${uid}-email`}>
+                {c.from}
+              </label>
+              <div className="app-contact-from">
+                <input
+                  ref={emailRef}
+                  id={`${uid}-email`}
+                  className="app-contact-input app-contact-from-email"
+                  type="email"
+                  name="email"
+                  autoComplete="email"
+                  inputMode="email"
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  enterKeyHint="next"
+                  required
+                  maxLength={254}
+                  value={from.email}
+                  placeholder={c.fromEmailPlaceholder}
+                  aria-label={c.fromEmail}
+                  aria-invalid={emailInvalid || undefined}
+                  readOnly={busy}
+                  onChange={(e) => {
+                    setFrom((f) => ({ ...f, email: e.target.value }));
+                    if (refused === "email" || refused === "badEmail") setRefused(null);
+                    if (startedAt.current == null) startedAt.current = e.timeStamp;
+                    if (sendError) setSendError(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.metaKey && !e.ctrlKey && !e.nativeEvent.isComposing) {
+                      e.preventDefault();
+                      (e.currentTarget.parentElement?.querySelector<HTMLInputElement>("input[name=name]") ?? subjectRef.current)?.focus();
+                    }
+                  }}
+                />
+                <span className="app-contact-from-sep" aria-hidden />
+                <input
+                  id={`${uid}-name`}
+                  className="app-contact-input app-contact-from-name"
+                  type="text"
+                  name="name"
+                  autoComplete="name"
+                  enterKeyHint="next"
+                  maxLength={80}
+                  value={from.name}
+                  placeholder={c.fromNamePlaceholder}
+                  aria-label={c.fromName}
+                  readOnly={busy}
+                  onChange={(e) => setFrom((f) => ({ ...f, name: e.target.value }))}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.metaKey && !e.ctrlKey && !e.nativeEvent.isComposing) {
+                      e.preventDefault();
+                      subjectRef.current?.focus();
+                    }
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
           <div className="app-contact-row app-contact-row--subject">
             <label className="app-contact-row-label" htmlFor={`${uid}-subject`}>
               {c.subject}
@@ -428,7 +657,7 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
               readOnly={busy}
               onChange={(e) => {
                 update({ subject: e.target.value });
-                typing();
+                typing(e.timeStamp);
               }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.metaKey && !e.ctrlKey && !e.nativeEvent.isComposing) {
@@ -447,7 +676,7 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
                 className="app-contact-chip"
                 aria-pressed={activeChip?.id === ch.id}
                 disabled={busy}
-                onClick={(e) => pickChip(ch, e.detail > 0)}
+                onClick={(e) => pickChip(ch, e.detail > 0, e.timeStamp)}
               >
                 {activeChip?.id === ch.id && (
                   <m.span
@@ -472,15 +701,24 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
               className="app-contact-textarea"
               name="body"
               rows={9}
+              maxLength={sending ? LETTER_MAX : undefined}
               value={draft.body}
               placeholder={placeholder}
               readOnly={busy}
               onChange={(e) => {
                 update({ body: e.target.value });
-                typing();
+                typing(e.timeStamp);
                 scrollsInside(e.currentTarget);
               }}
             />
+          </div>
+
+          {/* only bots fill this in */}
+          <div className="app-contact-hp" aria-hidden>
+            <label>
+              {c.hpLabel}
+              <input ref={hpRef} type="text" name="emos_url" tabIndex={-1} autoComplete="off" defaultValue="" />
+            </label>
           </div>
 
           {tooLong && (
@@ -497,15 +735,27 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
             </div>
           )}
 
+          {sendError && (
+            <div className="app-contact-long app-contact-error" role="alert">
+              <p>{errorText}</p>
+              {sendError !== "invalid" && (
+                <a href={href} className="app-contact-btn app-contact-btn--small">
+                  <PixelGlyph cells={G_OPEN} size={12} />
+                  <span>{c.useMailApp}</span>
+                </a>
+              )}
+            </div>
+          )}
+
           <div ref={footRef} className="app-contact-foot">
             <span className="sr-only" aria-live="polite">
-              {busy ? c.flying : refused ? c.writeFirst : ""}
+              {busy ? (sending ? c.sending : c.flying) : refusal}
             </span>
             <p className="app-contact-status">
               {busy ? (
-                <span className="app-contact-status-busy">{c.flying}</span>
+                <span className="app-contact-status-busy">{sending ? c.sending : c.flying}</span>
               ) : refused ? (
-                <span className="app-contact-status-refused">{c.writeFirst}</span>
+                <span className="app-contact-status-refused">{refusal}</span>
               ) : (
                 <>
                   <span className="tabular">{wordsLabel}</span>
@@ -522,7 +772,7 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
               ref={sendRef}
               type="submit"
               className="app-contact-btn app-contact-btn--primary app-contact-send"
-              aria-label={c.sendLabel}
+              aria-label={sending ? c.sendLabelSend : c.sendLabel}
               aria-keyshortcuts={isMac ? "Meta+Enter" : "Control+Enter"}
               disabled={busy}
             >
@@ -535,6 +785,40 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
           </div>
           <span ref={footEndRef} className="app-contact-foot-end" aria-hidden />
         </m.form>
+      ) : deliveredHere ? (
+        <m.section
+          key="delivered"
+          className="app-contact-card app-contact-result"
+          aria-labelledby={`${uid}-result`}
+          initial={reduced ? { opacity: 0 } : { opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={reduced ? { duration: 0.15 } : spring.gentle}
+        >
+          <p className="app-contact-eyebrow app-contact-eyebrow--signal">{c.deliveredEyebrow}</p>
+          <h3 id={`${uid}-result`} ref={resultRef} tabIndex={-1} className="app-contact-result-title">
+            {c.deliveredTitle}
+          </h3>
+          <p className="app-contact-result-body">{c.deliveredBody}</p>
+          <p className="app-contact-result-summary">
+            <span className="app-contact-result-subject">{draft.subject.trim() || c.noSubject}</span>
+            <span aria-hidden> · </span>
+            <span className="tabular">{wordsLabel}</span>
+          </p>
+          <ReadEstimate />
+          <div className="app-contact-actions app-contact-result-actions">
+            <button type="button" className="app-contact-btn" onClick={() => onOpenSent(delivered!)}>
+              <PixelGlyph cells={G_ARROW} size={14} />
+              <span>{c.viewInSent}</span>
+            </button>
+            <button
+              type="button"
+              className="app-contact-btn app-contact-btn--ghost app-contact-result-new"
+              onClick={() => backToCompose(true)}
+            >
+              {c.newMessage}
+            </button>
+          </div>
+        </m.section>
       ) : (
         <m.section
           key="result"
@@ -550,7 +834,7 @@ export function Compose({ formId, onPhase }: { formId: string; onPhase: (p: Phas
           <h3 id={`${uid}-result`} ref={resultRef} tabIndex={-1} className="app-contact-result-title">
             {phase === "sent" ? c.sentTitle : c.readyTitle}
           </h3>
-          <p className="app-contact-result-body">{phase === "sent" ? c.sentBody : c.readyBody}</p>
+          <p className="app-contact-result-body">{fellBack ? c.fallbackBody : phase === "sent" ? c.sentBody : c.readyBody}</p>
           <p className="app-contact-result-summary">
             <span className="app-contact-result-subject">{draft.subject.trim() || c.noSubject}</span>
             <span aria-hidden> · </span>

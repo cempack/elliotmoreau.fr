@@ -27,8 +27,12 @@ import type { Mark } from "./postmark";
  */
 
 export type StageHandle = {
-  /** fold, then fly into the Dock; resolves through `onLand` */
-  send: () => void;
+  /**
+   * fold, then fly into the Dock; resolves through `onLand`. With `gate`
+   * (a send in progress), it folds and waits there: the letter only flies
+   * once the gate says it was delivered; otherwise `onLand(false)`.
+   */
+  send: (gate?: Promise<boolean>) => void;
   /** the mail app was just opened by a click: the sealed letter makes the trip */
   deliver: (from?: Element | null) => void;
   /** back to writing: the letter opens again (or a fresh one comes back) */
@@ -77,6 +81,7 @@ export function Stage({
   reduced,
   origin,
   onLand,
+  doneLabel,
 }: {
   ref?: React.Ref<StageHandle>;
   phase: Phase;
@@ -94,6 +99,8 @@ export function Stage({
    * false when the browser would refuse; returns whether it opened.
    */
   onLand: (canOpen: boolean) => boolean;
+  /** what the stage says once it's gone (defaults to "handed to your mail app") */
+  doneLabel?: string;
 }) {
   const { t } = useI18n();
   const c = t.contact;
@@ -118,7 +125,10 @@ export function Stage({
   const [burst, setBurst] = useState<{ x: number; y: number; id: number } | null>(null);
   const burstTimer = useRef(0);
   /** what happens once the in-slot fold is done */
-  const pending = useRef<"fly" | "land" | null>(null);
+  const pending = useRef<"fly" | "land" | "gate" | null>(null);
+  /** a send waiting on the server: run `then` with its outcome, unless reset since */
+  const gate = useRef<{ run: number; then: (go: (ok: boolean) => void) => void } | null>(null);
+  const runs = useRef(0);
 
   // in-slot envelope: rises back in after a trip
   const slotX = useMotionValue(0);
@@ -272,8 +282,41 @@ export function Stage({
   };
 
 
+  /** after the gate: delivered flies into the Dock, anything else stays sealed for `onLand(false)` */
+  const afterGate = (ok: boolean) => {
+    if (ok) startFromSlot(true);
+    else cbs.current.onLand(false);
+  };
+
+  const sendGated = (promise: Promise<boolean>) => {
+    const run = ++runs.current;
+    const then = (go: (ok: boolean) => void) =>
+      promise.then(
+        (ok) => runs.current === run && go(ok),
+        () => runs.current === run && go(false)
+      );
+    if (reduced || !slotRef.current) {
+      // no flight: it seals where it stands and the card follows the outcome
+      setInstant(true);
+      setSealed(true);
+      then((ok) => cbs.current.onLand(ok));
+      return;
+    }
+    if (sealed || !slotVisible(slotRef.current.getBoundingClientRect())) {
+      setInstant(true);
+      setSealed(true);
+      then(afterGate);
+      return;
+    }
+    gate.current = { run, then };
+    pending.current = "gate";
+    setInstant(false);
+    setSealed(true);
+  };
+
   useImperativeHandle(ref, () => ({
-    send: () => {
+    send: (g) => {
+      if (g) return sendGated(g);
       const fresh = activationFresh();
       if (reduced || !slotRef.current) {
         setInstant(true);
@@ -306,6 +349,8 @@ export function Stage({
     reset: () => {
       stopAll();
       pending.current = null;
+      gate.current = null;
+      runs.current++;
       const inSlot = !carry && !gone;
       setCarry(null);
       setFlying(false);
@@ -337,6 +382,11 @@ export function Stage({
     pending.current = null;
     if (p === "fly") startFromSlot(true);
     else if (p === "land") cbs.current.onLand(false);
+    else if (p === "gate" && gate.current) {
+      const g = gate.current;
+      gate.current = null;
+      if (g.run === runs.current) g.then(afterGate);
+    }
   };
 
   const showSlot = !carry && !gone;
@@ -371,7 +421,7 @@ export function Stage({
         {phase === "sent" ? (
           home && (
             <span className="app-contact-stage-done">
-              <span className="app-contact-stage-out">{c.outbox}</span>
+              <span className="app-contact-stage-out">{doneLabel ?? c.outbox}</span>
             </span>
           )
         ) : phase === "ready" ? (
