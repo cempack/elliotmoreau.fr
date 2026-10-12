@@ -3,6 +3,7 @@ import { cache } from "react";
 import { getLatestPosts, type GhostPost } from "./ghost";
 import { getActivity, getPushes, getRepos, type ActivityInfo, type PushHistory, type RepoInfo } from "./github";
 import { getSpotifyStatus, type SpotifyStatus } from "./spotify";
+import { getWeather, type Weather } from "./weather";
 import { FIXTURE_ACTIVITY, FIXTURE_POSTS, FIXTURE_PUSHES, FIXTURE_REPOS, FIXTURE_SPOTIFY } from "./fixtures";
 import { getSiteContent } from "@/server/content";
 import type { CurrentAway, NowContent, PlaceRow, PublicLive, Status } from "./content";
@@ -27,6 +28,8 @@ export type SiteData = {
   live: PublicLive;
   /** who's away today (hand-set, or a trip whose dates include today), resolved at render */
   away: CurrentAway | null;
+  /** Toulouse's weather now (the wallpaper's sky, the sundial's caption); null when unknown */
+  weather: Weather | null;
 };
 
 /** sample data stands in for unreachable sources everywhere except the
@@ -48,12 +51,13 @@ export const getSiteData = cache(async (): Promise<SiteData> => {
   const { hiddenRepos, ...publicLive } = live;
   const hidden = new Set(hiddenRepos.map((n) => n.toLowerCase()));
   const skip = hidden.size ? (repo: string) => hidden.has(repo.toLowerCase()) : undefined;
-  const [posts, spotify, repos, activity, pushes] = await Promise.all([
+  const [posts, spotify, repos, activity, pushes, weather] = await Promise.all([
     getLatestPosts(12),
     live.showSpotify ? getSpotifyStatus().catch(() => null) : null,
     getRepos(),
     getActivity(skip),
     getPushes(skip),
+    getWeather(),
   ]);
   const pick = <T,>(live: T | null | undefined, sample: T, empty: T): [T, Source] => {
     const has = Array.isArray(live) ? live.length > 0 : live != null;
@@ -73,6 +77,7 @@ export const getSiteData = cache(async (): Promise<SiteData> => {
     activity: a && skip?.(a.repo) ? null : a,
     pushes: h && skip ? { ...h, days: h.days.filter((d) => !skip(d.repo)) } : h,
     sources: { posts: ps, spotify: ss, repos: rs, activity: as, pushes: hs },
+    weather,
     ...content,
     live: publicLive,
   };

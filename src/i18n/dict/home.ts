@@ -33,6 +33,9 @@ const en = {
       you: "you {time}",
       /** the sky pinned in Control Center */
       pinnedLine: "Sky pinned: {phase}",
+      /** Toulouse's weather now (the wallpaper shows it too) */
+      weather: { clear: "Clear, {temp}°", cloudy: "Cloudy, {temp}°", rain: "Rain, {temp}°", fog: "Fog, {temp}°", autan: "Autan, {wind} km/h" },
+      weatherAria: "Weather in Toulouse: {weather}.",
       aria: "Toulouse time {time}, {phase}. {next}.",
       ariaYou: "Your time {time}, {offset} from Toulouse.",
       open: "Open {app}.",
@@ -110,6 +113,8 @@ const fr: typeof en = {
       events: { sunrise: "Lever {time}", sunset: "Coucher {time}", night: "Nuit à {time}" },
       you: "chez vous {time}",
       pinnedLine: "Ciel épinglé : {phase}",
+      weather: { clear: "Dégagé, {temp}°", cloudy: "Nuageux, {temp}°", rain: "Pluie, {temp}°", fog: "Brouillard, {temp}°", autan: "Autan, {wind} km/h" },
+      weatherAria: "Météo à Toulouse : {weather}.",
       aria: "Heure de Toulouse {time}, {phase}. {next}.",
       ariaYou: "Chez vous {time}, {offset} par rapport à Toulouse.",
       open: "Ouvrir {app}.",

@@ -208,6 +208,13 @@ html[data-sky="night"] .app-home-sundial svg {
   flex: none;
   color: var(--color-label-2);
 }
+/* Toulouse's weather, the same the wallpaper shows; the autan in ember */
+.app-home-clock-weather {
+  color: var(--color-label-2);
+}
+.app-home-clock-weather[data-kind="autan"] {
+  color: var(--color-ember);
+}
 
 /* the wallpaper's sun as a handle: under everything on the desk */
 .app-home-sun-handle {

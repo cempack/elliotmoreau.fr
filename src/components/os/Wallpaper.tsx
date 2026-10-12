@@ -6,6 +6,8 @@ import { SKY_PHASES, useSky, type SkyMode, type SkyPhase } from "./sky";
 import type { City } from "./wallpaper/materials";
 import { lampsAt, relight } from "./wallpaper/light";
 import { pinnedMs, project, sunScrub, sunSpot } from "./wallpaper/sunClock";
+import { WeatherLayer } from "./wallpaper/Weather";
+import { useWeather } from "./weather";
 import "./wallpaper.css";
 
 /**
@@ -126,6 +128,7 @@ type Life = { key: string; cell: number; W: number; night: boolean; city: City }
 
 export function Wallpaper() {
   const sky = useSky();
+  const wx = useWeather();
   const domSky = useSyncExternalStore(subscribeSky, readSky, () => null);
   // the attribute is set pre-paint; if storage blocked even that, wait for
   // the provider's first read instead of lighting a guessed sky
@@ -286,6 +289,7 @@ export function Wallpaper() {
         className="os-wallpaper-canvas"
       />
       {life && <WallpaperLife key={life.key} life={life} />}
+      {life && known && <WeatherLayer city={life.city} cell={life.cell} phase={sky.phase} kind={wx.kind} weather={wx.weather} />}
     </div>
   );
 }

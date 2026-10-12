@@ -230,3 +230,20 @@ html[data-sky="dusk"] .os-wallpaper {
     transition-duration: 200ms;
   }
 }
+
+/* Toulouse's weather over the scene (./wallpaper/Weather): clouds, rain,
+   fog, the autan; one art-resolution canvas, upscaled like the city */
+.os-wallpaper-weather {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 3;
+  display: block;
+  image-rendering: pixelated;
+  animation: os-wp-weather-in 900ms var(--ease-out-quint) both;
+}
+@keyframes os-wp-weather-in {
+  from {
+    opacity: 0;
+  }
+}

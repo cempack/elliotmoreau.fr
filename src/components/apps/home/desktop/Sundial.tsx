@@ -7,6 +7,7 @@ import { useI18n } from "@/i18n/client";
 import { GLYPH_PIN, PixelGlyph } from "@/components/glyphs";
 import { Glass } from "@/components/os/Glass";
 import { useSky } from "@/components/os/sky";
+import { useWeather } from "@/components/os/weather";
 import { sunScrub } from "@/components/os/wallpaper/sunClock";
 import { grabSun, holdSun, releaseSun } from "@/components/os/wallpaper/hold";
 import { atLocalHour, localHour, moonPhase, phaseOf, sunAt, sunDay, TOULOUSE, type SkyPhase } from "@/lib/sun";
@@ -214,6 +215,7 @@ export function ClockWidget() {
   const now = useMinute();
   const zone = useVisitorZone();
   const { mode } = useSky();
+  const wx = useWeather();
   const scrub = useSyncExternalStore(sunScrub.subscribe, sunScrub.get, () => null);
   const [held, setHeld] = useState(false);
   const panel = useRef<HTMLDivElement>(null);
@@ -284,12 +286,13 @@ export function ClockWidget() {
   const you = now && offset !== 0 && scrub == null ? fill(w.you, { time: hhmm(now, lang, zone) }) : "";
   const pinned = mode !== "auto" && scrub == null ? mode : null;
   const phaseName = phase ? w.phase[phase] : " ";
+  const weather = wx.weather ? fill(w.weather[wx.kind], { temp: wx.weather.temp, wind: wx.weather.wind }) : "";
   const valueText = shown == null ? "" : fill(w.valueText, { time, phase: phase ? w.phase[phase].toLocaleLowerCase(lang) : "" });
   const minutesOf = (ms: number) => Math.round(localHour(new Date(ms)) * 60);
   const label = now
     ? `${fill(w.aria, { time: hhmm(now, lang), phase: phaseName, next: nextText })}${
         offset !== 0 ? ` ${fill(w.ariaYou, { time: hhmm(now, lang, zone), offset: fmtOffset(offset) })}` : ""
-      }`
+      }${weather ? ` ${fill(w.weatherAria, { weather })}` : ""}`
     : w.title;
 
   /* ── holding the shadow ── */
@@ -410,7 +413,7 @@ export function ClockWidget() {
         </span>
         <span className="app-home-clock-next">{nextText}</span>
       </p>
-      {(pinned || you) && (
+      {(pinned || you || weather) && (
         <p className="app-home-clock-extra" aria-hidden>
           {pinned ? (
             <>
@@ -418,7 +421,15 @@ export function ClockWidget() {
               {fill(w.pinnedLine, { phase: w.phase[pinned] })}
             </>
           ) : (
-            you
+            <>
+              {weather && (
+                <span className="app-home-clock-weather" data-kind={wx.kind}>
+                  {weather}
+                </span>
+              )}
+              {weather && you && <span aria-hidden> · </span>}
+              {you}
+            </>
           )}
         </p>
       )}
