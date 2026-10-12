@@ -333,6 +333,12 @@ html[data-term-focus] .os-win .os-win-lights:not(:hover) .os-win-light {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
 }
 
+/* cat README.md: markdown headings between the sections */
+.os-term-readme > .os-term-readme-h {
+  margin-top: 10px;
+  margin-bottom: 2px;
+}
+
 /* two-column lists: help, now, neofetch */
 .os-term-help,
 .os-term-kv {

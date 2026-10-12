@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useI18n } from "@/i18n/client";
 import { useFinePointer, useReduced } from "@/hooks/env";
-import { useSound } from "@/lib/sound";
 import { DesktopIcons } from "./DesktopIcons";
-import { Hello, type HelloHandle } from "./Hello";
+import { Hello } from "./Hello";
+import { useTerminal } from "@/components/os/Terminal";
+import { termQueue } from "@/components/os/terminal/queue";
 import { ClockWidget } from "./Sundial";
 import { SunHandle } from "./SunHandle";
 import { PushWidget } from "./BrickWall";
@@ -31,14 +32,13 @@ type Marquee = {
  */
 export function DesktopScene() {
   const { t } = useI18n();
+  const term = useTerminal();
   const reduced = useReduced();
   const fine = useFinePointer();
-  const { blip } = useSound();
   const sceneRef = useRef<HTMLElement>(null);
   const widgetsRef = useRef<HTMLDivElement>(null);
   const helloSlotRef = useRef<HTMLDivElement>(null);
   const marqueeRef = useRef<HTMLDivElement>(null);
-  const helloRef = useRef<HelloHandle>(null);
   const mq = useRef<Marquee | null>(null);
   const suppressClick = useRef(false);
   const [selected, setSelectedState] = useState<Set<DesktopIconId>>(() => new Set());
@@ -108,11 +108,10 @@ export function DesktopScene() {
     return out;
   }, []);
 
-  /* ── the README icon points at the intro ── */
+  /* ── the README icon: the terminal opens on cat README.md ── */
   const onReadme = () => {
-    helloRef.current?.focus();
-    helloRef.current?.nudge();
-    blip("open");
+    termQueue.push(`cat ${t.system.term.cat.readme}`);
+    term.setOpen(true);
   };
 
   /* ── marquee selection on empty desktop ── */
@@ -201,7 +200,7 @@ export function DesktopScene() {
       {fine && <SunHandle />}
 
       <div ref={helloSlotRef} className="app-home-hello-slot">
-        <Hello ref={helloRef} reduced={reduced} />
+        <Hello />
       </div>
 
       <div ref={widgetsRef} className="app-home-widgets" role="group" aria-label={t.home.widgets.label}>

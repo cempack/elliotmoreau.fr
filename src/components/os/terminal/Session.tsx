@@ -13,6 +13,7 @@ import { rebootOS } from "../Intro";
 import { useTerminal, useTerminalSession, type Entry } from "../Terminal";
 import { SILENT, complete, cwdLabel, runCommand, type RunCtx } from "./commands";
 import { ActionsCtx, Prompt, fill, type Actions } from "./ui";
+import { termQueue } from "./queue";
 
 /** One-tap commands for the phone sheet, where typing is the slow path. */
 const CHIPS = ["help", "whoami", "projects", "posts", "now", "neofetch", "theme", "contact", "sudo hire elliot"];
@@ -125,6 +126,16 @@ export function Session({
     };
     actions.current.fill = put;
   });
+  // a command queued for the open terminal (the README icon's cat README.md)
+  useEffect(() => {
+    if (!term.open) return;
+    const go = () => {
+      const c = termQueue.take();
+      if (c) actions.current.run(c);
+    };
+    go();
+    return termQueue.subscribe(go);
+  }, [term.open]);
   const actionsValue = useMemo<Actions>(
     () => ({ run: (c) => actions.current.run(c), fill: (c) => actions.current.fill(c) }),
     []

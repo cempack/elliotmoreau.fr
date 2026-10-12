@@ -236,6 +236,65 @@ function whoami(ctx: RunCtx) {
   );
 }
 
+/** cat README.md: who, what's on this machine (each a command), where else */
+function readme(ctx: RunCtx) {
+  const t = ctx.d.system.term;
+  const r = t.readme;
+  const [first, ...rest] = t.whoami;
+  const apps = (["work", "writing", "atlas", "now", "contact"] as const).map((id) => ({ id, label: ctx.d.shell.apps[id], about: r.apps[id] }));
+  const elsewhere: [string, string, string][] = [
+    ["GitHub", SOCIALS.github, "github.com/cempack"],
+    ["Mastodon", SOCIALS.mastodon, "mastodon.social/@cempack"],
+    ["YouTube", SOCIALS.youtube, "youtube.com/@cempack"],
+  ];
+  return (
+    <div className="os-term-block os-term-readme">
+      <p className="os-term-strong">
+        <span className="os-term-ok"># </span>
+        {first}
+      </p>
+      {rest.map((l) => (
+        <p key={l}>{l}</p>
+      ))}
+      <p className="os-term-strong os-term-readme-h">
+        <span className="os-term-ok">## </span>
+        {r.here}
+      </p>
+      <dl className="os-term-help">
+        {apps.map((a) => (
+          <div key={a.id}>
+            <dt>
+              <Cmd value={`open ${a.id}`}>{a.label}</Cmd>
+            </dt>
+            <dd>{a.about}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="os-term-strong os-term-readme-h">
+        <span className="os-term-ok">## </span>
+        {r.elsewhere}
+      </p>
+      <dl className="os-term-kv">
+        {elsewhere.map(([k, href, label]) => (
+          <div key={k}>
+            <dt>{k}</dt>
+            <dd>
+              <Ext href={href}>{label}</Ext>
+            </dd>
+          </div>
+        ))}
+        <div>
+          <dt>{r.email}</dt>
+          <dd>
+            <Ext href={`mailto:${SOCIALS.email}`}>{SOCIALS.email}</Ext>
+          </dd>
+        </div>
+      </dl>
+      <Line tone="dim">{r.foot}</Line>
+    </div>
+  );
+}
+
 function contact(ctx: RunCtx) {
   const t = ctx.d.system.term.contact;
   const email = SOCIALS.email;
@@ -379,7 +438,7 @@ function neofetch(ctx: RunCtx) {
 function catFile(file: string, ctx: RunCtx): Output {
   const t = ctx.d.system.term;
   const f = file.replace(/^(\.\/|~\/)/, "");
-  if (/^(readme|lisezmoi)(\.md)?$/i.test(f)) return whoami(ctx);
+  if (/^(readme|lisezmoi)(\.md)?$/i.test(f)) return readme(ctx);
   if (f === ".secrets")
     return (
       <div className="os-term-block">

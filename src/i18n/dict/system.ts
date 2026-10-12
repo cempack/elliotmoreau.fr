@@ -94,6 +94,20 @@ const en = {
       been: "been there",
       want: "on the list",
     },
+    /** cat README.md (the desktop's README icon runs it) */
+    readme: {
+      here: "On this machine",
+      apps: {
+        work: "projects, live from GitHub",
+        writing: "posts on how things get made",
+        atlas: "places I’ve been, and the next ones",
+        now: "what I’m up to, and listening to",
+        contact: "write to me",
+      },
+      elsewhere: "Elsewhere",
+      email: "Email",
+      foot: "I reply in English or French.",
+    },
     secrets: [
       "1. Type reboot to see the boot again, or lock to lock the screen.",
       "2. Press ` anywhere and I'll show up.",
@@ -304,6 +318,19 @@ const fr: typeof en = {
       readme: "LISEZMOI.md",
       been: "déjà visité",
       want: "sur la liste",
+    },
+    readme: {
+      here: "Sur cette machine",
+      apps: {
+        work: "mes projets, en direct de GitHub",
+        writing: "des articles sur la fabrication des choses",
+        atlas: "les lieux visités, et les prochains",
+        now: "ce que je fais, et ce que j’écoute",
+        contact: "m’écrire",
+      },
+      elsewhere: "Ailleurs",
+      email: "E-mail",
+      foot: "Je réponds en français ou en anglais.",
     },
     secrets: [
       "1. Tapez reboot pour revoir le démarrage, ou lock pour verrouiller l’écran.",
