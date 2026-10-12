@@ -165,8 +165,8 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"] {
 html[data-mail-hash="elsewhere"] .app-contact .os-win-nav-item[href$="#elsewhere"]::after,
 html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
   opacity: 1;
-  background: color-mix(in oklab, var(--os-win-accent) 14%, rgba(255, 255, 255, 0.03));
-  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--os-win-accent) 30%, transparent);
+  /* the same quiet slab as WinNav's thumb */
+  background: color-mix(in srgb, var(--color-label) 7.5%, transparent);
 }
 @media (max-width: 1023px) {
   html[data-mail-hash="elsewhere"] .app-contact .os-win-nav-item[href$="#elsewhere"],
@@ -1515,6 +1515,16 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
 .app-contact-live-when::before {
   content: "·";
   margin-right: 0.5rem;
+}
+/* phones: the panel's text column is narrow, so the age gets its own line
+   rather than wrapping under the label with a stray separator */
+@media (max-width: 767px) {
+  .app-contact-live-k {
+    flex-direction: column;
+  }
+  .app-contact-live-when::before {
+    content: none;
+  }
 }
 .app-contact-live-title {
   display: -webkit-box;
