@@ -1,14 +1,14 @@
 "use client";
 
 import "./window.css";
-import { ViewTransition, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { ViewTransition, addTransitionType, startTransition, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { m, type MotionStyle } from "motion/react";
 import { useI18n } from "@/i18n/client";
 import { useSound } from "@/lib/sound";
-import { spring } from "@/lib/motion";
 import { useReduced } from "@/hooks/env";
+import { viewTransitionActive } from "@/hooks/useSettled";
 import { appDef, type AppId } from "./apps";
 import { AppIcon } from "./icons";
 import { Glass } from "./Glass";
@@ -25,6 +25,8 @@ export { PathBar, type Crumb } from "./window/PathBar";
 /** Page transition classes by navigation type (see window.css). */
 const ENTER = { "app-open": "app-open", default: "app-in" };
 const EXIT = { "app-close": "app-close", "app-open": "app-leave", default: "app-out" };
+/** only zoom morphs the window in place; any other update inside just reflows */
+const UPDATE = { "win-zoom": "win-zoom", default: "none" };
 
 /**
  * CONTRACT (owner: window agent)
@@ -36,7 +38,9 @@ const EXIT = { "app-close": "app-close", "app-open": "app-leave", default: "app-
  * `className` (on the <section>), optional `subtitle` (replaces the mono
  * "~/path" next to the title).
  *
- * - Lights: zoom toggles full width on a layout spring (double-click the
+ * - Lights: zoom toggles full width, morphing in place as a view
+ *   transition (the browser animates the snapshot; nothing re-lays out
+ *   per frame, and no layout animation measures the page) (double-click the
  *   title bar too); close goes home with the "app-close" transition. No
  *   minimize: an app is open or it isn't. Glyphs show on hover/focus.
  * - The title bar is sticky under the menu bar; content scrolls with the
@@ -52,13 +56,6 @@ const EXIT = { "app-close": "app-close", "app-open": "app-leave", default: "app-
  *   fine): React only runs enter/exit for a ViewTransition that no DOM
  *   node of the changing subtree wraps.
  */
-let firstWindow = true;
-/** true once: for the first window of a page load (a hard load) */
-function takeFirstWindow() {
-  const first = firstWindow;
-  firstWindow = false;
-  return first;
-}
 
 export function AppWindow({
   app,
@@ -116,10 +113,10 @@ export function AppWindow({
   useLayoutEffect(() => {
     const el = winRef.current;
     if (!el) return;
-    // a hard load has no enter transition to aim: no geometry to write (it would restyle the whole page)
-    const hard = takeFirstWindow();
+    // only a window mounting inside a view transition is opening (a hard
+    // load, or reduced motion, has no transition to aim)
     let raf = 0;
-    if (!hard) {
+    if (viewTransitionActive()) {
       setEnterOrigin(el, app, appHref);
       raf = requestAnimationFrame(() => setEnterOrigin(el, app, appHref, true));
     }
@@ -160,21 +157,20 @@ export function AppWindow({
   const toggleZoom = () => {
     const next = !zoomed;
     setZoomPref(next);
-    setZoomed(next);
     blip("toggle");
+    if (reduced) return setZoomed(next);
+    startTransition(() => {
+      addTransitionType("win-zoom");
+      setZoomed(next);
+    });
   };
 
   return (
     // the ViewTransition must sit above any DOM node of the page, or React
     // never runs its enter/exit (nested boundaries only animate updates)
-    <ViewTransition enter={ENTER} exit={thrown ? "none" : EXIT} update="none" share="none" default="none">
+    <ViewTransition enter={ENTER} exit={thrown ? "none" : EXIT} update={UPDATE} share="none" default="none">
       <m.section
         ref={winRef}
-        layout
-        // only zoom resizes the window on a spring: content changes (a
-        // filter, a sheet, a growing list) just reflow
-        layoutDependency={zoomed}
-        transition={{ layout: spring.default }}
         aria-labelledby={titleId}
         data-app={app}
         data-zoomed={zoomed || undefined}
@@ -184,10 +180,8 @@ export function AppWindow({
         <Glass thickness="thick" className="os-win-glass" aria-hidden />
         <span className="os-win-glow" aria-hidden />
 
-        <m.div
+        <div
           ref={barRef}
-          layout="position"
-          layoutDependency={zoomed}
           className="os-win-bar"
          
           {...drag.handlers}
@@ -243,9 +237,9 @@ export function AppWindow({
               <WinIcon kind="close" />
             </span>
           </Link>
-        </m.div>
+        </div>
 
-        <m.div layout="position" layoutDependency={zoomed} className="os-win-body" data-has-side={sidebar ? "" : undefined}>
+        <div className="os-win-body" data-has-side={sidebar ? "" : undefined}>
           {sidebar && (
             <aside className="os-win-side" aria-label={w.sections} data-lenis-prevent>
               {sidebar}
@@ -254,7 +248,7 @@ export function AppWindow({
           <div ref={mainRef} className="os-win-main" data-lenis-prevent>
             {children}
           </div>
-        </m.div>
+        </div>
 
         <span className="os-win-rim" aria-hidden />
       </m.section>

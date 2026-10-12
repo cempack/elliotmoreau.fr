@@ -9,7 +9,6 @@ import { project, spring } from "@/lib/motion";
 import { useSound } from "@/lib/sound";
 import { APPS } from "@/components/os/apps";
 import { AppIcon } from "@/components/os/icons";
-import { markLaunch } from "@/components/os/dock/launch";
 import { useTerminal } from "@/components/os/Terminal";
 import { usePalette } from "@/components/ui/palette";
 import { DESKTOP_ICONS, DesktopGlyph, type DesktopIconId } from "./icons";
@@ -367,7 +366,7 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
   }, []);
 
   /* ── opening ── */
-  const open = (id: DesktopIconId | PhoneOnly, el: HTMLElement) => {
+  const open = (id: DesktopIconId | PhoneOnly) => {
     if (id === "readme") {
       onReadme();
       return;
@@ -381,14 +380,12 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
       return;
     }
     if (id === "draft") {
-      markLaunch(el.querySelector(".app-home-icon-tile") ?? el);
       blip("open");
       router.push(path("/contact"), { transitionTypes: ["app-open"] });
       return;
     }
     const app = APPS.find((a) => a.id === id);
     if (!app) return;
-    markLaunch(el.querySelector(".app-home-icon-tile") ?? el);
     blip("open");
     router.push(path(app.path), { transitionTypes: ["app-open"] });
   };
@@ -597,7 +594,6 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
   };
 
   const onClick = (id: DesktopIconId | PhoneOnly) => (e: React.MouseEvent<HTMLElement>) => {
-    const el = e.currentTarget;
     if (clock() < quietUntil.current) {
       e.preventDefault();
       return;
@@ -607,7 +603,7 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
     const modified = e.metaKey || e.ctrlKey || e.shiftKey || e.altKey;
     if (activate && !(modified && e.detail !== 0)) {
       e.preventDefault();
-      open(id, el);
+      open(id);
       return;
     }
     // a single click only selects (Finder): the link doesn't navigate

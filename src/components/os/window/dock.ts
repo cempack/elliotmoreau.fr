@@ -74,20 +74,41 @@ const px = (v: number) => `${Math.round(v * 10) / 10}px`;
  * coordinates; `gx`, `gy` let the keyframes undo the scale's effect on the
  * group's positioning transform).
  */
+const geometry: Record<"in" | "out", string> = { in: "", out: "" };
+let sheet: HTMLStyleElement | null = null;
+
+/**
+ * The variables live in a rule on ::view-transition, not on <html>: the
+ * transition's pseudo-elements inherit them from there, while no element
+ * of the page does, so writing them never restyles the whole document
+ * (custom properties on the root did, several times per open and close).
+ */
+function flush() {
+  if (!sheet?.isConnected) {
+    sheet = document.createElement("style");
+    sheet.id = "os-vt-geometry";
+    document.head.appendChild(sheet);
+  }
+  const text = `html::view-transition{${geometry.in}${geometry.out}}`;
+  if (sheet.textContent !== text) sheet.textContent = text;
+}
+
 function writeGeometry(prefix: "in" | "out", r: DOMRect, top: number, icon: Point) {
   const vh = window.innerHeight;
   const t = Math.max(0, menubarBottom() - top);
   const vis = Math.max(1, Math.min(top + r.height, vh) - (top + t));
-  const s = document.documentElement.style;
-  const set = (k: string, v: number) => s.setProperty(`--os-vt-${prefix}-${k}`, px(v));
-  set("gx", r.left);
-  set("gy", top);
-  set("t", t);
-  set("vis", vis);
-  set("h", r.height);
-  set("cb", Math.max(0, r.height - t - vis));
-  set("ox", icon.x - r.left);
-  set("oy", icon.y - (top + t));
+  const v: [string, number][] = [
+    ["gx", r.left],
+    ["gy", top],
+    ["t", t],
+    ["vis", vis],
+    ["h", r.height],
+    ["cb", Math.max(0, r.height - t - vis)],
+    ["ox", icon.x - r.left],
+    ["oy", icon.y - (top + t)],
+  ];
+  geometry[prefix] = v.map(([k, n]) => `--os-vt-${prefix}-${k}:${px(n)};`).join("");
+  flush();
 }
 
 /**

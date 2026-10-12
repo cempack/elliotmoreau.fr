@@ -9,7 +9,7 @@ import { AppIcon, ICON_ACCENT, type IconId } from "../icons";
 import { Glass } from "../Glass";
 import { useTerminal } from "../Terminal";
 import { DOCK_ICON, useMagnification } from "./useMagnification";
-import { bounce, isPlainClick, markLaunch, pressHandlers } from "./launch";
+import { bounce, isPlainClick, pressHandlers } from "./launch";
 
 /** Icon stack shared by every slot: magnify → bounce → press → tile. */
 function DockIcon({ app }: { app: IconId }) {
@@ -116,9 +116,7 @@ export function DesktopDock() {
                     if (!isPlainClick(e)) return;
                     // already here: no redundant navigation (and no page transition flash)
                     if (on) return e.preventDefault();
-                    const item = e.currentTarget.parentElement;
-                    markLaunch(item);
-                    bounce(item?.querySelector("[data-dock-bounce]"));
+                    bounce(e.currentTarget.parentElement?.querySelector("[data-dock-bounce]"));
                   }}
                   {...pressHandlers}
                 >
@@ -147,11 +145,7 @@ export function DesktopDock() {
               data-dock-focus=""
               onFocus={() => setFocusIdx(termIdx)}
               onClick={(e) => {
-                const item = e.currentTarget.parentElement;
-                if (!term.open) {
-                  markLaunch(item);
-                  bounce(item?.querySelector("[data-dock-bounce]"));
-                }
+                if (!term.open) bounce(e.currentTarget.parentElement?.querySelector("[data-dock-bounce]"));
                 term.toggle();
               }}
               {...pressHandlers}

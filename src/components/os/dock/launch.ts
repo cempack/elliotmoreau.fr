@@ -26,20 +26,6 @@ export function bounce(el: Element | null | undefined, height = 16) {
   );
 }
 
-/**
- * Publish where an app was launched from, in viewport px, so an opening
- * window can grow out of that exact icon:
- * `--os-launch-x`, `--os-launch-y` on <html>.
- */
-export function markLaunch(el: Element | null | undefined) {
-  if (!el) return;
-  const r = el.getBoundingClientRect();
-  if (!r.width) return;
-  const s = document.documentElement.style;
-  s.setProperty("--os-launch-x", `${Math.round(r.left + r.width / 2)}px`);
-  s.setProperty("--os-launch-y", `${Math.round(r.top + r.height / 2)}px`);
-}
-
 /** The visible icon for an app (desktop dock or mobile tab bar). */
 export function visibleIcon(id: string) {
   const all = document.querySelectorAll<HTMLElement>(`[data-dock-launch="${id}"]`);
@@ -87,8 +73,8 @@ function digitOf(e: KeyboardEvent) {
 
 /**
  * Number keys 1–6 open apps (app.key), unless the user is typing or a
- * dialog/sheet is open. Bounces the visible dock icon and publishes the
- * launch origin, then navigates with the "app-open" transition.
+ * dialog/sheet is open. Bounces the visible dock icon, then navigates
+ * with the "app-open" transition.
  */
 export function useAppShortcuts(activeId: AppDef["id"]) {
   const router = useRouter();
@@ -103,9 +89,7 @@ export function useAppShortcuts(activeId: AppDef["id"]) {
       if (document.querySelector("dialog[open], [aria-modal='true']")) return;
       e.preventDefault();
       if (app.id === activeId) return;
-      const icon = visibleIcon(app.id);
-      markLaunch(icon);
-      bounce(icon?.querySelector("[data-dock-bounce]"));
+      bounce(visibleIcon(app.id)?.querySelector("[data-dock-bounce]"));
       router.push(path(app.path), { transitionTypes: ["app-open"] });
     };
     window.addEventListener("keydown", onKey);

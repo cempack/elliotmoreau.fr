@@ -12,7 +12,7 @@ import { Sheet, useSheetDismiss } from "@/components/ui/Sheet";
 import { APPS, appForPath, type AppId } from "../apps";
 import { AppIcon, type IconId } from "../icons";
 import { useTerminal } from "../Terminal";
-import { bounce, isPlainClick, markLaunch, pressHandlers, scrollToTop } from "./launch";
+import { bounce, isPlainClick, pressHandlers, scrollToTop } from "./launch";
 
 /** The five apps that earn a tab; the rest live behind More. */
 const PRIMARY: AppId[] = ["home", "work", "writing", "atlas", "contact"];
@@ -91,9 +91,7 @@ export function MobileTabBar() {
       scrollToTop();
       return;
     }
-    const tab = e.currentTarget;
-    markLaunch(tab.querySelector("[data-dock-bounce]"));
-    bounce(tab.querySelector("[data-dock-bounce]"), 7);
+    bounce(e.currentTarget.querySelector("[data-dock-bounce]"), 7);
   };
 
   return (
@@ -188,7 +186,6 @@ function MoreList({ active, afterRef }: { active: AppId; afterRef: React.RefObje
                 thenClose(scrollToTop);
                 return;
               }
-              markLaunch(e.currentTarget.querySelector("[data-dock-bounce]"));
               dismiss();
             }}
           >

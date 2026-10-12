@@ -496,8 +496,11 @@
   .os-win-bar::after {
     inset-inline: 1rem;
   }
+  /* phones: just the app's name, like a native title (no path, no subtitle) */
   .os-win-lights,
-  .os-win-sub--path {
+  .os-win-sub,
+  .os-win-sub--path,
+  .os-win-heading .os-path {
     display: none;
   }
   .os-win-grabber {
@@ -565,6 +568,26 @@
    (geometry from window/dock.ts in --os-vt-in-* / --os-vt-out-*). The
    group is what scales; `translate` undoes the scale's effect on its
    positioning transform, so it scales about the Dock icon exactly. */
+
+/* zoom: the window widens (or narrows) in place. The group morphs its box
+   on the compositor; the snapshots keep their own size, top-centred and
+   clipped by the window's corners, and cross-fade, so nothing stretches */
+::view-transition-group(.win-zoom) {
+  overflow: clip;
+  border-radius: var(--radius-window);
+  background: color-mix(in srgb, var(--color-ink-900) 86%, transparent);
+  box-shadow: 0 24px 48px -28px rgba(0, 0, 0, 0.6);
+  animation-duration: 0.36s;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+::view-transition-old(.win-zoom),
+::view-transition-new(.win-zoom) {
+  width: 100%;
+  height: 100%;
+  object-fit: none;
+  object-position: top center;
+  animation-duration: 0.22s;
+}
 
 ::view-transition-group(.app-open),
 ::view-transition-group(.app-in) {

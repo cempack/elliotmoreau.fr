@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import type { PlaceRow } from "@/lib/content";
 import { usePlaces } from "@/components/os/SiteData";
+import { useSettled } from "@/hooks/useSettled";
 import { tileFor } from "./geo";
 import { TILE_H, TILE_W } from "./landmass";
 
@@ -129,9 +130,15 @@ export function PixelMap({ place, places, className = "" }: { place: PlaceRow; p
   const ref = useRef<HTMLCanvasElement>(null);
   const site = usePlaces();
   const others = places ?? site;
+  // painted once the window has finished opening, and only again if the place changes
+  const settled = useSettled();
+  const painted = useRef<{ place: PlaceRow; others: readonly PlaceRow[] } | null>(null);
   useEffect(() => {
+    if (!settled || (painted.current?.place === place && painted.current.others === others)) return;
     const ctx = ref.current?.getContext("2d");
-    if (ctx) paintMap(place, others, ctx);
-  }, [place, others]);
+    if (!ctx) return;
+    paintMap(place, others, ctx);
+    painted.current = { place, others };
+  }, [place, others, settled]);
   return <canvas ref={ref} width={TILE_W} height={TILE_H} aria-hidden className={className} />;
 }

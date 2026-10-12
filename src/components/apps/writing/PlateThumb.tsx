@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useSettled } from "@/hooks/useSettled";
 import { composite, paintPlateLayers } from "./plate";
 
 /** the plate as the reader paints it in a ~610 px frame (3 px cells) */
@@ -25,10 +26,15 @@ export function PlateThumb({
   className?: string;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
+  // painted once the window has finished opening (a plate is a few hundred thousand pixels)
+  const settled = useSettled();
+  const painted = useRef("");
   useEffect(() => {
     const c = ref.current;
     const ctx = c?.getContext("2d");
-    if (!c || !ctx) return;
+    const key = `${seed}:${W}x${H}`;
+    if (!settled || !c || !ctx || painted.current === key) return;
+    painted.current = key;
     const layers = paintPlateLayers(seed, PW, PH);
     const full = new Uint8ClampedArray(PW * PH * 4);
     composite(layers, [0, 0, 0, 0], full);
@@ -41,6 +47,6 @@ export function PlateThumb({
       out.set(full.subarray(s, s + W * 4), y * W * 4);
     }
     ctx.putImageData(new ImageData(out, W, H), 0, 0);
-  }, [seed, W, H]);
+  }, [seed, W, H, settled]);
   return <canvas ref={ref} className={className} width={W} height={H} aria-hidden />;
 }

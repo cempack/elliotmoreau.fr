@@ -24,9 +24,8 @@ export { DOCK_ICON, DOCK_MAX } from "./dock/useMagnification";
  * Height: `var(--dock-h)` is the space the dock occupies at the bottom of
  * the viewport (76px desktop; the floating 60px tab bar capsule plus the
  * gap under it on phones, home indicator included). Pad with it.
- * Launch origin: `--os-launch-x/y` on <html> (viewport px) hold the centre
- * of the icon an app was last launched from; every icon carries
- * `[data-dock-launch="<app id>"]` for measuring.
+ * Every icon carries `[data-dock-launch="<app id>"]`, so a window can
+ * measure the icon it grows out of (window/dock.ts).
  * View transitions: while a transition runs (only then: a name would make
  * it a backdrop root and drop its glass) the dock is `os-dock` (phone:
  * `os-tabbar`) and holds still above the pages transitioning beneath it.
