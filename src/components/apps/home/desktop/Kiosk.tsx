@@ -309,7 +309,7 @@ export function LatestPostWidget() {
   const fold = peel && box ? foldGeometry(peel, { x: box.w, y: box.h }, box.w, box.h) : null;
   const d0 = describe(post);
   const d1 = describe(next);
-  const href = `${path("/writing")}?p=${encodeURIComponent(post.slug)}`;
+  const href = path(`/writing/${encodeURIComponent(post.slug)}`);
 
   return (
     <div className="app-home-widget app-home-widget--post app-home-kiosk" data-peeling={peel ? "" : undefined}>

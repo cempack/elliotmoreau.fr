@@ -1,28 +1,19 @@
-// Strings for the Writing app (Notes). Templates use {placeholders}; the
+// Strings for the Writing app. Templates use {placeholders}; the
 // dict crosses the server → client boundary, so plain strings (and string
 // arrays) only.
 const en = {
-  /* sidebar */
-  folders: "Folders",
-  foldersLabel: "Filter posts by topic",
+  /* the list */
+  title: "Writing",
+  lede: "Notes on code, design, travel and music. Each one reads right here.",
+  earlier: "Earlier",
   all: "All posts",
   /* list */
   list: "Posts",
-  countOne: "1 post",
-  countOther: "{n} posts",
-  minShort: "{n} min",
-  keysHint: "browse",
-  keysTurn: "turn the page",
-  sourceLive: "Live from the blog",
-  sourceSample: "Sample posts · blog not connected",
   /* reader */
-  reader: "Reader",
   minRead: "{n} min read",
   /** beside the post, while reading */
   minLeft: "{n} min left",
   author: "Elliot Moreau",
-  readOnBlog: "Read on the blog",
-  readOnBlogLabel: "Read “{title}” on the blog (opens in a new tab)",
   read: "Read",
   readLabel: "Read “{title}”",
   onBlog: "On the blog",
@@ -30,13 +21,11 @@ const en = {
   allPosts: "All posts",
   sampleBody: "Sample text · blog not connected",
   /* write back (end of a post) */
-  writeBackKicker: "Write back",
   writeBackTitle: "Thoughts on this?",
   writeBackBody: "Send me a letter from Mail. I read every one, and answer most.",
   writeBackCta: "Write back",
   writeBackSubject: "Re: {title}",
   writeBackFirstLine: "About “{title}”: {url}",
-  cursorRead: "Read",
   copyLink: "Copy link",
   copied: "Link copied",
   copyFailed: "Couldn't copy the link",
@@ -44,14 +33,11 @@ const en = {
   newer: "Newer",
   more: "Keep reading",
   back: "Back to {folder}",
-  /* newsletter (reader) */
-  memberKicker: "Newsletter",
+  /* newsletter (end of the list and of a post) */
   memberTitle: "Get the next post by email",
   memberBody: "A few times a year. Unsubscribe in one click.",
   memberRss: "Prefer a feed? RSS",
-  /* newsletter (phones: the list screen) */
-  newsTitle: "Newsletter",
-  newsBody: "New posts by email, a few times a year.",
+  /* newsletter form */
   newsLabel: "Email address",
   newsPlaceholder: "you@example.com",
   newsSubscribe: "Subscribe",
@@ -65,9 +51,6 @@ const en = {
   blog: "Blog",
   openBlog: "Open blog.elliotmoreau.fr in a new tab",
   /* states */
-  folderEmptyTitle: "Nothing in this folder",
-  folderEmptyBody: "No posts under this topic yet.",
-  folderEmptyCta: "Show all posts",
   noneTitle: "No posts yet",
   noneBody: "Nothing has been published so far. New posts appear on the blog first.",
   offlineTitle: "The blog didn't answer",
@@ -75,29 +58,18 @@ const en = {
   visitBlog: "Open the blog",
   /* dates */
   months: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
-  monthsShort: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-  dateShort: "{d} {m}",
   dateLong: "{d} {m} {y}",
 };
 
 const fr: typeof en = {
-  folders: "Dossiers",
-  foldersLabel: "Filtrer les articles par sujet",
+  title: "Écrits",
+  lede: "Des notes sur le code, le design, les voyages et la musique. Chacune se lit ici.",
+  earlier: "Plus anciens",
   all: "Tous les articles",
   list: "Articles",
-  countOne: "1 article",
-  countOther: "{n} articles",
-  minShort: "{n} min",
-  keysHint: "parcourir",
-  keysTurn: "tourner la page",
-  sourceLive: "En direct du blog",
-  sourceSample: "Articles d’exemple · blog non connecté",
-  reader: "Lecteur",
   minRead: "{n} min de lecture",
   minLeft: "Encore {n} min",
   author: "Elliot Moreau",
-  readOnBlog: "Lire sur le blog",
-  readOnBlogLabel: "Lire « {title} » sur le blog (nouvel onglet)",
   read: "Lire",
   readLabel: "Lire « {title} »",
   onBlog: "Sur le blog",
@@ -105,13 +77,11 @@ const fr: typeof en = {
   allPosts: "Tous les articles",
   sampleBody: "Texte d’exemple · blog non connecté",
   /* write back (end of a post) */
-  writeBackKicker: "Répondre",
   writeBackTitle: "Un avis là-dessus ?",
   writeBackBody: "Écrivez-moi depuis Mail. Je lis chaque lettre et réponds à presque toutes.",
   writeBackCta: "Répondre",
   writeBackSubject: "Re : {title}",
   writeBackFirstLine: "À propos de « {title} » : {url}",
-  cursorRead: "Lire",
   copyLink: "Copier le lien",
   copied: "Lien copié",
   copyFailed: "Impossible de copier le lien",
@@ -119,12 +89,9 @@ const fr: typeof en = {
   newer: "Plus récent",
   more: "À lire aussi",
   back: "Retour à {folder}",
-  memberKicker: "Newsletter",
   memberTitle: "Le prochain article par e‑mail",
   memberBody: "Quelques fois par an. Désinscription en un clic.",
   memberRss: "Plutôt un flux ? RSS",
-  newsTitle: "Newsletter",
-  newsBody: "Les nouveaux articles par e‑mail, quelques fois par an.",
   newsLabel: "Adresse e‑mail",
   newsPlaceholder: "vous@exemple.fr",
   newsSubscribe: "S’abonner",
@@ -137,17 +104,12 @@ const fr: typeof en = {
   rss: "Flux RSS",
   blog: "Blog",
   openBlog: "Ouvrir blog.elliotmoreau.fr dans un nouvel onglet",
-  folderEmptyTitle: "Rien dans ce dossier",
-  folderEmptyBody: "Aucun article sur ce sujet pour l’instant.",
-  folderEmptyCta: "Voir tous les articles",
   noneTitle: "Pas encore d’articles",
   noneBody: "Rien n’a encore été publié. Les nouveaux articles paraissent d’abord sur le blog.",
   offlineTitle: "Le blog ne répond pas",
   offlineBody: "Impossible de charger les articles pour l’instant. Ils sont tous sur blog.elliotmoreau.fr.",
   visitBlog: "Ouvrir le blog",
   months: ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"],
-  monthsShort: ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."],
-  dateShort: "{d} {m}",
   dateLong: "{d} {m} {y}",
 };
 

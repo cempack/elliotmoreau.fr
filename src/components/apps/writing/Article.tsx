@@ -12,9 +12,9 @@ import { PixelGlyph } from "@/components/glyphs";
 import { AppWindow } from "@/components/os/AppWindow";
 import { Plate } from "./Plate";
 import { ReadingSky } from "./ReadingSky";
-import { SubscribeForm } from "./SubscribeForm";
-import { G_BACK, G_COPY, G_MAIL, G_RSS } from "./glyphs";
-import { RSS_URL, dateLong, fmt, primaryTag } from "./util";
+import { Letters } from "./Letters";
+import { G_BACK, G_COPY, G_MAIL } from "./glyphs";
+import { dateLong, fmt, primaryTag } from "./util";
 
 type Neighbour = { slug: string; title: string } | null;
 
@@ -43,7 +43,7 @@ export function Article({
   const { notify } = useToast();
   const tag = primaryTag(post);
   const here = `${SITE_URL}${path(`/writing/${post.slug}`)}`;
-  const back = `${path("/writing")}?p=${encodeURIComponent(post.slug)}`;
+  const back = path("/writing");
 
   // the floating bar (phones) gets its material once the plate has scrolled under it
   const barRef = useRef<HTMLElement>(null);
@@ -124,12 +124,10 @@ export function Article({
               <PixelGlyph cells={G_MAIL} size={28} />
             </span>
             <div className="app-writing-member-text">
-              <p className="app-writing-member-k">{w.writeBackKicker}</p>
               <h3 id="post-writeback" className="app-writing-member-title">
                 {w.writeBackTitle}
               </h3>
               <p className="app-writing-member-body">{w.writeBackBody}</p>
-              <p className="app-writing-writeback-subject">{subject}</p>
             </div>
             <Link href={reply} className="app-writing-cta app-writing-writeback-cta">
               {w.writeBackCta}
@@ -158,26 +156,7 @@ export function Article({
             </nav>
           )}
 
-          <aside className="app-writing-member" aria-labelledby="post-member">
-            <span className="app-writing-member-art" aria-hidden>
-              <PixelGlyph cells={G_RSS} size={24} />
-            </span>
-            <div className="app-writing-member-text">
-              <p className="app-writing-member-k">{w.memberKicker}</p>
-              <h3 id="post-member" className="app-writing-member-title">
-                {w.memberTitle}
-              </h3>
-              <p className="app-writing-member-body">{w.memberBody}</p>
-            </div>
-            <div className="app-writing-member-form">
-              <SubscribeForm />
-              <a href={RSS_URL} target="_blank" rel="noopener" className="app-writing-member-alt">
-                <PixelGlyph cells={G_RSS} size={12} />
-                {w.memberRss}
-                <span aria-hidden>↗</span>
-              </a>
-            </div>
-          </aside>
+          <Letters />
         </div>
       </article>
     </AppWindow>

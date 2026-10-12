@@ -1,44 +1,234 @@
-/* ─────────────────────────── emOS · Writing (Notes) ───────────────────────────
-   ≥1280px: [folders] [post list] [reader]; 768–1279: [list + folder chips]
-   [reader], the reader keeps the width. The folder and list columns are
-   sticky with their own scroll; the reader flows with the page. Phones:
-   an iOS navigation stack (list → reader) driven by useNavStack. Accent:
-   the window's own (--os-win-accent, ember). */
+/* ─────────────────────────── emOS · Writing ───────────────────────────
+   One column, read top to bottom: the newest post leads with its sky, the
+   earlier ones follow as plain rows, the newsletter closes the page. A
+   post opens in full at /writing/<slug> (.app-writing-article, below).
+   Accent: the window's own (--os-win-accent, ember). */
 
 .app-writing {
-  --app-writing-side-w: 15rem;
-  --app-writing-list-w: 20rem;
   --app-writing-pad: clamp(1.25rem, 5cqi, 3.5rem);
   position: relative;
   display: flex;
   flex-direction: column;
   min-height: 100%;
-}
-.app-writing-stack {
-  position: relative;
-  flex: 1 0 auto;
-}
-.app-writing-pane {
-  position: relative;
-  min-width: 0;
-}
-.app-writing-probe {
-  /* out of flow (and out of the grid); only its computed top is read */
-  position: absolute;
-  top: var(--os-win-sticky-top);
-  left: 0;
-  display: block;
-  width: 0;
-  height: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-.app-writing-pane--reader {
   container-type: inline-size;
 }
-.app-writing-pane--folders {
-  display: none;
+
+/* ───────────────────────────── the list ───────────────────────────── */
+
+.app-writing-home {
+  width: 100%;
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: clamp(1.25rem, 4cqi, 2.75rem) 1.25rem 3rem;
 }
+.app-writing-intro {
+  margin-bottom: 1.75rem;
+}
+.app-writing-h1 {
+  color: var(--color-label);
+  font-family: var(--font-display);
+  font-size: var(--text-title-1);
+  font-weight: 650;
+  line-height: var(--text-title-1--line-height);
+  letter-spacing: var(--text-title-1--letter-spacing);
+}
+.app-writing-lede {
+  max-width: 34em;
+  margin-top: 0.5rem;
+  color: var(--color-label-2);
+  font-size: var(--text-body);
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+/* the newest post, as one big link */
+.app-writing-lead {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: 16px;
+  background: color-mix(in oklab, var(--color-ink-950) 40%, transparent);
+  transition: background-color 0.2s;
+}
+/* the rim over the sky too, not only round the words */
+.app-writing-lead::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  pointer-events: none;
+}
+@media (hover: hover) {
+  .app-writing-lead:hover {
+    background: color-mix(in oklab, var(--color-ink-950) 25%, rgba(255, 255, 255, 0.03));
+  }
+}
+.app-writing-lead:focus-visible {
+  outline-offset: 3px;
+}
+.app-writing-lead-plate {
+  display: block;
+}
+.app-writing-lead-plate .app-writing-plate {
+  aspect-ratio: 5 / 2;
+  border-radius: 0;
+}
+.app-writing-lead-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0.25rem clamp(1.125rem, 4cqi, 1.75rem) clamp(1.25rem, 4cqi, 1.75rem);
+}
+.app-writing-when {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem 0.625rem;
+  color: var(--color-label-3);
+  font-size: var(--text-footnote);
+  line-height: 1.3;
+}
+.app-writing-when-tag {
+  padding: 0.1875rem 0.5625rem;
+  border-radius: 999px;
+  color: color-mix(in oklab, var(--os-win-accent) 75%, var(--color-label));
+  font-weight: 600;
+  background: color-mix(in oklab, var(--os-win-accent) 14%, transparent);
+}
+.app-writing-lead-title {
+  margin-top: 0.75rem;
+  color: var(--color-label);
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 5.5cqi, 2.75rem);
+  font-weight: 660;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+.app-writing-lead-dek {
+  margin-top: 0.75rem;
+  color: var(--color-label-2);
+  font-size: var(--text-body);
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+.app-writing-lead-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  height: 2.75rem;
+  margin-top: 1.25rem;
+  padding: 0 1.125rem 0 1.375rem;
+  border-radius: var(--radius-control);
+  color: var(--color-ink-950);
+  font-size: 0.9375rem;
+  font-weight: 650;
+  background: var(--color-signal);
+}
+.app-writing-lead-arrow {
+  display: inline-block;
+  transition: transform 0.3s var(--ease-out-quint);
+}
+@media (hover: hover) and (pointer: fine) {
+  .app-writing-lead:hover .app-writing-lead-arrow {
+    transform: translateX(3px);
+  }
+}
+
+/* the earlier posts: title, a line, when */
+.app-writing-earlier {
+  margin-top: 2.5rem;
+}
+.app-writing-sec {
+  margin-bottom: 0.25rem;
+  color: var(--color-label-2);
+  font-size: var(--text-footnote);
+  font-weight: 600;
+}
+.app-writing-index {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.app-writing-index > li + li {
+  border-top: 1px solid var(--hairline);
+}
+.app-writing-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3125rem;
+  margin: 0 -0.75rem;
+  padding: 1rem 0.75rem;
+  border-radius: 12px;
+  transition: background-color 0.2s;
+}
+@media (hover: hover) {
+  .app-writing-entry:hover {
+    background: rgba(255, 255, 255, 0.04);
+  }
+}
+.app-writing-entry:active {
+  background: rgba(255, 255, 255, 0.06);
+}
+.app-writing-entry-title {
+  color: var(--color-label);
+  font-size: var(--text-headline);
+  font-weight: 620;
+  line-height: 1.3;
+  letter-spacing: -0.012em;
+  text-wrap: balance;
+}
+.app-writing-entry-dek {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--color-label-2);
+  font-size: var(--text-callout);
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.app-writing-entry-when {
+  color: var(--color-label-3);
+  font-size: var(--text-footnote);
+}
+
+/* the newsletter, once, at the end */
+.app-writing-letters {
+  margin-top: 3rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--hairline);
+}
+.app-writing-letters-title {
+  color: var(--color-label);
+  font-size: var(--text-title-3);
+  font-weight: 650;
+  line-height: var(--text-title-3--line-height);
+  letter-spacing: var(--text-title-3--letter-spacing);
+}
+.app-writing-letters-body {
+  margin: 0.375rem 0 1rem;
+  color: var(--color-label-2);
+  font-size: var(--text-callout);
+  line-height: 1.45;
+}
+.app-writing-letters .app-writing-news-form {
+  max-width: 28rem;
+}
+.app-writing-letters-rss {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  margin-top: 0.5rem;
+  color: var(--color-label-3);
+  font-size: var(--text-footnote);
+  transition: color 0.2s;
+}
+.app-writing-letters-rss:hover {
+  color: var(--color-label);
+}
+
 .app-writing-sentinel {
   display: block;
   height: 0;
@@ -87,46 +277,8 @@
   }
 }
 
-/* ── folders column (≥1280) ── */
-.app-writing-side {
-  display: flex;
-  min-height: calc(var(--os-win-view-h, 100svh) - 2.25rem);
-  flex-direction: column;
-  gap: 0.125rem;
-}
-.app-writing-side-k {
-  padding: 0.375rem 0.625rem 0.5rem;
-  color: var(--color-label-3);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-/* ── newsletter (phones: the list screen; the empty state) ── */
-.app-writing-news {
-  margin-top: 1.25rem;
-  padding: 0.9375rem 0.9375rem 0.875rem;
-  border-radius: var(--radius-card);
-  background: linear-gradient(160deg, color-mix(in oklab, var(--os-win-accent) 9%, transparent), rgba(255, 255, 255, 0.02) 70%);
-  box-shadow: inset 0 0 0 1px var(--hairline);
-}
-.app-writing-news-title {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: var(--text-callout);
-  font-weight: 600;
-  line-height: 1.3;
-}
-.app-writing-news-glyph {
-  color: var(--os-win-accent);
-}
-.app-writing-news-body {
-  margin-top: 0.3125rem;
-  color: var(--color-label-3);
-  font-size: var(--text-footnote);
-  line-height: var(--text-footnote--line-height);
-}
+/* ── newsletter form ── */
+
 .app-writing-news-form {
   margin-top: 0.875rem;
 }
@@ -197,436 +349,9 @@
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }
-.app-writing-news-links {
-  display: flex;
-  gap: 1rem;
-  margin-top: 0.875rem;
-  font-size: 0.75rem;
-}
-.app-writing-news-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  min-height: 1.5rem;
-  color: var(--color-label-3);
-  transition: color 0.2s;
-}
-.app-writing-news-link:hover {
-  color: var(--color-label);
-}
-.app-writing-news-link svg {
-  color: var(--os-win-accent);
-}
 
-/* ── list pane ── */
-.app-writing-listpane {
-  padding: 0.875rem 0.625rem 1.25rem;
-}
+/* ── a post's sky, title and newsletter card ── */
 
-/* the shelf of spines: a pixel band over the list, an aria-hidden mirror of it */
-.app-writing-shelf {
-  position: relative;
-  height: 150px;
-  margin: 0.25rem 0.625rem 0.75rem;
-  overflow: hidden;
-  border-radius: var(--radius-control);
-  background: #0b0d0c;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-border-active) 8%, transparent);
-  cursor: grab;
-  touch-action: pan-y;
-  -webkit-user-select: none;
-  user-select: none;
-}
-.app-writing-shelf:active {
-  cursor: grabbing;
-}
-.app-writing-shelf-canvas {
-  position: absolute;
-  left: 0;
-  top: 0;
-  image-rendering: pixelated;
-}
-/* titles run up the spines as real text, riding their books */
-.app-writing-shelf-title {
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 12px;
-  overflow: hidden;
-  color: var(--color-label-2);
-  font: 500 12px/12px var(--font-mono);
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  transform-origin: 0 0;
-  margin-top: 0;
-  translate: -6px 0;
-  pointer-events: none;
-}
-.app-writing-shelf-callout {
-  position: absolute;
-  top: 6px;
-  max-width: 180px;
-  padding: 4px 7px;
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--color-ink-950) 90%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-border-active) 16%, transparent);
-  color: var(--color-label);
-  font-size: 0.75rem;
-  line-height: 1.25;
-  pointer-events: none;
-}
-@media (max-width: 767px) {
-  .app-writing-shelf {
-    height: 144px;
-    margin: 0.25rem 0 0.75rem;
-    border-radius: 0;
-  }
-}
-.app-writing-listhead {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.375rem 0.625rem 0.5rem;
-}
-.app-writing-listtitle {
-  min-width: 0;
-  overflow: hidden;
-  font-size: var(--text-title-3);
-  font-weight: 650;
-  line-height: var(--text-title-3--line-height);
-  letter-spacing: var(--text-title-3--letter-spacing);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.app-writing-listcount,
-.app-writing-listyear {
-  flex: none;
-  color: var(--color-label-3);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-}
-.app-writing-listyear {
-  display: none;
-  letter-spacing: 0.08em;
-}
-.app-writing-listbox {
-  outline: none;
-}
-.app-writing-rows {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.app-writing-year {
-  padding: 1rem 0.625rem 0.375rem;
-  color: var(--color-label-3);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 400;
-  letter-spacing: 0.08em;
-}
-
-/* a post row, Mail-style: no card and no tint. Title, excerpt, then when
-   and how long, on the list title's edge; a hairline between rows (gone
-   around the selection and the pointer); the plate is the one colour */
-.app-writing-row {
-  position: relative;
-  isolation: isolate;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
-  gap: 0.875rem;
-  padding: 0.8125rem 0.625rem 0.875rem;
-  border-radius: 12px;
-  cursor: default;
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  scroll-margin: calc(var(--os-win-sticky-top) + 0.5rem) 0 1.5rem;
-}
-.app-writing-row::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 0.625rem;
-  left: 0.625rem;
-  height: 1px;
-  background: var(--hairline);
-  transition: opacity 0.2s;
-}
-/* the listbox's rows keep a sliver apart, so the selection and the
-   pointer's wash never fuse into one slab; the hairline sits in it */
-.app-writing-row + .app-writing-row {
-  margin-top: 3px;
-}
-.app-writing-row + .app-writing-row::before {
-  top: -2px;
-}
-.app-writing-year + .app-writing-row::before,
-.app-writing-rows > li:first-child > .app-writing-row::before,
-.app-writing-row[data-selected]::before,
-.app-writing-row[data-selected] + .app-writing-row::before {
-  opacity: 0;
-}
-/* the pointer's wash, under the selection */
-.app-writing-row::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  border-radius: inherit;
-  background: color-mix(in srgb, var(--color-label) 3.5%, transparent);
-  opacity: 0;
-  transition: opacity 0.18s;
-}
-@media (hover: hover) and (pointer: fine) {
-  .app-writing-row:hover::after {
-    opacity: 1;
-  }
-  .app-writing-row[data-selected]:hover::after {
-    opacity: 0;
-  }
-  .app-writing-row:hover::before,
-  .app-writing-row:hover + .app-writing-row::before {
-    opacity: 0;
-  }
-  .app-writing-row:hover .app-writing-row-plate {
-    filter: none;
-  }
-}
-.app-writing-row:focus-visible {
-  outline-offset: 2px;
-  border-radius: 12px;
-}
-/* mouse-only overlay link: ⌘/middle-click and the context menu get a URL */
-.app-writing-row-link {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  border-radius: inherit;
-  cursor: default;
-  -webkit-user-drag: none;
-}
-/* the selection: a quiet slab of light, no tint and no edge, that springs
-   from row to row */
-.app-writing-row-thumb {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  background: color-mix(in srgb, var(--color-label) 7.5%, transparent);
-}
-.app-writing-row-text {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-}
-.app-writing-row-title {
-  display: -webkit-box;
-  overflow: hidden;
-  color: var(--color-label);
-  font-size: 0.9688rem;
-  font-weight: 600;
-  line-height: 1.3;
-  letter-spacing: -0.012em;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  text-wrap: pretty;
-  overflow-wrap: anywhere;
-}
-.app-writing-row-excerpt {
-  display: -webkit-box;
-  margin-top: 0.25rem;
-  overflow: hidden;
-  color: var(--color-label-3);
-  font-size: var(--text-footnote);
-  line-height: 1.45;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  transition: color 0.2s;
-}
-.app-writing-row-meta {
-  display: flex;
-  align-items: center;
-  gap: 0.4375rem;
-  margin-top: 0.5rem;
-  color: var(--color-label-3);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  line-height: 1.3;
-  transition: color 0.2s;
-}
-.app-writing-row[data-selected] .app-writing-row-excerpt,
-.app-writing-row[data-selected] .app-writing-row-meta {
-  color: var(--color-label-2);
-}
-/* the post's plate in miniature, a little window onto its pixel world:
-   dimmed at rest, lit under the pointer, lit and lifted when selected
-   (and its hills lean, PlateThumb) */
-.app-writing-row-art {
-  position: relative;
-  width: 4rem;
-  margin-top: 0.1875rem;
-  aspect-ratio: 32 / 22;
-  overflow: hidden;
-  border-radius: 7px;
-  background: var(--color-ink-900);
-  transition: box-shadow 0.3s;
-}
-.app-writing-row-art::after {
-  /* scanline wash, so the plate sits behind glass like the reader's */
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: repeating-linear-gradient(180deg, transparent 0 2px, color-mix(in srgb, var(--color-ink-950) 16%, transparent) 2px 3px);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-  pointer-events: none;
-}
-.app-writing-row-plate {
-  display: block;
-  width: 100%;
-  height: 100%;
-  image-rendering: pixelated;
-  filter: saturate(0.8) brightness(0.86);
-  transition: filter 0.25s;
-}
-.app-writing-row[data-selected] .app-writing-row-plate {
-  filter: none;
-}
-.app-writing-row[data-selected] .app-writing-row-art {
-  box-shadow: 0 6px 14px -6px rgba(0, 0, 0, 0.75);
-}
-.app-writing-listfoot {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.625rem 1rem;
-  padding: 1rem 0.625rem 0;
-  color: var(--color-label-3);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-}
-.app-writing-source {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-.app-writing-keys {
-  display: none;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.375rem 0.875rem;
-}
-.app-writing-key {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-.app-writing-keys kbd {
-  display: inline-grid;
-  place-items: center;
-  min-width: 1.25rem;
-  height: 1.25rem;
-  padding: 0 0.25rem;
-  border-radius: 5px;
-  color: var(--color-label-2);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  background: rgba(255, 255, 255, 0.06);
-  box-shadow:
-    inset 0 0 0 1px var(--hairline),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.3);
-}
-@media (hover: hover) and (pointer: fine) and (min-width: 768px) {
-  .app-writing-keys {
-    display: flex;
-  }
-}
-.app-writing-news--list {
-  margin: 1.75rem 0.25rem 0;
-}
-
-/* folder chips (below 1280: under the list's title) */
-.app-writing-chips {
-  margin: 0 -0.625rem;
-  padding: 0.125rem 0 0.375rem;
-}
-.app-writing-chips-row {
-  display: flex;
-  gap: 0.375rem;
-  /* a sideways scroller clips in y too: room for the chips' focus ring
-     (5px), given back by the margins so nothing moves */
-  margin: -0.25rem 0 -0.125rem;
-  padding: 0.375rem 1.25rem;
-  overflow-x: auto;
-  list-style: none;
-  overscroll-behavior-x: contain;
-  scrollbar-width: none;
-  mask-image: linear-gradient(90deg, transparent 0, #000 1rem, #000 calc(100% - 1rem), transparent 100%);
-}
-.app-writing-chips-row::-webkit-scrollbar {
-  display: none;
-}
-.app-writing-chip {
-  position: relative;
-  isolation: isolate;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4375rem;
-  height: 2.125rem;
-  padding: 0 0.8125rem;
-  border-radius: 999px;
-  color: var(--color-label-2);
-  font-size: var(--text-footnote);
-  font-weight: 500;
-  white-space: nowrap;
-  background: rgba(255, 255, 255, 0.05);
-  box-shadow: inset 0 0 0 1px var(--hairline);
-  -webkit-tap-highlight-color: transparent;
-  transition:
-    color 0.2s,
-    background-color 0.2s;
-}
-.app-writing-chip:hover {
-  color: var(--color-label);
-}
-.app-writing-chip::before {
-  content: "";
-  position: absolute;
-  inset: -0.3125rem 0;
-}
-.app-writing-chip[data-active] {
-  color: var(--color-ink-950);
-  font-weight: 600;
-}
-.app-writing-chip-thumb {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  background: var(--os-win-accent);
-}
-.app-writing-chip-count {
-  color: var(--color-label-3);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 400;
-}
-.app-writing-chip[data-active] .app-writing-chip-count {
-  color: var(--color-ink-800);
-}
-
-/* ── reader ── */
-.app-writing-reader {
-  position: relative;
-  max-width: 64rem;
-  padding: clamp(1rem, 3cqi, 1.75rem) var(--app-writing-pad) 3.5rem;
-}
 .app-writing-navbar {
   display: none;
 }
@@ -660,12 +385,6 @@
 .app-writing-plate-img[data-loaded] {
   opacity: 1;
 }
-
-.app-writing-turn {
-  position: relative;
-  /* the title starts on the plate's dark near hills */
-  margin-top: calc(-1 * clamp(2.25rem, 7.5cqi, 4.75rem));
-}
 .app-writing-meta {
   display: flex;
   flex-wrap: wrap;
@@ -674,19 +393,15 @@
   color: var(--color-label-2);
   /* it sits on the plate's dithered foot */
   text-shadow: 0 1px 2px color-mix(in srgb, var(--color-ink-950) 70%, transparent);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  line-height: 1.2;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: var(--text-footnote);
+  line-height: 1.3;
 }
 .app-writing-tag {
   position: relative;
-  padding: 0.3125rem 0.625rem;
+  padding: 0.25rem 0.625rem;
   border-radius: 999px;
-  color: var(--os-win-accent);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  color: color-mix(in oklab, var(--os-win-accent) 75%, var(--color-label));
+  font-weight: 600;
   background: color-mix(in oklab, var(--os-win-accent) 16%, color-mix(in srgb, var(--color-ink-950) 50%, transparent));
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--os-win-accent) 38%, transparent);
   transition: background-color 0.2s;
@@ -711,19 +426,6 @@
   outline-offset: 6px;
   border-radius: 6px;
 }
-/* each word rises out of its own line box */
-.app-writing-w {
-  display: inline-block;
-  max-width: 100%;
-  overflow-wrap: anywhere;
-  padding-bottom: 0.12em;
-  margin-bottom: -0.12em;
-  overflow: clip;
-  vertical-align: top;
-}
-.app-writing-wi {
-  display: inline-block;
-}
 .app-writing-dek {
   max-width: 34em;
   margin-top: 1.25rem;
@@ -733,41 +435,10 @@
   letter-spacing: -0.011em;
   text-wrap: pretty;
 }
-.app-writing-byline {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem 1.5rem;
-  margin-top: 1.75rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--hairline);
-}
-.app-writing-author {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: 0.75rem;
-}
-.app-writing-author-text {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-}
 .app-writing-author-name {
   font-size: var(--text-callout);
   font-weight: 600;
   line-height: 1.3;
-}
-.app-writing-author-sub {
-  color: var(--color-label-3);
-  font-size: var(--text-footnote);
-  line-height: 1.35;
-}
-.app-writing-ctas {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
 }
 .app-writing-cta {
   display: inline-flex;
@@ -796,38 +467,6 @@
     transform: translate(2px, -2px);
   }
 }
-.app-writing-iconbtn {
-  display: grid;
-  place-items: center;
-  width: 2.75rem;
-  height: 2.75rem;
-  border-radius: var(--radius-control);
-  color: var(--color-label-2);
-  background: rgba(255, 255, 255, 0.06);
-  box-shadow: inset 0 0 0 1px var(--hairline);
-  transition:
-    color 0.2s,
-    background-color 0.2s;
-}
-.app-writing-iconbtn:hover {
-  color: var(--color-label);
-  background: rgba(255, 255, 255, 0.11);
-}
-
-/* newsletter card: one way to follow, right under the post */
-.app-writing-member {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: start;
-  gap: 1rem 1.125rem;
-  margin-top: 3rem;
-  padding: 1.25rem 1.25rem 1.125rem 1.125rem;
-  border-radius: var(--radius-card);
-  background:
-    radial-gradient(90% 140% at 0% 0%, color-mix(in oklab, var(--os-win-accent) 14%, transparent), transparent 70%),
-    rgba(255, 255, 255, 0.025);
-  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--os-win-accent) 20%, var(--hairline));
-}
 .app-writing-member-art {
   display: grid;
   place-items: center;
@@ -837,13 +476,6 @@
   color: var(--os-win-accent);
   background: color-mix(in oklab, var(--os-win-accent) 12%, color-mix(in srgb, var(--color-ink-950) 40%, transparent));
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--os-win-accent) 28%, transparent);
-}
-.app-writing-member-k {
-  color: var(--os-win-accent);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 .app-writing-member-title {
   margin-top: 0.25rem;
@@ -860,186 +492,6 @@
   font-size: var(--text-callout);
   line-height: var(--text-callout--line-height);
   text-wrap: pretty;
-}
-.app-writing-member-form {
-  grid-column: 2;
-  max-width: 28rem;
-}
-.app-writing-member-form .app-writing-news-form {
-  margin-top: 0;
-}
-.app-writing-member-form .app-writing-news-row {
-  flex-direction: row;
-}
-.app-writing-member-form .app-writing-news-input,
-.app-writing-member-form .app-writing-news-btn {
-  height: 2.75rem;
-}
-.app-writing-member-form .app-writing-news-btn {
-  padding: 0 1.125rem;
-}
-.app-writing-member-alt {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4375rem;
-  min-height: 1.75rem;
-  margin-top: 0.625rem;
-  color: var(--color-label-3);
-  font-size: var(--text-footnote);
-  transition: color 0.2s;
-}
-.app-writing-member-alt svg {
-  color: var(--os-win-accent);
-}
-.app-writing-member-alt:hover {
-  color: var(--color-label);
-}
-
-.app-writing-pager {
-  display: grid;
-  grid-auto-columns: minmax(0, 1fr);
-  grid-auto-flow: column;
-  gap: 0.75rem;
-  margin-top: 0.75rem;
-}
-.app-writing-page {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.375rem;
-  padding: 1rem 1.125rem 1.0625rem;
-  border-radius: var(--radius-card);
-  text-align: left;
-  background: rgba(255, 255, 255, 0.025);
-  box-shadow: inset 0 0 0 1px var(--hairline);
-  transition: background-color 0.2s;
-}
-.app-writing-page:hover {
-  background: rgba(255, 255, 255, 0.06);
-}
-/* older posts live to the right (the page turns that way) */
-.app-writing-page--older {
-  grid-column: 2;
-  align-items: flex-end;
-  text-align: right;
-}
-.app-writing-page-k {
-  color: var(--color-label-3);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-.app-writing-page-t {
-  display: -webkit-box;
-  overflow: hidden;
-  font-size: var(--text-callout);
-  font-weight: 600;
-  line-height: 1.3;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-}
-
-/* turning the page: the edge it heads for says where it goes */
-.app-writing-turns {
-  position: sticky;
-  top: calc(var(--os-win-view-h, 100svh) / 2);
-  z-index: 4;
-  height: 0;
-  pointer-events: none;
-}
-.app-writing-turnhint {
-  position: absolute;
-  top: 0;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  max-width: min(17rem, 46cqi);
-  padding: 0.375rem 1rem 0.375rem 0.375rem;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-ink-900) 82%, transparent);
-  box-shadow:
-    inset 0 1px 0 var(--glass-rim),
-    inset 0 0 0 1px var(--hairline),
-    0 18px 40px -18px rgba(0, 0, 0, 0.8);
-  translate: 0 -50%;
-  opacity: 0;
-}
-.app-writing-turnhint[data-side="older"] {
-  right: 0;
-  flex-direction: row-reverse;
-  padding: 0.375rem 0.375rem 0.375rem 1rem;
-  text-align: right;
-}
-.app-writing-turnhint[data-side="newer"] {
-  left: 0;
-}
-/* nothing further that way: only the disc, and the page gives */
-.app-writing-turnhint[data-end] {
-  padding: 0;
-  background: none;
-  box-shadow: none;
-}
-.app-writing-turnhint-disc {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 999px;
-  color: var(--color-label);
-  font-size: 1.0625rem;
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow:
-    inset 0 1px 0 var(--glass-rim),
-    inset 0 0 0 1px var(--hairline);
-  transition:
-    background-color 0.18s,
-    color 0.18s,
-    scale 0.32s var(--ease-spring);
-}
-.app-writing-turnhint[data-armed] .app-writing-turnhint-disc {
-  color: var(--color-ink-950);
-  background: var(--color-signal);
-  box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-signal) 22%, transparent);
-  scale: 1.08;
-}
-.app-writing-turnhint[data-end] .app-writing-turnhint-disc {
-  width: 2.75rem;
-  height: 2.75rem;
-  color: var(--color-label-3);
-  background: color-mix(in srgb, var(--color-ink-900) 70%, transparent);
-}
-.app-writing-turnhint-text {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 0.125rem;
-  padding-block: 0.25rem;
-}
-.app-writing-turnhint-k {
-  color: var(--color-label-3);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  transition: color 0.18s;
-}
-.app-writing-turnhint[data-armed] .app-writing-turnhint-k {
-  color: var(--color-signal);
-}
-.app-writing-turnhint-t {
-  display: -webkit-box;
-  overflow: hidden;
-  color: var(--color-label);
-  font-size: var(--text-footnote);
-  font-weight: 600;
-  line-height: 1.3;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
 }
 
 /* ── states ── */
@@ -1107,261 +559,11 @@
   background: var(--color-signal);
 }
 
-.app-writing-news--empty {
-  width: 100%;
-  max-width: 22rem;
-  margin-top: 2.5rem;
-  text-align: left;
-}
-.app-writing-news--empty .app-writing-news-row {
-  flex-direction: row;
-}
-
-/* ── ≥768: side by side ── */
-@media (min-width: 768px) {
-  .app-writing-stack {
-    display: grid;
-    grid-template-columns: var(--app-writing-list-w) minmax(0, 1fr);
-    align-items: start;
-    background: linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--color-ink-950) 8%, transparent) 0 var(--app-writing-list-w),
-      var(--hairline) var(--app-writing-list-w) calc(var(--app-writing-list-w) + 1px),
-      transparent calc(var(--app-writing-list-w) + 1px)
-    );
-  }
-  .app-writing-pane--list {
-    position: sticky;
-    top: var(--os-win-sticky-top);
-    max-height: var(--os-win-view-h, 100svh);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-gutter: stable;
-    transform: none !important;
-    clip-path: none !important;
-  }
-  .app-writing-pane--reader {
-    /* a page being turned slides under the column edge, not over the list */
-    overflow-x: clip;
-    transform: none !important;
-    touch-action: pan-y pinch-zoom;
-  }
-  /* the newsletter lives under the post here; the list keeps to the list */
-  .app-writing-news--list {
-    display: none;
-  }
-}
-@media (min-width: 768px) and (max-width: 1023px) {
-  .app-writing {
-    --app-writing-list-w: 17.5rem;
-  }
-  .app-writing-row {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .app-writing-row-art {
-    display: none;
-  }
-}
-/* wide: the folders get their own column (the reader still keeps ≥36rem) */
-@media (min-width: 1280px) and (max-width: 1439px) {
-  .app-writing {
-    --app-writing-side-w: 14rem;
-  }
-}
-@media (min-width: 1280px) {
-  .app-writing-stack {
-    grid-template-columns: var(--app-writing-side-w) var(--app-writing-list-w) minmax(0, 1fr);
-    background: linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--color-ink-950) 16%, transparent) 0 var(--app-writing-side-w),
-      var(--hairline) var(--app-writing-side-w) calc(var(--app-writing-side-w) + 1px),
-      color-mix(in srgb, var(--color-ink-950) 8%, transparent) calc(var(--app-writing-side-w) + 1px) calc(var(--app-writing-side-w) + var(--app-writing-list-w)),
-      var(--hairline) calc(var(--app-writing-side-w) + var(--app-writing-list-w)) calc(var(--app-writing-side-w) + var(--app-writing-list-w) + 1px),
-      transparent calc(var(--app-writing-side-w) + var(--app-writing-list-w) + 1px)
-    );
-  }
-  .app-writing-pane--folders {
-    position: sticky;
-    top: var(--os-win-sticky-top);
-    display: block;
-    max-height: var(--os-win-view-h, 100svh);
-    padding: 0.75rem 0.75rem 1.5rem;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-width: none;
-  }
-  .app-writing-pane--folders::-webkit-scrollbar {
-    display: none;
-  }
-  .app-writing-chips {
-    display: none;
-  }
-}
-@media (min-width: 1440px) {
-  .app-writing {
-    --app-writing-list-w: 22rem;
-  }
-}
-
-/* ── phones: a navigation stack ── */
+/* ── phones ── */
 @media (max-width: 767px) {
-  .app-writing-stack {
-    overflow: clip;
-  }
-  /* the list showing: the reader waits off to the right, hidden but laid
-     out, so a push only has to move it */
-  .app-writing-stack[data-view="list"]:not([data-moving]) .app-writing-pane--reader {
-    position: absolute;
-    top: 0;
-    right: 0;
-    left: 0;
-    visibility: hidden;
-    pointer-events: none;
-  }
-  /* while the reader owns the flow, the list waits underneath, pinned at
-     the scroll offset it was left at */
-  .app-writing-stack:is([data-view="reader"], [data-moving]) .app-writing-pane--list {
-    position: absolute;
-    top: var(--app-writing-under-y, 0px);
-    right: 0;
-    left: 0;
-  }
-  .app-writing-stack[data-view="reader"]:not([data-moving]) .app-writing-pane--list {
-    visibility: hidden;
-  }
-  .app-writing-pane--reader {
-    z-index: 1;
-    min-height: var(--os-win-view-h, 100svh);
-    touch-action: pan-y pinch-zoom;
-  }
-  .app-writing-stack[data-moving] .app-writing-pane {
-    will-change: transform;
-  }
-  .app-writing-stack[data-moving] {
-    user-select: none;
-    -webkit-user-select: none;
-  }
-  .app-writing-shade {
-    position: absolute;
-    inset: 0;
-    z-index: 3;
-    background: color-mix(in srgb, var(--color-ink-950) 40%, transparent);
-    pointer-events: none;
-  }
-  /* the reader's leading edge casts onto the list */
-  .app-writing-edge {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: -1.25rem;
-    width: 1.25rem;
-    background: linear-gradient(270deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.08) 45%, transparent);
-    pointer-events: none;
-  }
-
-  /* list screen: large title, then the filters, then the posts */
-  .app-writing-listpane {
-    padding: 0 0 1rem;
-  }
-  .app-writing-listhead {
-    padding: 0.5rem 1rem 0.375rem;
-  }
-  .app-writing-listtitle {
-    font-size: var(--text-title-2);
-    font-weight: 700;
-    line-height: var(--text-title-2--line-height);
-    letter-spacing: var(--text-title-2--letter-spacing);
-  }
-  /* the chip already counts; the first year stands by the title (and
-     stays in the outline for screen readers) */
-  .app-writing-listcount {
-    display: none;
-  }
-  .app-writing-group:first-child > .app-writing-year {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-  .app-writing-listyear {
-    display: block;
-  }
-  .app-writing-chips {
-    margin: 0;
-    padding: 0 0 0.25rem;
-  }
-  .app-writing-chips-row {
-    padding-inline: 1rem;
-    mask-image: linear-gradient(90deg, transparent 0, #000 0.875rem, #000 calc(100% - 0.875rem), transparent 100%);
-  }
-  .app-writing-chip {
-    height: 2.25rem;
-    padding: 0 0.875rem;
-    font-size: var(--text-callout);
-  }
-  .app-writing-year {
-    padding: 1rem 1rem 0.375rem;
-  }
-  .app-writing-row {
-    gap: 1rem;
-    padding: 0.9375rem 1rem 1rem;
-    border-radius: 0;
-    cursor: pointer;
-  }
-  .app-writing-row::before {
-    right: 1rem;
-    left: 1rem;
-  }
-  /* a tap lights the whole row, edge to edge, and the hairlines either
-     side step aside, as in Mail */
-  .app-writing-row:active::after {
-    opacity: 1;
-    background: color-mix(in srgb, var(--color-label) 8%, transparent);
-    transition: none;
-  }
-  .app-writing-row:active::before,
-  .app-writing-rows > li:has(> .app-writing-row:active) + li > .app-writing-row::before {
-    opacity: 0;
-    transition: none;
-  }
-  .app-writing-row-title {
-    font-size: var(--text-headline);
-  }
-  .app-writing-row-excerpt {
-    font-size: var(--text-callout);
-    line-height: 1.4;
-  }
-  .app-writing-row-meta {
-    margin-top: 0.5625rem;
-    font-size: 0.8125rem;
-  }
-  .app-writing-row-art {
-    width: 4.5rem;
-  }
-  /* nothing stays selected here: every plate is lit */
-  .app-writing-row-plate {
-    filter: none;
-  }
-  .app-writing-listfoot {
-    padding: 1.25rem 1rem 0;
-  }
-  .app-writing-news--list {
-    margin: 1.5rem 1rem 0;
-  }
-  .app-writing-news--list .app-writing-news-row {
-    flex-direction: row;
-  }
   .app-writing-news-input,
   .app-writing-news-btn {
     height: 2.75rem;
-  }
-
-  /* reader: a full-bleed plate under a floating nav bar */
-  .app-writing-reader {
-    padding: 0 1rem 2.5rem;
   }
   .app-writing-navbar {
     position: sticky;
@@ -1389,26 +591,6 @@
   }
   .app-writing-navbar[data-stuck]::before {
     opacity: 1;
-  }
-  .app-writing-navtitle {
-    min-width: 0;
-    flex: 1;
-    overflow: hidden;
-    color: var(--color-label);
-    font-size: var(--text-callout);
-    font-weight: 600;
-    text-align: center;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    opacity: 0;
-    translate: 0 0.375rem;
-    transition:
-      opacity 0.2s,
-      translate 0.3s var(--ease-out-quint);
-  }
-  .app-writing-navbar[data-titled] .app-writing-navtitle {
-    opacity: 1;
-    translate: 0 0;
   }
   .app-writing-back,
   .app-writing-navbtn {
@@ -1484,9 +666,6 @@
     margin: 0 -1rem;
     border-radius: 0;
   }
-  .app-writing-turn {
-    margin-top: -2.5rem;
-  }
   .app-writing-title {
     max-width: none;
     font-size: clamp(2.125rem, 9.6cqi, 2.75rem);
@@ -1495,29 +674,6 @@
   }
   .app-writing-dek {
     margin-top: 1rem;
-  }
-  .app-writing-byline {
-    margin-top: 1.5rem;
-  }
-  /* left-aligned, so the mini player pill (bottom right) stays clear of it */
-  .app-writing-ctas .app-writing-iconbtn {
-    display: none;
-  }
-  .app-writing-member {
-    margin-top: 2.25rem;
-    padding: 1.125rem;
-  }
-  .app-writing-member-form {
-    grid-column: 1 / -1;
-    max-width: none;
-  }
-  .app-writing-pager {
-    grid-auto-flow: row;
-  }
-  .app-writing-page--older {
-    grid-column: auto;
-    align-items: flex-start;
-    text-align: left;
   }
 
   /* toolbar: an icon button beside the close button */
@@ -1552,29 +708,6 @@
   }
 }
 
-/* before hydration, a deep link the server didn't know: the reader copy
-   waits for the client (and on phones the reader screen shows at once).
-   If the client never comes, it shows anyway after a few seconds. */
-:root[data-writing-link] :is(.app-writing-turn, .app-writing-pager, .app-writing-navtitle) {
-  animation: app-writing-pending 4s step-end;
-}
-@keyframes app-writing-pending {
-  from,
-  to {
-    visibility: hidden;
-  }
-}
-@media (max-width: 767px) {
-  :root[data-writing-link] .app-writing-stack[data-view="list"] .app-writing-pane--list {
-    display: none;
-  }
-  :root[data-writing-link] .app-writing-stack[data-view="list"] .app-writing-pane--reader {
-    position: relative;
-    visibility: visible;
-    transform: none !important;
-  }
-}
-
 /* touch: generous targets */
 @media (pointer: coarse) {
   .app-writing-tag::before {
@@ -1582,39 +715,14 @@
     position: absolute;
     inset: -0.625rem -0.375rem;
   }
-  .app-writing-news-link {
-    min-width: 2.75rem;
-    min-height: 2.75rem;
-    padding-inline: 0.25rem;
-  }
-  .app-writing-member-alt {
-    min-height: 2.75rem;
-  }
 }
 
-/* reduced motion: the stack cross-fades, nothing rises or leans */
+/* reduced motion: nothing slides */
 @media (prefers-reduced-motion: reduce) {
-  .app-writing-row-plate,
-  .app-writing-row-art,
   .app-writing-tool-glyph,
   .app-writing-cta-arrow,
-  .app-writing-navtitle,
-  .app-writing-turnhint-disc {
+  .app-writing-lead-arrow {
     transition: none;
-  }
-  .app-writing-navtitle {
-    translate: none;
-  }
-}
-@media (prefers-reduced-motion: reduce) and (max-width: 767px) {
-  .app-writing-stack[data-view="reader"] .app-writing-pane--reader,
-  .app-writing-stack[data-view="list"] .app-writing-pane--list {
-    animation: app-writing-fade 150ms linear both;
-  }
-}
-@keyframes app-writing-fade {
-  from {
-    opacity: 0;
   }
 }
 
@@ -1632,10 +740,6 @@
   }
 }
 @media (prefers-contrast: more) {
-  .app-writing-row-thumb {
-    background: var(--color-ink-700);
-    box-shadow: inset 0 0 0 1.5px var(--color-label-2);
-  }
   .app-writing-back,
   .app-writing-navbtn {
     background: var(--color-ink-900);
@@ -1647,15 +751,6 @@
   }
   .app-writing-navbar::before {
     background: var(--color-ink-950);
-  }
-  .app-writing-row-excerpt,
-  .app-writing-news-body,
-  .app-writing-turnhint-k,
-  .app-writing-member-alt {
-    color: var(--color-label-2);
-  }
-  .app-writing-turnhint-disc {
-    background: var(--color-ink-800);
   }
 }
 
@@ -1976,9 +1071,6 @@
   color: var(--color-signal);
   background: color-mix(in oklab, var(--color-signal) 12%, color-mix(in srgb, var(--color-ink-950) 40%, transparent));
 }
-.app-writing-writeback .app-writing-member-k {
-  color: var(--color-signal);
-}
 @media (max-width: 560px) {
   .app-writing-writeback {
     grid-template-columns: auto minmax(0, 1fr);
@@ -2015,9 +1107,12 @@
 }
 .app-writing-article-turn-k {
   color: var(--color-label-3);
-  font: 500 0.6875rem/1 var(--font-mono);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: var(--text-footnote);
+  line-height: 1.2;
+}
+/* the newsletter keeps to the post's measure */
+.app-writing-article .app-writing-letters {
+  max-width: var(--app-writing-measure);
 }
 .app-writing-article-turn-t {
   color: var(--color-label);
@@ -2025,9 +1120,6 @@
   font-weight: 560;
   line-height: 1.3;
   text-wrap: balance;
-}
-.app-writing-article .app-writing-member {
-  max-width: var(--app-writing-measure);
 }
 @media (max-width: 767px) {
   .app-writing-article {
@@ -2136,18 +1228,6 @@
     letter-spacing: 0.02em;
   }
 }
-
-/* write back: the letter's subject, already written */
-.app-writing-writeback-subject {
-  margin: 0.75rem 0 0;
-  padding-bottom: 0.375rem;
-  overflow: hidden;
-  border-bottom: 1px dashed color-mix(in oklab, var(--color-label) 18%, transparent);
-  color: var(--color-label-2);
-  font: 500 0.75rem/1.3 var(--font-mono);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 /* it rises into place as the last lines scroll by */
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
@@ -2156,137 +1236,11 @@
       animation-timeline: view();
       animation-range: entry 10% entry 90%;
     }
-  }
+}
 }
 @keyframes app-writing-rise {
   from {
     opacity: 0;
     translate: 0 1.25rem;
   }
-}
-
-/* ───────────── a book off the shelf (openBook.ts) ───────────── */
-
-.app-writing-book-stage {
-  position: fixed;
-  inset: 0;
-  /* over the windows, under the menu bar and the Dock */
-  z-index: 45;
-  pointer-events: none;
-  perspective: 1600px;
-}
-.app-writing-book-scrim {
-  position: absolute;
-  border-radius: var(--radius-window, 12px);
-  background: color-mix(in srgb, var(--color-ink-950) 55%, transparent);
-  opacity: 0;
-}
-.app-writing-book {
-  position: absolute;
-  transform-style: preserve-3d;
-  will-change: transform;
-}
-.app-writing-book-page,
-.app-writing-book-front,
-.app-writing-book-back {
-  position: absolute;
-  inset: 0;
-  border-radius: 3px 6px 6px 3px;
-}
-/* the title page */
-.app-writing-book-page {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.9em;
-  padding: 0 1.15em;
-  color: var(--color-label);
-  /* the gutter's shadow on the left, where the cover is bound */
-  background:
-    linear-gradient(90deg, rgba(0, 0, 0, 0.32), transparent 14%),
-    radial-gradient(120% 70% at 30% 0%, rgba(255, 255, 255, 0.04), transparent 70%),
-    var(--color-ink-900);
-  box-shadow:
-    inset 0 0 0 1px var(--hairline),
-    0 28px 60px -26px rgba(0, 0, 0, 0.85);
-}
-.app-writing-book-meta {
-  margin: 0;
-  white-space: pre-line;
-  color: var(--color-label-3);
-  font: 500 max(0.5em, 10px) / 1.35 var(--font-mono);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-.app-writing-book-title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: 1.3em;
-  font-weight: 650;
-  letter-spacing: -0.03em;
-  line-height: 1.06;
-  text-wrap: balance;
-}
-/* the cover hinges on its left edge */
-.app-writing-book-cover {
-  position: absolute;
-  inset: 0;
-  transform-origin: left center;
-  transform-style: preserve-3d;
-}
-.app-writing-book-front {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  padding: 6px 0 0 6px;
-  overflow: hidden;
-  background: var(--cloth);
-  box-shadow:
-    inset -6px 0 0 var(--edge),
-    0 28px 60px -26px rgba(0, 0, 0, 0.85);
-  backface-visibility: hidden;
-}
-.app-writing-book-plate {
-  display: block;
-  flex: none;
-  image-rendering: pixelated;
-}
-.app-writing-book-band {
-  flex: none;
-  align-self: stretch;
-  height: 3px;
-  margin-right: 12px;
-  background: var(--label);
-}
-.app-writing-book-ctitle {
-  display: -webkit-box;
-  margin: 0.85em 1.1em 0 0.35em;
-  overflow: hidden;
-  color: var(--color-label);
-  font-family: var(--font-display);
-  font-weight: 650;
-  letter-spacing: -0.02em;
-  line-height: 1.12;
-  text-wrap: balance;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-}
-.app-writing-book-mins {
-  margin: auto 0 0.75rem 0.35em;
-  color: var(--color-label-2);
-  font: 500 0.6875rem/1 var(--font-mono);
-}
-/* the endpaper: the cloth, dotted */
-.app-writing-book-back {
-  background:
-    radial-gradient(circle, color-mix(in srgb, var(--edge) 70%, transparent) 1px, transparent 1.6px) 0 0 / 6px 6px,
-    var(--cloth);
-  box-shadow: inset 6px 0 0 color-mix(in srgb, var(--edge) 80%, transparent);
-  transform: rotateY(180deg);
-  backface-visibility: hidden;
-}
-.app-writing-book-spine {
-  position: absolute;
-  image-rendering: pixelated;
-  backface-visibility: hidden;
 }

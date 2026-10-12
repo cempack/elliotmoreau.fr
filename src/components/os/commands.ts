@@ -276,7 +276,7 @@ export function useSpotlightCommands(): Command[] {
         group: b.title,
         label: fill(b.post, { title: post.title, n }),
         board: { time: dm(new Date(post.published_at)), dest: post.title, via: post.tags[0]?.name ?? "", status: fill(b.min, { n }), key: post.slug, remember: true },
-        perform: () => router.push(`${path("/writing")}?p=${encodeURIComponent(post.slug)}`, { transitionTypes: ["app-open"] } as never),
+        perform: () => router.push(path(`/writing/${encodeURIComponent(post.slug)}`), { transitionTypes: ["app-open"] } as never),
       });
     }
     if (activity) {

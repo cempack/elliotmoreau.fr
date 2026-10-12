@@ -7,26 +7,6 @@ function cells(rows: string[]): Cells {
   return out;
 }
 
-export const G_ALL = cells([
-  ".#####.",
-  ".......",
-  "#######",
-  "#.....#",
-  "#.....#",
-  "#.....#",
-  "#######",
-]);
-
-export const G_FOLDER = cells([
-  ".......",
-  "###....",
-  "#######",
-  "#.....#",
-  "#.....#",
-  "#.....#",
-  "#######",
-]);
-
 export const G_BACK = cells([
   "...#...",
   "..#....",
