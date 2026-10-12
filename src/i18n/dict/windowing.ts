@@ -7,6 +7,7 @@ const en = {
     zoom: "Enter full width",
     unzoom: "Exit full width",
     sections: "Sections",
+    path: "Path",
   },
 };
 
@@ -17,6 +18,7 @@ const fr: typeof en = {
     zoom: "Passer en pleine largeur",
     unzoom: "Quitter la pleine largeur",
     sections: "Rubriques",
+    path: "Chemin",
   },
 };
 

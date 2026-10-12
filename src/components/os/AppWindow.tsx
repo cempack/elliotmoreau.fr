@@ -16,9 +16,11 @@ import { useWindowDrag } from "./window/useWindowDrag";
 import { dockIconCenter, markKeyboardClose, setEnterOrigin, setExitOrigin } from "./window/dock";
 import { getZoomPref, setZoomPref } from "./window/zoomPref";
 import { WinIcon } from "./window/WinIcon";
+import { PathBar, type Crumb } from "./window/PathBar";
 import { closeWorkspace } from "./workspaces";
 
 export { WinNav, WinNavItem } from "./window/WinNav";
+export { PathBar, type Crumb } from "./window/PathBar";
 
 /** Page transition classes by navigation type (see window.css). */
 const ENTER = { "app-open": "app-open", default: "app-in" };
@@ -51,11 +53,18 @@ const EXIT = { "app-close": "app-close", "app-open": "app-leave", default: "app-
  *   node of the changing subtree wraps.
  */
 let firstWindow = true;
+/** true once: for the first window of a page load (a hard load) */
+function takeFirstWindow() {
+  const first = firstWindow;
+  firstWindow = false;
+  return first;
+}
 
 export function AppWindow({
   app,
   title,
   subtitle,
+  path: crumbs,
   toolbar,
   sidebar,
   children,
@@ -64,6 +73,8 @@ export function AppWindow({
   app: AppId;
   title?: string;
   subtitle?: React.ReactNode;
+  /** the title bar's path after "~" (defaults to the app's own segment); each segment but the last is clickable */
+  path?: Crumb[];
   toolbar?: React.ReactNode;
   sidebar?: React.ReactNode;
   children: React.ReactNode;
@@ -106,8 +117,7 @@ export function AppWindow({
     const el = winRef.current;
     if (!el) return;
     // a hard load has no enter transition to aim: no geometry to write (it would restyle the whole page)
-    const hard = firstWindow;
-    firstWindow = false;
+    const hard = takeFirstWindow();
     let raf = 0;
     if (!hard) {
       setEnterOrigin(el, app, appHref);
@@ -225,9 +235,7 @@ export function AppWindow({
             {subtitle ? (
               <span className="os-win-sub">{subtitle}</span>
             ) : (
-              <span className="os-win-sub os-win-sub--path" aria-hidden>
-                ~{def.path === "/" ? "" : def.path}
-              </span>
+              <PathBar crumbs={crumbs ?? (def.path === "/" ? [] : [{ label: def.path.slice(1) }])} />
             )}
           </div>
 

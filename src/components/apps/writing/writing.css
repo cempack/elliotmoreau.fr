@@ -1643,10 +1643,6 @@
   padding: clamp(1rem, 3cqi, 1.75rem) var(--app-writing-pad) 3.5rem;
   container-type: inline-size;
 }
-.app-writing-article-path {
-  color: var(--color-label-3);
-  font: 500 0.75rem/1 var(--font-mono);
-}
 @media (min-width: 768px) {
   .app-writing-article-bar {
     display: flex;

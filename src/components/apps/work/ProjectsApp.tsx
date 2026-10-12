@@ -2,7 +2,7 @@
 
 import "./work.css";
 import { AnimatePresence, LayoutGroup, m } from "motion/react";
-import { AppWindow } from "@/components/os/AppWindow";
+import { AppWindow, PathBar, type Crumb } from "@/components/os/AppWindow";
 import { Sheet } from "@/components/ui/Sheet";
 import { useI18n } from "@/i18n/client";
 import { spring } from "@/lib/motion";
@@ -15,7 +15,7 @@ import { QuickLook, QuickLookSheetBody } from "./QuickLook";
 import { Sidebar } from "./Sidebar";
 import { Toolbar } from "./Toolbar";
 import { WorkProvider, useWork, visibleSearch } from "./store";
-import { fmt, pathFor } from "./model";
+import { fmt } from "./model";
 import { useLive, useSiteData } from "@/components/os/SiteData";
 
 /**
@@ -45,13 +45,20 @@ export function ProjectsApp() {
   );
 }
 
+/** ~/work/lang/go?q=…: each level clears what's below it */
 function WorkPath() {
-  const { filter, query } = useWork();
-  return (
-    <span className="app-work-path" aria-hidden>
-      {pathFor(filter, query)}
-    </span>
-  );
+  const { filter, query, setFilter, setQuery } = useWork();
+  const q = query.trim();
+  const all = () => {
+    setFilter({ kind: "all" });
+    setQuery("");
+  };
+  const crumbs: Crumb[] = [{ label: "work", onClick: all }];
+  if (filter.kind === "lang") crumbs.push({ label: "lang", onClick: all }, { label: filter.value.toLowerCase(), onClick: () => setQuery("") });
+  else if (filter.kind === "tag") crumbs.push({ label: "tags", onClick: all }, { label: filter.value, onClick: () => setQuery("") });
+  else if (filter.kind === "starred") crumbs.push({ label: "starred", onClick: () => setQuery("") });
+  if (q) crumbs.push({ label: `?q=${q.length > 18 ? `${q.slice(0, 17)}…` : q}`, suffix: true });
+  return <PathBar crumbs={crumbs} />;
 }
 
 function WorkSidebar() {

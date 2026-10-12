@@ -9,6 +9,7 @@ import { ArrowUpRight, GithubIcon, RestartIcon, RssIcon } from "./glyphs";
 import { DataPlate } from "./DataPlate";
 import { BLOG_RSS, SITE_REPO, restartOS } from "./util";
 import { lockOS } from "../Intro";
+import { PhoneTicket } from "./PhoneTicket";
 
 /** fastfetch's colour blocks, in Moss. */
 const SWATCHES = [
@@ -119,6 +120,8 @@ export function AboutPanel() {
           ))}
         </ul>
       </div>
+
+      <PhoneTicket />
 
       <div className="os-menubar-about-actions">
         <a className="os-menubar-action" href={SITE_REPO} target="_blank" rel="noopener noreferrer" aria-label={a.sourceLabel}>

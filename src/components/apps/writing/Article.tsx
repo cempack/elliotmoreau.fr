@@ -75,7 +75,7 @@ export function Article({
   };
 
   return (
-    <AppWindow app="writing" subtitle={<span className="app-writing-article-path">~/writing/{post.slug}</span>}>
+    <AppWindow app="writing" path={[{ label: "writing", href: back }, { label: post.slug }]}>
       <article className="app-writing-article" aria-labelledby="post-title">
         <nav ref={barRef} className="app-writing-navbar app-writing-article-bar" aria-label={w.list}>
           <Link href={back} className="app-writing-back">

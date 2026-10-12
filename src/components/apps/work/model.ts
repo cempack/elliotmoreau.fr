@@ -142,17 +142,3 @@ export function highlight(text: string, terms: string[]) {
   }
   return runs;
 }
-
-/** The mono path in the title bar: ~/work, ~/work/starred, ~/work/lang/go … */
-export function pathFor(f: Filter, q: string) {
-  const base =
-    f.kind === "all"
-      ? "~/work"
-      : f.kind === "lang"
-        ? `~/work/lang/${f.value.toLowerCase()}`
-        : f.kind === "tag"
-          ? `~/work/tags/${f.value}`
-          : `~/work/${f.kind}`;
-  const query = q.trim();
-  return query ? `${base}?q=${query.length > 18 ? query.slice(0, 17) + "…" : query}` : base;
-}

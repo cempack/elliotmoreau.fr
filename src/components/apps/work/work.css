@@ -20,15 +20,9 @@
   padding: 1.25rem var(--app-work-pad) 0;
 }
 
-/* the mono path in the title bar (~/work/tags/hyprland?q=…) */
-.app-work-path {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0;
-  color: var(--color-label-3);
-}
+/* the title bar's path (~/work/tags/hyprland?q=…) gives way to the toolbar on narrower windows */
 @media (max-width: 1099px) {
-  .app-work-path {
+  .app-work-win .os-path {
     display: none;
   }
 }

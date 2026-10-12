@@ -2,7 +2,7 @@
 
 import "./mail.css";
 import { useEffect, useId, useState, useSyncExternalStore } from "react";
-import { AppWindow } from "@/components/os/AppWindow";
+import { AppWindow, PathBar } from "@/components/os/AppWindow";
 import { useI18n } from "@/i18n/client";
 import { useReduced } from "@/hooks/env";
 import { useSound } from "@/lib/sound";
@@ -39,7 +39,7 @@ function boxFromHash(hash: string): Box {
 function DraftPath() {
   const { t } = useI18n();
   const file = useSyncExternalStore(draftFile.subscribe, draftFile.get, draftFile.server);
-  return <>{`~/contact/${t.contact.draftsDir}/${file || t.contact.untitled}.eml`}</>;
+  return <PathBar crumbs={[{ label: "contact" }, { label: t.contact.draftsDir }, { label: `${file || t.contact.untitled}.eml` }]} />;
 }
 
 /**
@@ -110,26 +110,20 @@ export function MailApp({ mailReady = false }: { mailReady?: boolean }) {
   const email = SOCIALS.email;
   // phones: Send lives in the sheet's header, always in reach (iOS Mail)
   const headerSend = shown === "compose" && (phase === "compose" || phase === "sending");
+  // ~/contact/<mailbox>: "contact" goes back to a new message
+  const up = { label: "contact", onClick: () => select("compose") };
   const subtitle =
     shown === "compose" ? (
       <DraftPath />
-    ) : shown === "sent" ? (
-      `~/contact/${c.sentDir}`
-    ) : shown === "elsewhere" ? (
-      `~/contact/${c.elsewhereDir}`
     ) : (
-      "~/contact/pgp.asc"
+      <PathBar crumbs={[up, { label: shown === "sent" ? c.sentDir : shown === "elsewhere" ? c.elsewhereDir : "pgp.asc" }]} />
     );
 
   return (
     <AppWindow
       app="contact"
       className="app-contact"
-      subtitle={
-        <span className="app-contact-path" aria-hidden>
-          {subtitle}
-        </span>
-      }
+      subtitle={subtitle}
       toolbar={
         <>
           {/* a new message has the address (and its copy button) in its To row */}

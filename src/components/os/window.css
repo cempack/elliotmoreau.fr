@@ -728,3 +728,47 @@
     transition: none;
   }
 }
+
+/* the path bar: Finder's, in mono. Segments up the tree are links. */
+.os-path {
+  display: inline-flex;
+  align-items: baseline;
+  min-width: 0;
+  overflow: hidden;
+}
+.os-path-item {
+  display: inline-flex;
+  align-items: baseline;
+  min-width: 0;
+}
+.os-path-sep {
+  padding: 0 1px;
+  color: var(--color-label-3);
+}
+.os-path-seg {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.os-path-seg[aria-current] {
+  color: var(--color-label);
+}
+.os-path-link {
+  margin: -2px -3px;
+  padding: 2px 3px;
+  border-radius: 4px;
+  color: var(--color-label-2);
+  font: inherit;
+  background: none;
+  transition:
+    color 0.15s,
+    background-color 0.15s;
+}
+.os-path-link:hover {
+  color: var(--color-label);
+  background: rgba(255, 255, 255, 0.08);
+}
+.os-path-link:focus-visible {
+  outline: 2px solid var(--os-win-accent);
+  outline-offset: 1px;
+}

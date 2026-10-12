@@ -5,12 +5,6 @@
    action per view. */
 
 /* ── window chrome bits (subtitle path, toolbar) ── */
-.app-contact-path {
-  color: var(--color-label-2);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0;
-}
 .app-contact-tool {
   display: inline-flex;
   height: 2rem;
@@ -36,9 +30,6 @@
   color: var(--color-signal);
 }
 @media (max-width: 767px) {
-  .app-contact-path {
-    display: none;
-  }
   .app-contact-tool {
     justify-content: center;
     width: 2.75rem;
