@@ -13,6 +13,7 @@ import { type SkyMode, type SkyPhase } from "../sky";
 import { phaseOf, sunAt } from "@/lib/sun";
 import { EmosLogo } from "../EmosLogo";
 import { Cmd, Ext, Swatch, fill, nodes } from "./ui";
+import { GitLog, GitShow } from "./Git";
 
 /**
  * The Terminal's commands. Each one takes its arguments and a context of
@@ -164,6 +165,7 @@ const HELP: { cmd: string; label: string; key: keyof Dict["system"]["term"]["hel
   { cmd: "posts", label: "posts", key: "posts" },
   { cmd: "now", label: "now", key: "now" },
   { cmd: "neofetch", label: "neofetch", key: "neofetch" },
+  { cmd: "git log --oneline", label: "git log", key: "git" },
   { cmd: "contact", label: "contact", key: "contact" },
   { cmd: "sky", label: "sky <phase>", key: "sky", fill: true },
   { cmd: "lang", label: "lang <en|fr>", key: "lang", fill: true },
@@ -784,6 +786,25 @@ const COMMANDS: Command[] = [
     },
   },
   { name: "admin", aliases: ["login", "su"], hidden: true, run: (_a, ctx) => openAdmin(ctx) },
+  {
+    name: "git",
+    args: () => ["log --oneline", "show", "status"],
+    run: (args, ctx) => {
+      const g = ctx.d.system.term.git;
+      const [sub, ref] = args;
+      if (sub === "log" || sub === "lg") return <GitLog />;
+      if (sub === "show") return <GitShow refName={ref?.replace(/^HEAD$/i, "") || "HEAD"} />;
+      if (sub === "status")
+        return (
+          <div className="os-term-block">
+            {g.status.map((l, i) => (
+              <p key={i}>{l || "\u00a0"}</p>
+            ))}
+          </div>
+        );
+      return <Line tone="dim">{g.usage}</Line>;
+    },
+  },
   {
     name: "hire",
     hidden: true,

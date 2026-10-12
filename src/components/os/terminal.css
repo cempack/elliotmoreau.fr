@@ -738,3 +738,46 @@ html[data-term-focus] .os-win .os-win-lights:not(:hover) .os-win-light {
     color: var(--color-label-2);
   }
 }
+
+/* git log / git show: this site's real history */
+.os-term-git-row {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.os-term-git-sha {
+  color: var(--color-ember);
+}
+.os-term-git-head {
+  color: var(--color-ion);
+}
+.os-term-git-title {
+  margin-top: 0.5em;
+  color: var(--color-label);
+  font-weight: 600;
+}
+.os-term-git-body {
+  margin-top: 0.25em;
+  color: var(--color-label-2);
+  white-space: pre-wrap;
+}
+.os-term-git-files {
+  margin: 0.5em 0;
+  list-style: none;
+}
+.os-term-git-files li {
+  display: flex;
+  gap: 0.75ch;
+}
+.os-term-git-file {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.os-term-git-add {
+  color: var(--color-signal);
+}
+.os-term-git-del {
+  color: var(--color-flare);
+}

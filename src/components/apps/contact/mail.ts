@@ -25,7 +25,26 @@ export function saveDraft(d: Draft) {
     if (!d.subject.trim() && !d.body.trim()) localStorage.removeItem(DRAFT_KEY);
     else localStorage.setItem(DRAFT_KEY, JSON.stringify(d));
   } catch {}
+  // the desktop shows a waiting draft as a file
+  window.dispatchEvent(new Event(DRAFT_EVENT));
 }
+
+export const DRAFT_EVENT = "em-draft";
+
+/** the waiting draft's subject ("" when untitled), or null when there's none; for useSyncExternalStore */
+export const draftOnDesk = {
+  subscribe(cb: () => void) {
+    const onStorage = (e: StorageEvent) => e.key === DRAFT_KEY && cb();
+    window.addEventListener(DRAFT_EVENT, cb);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(DRAFT_EVENT, cb);
+      window.removeEventListener("storage", onStorage);
+    };
+  },
+  get: (): string | null => loadDraft()?.subject.trim() ?? null,
+  server: (): string | null => null,
+};
 
 /** Who the letter is from (sending from the site): remembered in this browser for the next one. */
 export type From = { email: string; name: string };

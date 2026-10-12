@@ -34,9 +34,10 @@ export const G_PLANE: Cells = [
 ];
 
 /** What can sit on the desktop. The apps live in the Dock, so only the
-    README (it opens hello.txt) is out on the desk. */
-export type DesktopIconId = Exclude<AppId, "home"> | "readme";
-export const DESKTOP_ICONS: DesktopIconId[] = ["readme"];
+    README (it opens hello.txt) is out on the desk, and a Mail draft while
+    one is waiting to be sent. */
+export type DesktopIconId = Exclude<AppId, "home" | "admin"> | "readme" | "draft";
+export const DESKTOP_ICONS: DesktopIconId[] = ["readme", "draft"];
 
 const C = {
   paper: "#ebe9e1",
@@ -45,6 +46,8 @@ const C = {
   ink: "#0a0c0b",
   signal: "#b0cc86",
   ion: "#89b4a8",
+  ember: "#e0bd6e",
+  emberDeep: "#c99645",
 };
 
 /* A text file with a dog-eared corner, a lime heading and ruled lines. 16×16,
@@ -70,35 +73,63 @@ const README_ROWS = [
 const README_PAL: Record<string, string> = { W: C.paper, w: C.paper2, g: C.paper3, S: C.signal, I: C.ion };
 
 type Run = { x: number; y: number; w: number; fill: string };
-const runs: Run[] = [];
-const shadow: Run[] = [];
-README_ROWS.forEach((row, y) => {
-  let x = 0;
-  while (x < 16) {
-    const ch = row[x];
-    let w = 1;
-    while (x + w < 16 && row[x + w] === ch) w++;
-    if (ch !== ".") runs.push({ x, y, w, fill: README_PAL[ch] });
-    x += w;
-  }
-  x = 0;
-  while (x < 16) {
-    if (row[x] === ".") {
-      x++;
-      continue;
+
+/** a 16×16 map as runs of colour, plus its one-cell drop shadow */
+function build(rows: readonly string[], pal: Record<string, string>) {
+  const runs: Run[] = [];
+  const shadow: Run[] = [];
+  rows.forEach((row, y) => {
+    let x = 0;
+    while (x < 16) {
+      const ch = row[x];
+      let w = 1;
+      while (x + w < 16 && row[x + w] === ch) w++;
+      if (ch !== ".") runs.push({ x, y, w, fill: pal[ch] });
+      x += w;
     }
-    let w = 1;
-    while (x + w < 16 && row[x + w] !== ".") w++;
-    shadow.push({ x: x + 1, y: y + 1, w, fill: "" });
-    x += w;
-  }
-});
+    x = 0;
+    while (x < 16) {
+      if (row[x] === ".") {
+        x++;
+        continue;
+      }
+      let w = 1;
+      while (x + w < 16 && row[x + w] !== ".") w++;
+      shadow.push({ x: x + 1, y: y + 1, w, fill: "" });
+      x += w;
+    }
+  });
+  return { runs, shadow };
+}
+
+const README = build(README_ROWS, README_PAL);
+
+/* The Mail draft: the same page with a sealed envelope on it, ember flap. */
+const EML_ROWS = [
+  "................",
+  "...WWWWWWWw.....",
+  "...WWWWWWWww....",
+  "...WWWWWWWwww...",
+  "...WWWWWWWWWW...",
+  "...WEEEEEEEEW...",
+  "...WEeEEEEeEW...",
+  "...WEWeEEeWEW...",
+  "...WEWWeeWWEW...",
+  "...WEWWWWWWEW...",
+  "...WEEEEEEEEW...",
+  "...WWWWWWWWWW...",
+  "...WgggggWWWW...",
+  "...WWWWWWWWWW...",
+  "................",
+  "................",
+];
+const EML = build(EML_ROWS, { W: C.paper, w: C.paper2, g: C.paper3, E: C.ember, e: C.emberDeep });
 
 /**
  * A document, not an app: no tile, just the page, drawn a little larger
  * than an app glyph (documents on a desktop read by their silhouette).
  */
-function ReadmeGlyph({ size }: { size: number }) {
+function DocGlyph({ size, art }: { size: number; art: ReturnType<typeof build> }) {
   // whole or half px per cell, so the page stays as crisp as the app glyphs
   const cell = Math.round(glyphCell(size) * 1.25 * 2) / 2;
   const gp = cell * 16;
@@ -113,9 +144,9 @@ function ReadmeGlyph({ size }: { size: number }) {
         style={{ display: "block", overflow: "visible" }}
       >
         <g fill={C.ink} opacity={0.5}>
-          <path d={pxPath(shadow)} />
+          <path d={pxPath(art.shadow)} />
         </g>
-        {[...byFill(runs, (r) => r.fill)].map(([fill, rs]) => (
+        {[...byFill(art.runs, (r) => r.fill)].map(([fill, rs]) => (
           <path key={fill} d={pxPath(rs)} fill={fill} />
         ))}
       </svg>
@@ -124,6 +155,7 @@ function ReadmeGlyph({ size }: { size: number }) {
 }
 
 export function DesktopGlyph({ id, size }: { id: DesktopIconId; size: number }) {
-  if (id === "readme") return <ReadmeGlyph size={size} />;
+  if (id === "readme") return <DocGlyph size={size} art={README} />;
+  if (id === "draft") return <DocGlyph size={size} art={EML} />;
   return <AppIcon app={id} size={size} />;
 }

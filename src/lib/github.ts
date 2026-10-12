@@ -236,3 +236,67 @@ export async function getPushes(skip?: Skip): Promise<PushHistory | null> {
   const oldest = events[events.length - 1]?.created_at;
   return { days, since: oldest ? toulouseDay.format(new Date(oldest)) : days[days.length - 1]?.d ?? "" };
 }
+
+/* ───────────────────────── this site's own history (Terminal: git log) ───────────────────────── */
+
+const SITE = "elliotmoreau.fr";
+/** the branch and commit this server was built from (Railway sets these), so the log is the running site's */
+const DEPLOYED_BRANCH = () => process.env.RAILWAY_GIT_BRANCH || "main";
+const DEPLOYED_SHA = () => process.env.RAILWAY_GIT_COMMIT_SHA || DEPLOYED_BRANCH();
+
+export type CommitInfo = { sha: string; message: string; date: string; url: string; author: string };
+export type CommitDetail = CommitInfo & {
+  body: string;
+  stats: { additions: number; deletions: number };
+  files: { name: string; status: string; additions: number; deletions: number }[];
+};
+
+type GhCommit = {
+  sha: string;
+  html_url: string;
+  commit: { message: string; author?: { name?: string; date?: string }; committer?: { date?: string } };
+  stats?: { additions: number; deletions: number };
+  files?: { filename: string; status: string; additions: number; deletions: number }[];
+};
+
+const toInfo = (c: GhCommit): CommitInfo => ({
+  sha: c.sha,
+  message: c.commit.message.split("\n")[0].slice(0, 200),
+  date: c.commit.committer?.date ?? c.commit.author?.date ?? "",
+  url: c.html_url,
+  author: c.commit.author?.name ?? "",
+});
+
+/** the latest commits of this site's repo (cached 5 minutes) */
+export async function getSiteCommits(n = 15): Promise<CommitInfo[] | null> {
+  try {
+    const res = await fetch(`${API}/repos/${USER}/${SITE}/commits?per_page=${Math.min(n, 50)}&sha=${encodeURIComponent(DEPLOYED_SHA())}`, {
+      headers: headers(),
+      next: { revalidate: 300 },
+    });
+    if (!res.ok) return null;
+    return ((await res.json()) as GhCommit[]).map(toInfo);
+  } catch {
+    return null;
+  }
+}
+
+/** one commit with its files (git show); null when unknown */
+export async function getSiteCommit(name: string): Promise<CommitDetail | null> {
+  if (!/^(HEAD|main|[0-9a-f]{4,40})$/i.test(name)) return null;
+  const ref = /^head$/i.test(name) ? DEPLOYED_SHA() : name;
+  try {
+    const res = await fetch(`${API}/repos/${USER}/${SITE}/commits/${ref}`, { headers: headers(), next: { revalidate: 3600 } });
+    if (!res.ok) return null;
+    const c = (await res.json()) as GhCommit;
+    const [, ...rest] = c.commit.message.split("\n");
+    return {
+      ...toInfo(c),
+      body: rest.join("\n").replace(/\n?Co-Authored-By:[^\n]*|\n?Claude-Session:[^\n]*/g, "").trim().slice(0, 1200),
+      stats: { additions: c.stats?.additions ?? 0, deletions: c.stats?.deletions ?? 0 },
+      files: (c.files ?? []).slice(0, 40).map((f) => ({ name: f.filename, status: f.status, additions: f.additions, deletions: f.deletions })),
+    };
+  } catch {
+    return null;
+  }
+}

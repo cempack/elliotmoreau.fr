@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { animate, type AnimationPlaybackControls } from "motion/react";
 import { useI18n } from "@/i18n/client";
@@ -16,6 +16,7 @@ import { DESKTOP_ICONS, DesktopGlyph, type DesktopIconId } from "./icons";
 import { desktopMemory, type Cell } from "./store";
 import { FLING, band, intersects, pushSample, releaseVelocity, type Rect, type Sample } from "./physics";
 import { PHONE, isPhone, safeTopPx } from "./layout";
+import { draftOnDesk } from "@/components/apps/contact/mail";
 
 const ICON = 60;
 /** touch: how long a finger rests on an icon before it lifts to move */
@@ -31,7 +32,7 @@ const clock = () => performance.now();
    already on the screen). Desk icons are hidden on phones in CSS and the
    phone ones on desks, so the server render is the same for both. */
 type PhoneOnly = "now" | "terminal" | "search";
-const DESK_ONLY = new Set<DesktopIconId>(["work", "writing", "atlas", "now", "contact", "readme"]);
+const DESK_ONLY = new Set<DesktopIconId>(["work", "writing", "atlas", "now", "contact", "readme", "draft"]);
 const PHONE_ROW: PhoneOnly[] = ["now", "terminal", "search"];
 
 /* ───────────────────────────── grid geometry ─────────────────────────────
@@ -157,6 +158,9 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
   const quietUntil = useRef(0);
   const touchTap = useRef(false);
   const [focusId, setFocusId] = useState<DesktopIconId | null>(null);
+  // a Mail draft waiting to be sent sits on the desk as a file, named after its subject
+  const draft = useSyncExternalStore(draftOnDesk.subscribe, draftOnDesk.get, draftOnDesk.server);
+  const icons: DesktopIconId[] = draft == null ? DESKTOP_ICONS.filter((i) => i !== "draft") : DESKTOP_ICONS;
 
   const L = (id: DesktopIconId): Live => {
     let v = live.current[id];
@@ -189,7 +193,7 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
   /** remember the whole arrangement once a hand has touched it */
   const remember = () => {
     const cells = {} as Record<DesktopIconId, Cell>;
-    for (const id of DESKTOP_ICONS) cells[id] = L(id).cell;
+    for (const id of icons) cells[id] = L(id).cell;
     desktopMemory.arrange(cells);
   };
 
@@ -210,7 +214,7 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
   /** cells taken by the other icons or blocked */
   const occupancy = (m: Metrics, except: Set<DesktopIconId>) => {
     const taken = blockedCells(m);
-    for (const id of DESKTOP_ICONS) if (!except.has(id)) taken.add(key(L(id).cell));
+    for (const id of icons) if (!except.has(id)) taken.add(key(L(id).cell));
     return taken;
   };
 
@@ -239,12 +243,12 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
   const defaultCells = (m: Metrics, blocked: Set<string>) => {
     const rows = m.rows;
     const out: Cell[] = [];
-    for (let c = 0; c < m.cols && out.length < DESKTOP_ICONS.length; c++) {
-      for (let r = 0; r < rows && out.length < DESKTOP_ICONS.length; r++) {
+    for (let c = 0; c < m.cols && out.length < icons.length; c++) {
+      for (let r = 0; r < rows && out.length < icons.length; r++) {
         if (!blocked.has(key({ c, r }))) out.push({ c, r });
       }
     }
-    for (let i = out.length; i < DESKTOP_ICONS.length; i++) out.push(flowCell(i, m.rows));
+    for (let i = out.length; i < icons.length; i++) out.push(flowCell(i, m.rows));
     return out;
   };
 
@@ -296,7 +300,7 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
     const blocked = blockedCells(m);
     const flow = untouched ? defaultCells(m, blocked) : null;
     const placed = new Set<string>();
-    DESKTOP_ICONS.forEach((id, i) => {
+    icons.forEach((id, i) => {
       const v = L(id);
       if (drag.current?.ids.includes(id)) {
         placed.add(key(v.cell));
@@ -376,6 +380,12 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
       palette.open();
       return;
     }
+    if (id === "draft") {
+      markLaunch(el.querySelector(".app-home-icon-tile") ?? el);
+      blip("open");
+      router.push(path("/contact"), { transitionTypes: ["app-open"] });
+      return;
+    }
     const app = APPS.find((a) => a.id === id);
     if (!app) return;
     markLaunch(el.querySelector(".app-home-icon-tile") ?? el);
@@ -446,7 +456,7 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
     if (!scene) return;
     const m = readMetrics(scene);
     d.moved = true;
-    d.ids = selected.has(d.id) ? DESKTOP_ICONS.filter((i) => selected.has(i)) : [d.id];
+    d.ids = selected.has(d.id) ? icons.filter((i) => selected.has(i)) : [d.id];
     let gl = Infinity;
     let gt = Infinity;
     let gr = -Infinity;
@@ -608,7 +618,7 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
   const onKeyDown = (id: DesktopIconId) => (e: React.KeyboardEvent<HTMLElement>) => {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "a") {
       e.preventDefault();
-      setSelected(new Set(DESKTOP_ICONS));
+      setSelected(new Set(icons));
       return;
     }
     if (e.key === "Escape") {
@@ -628,7 +638,7 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
     const hy = here.r;
     let best: DesktopIconId | null = null;
     let bestScore = Infinity;
-    for (const other of DESKTOP_ICONS) {
+    for (const other of icons) {
       if (other === id) continue;
       const c = L(other).cell;
       const ddx = -c.c - hx;
@@ -651,8 +661,8 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
 
   // desks: a roving tab stop (the focused icon, else the first selected,
   // else the first); phones: every icon on the home screen is a stop
-  const firstSelected = DESKTOP_ICONS.find((i) => selected.has(i));
-  const tabStop = focusId ?? firstSelected ?? DESKTOP_ICONS[0];
+  const firstSelected = icons.find((i) => selected.has(i));
+  const tabStop = focusId ?? firstSelected ?? icons[0];
   const hint = fine ? t.home.icons.hint : phone ? t.home.icons.hintPhone : t.home.icons.hintTouch;
 
   const phoneIcon = (id: PhoneOnly) => (
@@ -679,9 +689,10 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
       <span id={hintId} hidden>
         {hint}
       </span>
-      {DESKTOP_ICONS.flatMap((id) => {
+      {icons.flatMap((id) => {
         const app = APPS.find((a) => a.id === id);
-        const label = id === "readme" ? t.home.icons.readme : t.shell.apps[id];
+        const label =
+          id === "readme" ? t.home.icons.readme : id === "draft" ? `${draft || t.home.icons.untitled}.eml` : t.shell.apps[id];
         const deskOnly = DESK_ONLY.has(id);
         const common = {
           ref: (el: HTMLElement | null) => {
@@ -722,7 +733,11 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
           </>
         );
         const node =
-          id === "readme" || !app ? (
+          id === "draft" ? (
+            <a key={id} href={path("/contact")} {...common} title={t.home.icons.draftHint} data-draft="">
+              {inner}
+            </a>
+          ) : id === "readme" || !app ? (
             <button key={id} type="button" {...common}>
               {inner}
             </button>
@@ -735,6 +750,21 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
         return [node];
       })}
       {PHONE_ROW.map(phoneIcon)}
+      {draft != null && (
+        <a
+          key="p-draft"
+          href={path("/contact")}
+          data-phone-icon="draft"
+          className="app-home-icon app-home-icon--phone"
+          tabIndex={phone ? 0 : -1}
+          title={t.home.icons.draftHint}
+        >
+          <span className="app-home-icon-tile">
+            <DesktopGlyph id="draft" size={ICON} />
+          </span>
+          <span className="app-home-icon-label">{`${draft || t.home.icons.untitled}.eml`}</span>
+        </a>
+      )}
     </div>
   );
 }
