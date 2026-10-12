@@ -17,6 +17,8 @@ import { useSheetDismiss } from "@/components/ui/Sheet";
 import { DitherStage } from "./DitherStage";
 import { G_ARROW, G_CHECK, G_CLOSE, G_COPY, G_FORK } from "./glyphs";
 import { Marked } from "./Parts";
+import { RepoBack } from "./Signals";
+import { useRepoDetail } from "./extras";
 import { compact, fmt, langColor } from "./model";
 
 type Sample = { t: number; x: number; y: number };
@@ -591,6 +593,9 @@ function QuickLookBody({
   const { t, lang } = useI18n();
   const q = t.work.ql;
   const { blip } = useSound();
+  const reduced = useReduced();
+  // the back of the sticker: fetched when Quick Look opens on this repo
+  const detail = useRepoDetail(repo.name);
   const [copied, setCopied] = useState<"ok" | "fail" | null>(null);
   const timer = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -714,6 +719,8 @@ function QuickLookBody({
             ))}
           </div>
         )}
+
+        <RepoBack detail={detail} reduced={reduced} />
       </div>
 
       <div className="app-work-qlb-bar">

@@ -12,6 +12,8 @@ import { useNow } from "@/components/os/menubar/util";
 import { GLYPH_STAR, PixelGlyph } from "@/components/glyphs";
 import { G_CHEVRON } from "./glyphs";
 import { Marked } from "./Parts";
+import { CiSignal, MarkBadge } from "./Signals";
+import { useWork } from "./store";
 import { type SortKey, type ViewMode, compact, fmt, itemId, langColor, normalize } from "./model";
 
 type View = "icons" | "list";
@@ -257,6 +259,7 @@ function Item({
   onDoubleClick: () => void;
 }) {
   const { t, lang } = useI18n();
+  const { ci, marks } = useWork();
   const id = itemId(repo.name);
   // the grid ↔ list morph ripples through the items; filtering doesn't
   const lt = { ...spring.default, delay: stagger ? Math.min(index * 0.014, 0.2) : 0 };
@@ -302,6 +305,8 @@ function Item({
         <span className="app-work-name-text">
           <Marked text={repo.name} terms={terms} />
         </span>
+        <MarkBadge mark={marks[repo.name]} />
+        <CiSignal ci={ci[repo.name]} />
       </m.span>
       <m.span
         layout="position"

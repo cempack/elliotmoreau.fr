@@ -300,3 +300,115 @@ export async function getSiteCommit(name: string): Promise<CommitDetail | null> 
     return null;
   }
 }
+
+/* ───────────────────────── one repo, turned over (Projects: Quick Look's back, Green light) ───────────────────────── */
+
+export type CiState = "passing" | "failing" | "running" | "none";
+export type CiInfo = { state: CiState; /** the failing check's name, or "deployed" for this site */ detail?: string; url?: string; at?: string };
+
+export type RepoDetail = {
+  name: string;
+  /** the README's first paragraph, as plain text */
+  intro: string;
+  /** the README's first image (absolute URL) */
+  image: string | null;
+  /** bytes per language, largest first */
+  languages: { name: string; bytes: number }[];
+  issues: number;
+  license: string | null;
+  release: { tag: string; at: string; url: string } | null;
+  ci: CiInfo;
+};
+
+const NAME_RE = /^[A-Za-z0-9._-]{1,100}$/;
+
+async function gh<T>(path: string, revalidate = 300): Promise<{ ok: true; data: T } | { ok: false; status: number }> {
+  try {
+    const res = await fetch(`${API}${path}`, { headers: headers(), next: { revalidate } });
+    if (!res.ok) return { ok: false, status: res.status };
+    return { ok: true, data: (await res.json()) as T };
+  } catch {
+    return { ok: false, status: 0 };
+  }
+}
+
+/** a README's first real paragraph: no headings, badges, images, HTML or link-only lines */
+export function readmeIntro(md: string): string {
+  const blocks = md
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/```[\s\S]*?```/g, "")
+    .split(/\n\s*\n/);
+  for (const b of blocks) {
+    const text = b.trim();
+    if (!text || /^(#|>|\||[-*+] |\d+\. |<|!\[|\[!\[)/.test(text)) continue;
+    const plain = text
+      .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+      .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+      .replace(/[*_`~]+/g, "")
+      .replace(/<[^>]+>/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (plain.length >= 30) return plain.length > 420 ? `${plain.slice(0, 419).trimEnd()}…` : plain;
+  }
+  return "";
+}
+
+/** the default branch's checks, folded into one signal */
+export async function getCi(name: string, branch = "HEAD"): Promise<CiInfo> {
+  if (!NAME_RE.test(name)) return { state: "none" };
+  // this site: the deploy itself is its check (Railway built and is serving it)
+  if (name === SITE && process.env.RAILWAY_DEPLOYMENT_ID) return { state: "passing", detail: "deployed", at: BOOTED_AT };
+  const r = await gh<{ check_runs: { name: string; status: string; conclusion: string | null; html_url: string; completed_at: string | null }[] }>(
+    `/repos/${USER}/${name}/commits/${branch}/check-runs?per_page=30`
+  );
+  if (!r.ok || !r.data.check_runs.length) return { state: "none" };
+  const runs = r.data.check_runs;
+  const failed = runs.find((c) => c.conclusion === "failure" || c.conclusion === "timed_out" || c.conclusion === "cancelled");
+  if (failed) return { state: "failing", detail: failed.name, url: failed.html_url, at: failed.completed_at ?? undefined };
+  if (runs.some((c) => c.status !== "completed")) return { state: "running", url: runs[0].html_url };
+  return { state: "passing", url: runs[0].html_url, at: runs[0].completed_at ?? undefined };
+}
+
+/** when this server started: on Railway, the moment the running deploy went live */
+const BOOTED_AT = new Date().toISOString();
+
+export async function getRepoDetail(name: string): Promise<RepoDetail | null> {
+  if (!NAME_RE.test(name)) return null;
+  const repo = await gh<{ open_issues_count: number; license: { spdx_id: string | null; name: string } | null; default_branch: string }>(
+    `/repos/${USER}/${name}`
+  );
+  if (!repo.ok) return null;
+  const [readme, langs, release, ci] = await Promise.all([
+    gh<{ content?: string; download_url?: string }>(`/repos/${USER}/${name}/readme`, 3600),
+    gh<Record<string, number>>(`/repos/${USER}/${name}/languages`, 3600),
+    gh<{ tag_name: string; published_at: string; html_url: string }>(`/repos/${USER}/${name}/releases/latest`, 3600),
+    getCi(name, repo.data.default_branch),
+  ]);
+  let intro = "";
+  let image: string | null = null;
+  if (readme.ok && readme.data.content) {
+    const md = Buffer.from(readme.data.content, "base64").toString("utf8");
+    intro = readmeIntro(md);
+    const raw = pickPreview(md);
+    if (raw && readme.data.download_url) {
+      const base = readme.data.download_url.slice(0, readme.data.download_url.lastIndexOf("/") + 1);
+      image = /^https?:\/\//i.test(raw) ? raw : new URL(raw.replace(/^\.\//, ""), base).toString();
+    }
+  }
+  const languages = langs.ok
+    ? Object.entries(langs.data)
+        .map(([n, bytes]) => ({ name: n, bytes }))
+        .sort((a, b) => b.bytes - a.bytes)
+    : [];
+  const spdx = repo.data.license?.spdx_id;
+  return {
+    name,
+    intro,
+    image,
+    languages,
+    issues: repo.data.open_issues_count,
+    license: spdx && spdx !== "NOASSERTION" ? spdx : (repo.data.license?.name ?? null),
+    release: release.ok ? { tag: release.data.tag_name, at: release.data.published_at, url: release.data.html_url } : null,
+    ci,
+  };
+}

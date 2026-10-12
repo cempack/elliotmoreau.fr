@@ -7,6 +7,8 @@ import { PIXEL_GLYPHS } from "@/components/PixelLabel";
 import { cellPaths } from "@/lib/pxpath";
 import { project, spring } from "@/lib/motion";
 import { itemId, langColor } from "./model";
+import { useWork } from "./store";
+import { MarkBadge } from "./Signals";
 
 /**
  * The Sticker Lid: the repos as die-cut vinyl stickers on a laptop lid.
@@ -279,6 +281,7 @@ export function Lid({
   /** the featured repo's name: the big sticker in the middle */
   pinned?: string;
 }) {
+  const { ci, marks } = useWork();
   const wrap = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const [now, setNow] = useState(0);
@@ -500,6 +503,13 @@ export function Lid({
             <span className="app-work-sticker-face" data-ql-origin style={{ clipPath: p?.flat }}>
               <StickerArt s={s} />
             </span>
+            {/* a failing build: a small red dot on the sticker; new since last visit: a stamp */}
+            {ci[s.repo.name]?.state === "failing" && <span className="app-work-sticker-fail" aria-hidden />}
+            {marks[s.repo.name] && (
+              <span className="app-work-sticker-mark" aria-hidden>
+                <MarkBadge mark={marks[s.repo.name]} />
+              </span>
+            )}
             {/* a corner lifting: the white backing showing */}
             {!p && liftCorner && <span className="app-work-sticker-corner" data-c={liftCorner} aria-hidden />}
             {p && (

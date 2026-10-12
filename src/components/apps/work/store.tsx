@@ -1,7 +1,8 @@
 "use client";
 
 import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { RepoInfo } from "@/lib/github";
+import type { CiInfo, RepoInfo } from "@/lib/github";
+import { useCi, useMarks, type Mark } from "./extras";
 import type { SiteData, Source } from "@/lib/data";
 import { useHydrated, useMedia } from "@/hooks/env";
 import { useSound } from "@/lib/sound";
@@ -57,6 +58,10 @@ type Work = {
   /** run after the open sheet has animated away */
   afterSheet: (fn: () => void) => void;
   applyTag: (tag: string) => void;
+  /** each repo's CI signal (Green light), once fetched */
+  ci: Record<string, CiInfo>;
+  /** what changed since this visitor last looked (this visit only) */
+  marks: Record<string, Mark>;
 };
 
 const Ctx = createContext<Work | null>(null);
@@ -105,6 +110,8 @@ export function WorkProvider({ data, children }: { data: SiteData; children: Rea
     () => (terms.length && filter.kind !== "all" ? repos.filter((r) => matches(r, terms)).length : 0),
     [repos, terms, filter.kind]
   );
+  const ci = useCi(repos);
+  const marks = useMarks(repos, source === "live");
   const featuredName = data.live.featuredRepo;
   const featured = useMemo(() => pickFeatured(repos, featuredName), [repos, featuredName]);
   const stars = useMemo(() => visible.reduce((s, r) => s + r.stars, 0), [visible]);
@@ -234,6 +241,8 @@ export function WorkProvider({ data, children }: { data: SiteData; children: Rea
 
   const value: Work = {
     repos,
+    ci,
+    marks,
     source,
     hydrated,
     phone,
