@@ -24,7 +24,13 @@ export type Shot = {
 
 const shots = new Map<AppId, Shot>();
 
-/** clone a window; cheap enough to run as it unmounts (a few ms for the largest app) */
+/**
+ * Clone a window; cheap enough to run as it unmounts. Only what shows is
+ * kept: anything wholly outside the window (rows scrolled away, the rest
+ * of a long page) is emptied and pinned to the size it had, so the copy
+ * lays out the same with a fraction of the elements, and the overview
+ * never styles what no one can see.
+ */
 export function captureWindow(app: AppId, win: HTMLElement | null | undefined) {
   if (!win || !win.isConnected) return;
   const w = win.offsetWidth;
@@ -32,32 +38,78 @@ export function captureWindow(app: AppId, win: HTMLElement | null | undefined) {
   if (!w || !h) return;
   const box = win.getBoundingClientRect();
   const node = win.cloneNode(true) as HTMLElement;
-  const from = win.getElementsByTagName("*");
-  const to = node.getElementsByTagName("*");
   const scroll: Shot["scroll"] = [];
-  for (let i = 0; i < from.length && i < to.length; i++) {
-    const a = from[i];
-    const b = to[i];
-    if (b.id) b.removeAttribute("id");
-    if (a instanceof HTMLCanvasElement) {
-      const c = b as HTMLCanvasElement;
-      try {
-        c.width = a.width;
-        c.height = a.height;
-        c.getContext("2d")?.drawImage(a, 0, 0);
-      } catch {}
-    } else if (a instanceof HTMLTextAreaElement) {
-      b.textContent = a.value;
-    } else if (a instanceof HTMLInputElement) {
-      b.setAttribute("value", a.value);
-    }
-    if (a.scrollTop > 0 || a.scrollLeft > 0) scroll.push({ el: b, top: a.scrollTop, left: a.scrollLeft });
-  }
+  still(win, node);
+  copy(win, node, box, scroll);
   node.removeAttribute("id");
   node.removeAttribute("style");
   node.removeAttribute("data-dragging");
   node.removeAttribute("data-grabbed");
   shots.set(app, { node, w, h, x: box.left + (box.width - w) / 2, y: box.top + (box.height - h) / 2, scroll });
+}
+
+/**
+ * A copy is a still picture: what would move, blur what's behind it, take a
+ * layer of its own or join a page transition is switched off on the copied
+ * element itself (a rule on every descendant of the miniature would be
+ * matched against every element of the page, on every style change).
+ */
+function still(from: Element, to: Element) {
+  const cs = getComputedStyle(from);
+  const st = (to as HTMLElement).style;
+  if (!st) return;
+  if (cs.animationName !== "none") st.setProperty("animation", "none");
+  if (cs.backdropFilter && cs.backdropFilter !== "none") {
+    st.setProperty("backdrop-filter", "none");
+    st.setProperty("-webkit-backdrop-filter", "none");
+  }
+  if (cs.willChange !== "auto") st.setProperty("will-change", "auto");
+  if (cs.viewTransitionName && cs.viewTransitionName !== "none") st.setProperty("view-transition-name", "none");
+}
+
+/** walk the window and its clone side by side: carry live state over, empty what's out of sight */
+function copy(from: Element, to: Element, box: DOMRect, scroll: Shot["scroll"]) {
+  const a = from.children;
+  const b = to.children;
+  for (let i = 0; i < a.length && i < b.length; i++) {
+    const x = a[i];
+    const y = b[i];
+    if (y.id) y.removeAttribute("id");
+    // svg internals (gradients, clip paths) have no box of their own: an svg is kept whole
+    if (x instanceof SVGElement) continue;
+    const rects = x.getClientRects();
+    if (!rects.length) {
+      // not rendered (display: none): nothing in it shows, unless it only lends its children (display: contents)
+      if (getComputedStyle(x).display !== "contents") y.replaceChildren();
+      else copy(x, y, box, scroll);
+      continue;
+    }
+    still(x, y);
+    const r = x.getBoundingClientRect();
+    if (r.bottom < box.top || r.top > box.bottom || r.right < box.left || r.left > box.right) {
+      // out of sight: an empty box the same size holds its place
+      y.replaceChildren();
+      (y as HTMLElement).style?.setProperty("box-sizing", "border-box");
+      (y as HTMLElement).style?.setProperty("width", `${r.width}px`);
+      (y as HTMLElement).style?.setProperty("height", `${r.height}px`);
+      (y as HTMLElement).style?.setProperty("flex", "none");
+      continue;
+    }
+    if (x instanceof HTMLCanvasElement) {
+      const c = y as HTMLCanvasElement;
+      try {
+        c.width = x.width;
+        c.height = x.height;
+        c.getContext("2d")?.drawImage(x, 0, 0);
+      } catch {}
+    } else if (x instanceof HTMLTextAreaElement) {
+      y.textContent = x.value;
+    } else if (x instanceof HTMLInputElement) {
+      y.setAttribute("value", x.value);
+    }
+    if (x.scrollTop > 0 || x.scrollLeft > 0) scroll.push({ el: y, top: x.scrollTop, left: x.scrollLeft });
+    copy(x, y, box, scroll);
+  }
 }
 
 /** the window on screen, as it is right now */
@@ -72,10 +124,20 @@ export const getShot = (app: AppId) => shots.get(app);
 /** put a miniature in its card (scrolled as it was); returns the undo */
 export function attachShot(shot: Shot, box: HTMLElement) {
   box.appendChild(shot.node);
-  for (const s of shot.scroll) {
-    s.el.scrollTop = s.top;
-    s.el.scrollLeft = s.left;
-  }
-  return () => shot.node.remove();
+  if (!shot.scroll.length) return () => shot.node.remove();
+  // scrolled boxes are put back once the copy has laid out, in the frame's own
+  // layout (setting a scroll offset right away would force one)
+  const ro = new ResizeObserver(() => {
+    ro.disconnect();
+    for (const s of shot.scroll) {
+      s.el.scrollTop = s.top;
+      s.el.scrollLeft = s.left;
+    }
+  });
+  ro.observe(shot.node);
+  return () => {
+    ro.disconnect();
+    shot.node.remove();
+  };
 }
 export const dropShot = (app: AppId) => void shots.delete(app);

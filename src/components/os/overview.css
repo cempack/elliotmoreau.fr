@@ -1,15 +1,19 @@
 /* ───────────── every window, over the river (WindowsOverview.tsx) ───────────── */
 
-/* the windows step back while the overview shows */
+/* the windows fade while the overview shows (the one on screen becomes its
+   card). Only fade: a frosted window scaling under the cards cost every
+   frame its blur, and once transparent the compositor skips it */
 .os-stage {
-  transition:
-    opacity 0.28s var(--ease-out-quint),
-    scale 0.42s var(--ease-out-quint);
+  transition: opacity 0.24s var(--ease-out-quint);
 }
 html[data-overview] .os-stage {
   opacity: 0;
-  scale: 0.95;
   pointer-events: none;
+  transition: opacity 0.2s var(--ease-out-quint);
+}
+/* nobody watches the sky behind the windows: it holds still */
+html[data-overview] :is(.os-wallpaper-twinkle, .os-wallpaper-meteor, .os-wallpaper-plane) {
+  animation-play-state: paused;
 }
 
 .os-ov {
@@ -94,6 +98,12 @@ html[data-overview] .os-stage {
 .os-ov-fly {
   position: absolute;
   inset: 0;
+}
+/* a new layout tilts a card anew */
+.os-ov-fly {
+  transition:
+    opacity 0.2s var(--ease-out-quint),
+    rotate 0.35s var(--ease-out-quint);
 }
 .os-ov-card {
   position: absolute;
@@ -207,25 +217,12 @@ html[data-overview] .os-stage {
   translate: none;
   opacity: 1;
 }
-/* a still picture: nothing moves, nothing blurs what's behind it, nothing joins a page transition */
-.os-ov-shot,
-.os-ov-shot * {
-  view-transition-name: none !important;
-  transition: none !important;
-  animation-duration: 0.001ms !important;
-  animation-delay: 0s !important;
-  animation-iteration-count: 1 !important;
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
-}
+/* a still picture: windowShots.ts switches off, on each copied element,
+   whatever would move, blur, take a layer or join a page transition (a
+   rule on every descendant here would cost the whole page on every style change) */
 .os-ov-shot .os-glass-pane {
   background: var(--color-ink-900);
 }
-.os-ov-fit {
-  position: absolute;
-  inset: 0;
-}
-
 /* a window from before a reload: no picture yet, its icon */
 .os-ov-blank {
   position: absolute;
@@ -250,7 +247,6 @@ html[data-overview] .os-stage {
 }
 
 /* diving into a window: it rises over everything, the rest steps aside */
-.os-ov-fly,
 .os-ov-desks,
 .os-ov-hint {
   transition: opacity 0.2s var(--ease-out-quint);
@@ -353,11 +349,8 @@ html[data-overview] .os-stage {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .os-stage {
+  .os-ov-fly {
     transition: opacity 0.2s;
-  }
-  html[data-overview] .os-stage {
-    scale: 1;
   }
 }
 @media (prefers-reduced-transparency: reduce) {

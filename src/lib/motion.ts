@@ -29,6 +29,29 @@ export const spring = {
   flick: springFrom(0.4, 0.18),
 } satisfies Record<string, Transition>;
 
+/**
+ * The same critically damped spring as `springFrom`, as a CSS easing and
+ * a duration, for animations the compositor runs on its own (WAAPI, CSS):
+ * they keep their frames however busy the main thread gets.
+ */
+const cssSprings = new Map<number, { duration: number; easing: string }>();
+export function springCss(visualDuration: number) {
+  let v = cssSprings.get(visualDuration);
+  if (v) return v;
+  const w = (2 * Math.PI) / (visualDuration * 1.2);
+  // x(t) = 1 - (1 + wt)e^(-wt); done once it is within 0.2% of rest
+  const end = 8.3 / w;
+  const n = 24;
+  const pts = Array.from({ length: n + 1 }, (_, i) => {
+    const t = (i / n) ** 1.6 * end;
+    const x = i === n ? 1 : 1 - (1 + w * t) * Math.exp(-w * t);
+    return `${x.toFixed(4)} ${((t / end) * 100).toFixed(2)}%`;
+  });
+  v = { duration: Math.round(end * 1000), easing: `linear(${pts.join(", ")})` };
+  cssSprings.set(visualDuration, v);
+  return v;
+}
+
 /** Press feedback: lands on pointer-down, springs back on release. */
 export const press = { scale: 0.97 } as const;
 

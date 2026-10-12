@@ -7,7 +7,7 @@ import { AnimatePresence, animate, m, useMotionValue, useTransform, type MotionV
 import { useI18n } from "@/i18n/client";
 import { useFinePointer, useReduced } from "@/hooks/env";
 import { useSpotifyStatus } from "@/hooks/useSpotifyStatus";
-import { spring } from "@/lib/motion";
+import { spring, springCss } from "@/lib/motion";
 import { useSound } from "@/lib/sound";
 import { useToast } from "@/components/Toasts";
 import { loadDraft, DRAFT_EVENT } from "@/components/apps/contact/mail";
@@ -220,25 +220,42 @@ function Layer() {
     ? { x: shape.x, y: shape.y, w: shape.w, h: shape.h }
     : { x: vp.w * 0.06, y: 56, w: vp.w * 0.88, h: vp.h - 160 };
 
-  useEffect(() => {
+  // phones lay their row out in CSS, every card one size: one is measured,
+  // once, after everything is in (the one read the opening makes)
+  const cardW = useRef(0);
+  const fitters = useRef(new Set<() => void>());
+  const layoutKey = `${ids.join(",")}|${vp.w}x${vp.h}`;
+  useLayoutEffect(() => {
+    if (!phone) return;
+    const li = rootRef.current?.querySelector<HTMLElement>(".os-ov-slot");
+    if (!li) return;
+    cardW.current = li.clientWidth;
+    for (const fit of fitters.current) fit();
+  }, [phone, layoutKey]);
+
+  // focus lands with the first frame, on the window on screen
+  useLayoutEffect(() => {
     back.current = document.activeElement as HTMLElement | null;
-    blip("open");
-    // warm every window it can dive into
-    for (const id of open) {
-      const a = APPS.find((x) => x.id === id);
-      if (a && id !== here) router.prefetch(path(a.path));
-    }
-    const id = requestAnimationFrame(() => {
-      const card = rootRef.current?.querySelector<HTMLElement>(`[data-ov="${here}"]`) ?? rootRef.current?.querySelector<HTMLElement>("[data-ov]");
-      card?.focus({ preventScroll: true });
-      // phones: the row scrolls; the current window starts in the middle
-      card?.closest("li")?.scrollIntoView({ inline: "center", block: "nearest", behavior: "instant" });
-    });
+    const card = rootRef.current?.querySelector<HTMLElement>(`[data-ov="${here}"]`) ?? rootRef.current?.querySelector<HTMLElement>("[data-ov]");
+    card?.focus({ preventScroll: true });
     return () => {
-      cancelAnimationFrame(id);
       const b = back.current;
       if (b?.isConnected) b.focus({ preventScroll: true });
     };
+    // once, as it opens
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    blip("open");
+    // warm every window it can dive into, once the opening has played
+    const t = window.setTimeout(() => {
+      for (const id of open) {
+        const a = APPS.find((x) => x.id === id);
+        if (a && id !== here) router.prefetch(path(a.path));
+      }
+    }, 450);
+    return () => window.clearTimeout(t);
     // once, as it opens
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -425,6 +442,8 @@ function Layer() {
                 detail={detailOf(id)}
                 shot={getShot(id)}
                 winBox={winBox}
+                cardW={cardW}
+                fitters={fitters}
                 phone={phone}
                 reduced={reduced}
                 fly={fly}
@@ -461,32 +480,73 @@ function Layer() {
   );
 }
 
+/**
+ * The miniatures go in one per frame after the first (the window on screen
+ * goes in at once, it is what flies): each frame styles and lays out one
+ * window, never all of them, while the cards' motion runs on the compositor.
+ */
+const attachQueue: (() => void)[] = [];
+let attachRaf = 0;
+function runAttach() {
+  attachRaf = 0;
+  attachQueue.shift()?.();
+  if (attachQueue.length) attachRaf = requestAnimationFrame(runAttach);
+}
+function queueAttach(fn: () => void) {
+  attachQueue.push(fn);
+  if (!attachRaf) attachRaf = requestAnimationFrame(runAttach);
+  return () => {
+    const k = attachQueue.indexOf(fn);
+    if (k >= 0) attachQueue.splice(k, 1);
+  };
+}
+
 /** a window's miniature: its cloned DOM, attached once, scaled to the card */
-function Thumb({ shot, width, defer = false }: { shot: Shot; width: number; defer?: boolean }) {
-  const ref = useRef<HTMLDivElement>(null);
+function Thumb({
+  shot,
+  width,
+  now,
+  cardW,
+  fitters,
+}: {
+  shot: Shot;
+  /** the slot's width (desks); phones take the row's measured card width */
+  width?: number;
+  now: boolean;
+  cardW: React.RefObject<number>;
+  fitters: React.RefObject<Set<() => void>>;
+}) {
+  const ref = useRef<HTMLSpanElement>(null);
+  // the scale, refitted when the card changes size (a write only: nothing here reads layout)
   useLayoutEffect(() => {
-    const box = ref.current;
-    if (!box) return;
-    if (!defer) return attachShot(shot, box);
-    // the others a frame later: the overview's first frame only lays out the window on screen
-    let undo: (() => void) | undefined;
-    const id = requestAnimationFrame(() => (undo = attachShot(shot, box)));
+    const el = ref.current;
+    if (!el) return;
+    const fit = () => {
+      const w = width ?? cardW.current;
+      if (w) el.style.setProperty("transform", `scale(${w / shot.w})`);
+    };
+    fit();
+    const set = fitters.current;
+    set.add(fit);
     return () => {
-      cancelAnimationFrame(id);
+      set.delete(fit);
+    };
+  }, [shot, width, cardW, fitters]);
+  // the clone goes in once
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    let undo: (() => void) | undefined;
+    const attach = () => (undo = attachShot(shot, el));
+    let cancel = () => {};
+    if (now) attach();
+    else cancel = queueAttach(attach);
+    return () => {
+      cancel();
       undo?.();
     };
-    // attached once per card
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shot]);
-  return (
-    <span
-      ref={ref}
-      className="os-ov-shot"
-      inert
-      aria-hidden
-      style={{ width: shot.w, height: shot.h, transform: `scale(${width / shot.w})` }}
-    />
-  );
+  }, [shot, now]);
+  return <span ref={ref} className="os-ov-shot" inert aria-hidden style={{ width: shot.w, height: shot.h }} />;
 }
 
 /** no miniature yet (a window from before a reload): its icon on a plain window */
@@ -509,6 +569,8 @@ function Card({
   detail,
   shot,
   winBox,
+  cardW,
+  fitters,
   phone,
   reduced,
   fly,
@@ -529,6 +591,8 @@ function Card({
   detail: string;
   shot: Shot | undefined;
   winBox: Box;
+  cardW: React.RefObject<number>;
+  fitters: React.RefObject<Set<() => void>>;
   phone: boolean;
   reduced: boolean;
   fly: React.RefObject<Map<AppId, () => void>>;
@@ -542,13 +606,9 @@ function Card({
   onMove: (id: AppId, k: number) => void;
 }) {
   const liRef = useRef<HTMLLIElement>(null);
+  const flyRef = useRef<HTMLDivElement>(null);
+  const labelRef = useRef<HTMLSpanElement>(null);
   const tilt = slot?.r ?? (phone ? TILT[index % TILT.length] * 0.6 : 0);
-  // the card as a whole: where it flies from and back to
-  const fx = useMotionValue(0);
-  const fy = useMotionValue(0);
-  const fs = useMotionValue(1);
-  const fr = useMotionValue(tilt);
-  const labelOpacity = useMotionValue(1);
   // the hand: a drag tilts the card the way it is pulled
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -563,7 +623,7 @@ function Card({
   const dragged = useRef(false);
   const [held, setHeld] = useState(false);
   const [gone, setGone] = useState(false);
-  const width = slot?.w ?? 0;
+  const width = slot?.w;
 
   // from the li's box to the window's: the offset and the scale that make the card the window
   const toWindow = () => {
@@ -576,56 +636,150 @@ function Card({
     };
   };
 
-  // the window on screen shrinks into its card; the others settle in around it
+  // the window on screen shrinks into its card; the others settle in around it.
+  // All of it on the compositor (WAAPI): the miniatures being laid out on the
+  // main thread meanwhile never cost the motion a frame.
   useLayoutEffect(() => {
-    if (reduced) return;
+    const el = flyRef.current;
+    const li = liRef.current;
+    if (!el || !li || reduced) return;
+    // phones: the row scrolls, and the window on screen starts in its middle
+    const row = li.parentElement;
+    if (phone && current && row) row.scrollLeft = li.offsetLeft - (row.clientWidth - li.offsetWidth) / 2;
     const w = current && shot ? toWindow() : null;
+    const label = labelRef.current;
     if (w) {
-      fx.set(w.x);
-      fy.set(w.y);
-      fs.set(w.s);
-      fr.set(0);
-      labelOpacity.set(0);
-      animate(fx, 0, spring.gentle);
-      animate(fy, 0, spring.gentle);
-      animate(fs, 1, spring.gentle);
-      animate(fr, tilt, spring.gentle);
-      animate(labelOpacity, 1, { duration: 0.2, delay: 0.22 });
+      const { duration, easing } = springCss(0.5);
+      el.animate([{ transform: `translate(${w.x}px, ${w.y}px) scale(${w.s})`, rotate: "0deg" }, { transform: "none", rotate: `${tilt}deg` }], { duration, easing });
+      label?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, delay: 220, easing: "ease-out", fill: "backwards" });
     } else {
-      fs.set(0.9);
-      fy.set(18);
-      labelOpacity.set(0);
-      const delay = 0.04 + index * 0.035;
-      animate(fs, 1, { ...spring.default, delay });
-      animate(fy, 0, { ...spring.default, delay });
-      animate(labelOpacity, 1, { duration: 0.2, delay: delay + 0.08 });
+      const delay = 40 + index * 35;
+      const { duration, easing } = springCss(0.35);
+      el.animate([{ transform: "translateY(18px) scale(0.9)" }, { transform: "none" }], { duration, easing, delay, fill: "backwards" });
+      li.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220, delay, easing: "ease-out", fill: "backwards" });
+      label?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, delay: delay + 80, easing: "ease-out", fill: "backwards" });
     }
     // once, as it appears
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // a new layout tilts it anew
-  useEffect(() => {
-    if (!held) animate(fr, tilt, spring.default);
-  }, [tilt, held, fr]);
+  // a window closed or moved away: the others glide to their new places (known, never measured)
+  const prev = useRef<{ slot: Slot | null; index: number } | null>(null);
+  const place = slot ? `${slot.x},${slot.y},${slot.w}` : `${index}`;
+  useLayoutEffect(() => {
+    const li = liRef.current;
+    const p = prev.current;
+    prev.current = { slot, index };
+    if (!li || !p || reduced) return;
+    const { duration, easing } = springCss(0.35);
+    if (slot && p.slot) {
+      const from = `translate(${p.slot.x - slot.x}px, ${p.slot.y - slot.y}px) scale(${p.slot.w / slot.w})`;
+      li.animate([{ transform: from, transformOrigin: "0 0" }, { transform: "none", transformOrigin: "0 0" }], { duration, easing });
+    } else if (!slot && p.index !== index && cardW.current) {
+      // phones: a row, one card and a 1.125rem gap per place
+      li.animate([{ transform: `translateX(${(p.index - index) * (cardW.current + 18)}px)` }, { transform: "none" }], { duration, easing });
+    }
+    // only when its place changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [place]);
 
-  // dive in (or back): the card grows into the window's place
+  // dive in (or back): the card grows into the window's place, from wherever it is right now
   useEffect(() => {
     const map = fly.current;
     map.set(id, () => {
+      const el = flyRef.current;
       const w = toWindow();
-      if (!w || reduced) return;
-      const t = { ...spring.default };
-      animate(fx, w.x - x.get(), t);
-      animate(fy, w.y - y.get(), t);
-      animate(fs, w.s, t);
-      animate(fr, 0, t);
-      animate(labelOpacity, 0, { duration: 0.1 });
+      if (!el || !w || reduced) return;
+      const cs = getComputedStyle(el);
+      const from = { transform: cs.transform, rotate: cs.rotate };
+      for (const a of el.getAnimations()) a.cancel();
+      const { duration, easing } = springCss(0.35);
+      el.animate([from, { transform: `translate(${w.x - w.s * x.get()}px, ${w.y - w.s * y.get()}px) scale(${w.s})`, rotate: "0deg" }], { duration, easing, fill: "forwards" });
+      labelRef.current?.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 100, fill: "forwards" });
     });
     return () => {
       map.delete(id);
     };
   });
+
+  /* the hand, by pointer events (a drag library would measure every card as
+     it mounts, a full layout each, just to be ready): a card follows the
+     pointer, leans the way it is pulled, and is thrown, set down on a
+     workspace or springs back. On phones only a pull up is the card's (the
+     row pans sideways natively), held back as it goes down. */
+  const hand = useRef<{ id: number; sx: number; sy: number; on: boolean; trail: { t: number; x: number; y: number }[] } | null>(null);
+  const onPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (gone || e.button !== 0 || hand.current) return;
+    hand.current = { id: e.pointerId, sx: e.clientX, sy: e.clientY, on: false, trail: [{ t: e.timeStamp, x: e.clientX, y: e.clientY }] };
+  };
+  const onPointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const h = hand.current;
+    if (!h || h.id !== e.pointerId) return;
+    const dx = e.clientX - h.sx;
+    const dy = e.clientY - h.sy;
+    if (!h.on) {
+      if (Math.hypot(dx, dy) < 5) return;
+      // a sideways swipe on a phone is the row's
+      if (phone && Math.abs(dx) > Math.abs(dy)) {
+        hand.current = null;
+        return;
+      }
+      h.on = true;
+      e.currentTarget.setPointerCapture(e.pointerId);
+      x.stop();
+      y.stop();
+      dragged.current = true;
+      onDragState(true);
+      setHeld(true);
+    }
+    h.trail.push({ t: e.timeStamp, x: e.clientX, y: e.clientY });
+    if (h.trail.length > 8) h.trail.shift();
+    if (phone) y.set(dy < 0 ? dy * 0.85 : dy * 0.1);
+    else {
+      x.set(dx);
+      y.set(dy);
+    }
+    const k = deskAt(e.clientX, e.clientY);
+    const on = k !== null && k !== view;
+    onHoverDesk(on ? k : null);
+    if (on !== over.current) {
+      over.current = on;
+      animate(shrink, on ? 0.42 : 1, spring.snappy);
+    }
+  };
+  const endDrag = (e: React.PointerEvent<HTMLButtonElement>, cancelled: boolean) => {
+    const h = hand.current;
+    if (!h || h.id !== e.pointerId) return;
+    hand.current = null;
+    if (!h.on) return;
+    window.setTimeout(() => (dragged.current = false), 0);
+    onDragState(false);
+    setHeld(false);
+    over.current = false;
+    onHoverDesk(null);
+    const k = cancelled ? null : deskAt(e.clientX, e.clientY);
+    if (k !== null && k !== view) {
+      setGone(true);
+      onMove(id, k);
+      return;
+    }
+    animate(shrink, 1, spring.snappy);
+    // the hand's speed over its last few moves, px/s
+    const a = h.trail.find((p) => e.timeStamp - p.t < 100) ?? h.trail[0];
+    const dt = Math.max(1, e.timeStamp - a.t) / 1000;
+    const vx = cancelled ? 0 : (e.clientX - a.x) / dt;
+    const vy = cancelled ? 0 : (e.clientY - a.y) / dt;
+    const ox = e.clientX - h.sx;
+    const oy = e.clientY - h.sy;
+    if (phone) {
+      if (!cancelled && (oy < -110 || vy < -650)) throwAway(0, Math.min(vy, -900));
+      else settle(0, vy * 0.1);
+      return;
+    }
+    const dist = Math.hypot(ox, oy);
+    if (!cancelled && (Math.hypot(vx, vy) > 1100 || dist > Math.max(220, (width ?? 0) * 0.75))) throwAway(vx || ox, vy || oy);
+    else settle(vx, vy);
+  };
 
   const throwAway = (vx: number, vy: number) => {
     setGone(true);
@@ -647,16 +801,15 @@ function Card({
   };
 
   const label = (
-    <m.span className="os-ov-label" style={{ opacity: labelOpacity }} aria-hidden>
+    <span ref={labelRef} className="os-ov-label" aria-hidden>
       <span className="os-ov-label-name">{name}</span>
       {detail && <span className="os-ov-label-detail">{detail}</span>}
-    </m.span>
+    </span>
   );
 
   return (
     <m.li
       ref={liRef}
-      layout={!reduced && !held}
       className="os-ov-slot"
       data-diving={diving || undefined}
       style={
@@ -665,7 +818,6 @@ function Card({
           : ({ "--ar": shot ? shot.w / shot.h : 0.52, zIndex: diving ? 8 : held ? 5 : 1 } as React.CSSProperties)
       }
       exit={{ opacity: 0, scale: 0.85, transition: { duration: 0.16 } }}
-      transition={spring.default}
     >
       {/* where it was, while it is held: put it back there, or throw it */}
       <AnimatePresence>
@@ -680,7 +832,7 @@ function Card({
           />
         )}
       </AnimatePresence>
-      <m.div className="os-ov-fly" style={{ x: fx, y: fy, scale: fs, rotate: fr }}>
+      <div ref={flyRef} className="os-ov-fly" style={{ rotate: `${tilt}deg` }}>
         <m.button
           type="button"
           className="os-ov-card"
@@ -690,47 +842,10 @@ function Card({
           aria-label={detail ? `${name}: ${detail}` : name}
           aria-keyshortcuts="Delete"
           style={{ x, y, rotate: lean, opacity: fade }}
-          drag={gone ? false : phone ? "y" : true}
-          dragConstraints={phone ? { top: 0, bottom: 0 } : undefined}
-          dragElastic={phone ? { top: 0.85, bottom: 0.1 } : undefined}
-          dragMomentum={false}
-          onDragStart={() => {
-            dragged.current = true;
-            onDragState(true);
-            setHeld(true);
-          }}
-          onDrag={(_, info) => {
-            const k = deskAt(info.point.x - window.scrollX, info.point.y - window.scrollY);
-            const on = k !== null && k !== view;
-            onHoverDesk(on ? k : null);
-            if (on !== over.current) {
-              over.current = on;
-              animate(shrink, on ? 0.42 : 1, spring.snappy);
-            }
-          }}
-          onDragEnd={(_, info) => {
-            window.setTimeout(() => (dragged.current = false), 0);
-            onDragState(false);
-            setHeld(false);
-            over.current = false;
-            const k = deskAt(info.point.x - window.scrollX, info.point.y - window.scrollY);
-            onHoverDesk(null);
-            if (k !== null && k !== view) {
-              setGone(true);
-              onMove(id, k);
-              return;
-            }
-            animate(shrink, 1, spring.snappy);
-            const vx = info.velocity.x;
-            const vy = info.velocity.y;
-            if (phone) {
-              if (info.offset.y < -110 || vy < -650) throwAway(0, Math.min(vy, -900));
-              return;
-            }
-            const dist = Math.hypot(info.offset.x, info.offset.y);
-            if (Math.hypot(vx, vy) > 1100 || dist > Math.max(220, width * 0.75)) throwAway(vx || info.offset.x, vy || info.offset.y);
-            else settle(vx, vy);
-          }}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={(e) => endDrag(e, false)}
+          onPointerCancel={(e) => endDrag(e, true)}
           onClick={() => {
             if (dragged.current || gone) return;
             onGo(id);
@@ -738,29 +853,10 @@ function Card({
         >
           <m.span className="os-ov-inner" style={{ scale: shrink }}>
             {label}
-            <span className="os-ov-face">{shot && width ? <Thumb shot={shot} width={width} defer={!current} /> : shot && phone ? <PhoneThumb shot={shot} /> : <Blank id={id} name={name} />}</span>
+            <span className="os-ov-face">{shot ? <Thumb shot={shot} width={width} now={current} cardW={cardW} fitters={fitters} /> : <Blank id={id} name={name} />}</span>
           </m.span>
         </m.button>
-      </m.div>
+      </div>
     </m.li>
   );
 }
-
-/** phones: the card's width comes from CSS, so the scale is measured */
-function PhoneThumb({ shot }: { shot: Shot }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const [width, setWidth] = useState(0);
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const ro = new ResizeObserver(() => setWidth(el.clientWidth));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-  return (
-    <span ref={ref} className="os-ov-fit">
-      {width > 0 && <Thumb shot={shot} width={width} />}
-    </span>
-  );
-}
-
