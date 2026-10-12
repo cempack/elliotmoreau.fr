@@ -62,7 +62,8 @@ export function layoutYears(ranges: { weeks: number[] }[], W: number, H: number,
   const pitch = (W - pad * 2) / WEEKS;
   const xs = Array.from({ length: WEEKS }, (_, w) => pad + (w + 0.5) * pitch);
   const vmax = Math.max(1, ...ranges.flatMap((r) => r.weeks));
-  const top = Math.round(H * 0.16);
+  // on phones the summits keep below the card that reads the picture
+  const top = Math.round(H * (compact ? 0.34 : 0.16));
   // the ranges step back up the stage; on phones they stand closer together
   const step = H * (compact ? 0.06 : 0.08);
   // alpine slopes: a peak's base is as wide as its height allows
@@ -111,7 +112,7 @@ export function layoutYears(ranges: { weeks: number[] }[], W: number, H: number,
     const y = Math.floor(Math.pow(hash(i * 13 + 5), 1.6) * horizon * 0.7);
     stars.push({ x: Math.floor(hash(i * 31 + 1) * W), y, a: 0.35 + 0.65 * hash(i * 7 + 3) });
   }
-  return { W, H, xs, tops, snow, heights, horizon, sun: { x: Math.round(W * (compact ? 0.3 : 0.5)), y: Math.round(H * 0.38), r: sunR }, stars };
+  return { W, H, xs, tops, snow, heights, horizon, sun: { x: Math.round(W * (compact ? 0.3 : 0.5)), y: Math.round(H * (compact ? 0.5 : 0.38)), r: sunR }, stars };
 }
 
 /**

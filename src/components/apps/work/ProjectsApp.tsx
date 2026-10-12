@@ -119,7 +119,8 @@ function WorkContent() {
             : fmt(h.tag, { tag: filter.value });
 
   return (
-    <div className="app-work">
+    // data-view and data-narrow let the phone layout drop the folder strip on the landing (work.css)
+    <div className="app-work" data-view={w.effView ?? undefined} data-narrow={filter.kind !== "all" || terms.length > 0 || undefined}>
       {w.repos.length > 0 && <WorkToolbar variant="inline" />}
 
       {w.repos.length === 0 ? (

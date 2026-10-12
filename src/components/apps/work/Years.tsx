@@ -12,6 +12,8 @@ import { useSound } from "@/lib/sound";
 import { fmt, itemId } from "./model";
 import { WEEKS, layoutYears, paintYears, rangeAt, weekAt, type YearsLayout } from "./yearsArt";
 import { afterTransition } from "@/hooks/useSettled";
+import { PixelGlyph } from "@/components/glyphs";
+import { G_CHEVRON } from "./glyphs";
 
 const CELL = 3;
 type Load = { years: YearsInfo; sample: boolean } | "error" | null;
@@ -224,13 +226,16 @@ export function Years({ visible, repos, onOpen }: { visible: Set<string>; repos:
   if (layout && years) {
     let prev = -1;
     let next = 0;
-    const end = layout.W * CELL - 72;
+    // the axis is 12px mono, about 7.2px a letter: a month ends a gap before "now" begins
+    const ch = 7.2;
+    const end = layout.W * CELL - y.now.length * ch - 12;
     for (let w = 0; w < WEEKS; w++) {
       const m = new Date(start + w * 7 * DAY).getUTCMonth();
       if (w > 0 && m !== prev) {
         const x = layout.xs[w] * CELL;
-        if (x >= next && x < end) {
-          ticks.push({ label: monthFmt.format(new Date(start + w * 7 * DAY)).replace(/\.$/, ""), x });
+        const label = monthFmt.format(new Date(start + w * 7 * DAY)).replace(/\.$/, "");
+        if (x >= next && x + label.length * ch < end) {
+          ticks.push({ label, x });
           next = x + 44;
         }
       }
@@ -349,6 +354,7 @@ export function Years({ visible, repos, onOpen }: { visible: Set<string>; repos:
                       .filter(Boolean)
                       .join(" · ")}
                   </span>
+                  <PixelGlyph cells={G_CHEVRON} size={7} className="app-work-years-proj-go" />
                 </button>
               </li>
             );

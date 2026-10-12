@@ -13,8 +13,9 @@ type View = "icons" | "list" | "years";
 
 /**
  * Search, view switch and sort, in two shapes: `bar` lives in the window's
- * title bar (≥768px), `inline` is a sticky row at the top of the content
- * on phones. Only one is ever displayed; both drive the same state.
+ * title bar (≥768px), `inline` is the top of the content on phones (the
+ * views, labelled, then a sticky search row). Only one is ever displayed;
+ * both drive the same state.
  */
 export function Toolbar({
   variant,
@@ -44,85 +45,113 @@ export function Toolbar({
   const id = useId();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  return (
-    <div className={`app-work-tb app-work-tb--${variant}`} data-no-drag>
-      <label className="app-work-search" htmlFor={`${id}-q`}>
-        <PixelGlyph cells={G_SEARCH} size={11} className="app-work-search-glyph" />
-        <input
-          ref={inputRef}
-          id={`${id}-q`}
-          type="search"
-          inputMode="search"
-          enterKeyHint="search"
-          autoComplete="off"
-          autoCorrect="off"
-          spellCheck={false}
-          data-work-search
-          disabled={disabled}
-          value={query}
-          placeholder={tb.search}
-          aria-label={tb.searchLabel}
-          onChange={(e) => onQuery(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Escape") {
-              e.preventDefault();
-              e.stopPropagation();
-              if (query) onQuery("");
-              else inputRef.current?.blur();
-            } else if (e.key === "Enter" || e.key === "ArrowDown") {
-              e.preventDefault();
-              onSubmit();
-            }
+  const search = (
+    <label className="app-work-search" htmlFor={`${id}-q`}>
+      <PixelGlyph cells={G_SEARCH} size={11} className="app-work-search-glyph" />
+      <input
+        ref={inputRef}
+        id={`${id}-q`}
+        type="search"
+        inputMode="search"
+        enterKeyHint="search"
+        autoComplete="off"
+        autoCorrect="off"
+        spellCheck={false}
+        data-work-search
+        disabled={disabled}
+        value={query}
+        placeholder={tb.search}
+        aria-label={tb.searchLabel}
+        onChange={(e) => onQuery(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            e.preventDefault();
+            e.stopPropagation();
+            if (query) onQuery("");
+            else inputRef.current?.blur();
+          } else if (e.key === "Enter" || e.key === "ArrowDown") {
+            e.preventDefault();
+            onSubmit();
+          }
+        }}
+        className="app-work-search-input"
+      />
+      {query ? (
+        <button
+          type="button"
+          className="app-work-search-clear"
+          aria-label={tb.clear}
+          onClick={() => {
+            onQuery("");
+            inputRef.current?.focus();
           }}
-          className="app-work-search-input"
-        />
-        {query ? (
+        >
+          <PixelGlyph cells={G_CLOSE} size={7} />
+        </button>
+      ) : (
+        variant === "bar" && (
+          <kbd className="app-work-kbd" aria-hidden>
+            /
+          </kbd>
+        )
+      )}
+    </label>
+  );
+
+  const views = (
+    <LayoutGroup id={`app-work-view-${variant}`}>
+      <div className="app-work-seg" role="group" aria-label={tb.view}>
+        {(["years", "list", "icons"] as const).map((v) => (
           <button
+            key={v}
             type="button"
-            className="app-work-search-clear"
-            aria-label={tb.clear}
-            onClick={() => {
-              onQuery("");
-              inputRef.current?.focus();
-            }}
+            className="app-work-seg-btn"
+            aria-pressed={view === null ? undefined : view === v}
+            aria-label={variant === "bar" ? tb[v] : undefined}
+            title={variant === "bar" ? tb[v] : undefined}
+            data-active={view === v || undefined}
+            onClick={() => onView(v)}
+            disabled={disabled}
           >
-            <PixelGlyph cells={G_CLOSE} size={7} />
+            {view === v && (
+              <m.span layoutId="thumb" className="app-work-seg-thumb" transition={spring.snappy} aria-hidden />
+            )}
+            <PixelGlyph cells={v === "icons" ? G_ALL : v === "list" ? G_LIST : G_PEAKS} size={11} />
+            {/* phones say what each view is */}
+            {variant === "inline" && <span className="app-work-seg-label">{tb[v]}</span>}
           </button>
-        ) : (
-          variant === "bar" && (
-            <kbd className="app-work-kbd" aria-hidden>
-              /
-            </kbd>
-          )
-        )}
-      </label>
+        ))}
+      </div>
+    </LayoutGroup>
+  );
 
-      <LayoutGroup id={`app-work-view-${variant}`}>
-        <div className="app-work-seg" role="group" aria-label={tb.view}>
-          {(["years", "list", "icons"] as const).map((v) => (
-            <button
-              key={v}
-              type="button"
-              className="app-work-seg-btn"
-              aria-pressed={view === null ? undefined : view === v}
-              aria-label={tb[v]}
-              title={tb[v]}
-              data-active={view === v || undefined}
-              onClick={() => onView(v)}
-              disabled={disabled}
-            >
-              {view === v && (
-                <m.span layoutId="thumb" className="app-work-seg-thumb" transition={spring.snappy} aria-hidden />
-              )}
-              <PixelGlyph cells={v === "icons" ? G_ALL : v === "list" ? G_LIST : G_PEAKS} size={11} />
-            </button>
-          ))}
+  // the lid lays its stickers out by size, the years by work: an order only means something in the list
+  const sortMenu = view !== "icons" && view !== "years" && <SortMenu sort={sort} onSort={onSort} disabled={disabled} />;
+
+  if (variant === "bar") {
+    return (
+      <div className="app-work-tb app-work-tb--bar" data-no-drag>
+        {search}
+        {views}
+        {sortMenu}
+      </div>
+    );
+  }
+
+  // phones: the views on a row of their own, labelled; search sticks under
+  // the title bar where there is something to look through (the landing is a picture)
+  return (
+    <>
+      <div className="app-work-views" data-no-drag>
+        {views}
+      </div>
+      {(view !== "years" || query) && (
+        <div className="app-work-tb app-work-tb--inline" data-no-drag>
+          {search}
+          {sortMenu}
         </div>
-      </LayoutGroup>
-
-      {/* the lid lays its stickers out by size, the years by work: an order only means something in the list */}
-      {view !== "icons" && view !== "years" && <SortMenu sort={sort} onSort={onSort} disabled={disabled} />}
-    </div>
+      )}
+    </>
   );
 }
 
