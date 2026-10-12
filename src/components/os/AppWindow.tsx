@@ -198,7 +198,7 @@ export function AppWindow({
         >
           <span className="os-win-grabber" aria-hidden />
           <div className="os-win-lights">
-            <Link prefetch={false}
+            <Link
               href={home}
               transitionTypes={["app-close"]}
               onClick={onCloseClick}
@@ -216,7 +216,7 @@ export function AppWindow({
             >
               <WinIcon kind={zoomed ? "unmax" : "max"} />
             </button>
-            <Link prefetch={false}
+            <Link
               href={home}
               transitionTypes={["app-close"]}
               onClick={onCloseWindow}
@@ -241,7 +241,7 @@ export function AppWindow({
 
           {toolbar && <div className="os-win-toolbar">{toolbar}</div>}
 
-          <Link prefetch={false}
+          <Link
             href={home}
             transitionTypes={["app-close"]}
             onClick={onCloseWindow}

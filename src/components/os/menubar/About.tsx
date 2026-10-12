@@ -2,7 +2,6 @@
 
 import "../menubar-panels.css";
 
-import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/i18n/client";
 import { useSound } from "@/lib/sound";
 import { ArrowUpRight, GithubIcon, RestartIcon, RssIcon } from "./glyphs";
@@ -10,8 +9,9 @@ import { DataPlate } from "./DataPlate";
 import { BLOG_RSS, SITE_REPO, restartOS } from "./util";
 import { lockOS } from "../Intro";
 import { PhoneTicket } from "./PhoneTicket";
+import { useTheme } from "@/hooks/useTheme";
 
-/** fastfetch's colour blocks, in Moss. */
+/** fastfetch's colour blocks, in the theme's colours. */
 const SWATCHES = [
   "var(--color-ink-900)",
   "var(--color-ink-600)",
@@ -24,73 +24,22 @@ const SWATCHES = [
   "var(--color-flare)",
 ];
 
-/**
- * Restart under a hinged red guard, the way a cockpit covers the switches
- * that matter: the first press lifts the guard, the second flips the
- * switch. The guard drops back after four idle seconds or on Esc. Two
- * buttons in order for keys and screen readers: lift, then restart.
- */
-function GuardedRestart() {
-  const { t } = useI18n();
-  const g = t.shell.about.guard;
-  const { blip } = useSound();
-  const [open, setOpen] = useState(false);
-  const timer = useRef(0);
-  const arm = (v: boolean) => {
-    window.clearTimeout(timer.current);
-    setOpen(v);
-    if (v) timer.current = window.setTimeout(() => setOpen(false), 4000);
-  };
-  useEffect(() => () => window.clearTimeout(timer.current), []);
-  return (
-    <div
-      className="os-guard"
-      data-open={open || undefined}
-      onKeyDown={(e) => {
-        if (e.key === "Escape" && open) {
-          e.stopPropagation();
-          arm(false);
-        }
-      }}
-    >
-      <button
-        type="button"
-        className="os-guard-cover"
-        aria-expanded={open}
-        aria-label={g.lift}
-        onClick={() => {
-          arm(!open);
-          blip("toggle");
-        }}
-      >
-        <span aria-hidden className="os-guard-stripes" />
-      </button>
-      <button
-        type="button"
-        className="os-menubar-action os-menubar-action--ghost os-guard-switch"
-        aria-disabled={!open}
-        tabIndex={open ? 0 : -1}
-        onClick={() => {
-          if (!open) return;
-          blip("click");
-          restartOS();
-        }}
-      >
-        <RestartIcon />
-        <span>{g.restart}</span>
-      </button>
-    </div>
-  );
-}
-
 export function AboutPanel() {
   const { t } = useI18n();
   const a = t.shell.about;
+  const { blip } = useSound();
+  const { meta } = useTheme();
   const rows: [string, React.ReactNode][] = [
     [a.keys.os, a.values.os],
     [a.keys.built, a.values.built],
     [a.keys.host, a.values.host],
-    [a.keys.theme, a.values.theme],
+    [
+      a.keys.theme,
+      <a key="theme" className="os-menubar-about-link" href={`https://github.com/${meta.repo}`} target="_blank" rel="noopener noreferrer">
+        {meta.name}
+        {meta.sha ? ` · ${meta.sha}` : ""}
+      </a>,
+    ],
     [a.keys.fonts, a.values.fonts],
   ];
   return (
@@ -137,7 +86,17 @@ export function AboutPanel() {
         <button type="button" className="os-menubar-action os-menubar-action--ghost" onClick={lockOS}>
           <span>{t.shell.menu.lock}</span>
         </button>
-        <GuardedRestart />
+        <button
+          type="button"
+          className="os-menubar-action os-menubar-action--ghost"
+          onClick={() => {
+            blip("click");
+            restartOS();
+          }}
+        >
+          <RestartIcon />
+          <span>{a.restart}</span>
+        </button>
       </div>
     </div>
   );

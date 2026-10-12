@@ -3,6 +3,7 @@ import path from "node:path";
 import { db } from "./db";
 import { env } from "./env";
 import { startMailSync } from "./mail";
+import { startOutbox } from "./mail/outbox";
 
 /**
  * Start-up work, run once per server process by src/instrumentation.ts
@@ -20,6 +21,8 @@ const TASKS: BootTask[] = [
   { name: "content", run: refreshPagesFromDatabase },
   // replies to visitors, read back from Elliot's mailbox (no-op until IMAP is set up)
   { name: "mail", run: startMailSync },
+  // letters stored but not yet emailed (a restart mid-send, Bridge down): sent now, then retried until they go
+  { name: "outbox", run: startOutbox },
 ];
 
 const g = globalThis as unknown as { __emosBooted?: boolean };

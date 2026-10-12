@@ -28,7 +28,9 @@ for (const k of ["SMTP_HOST", "SMTP_USER", "SMTP_PASS", "IMAP_HOST", "IMAP_USER"
 type Mail = typeof import("../../src/server/mail");
 type Match = typeof import("../../src/server/mail/match");
 type Crypto = typeof import("../../src/server/mail/crypto");
+type Outbox = typeof import("../../src/server/mail/outbox");
 let mail: Mail;
+let outboxMod: Outbox;
 let match: Match;
 let crypto: Crypto;
 const outbox: string[] = [];
@@ -38,6 +40,7 @@ before(async () => {
   mail = await import("../../src/server/mail");
   match = await import("../../src/server/mail/match");
   crypto = await import("../../src/server/mail/crypto");
+  outboxMod = await import("../../src/server/mail/outbox");
   const nodemailer = (await import("nodemailer")).default;
   const { useTestTransport } = await import("../../src/server/mail/transport");
   // a custom nodemailer transport that keeps each built message
@@ -62,7 +65,12 @@ before(async () => {
 
 after(() => fs.rmSync(dir, { recursive: true, force: true }));
 
-const last = async (): Promise<ParsedMail> => simpleParser(outbox[outbox.length - 1]);
+/** letters are stored first and emailed from the outbox: wait for it */
+const settle = () => outboxMod.settled();
+const last = async (): Promise<ParsedMail> => {
+  await settle();
+  return simpleParser(outbox[outbox.length - 1]);
+};
 const raw = () => outbox[outbox.length - 1];
 const OLD = Date.now() - 60_000;
 let ipCounter = 0;
@@ -104,7 +112,7 @@ test("refuses what it should, generically", async () => {
   assert.equal(outbox.length, 0, "nothing was sent");
 });
 
-test("a visitor's letter is emailed to Elliot with the right headers, then stored", async () => {
+test("a visitor's letter is stored, then emailed to Elliot with the right headers", async () => {
   const r = await mail.sendFromVisitor(letter());
   assert.equal(r.ok, true);
   if (!r.ok) return;
@@ -191,6 +199,7 @@ test("adminReply emails the visitor, threaded, with their link and the quote", a
 
 test("our own admin email, read back through IMAP, strips to what Elliot wrote", async () => {
   const { stripQuoted } = await import("../../src/server/mail/strip");
+  await settle();
   const m = await simpleParser(raw());
   assert.equal(stripQuoted(m.text ?? ""), "Hi Jane,\n\nHappy to. Thursday at 10?\n\nElliot");
 });
@@ -212,13 +221,23 @@ test("a reply written on the site goes to Elliot, threaded, and reopens the thre
   assert.deepEqual(await mail.visitorReply(token, "  ", ip()), { ok: false, error: "invalid" });
 });
 
-test("a failed SMTP send stores nothing and says so", async () => {
+test("a failed SMTP send keeps the letter, shows the error, and goes on the retry", async () => {
   const before = mail.listThreads().length;
   failNext = true;
   const r = await mail.sendFromVisitor(letter({ email: "fail@example.com" }));
-  assert.deepEqual(r, { ok: false, error: "failed" });
-  assert.equal(mail.listThreads().length, before);
+  assert.equal(r.ok, true, "stored: the visitor hears it's sent");
+  if (!r.ok) return;
+  await settle();
+  assert.equal(mail.listThreads().length, before + 1);
+  const msg = mail.getThread(r.threadId)!.messages![0];
+  assert.match(msg.error ?? "", /421/);
   assert.match(mail.mailHealth().lastError ?? "", /smtp: .*421/);
+  const sentBefore = outbox.length;
+  assert.equal(await outboxMod.deliverStored(msg.id), true, "the retry goes");
+  assert.equal(outbox.length, sentBefore + 1);
+  assert.equal(mail.getThread(r.threadId)!.messages![0].error, undefined, "and the error clears");
+  assert.equal(await outboxMod.deliverStored(msg.id), true, "a sent letter isn't sent twice");
+  assert.equal(outbox.length, sentBefore + 1);
 });
 
 test("rate limits: 5 an hour per IP, 5 a day per address", async () => {
@@ -388,6 +407,7 @@ test("IMAP: without references, same address and subject still find the thread",
 test("IMAP: a Sent copy with a new id and no X-Emos headers is caught by its text", async () => {
   const r = await mail.adminReply(threadId, "Bring a laptop too.");
   assert.deepEqual(r, { ok: true });
+  await settle();
   const ours = await simpleParser(raw());
   const m = await incoming(
     { From: "Elliot Moreau <hello@elliotm.fr>", To: "jane@example.com", Subject: ours.subject!, "Message-ID": "<stripped-headers@protonmail.com>", "In-Reply-To": ours.inReplyTo!, Date: rfcDate() },
@@ -418,4 +438,28 @@ test("mailHealth reports configuration without secrets", () => {
   assert.equal(h.smtp, true);
   assert.equal(h.imap, false);
   assert.equal(JSON.stringify(h).includes("test-secret"), false);
+});
+
+test("IMAP: a letter to the site's mailto address starts a thread; other inbox mail stays out", async () => {
+  const m = await incoming(
+    { From: "Bob Martin <bob@example.com>", To: "hello+site@elliotm.fr", Subject: "Saw your atlas", "Message-ID": "<bob.1@example.com>", Date: rfcDate() },
+    "Bonjour Elliot, j'ai vu ton atlas, très joli !"
+  );
+  assert.equal(match.worthFetching("inbox", { from: "bob@example.com", to: ["hello+site@elliotm.fr"], emos: false, refs: [] }), true);
+  assert.equal(match.ingest("inbox", m), "stored");
+  const t = mail.listThreads().find((x) => x.email === "bob@example.com")!;
+  assert.ok(t, "a thread for Bob");
+  assert.equal(t.name, "Bob Martin");
+  assert.equal(t.subject, "Saw your atlas");
+  assert.equal(t.lang, "fr");
+  assert.equal(t.adminUnread, 1);
+  assert.equal(mail.getThread(t.id)!.messages?.[0].body, "Bonjour Elliot, j'ai vu ton atlas, très joli !");
+
+  const other = await incoming(
+    { From: "Newsletter <news@shop.example>", To: "hello@elliotm.fr", Subject: "Sale!", "Message-ID": "<n.1@shop.example>", Date: rfcDate() },
+    "50% off"
+  );
+  assert.equal(match.worthFetching("inbox", { from: "news@shop.example", to: ["hello@elliotm.fr"], emos: false, refs: [] }), false);
+  assert.equal(match.ingest("inbox", other), "ignored");
+  assert.equal(mail.listThreads().some((x) => x.email === "news@shop.example"), false);
 });

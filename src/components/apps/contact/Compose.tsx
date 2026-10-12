@@ -8,6 +8,7 @@ import { useSound } from "@/lib/sound";
 import { spring } from "@/lib/motion";
 import { contentTop, scrollToY, scrollTop, scrollerBottom, scrollerTop } from "@/lib/scroller";
 import { SOCIALS } from "@/lib/places";
+import { SITE_MAILTO } from "@/lib/socials";
 import { PixelGlyph } from "@/components/glyphs";
 import { EmosMark } from "@/components/os/menubar/glyphs";
 import { sendLetter, type SendError } from "./api";
@@ -194,7 +195,7 @@ export function Compose({
     mountedAt.current = performance.now();
   }, []);
 
-  const href = mailtoHref(email, draft);
+  const href = mailtoHref(SITE_MAILTO, draft);
   const words = wordCount(draft.body);
   const wordsLabel = plural(lang, words, c.wordOne, c.words);
   const empty = !draft.subject.trim() && !draft.body.trim();

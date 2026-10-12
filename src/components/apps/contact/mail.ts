@@ -76,7 +76,8 @@ export const EMAIL_RE = /^[^\s@<>()[\]\\,;:"]{1,64}@[^\s@<>()[\]\\,;:"'_]+\.[^\s
 /** the longest letter the site sends (characters) */
 export const LETTER_MAX = 10_000;
 
-/** RFC 6068: spaces as %20, line breaks as CRLF. */
+/** RFC 6068: spaces as %20, line breaks as CRLF. Pass SITE_MAILTO (lib/socials)
+    as `email` so the letter reaches the admin's Mail. */
 export function mailtoHref(email: string, { subject, body }: Draft) {
   const q: string[] = [];
   if (subject.trim()) q.push(`subject=${encodeURIComponent(subject.trim())}`);

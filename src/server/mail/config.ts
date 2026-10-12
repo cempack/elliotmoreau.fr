@@ -1,5 +1,6 @@
 import "server-only";
 import { env } from "../env";
+import { SOCIALS } from "@/lib/socials";
 
 /** the domain in every Message-ID we mint: <m.<id>@elliotmoreau.fr> */
 export const MSGID_DOMAIN = "elliotmoreau.fr";
@@ -24,6 +25,8 @@ export const RATE = {
   replyPerIpDay: 30,
   replyPerThreadDay: 20,
   globalDay: 200,
+  /** new conversations from letters to the site's mailto address, a day */
+  mailtoDay: 40,
 } as const;
 
 /** the visitor's private link to their thread (also what admin replies carry) */
@@ -34,6 +37,16 @@ export function threadLink(token: string, lang: "en" | "fr") {
 /** the thread in the admin panel, for the email Elliot gets */
 export function adminLink(threadId: string) {
   return `${env.siteUrl}/admin?thread=${encodeURIComponent(threadId)}`;
+}
+
+/**
+ * The plus-tagged address the site's mailto: links write to (hello+site@…,
+ * lib/socials SITE_MAILTO): a letter to it was sent from someone's own mail
+ * app after clicking on the site, so the mail sync makes it a site
+ * conversation. Nothing else in the inbox ever reaches the admin.
+ */
+export function siteMailtoAddresses() {
+  return new Set([env.mailTo, SOCIALS.email].filter(Boolean).map((a) => a.toLowerCase().replace("@", "+site@")));
 }
 
 /** Elliot's own addresses: a visitor can't write "from" one, and mail from them is never a visitor's */

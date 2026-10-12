@@ -6,7 +6,7 @@ import type { TrackInfo } from "@/lib/spotify";
 import type { SoundKind } from "@/lib/sound";
 import { timeAgo } from "@/lib/format";
 import { LANG_COLORS, LANG_FALLBACK } from "@/lib/langColors";
-import { SOCIALS } from "@/lib/socials";
+import { SITE_MAILTO, SOCIALS } from "@/lib/socials";
 import { fmtCoords } from "@/lib/content";
 import { APPS, type AppDef, type AppId } from "../apps";
 import { type SkyMode, type SkyPhase } from "../sky";
@@ -286,7 +286,7 @@ function readme(ctx: RunCtx) {
         <div>
           <dt>{r.email}</dt>
           <dd>
-            <Ext href={`mailto:${SOCIALS.email}`}>{SOCIALS.email}</Ext>
+            <Ext href={`mailto:${SITE_MAILTO}`}>{SOCIALS.email}</Ext>
           </dd>
         </div>
       </dl>
@@ -311,7 +311,7 @@ function contact(ctx: RunCtx) {
   return (
     <div className="os-term-block">
       <p>
-        <Ext href={`mailto:${email}`} className="os-term-email">
+        <Ext href={`mailto:${SITE_MAILTO}`} className="os-term-email">
           {email}
         </Ext>{" "}
         {canCopy ? <span className="os-term-ok">✓ {t.copied}</span> : <Dim>{t.failed}</Dim>}

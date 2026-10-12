@@ -7,7 +7,7 @@ import { useToast } from "@/components/Toasts";
 import { rememberLocale, switchLocaleHref, useI18n } from "@/i18n/client";
 import { useSound } from "@/lib/sound";
 import { scrollToY } from "@/lib/scroller";
-import { SOCIALS } from "@/lib/socials";
+import { SITE_MAILTO, SOCIALS } from "@/lib/socials";
 import { PixelGlyph, type Cells } from "@/components/glyphs";
 import { G_COMMIT, G_PEN } from "@/components/apps/home/desktop/icons";
 import { APPS } from "./apps";
@@ -243,7 +243,7 @@ export function useSpotlightCommands(): Command[] {
       keywords: "mail email contact",
       icon: glyph(G_EXTERNAL),
       perform: () => {
-        window.location.href = `mailto:${SOCIALS.email}`;
+        window.location.href = `mailto:${SITE_MAILTO}`;
       },
     });
 

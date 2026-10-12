@@ -1,5 +1,8 @@
 "use client";
 
+import { useArtPalette } from "@/hooks/useTheme";
+import type { ArtPalette } from "@/lib/theme";
+
 /**
  * A city skyline for the lock screen while Elliot is away: no art per
  * city, a row of pixel buildings grown from the city's name (the same name
@@ -7,7 +10,7 @@
  * name, with a few lit windows.
  */
 
-const TINTS = ["#89b4a8", "#aea3c8", "#e0bd6e", "#e2786b", "#b0cc86"];
+const TINTS: (keyof ArtPalette)[] = ["ion", "lilac", "ember", "flare", "signal"];
 const W = 360;
 const H = 40;
 
@@ -22,8 +25,9 @@ function rng(seed: string) {
 }
 
 export function Skyline({ city }: { city: string }) {
+  const P = useArtPalette();
   const r = rng(city.toLowerCase());
-  const tint = TINTS[Math.floor(r() * TINTS.length)];
+  const tint = P[TINTS[Math.floor(r() * TINTS.length)]];
   const blocks: { x: number; w: number; h: number; spire: boolean }[] = [];
   for (let x = 0; x < W; ) {
     const w = 3 + Math.floor(r() * 7);
@@ -52,7 +56,7 @@ export function Skyline({ city }: { city: string }) {
         </g>
       ))}
       {windows.map((w, i) => (
-        <rect key={`w${i}`} x={w.x} y={w.y} width="1" height="1" fill="#f1dfb8" fillOpacity="0.8" />
+        <rect key={`w${i}`} x={w.x} y={w.y} width="1" height="1" fill={P.emberLight} fillOpacity="0.8" />
       ))}
     </svg>
   );

@@ -1,6 +1,8 @@
 "use client";
 
 import { byFill, pxPath } from "@/lib/pxpath";
+import { useArtPalette } from "@/hooks/useTheme";
+import type { ArtPalette } from "@/lib/theme";
 
 import { AppIcon, glyphCell } from "@/components/os/icons";
 import type { AppId } from "@/components/os/apps";
@@ -39,18 +41,11 @@ export const G_PLANE: Cells = [
 export type DesktopIconId = Exclude<AppId, "home" | "admin"> | "readme" | "draft";
 export const DESKTOP_ICONS: DesktopIconId[] = ["readme", "draft"];
 
-const C = {
-  paper: "#ebe9e1",
-  paper2: "#bcc2ba",
-  paper3: "#8f988f",
-  ink: "#0a0c0b",
-  signal: "#b0cc86",
-  ion: "#89b4a8",
-  ember: "#e0bd6e",
-  emberDeep: "#c99645",
-};
+/* Palette roles (artPalette), resolved at render so the pages follow the
+   live theme. */
+type Role = keyof ArtPalette;
 
-/* A text file with a dog-eared corner, a lime heading and ruled lines. 16×16,
+/* A text file with a dog-eared corner, an accent heading and ruled lines. 16×16,
    same cell grammar as the app icons so they share one pixel size. */
 const README_ROWS = [
   "................",
@@ -70,13 +65,13 @@ const README_ROWS = [
   "................",
   "................",
 ];
-const README_PAL: Record<string, string> = { W: C.paper, w: C.paper2, g: C.paper3, S: C.signal, I: C.ion };
+const README_PAL: Record<string, Role> = { W: "paper", w: "paper2", g: "paper3", S: "signal", I: "ion" };
 
-type Run = { x: number; y: number; w: number; fill: string };
+type Run<F = string> = { x: number; y: number; w: number; fill: F };
 
 /** a 16×16 map as runs of colour, plus its one-cell drop shadow */
-function build(rows: readonly string[], pal: Record<string, string>) {
-  const runs: Run[] = [];
+function build(rows: readonly string[], pal: Record<string, Role>) {
+  const runs: Run<Role>[] = [];
   const shadow: Run[] = [];
   rows.forEach((row, y) => {
     let x = 0;
@@ -123,7 +118,7 @@ const EML_ROWS = [
   "................",
   "................",
 ];
-const EML = build(EML_ROWS, { W: C.paper, w: C.paper2, g: C.paper3, E: C.ember, e: C.emberDeep });
+const EML = build(EML_ROWS, { W: "paper", w: "paper2", g: "paper3", E: "ember", e: "emberDeep" });
 
 /**
  * A document, not an app: no tile, just the page, drawn a little larger
@@ -131,6 +126,7 @@ const EML = build(EML_ROWS, { W: C.paper, w: C.paper2, g: C.paper3, E: C.ember, 
  */
 function DocGlyph({ size, art }: { size: number; art: ReturnType<typeof build> }) {
   // whole or half px per cell, so the page stays as crisp as the app glyphs
+  const P = useArtPalette();
   const cell = Math.round(glyphCell(size) * 1.25 * 2) / 2;
   const gp = cell * 16;
   return (
@@ -143,10 +139,10 @@ function DocGlyph({ size, art }: { size: number; art: ReturnType<typeof build> }
         focusable="false"
         style={{ display: "block", overflow: "visible" }}
       >
-        <g fill={C.ink} opacity={0.5}>
+        <g fill={P.ink950} opacity={0.5}>
           <path d={pxPath(art.shadow)} />
         </g>
-        {[...byFill(art.runs, (r) => r.fill)].map(([fill, rs]) => (
+        {[...byFill(art.runs, (r) => P[r.fill])].map(([fill, rs]) => (
           <path key={fill} d={pxPath(rs)} fill={fill} />
         ))}
       </svg>

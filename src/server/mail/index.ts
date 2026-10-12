@@ -2,8 +2,8 @@ import "server-only";
 import { db, nowIso, tx } from "../db";
 import { env, imapReady } from "../env";
 import { DAY, HOUR, LIMITS, MIN_COMPOSE_MS, RATE, elliotAddresses } from "./config";
-import { adminMail, testMail, visitorMail, messageIdFor, type MailThread } from "./compose";
-import { TOKEN_RE, decryptToken, encryptToken, hashToken, newId, newToken, saltedHash } from "./crypto";
+import { testMail, messageIdFor } from "./compose";
+import { TOKEN_RE, encryptToken, hashToken, newId, newToken, saltedHash } from "./crypto";
 import { takeRate, type Limit } from "./rate";
 import {
   STATUSES,
@@ -19,6 +19,7 @@ import {
   type ThreadStatus,
 } from "./store";
 import { canSend, deliver, lastSmtpError } from "./transport";
+import { queue } from "./outbox";
 import { cleanBody, cleanEmail, cleanLang, cleanLine } from "./validate";
 import { syncStatus } from "./sync";
 
@@ -72,16 +73,6 @@ const toThread = (t: ThreadDb): ThreadRow => ({
   adminUnread: t.admin_unread,
 });
 
-const mailThread = (t: ThreadDb): MailThread => ({ id: t.id, name: t.name, email: t.email, subject: t.subject, lang: t.lang });
-
-/** the latest letter from the visitor, quoted under an admin reply */
-function lastIn(threadId: string) {
-  const m = db()
-    .prepare(`SELECT body, created_at FROM messages WHERE thread_id = ? AND direction = 'in' ORDER BY created_at DESC, rowid DESC LIMIT 1`)
-    .get(threadId) as { body: string; created_at: string } | undefined;
-  return m ? { body: m.body, at: m.created_at } : undefined;
-}
-
 function safely<T>(fn: () => T, fallback: T): T {
   try {
     return fn();
@@ -94,8 +85,9 @@ function safely<T>(fn: () => T, fallback: T): T {
 /* ───────────────────────── visitor side ───────────────────────── */
 
 /**
- * A visitor's first letter: checked, rate-limited, emailed to Elliot, then
- * stored as a new thread. The token comes back once; it is the visitor's
+ * A visitor's first letter: checked, rate-limited, stored as a new thread,
+ * then emailed to Elliot from the outbox (the visitor hears "sent" as soon
+ * as it is stored: from there it is certain to go). The token comes back once; it is the visitor's
  * only key to the thread (kept in their browser, and in Elliot's replies).
  */
 export async function sendFromVisitor(input: {
@@ -157,9 +149,6 @@ export async function sendFromVisitor(input: {
     visitor_unread: 0,
   };
   const msgId = newId();
-  const sent = await deliver(visitorMail(mailThread(thread), { id: msgId, body }, []));
-  if (!sent.ok) return { ok: false, error: sent.error === "unavailable" ? "unavailable" : "failed" };
-
   try {
     const at = nowIso();
     tx((d) => {
@@ -176,14 +165,14 @@ export async function sendFromVisitor(input: {
         in_reply_to: null,
         source: "site",
         created_at: at,
-        sent_at: at,
+        sent_at: null,
       });
     });
   } catch (e) {
-    // the email reached Elliot; only the copy on the site is missing
-    console.error("[mail] sent but not stored:", (e as Error)?.message ?? e);
+    console.error("[mail] couldn't store the letter:", (e as Error)?.message ?? e);
     return { ok: false, error: "failed" };
   }
+  queue(msgId);
   return { ok: true, token, threadId: thread.id };
 }
 
@@ -249,9 +238,6 @@ export async function visitorReply(
 
   const prior = messageIdsOf(t.id);
   const msgId = newId();
-  const sent = await deliver(visitorMail(mailThread(t), { id: msgId, body: text }, prior));
-  if (!sent.ok) return { ok: false, error: sent.error === "unavailable" ? "unavailable" : "failed" };
-
   const thread = t;
   try {
     const at = nowIso();
@@ -265,15 +251,16 @@ export async function visitorReply(
         in_reply_to: prior[prior.length - 1] ?? null,
         source: "site",
         created_at: at,
-        sent_at: at,
+        sent_at: null,
       });
       // the ball is in Elliot's court again (an archived thread comes back to the inbox)
       d.prepare(`UPDATE threads SET status = 'open', last_at = ?, admin_unread = admin_unread + 1 WHERE id = ?`).run(at, thread.id);
     });
   } catch (e) {
-    console.error("[mail] sent but not stored:", (e as Error)?.message ?? e);
+    console.error("[mail] couldn't store the reply:", (e as Error)?.message ?? e);
     return { ok: false, error: "failed" };
   }
+  queue(msgId);
   return { ok: true };
 }
 
@@ -305,8 +292,9 @@ export function setThreadStatus(id: string, status: ThreadStatus) {
 }
 
 /**
- * Elliot's reply from the admin panel: to the visitor, threaded under
- * their last letter, with their private link to the thread in the footer.
+ * Elliot's reply from the admin panel: stored, then emailed from the outbox
+ * to the visitor, threaded under their last letter, with their private link
+ * to the thread in the footer.
  * The copy Proton files in Sent is recognised by the poller and skipped.
  */
 export async function adminReply(threadId: string, body: string): Promise<{ ok: true } | { ok: false; error: string }> {
@@ -317,15 +305,13 @@ export async function adminReply(threadId: string, body: string): Promise<{ ok: 
   if (text == null) return { ok: false, error: "invalid" };
   const prior = messageIdsOf(t.id);
   const msgId = newId();
-  const token = decryptToken(t.token_enc);
-  const sent = await deliver(adminMail(mailThread(t), { id: msgId, body: text }, prior, token, lastIn(t.id)));
-  if (!sent.ok) return { ok: false, error: sent.error };
   try {
     storeAdminReply(t, msgId, text, prior);
   } catch (e) {
-    console.error("[mail] sent but not stored:", (e as Error)?.message ?? e);
-    return { ok: false, error: "sent, but couldn't be saved on the site" };
+    console.error("[mail] couldn't store the reply:", (e as Error)?.message ?? e);
+    return { ok: false, error: "couldn't be saved" };
   }
+  queue(msgId);
   return { ok: true };
 }
 
@@ -341,7 +327,7 @@ function storeAdminReply(t: ThreadDb, msgId: string, text: string, prior: string
       in_reply_to: prior[prior.length - 1] ?? null,
       source: "admin",
       created_at: at,
-      sent_at: at,
+      sent_at: null,
     });
     d.prepare(
       `UPDATE threads SET status = 'answered', last_at = ?, admin_unread = 0, visitor_unread = visitor_unread + 1 WHERE id = ?`

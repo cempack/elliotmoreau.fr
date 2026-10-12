@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useI18n } from "@/i18n/client";
 import { APPS, appForPath } from "../apps";
 import { AppIcon, ICON_ACCENT, type IconId } from "../icons";
@@ -43,6 +43,7 @@ function Tip({ label, kbd }: { label: string; kbd: string }) {
  */
 export function DesktopDock() {
   const { t, path } = useI18n();
+  const router = useRouter();
   const active = appForPath(usePathname());
   const term = useTerminal();
   const zoneRef = useRef<HTMLElement>(null);
@@ -98,7 +99,10 @@ export function DesktopDock() {
                 data-dock-scale=""
                 data-dock-launch={app.id}
               >
-                <Link prefetch={false}
+                <Link
+                  // warmed on hover or press (and on idle by IdlePrefetch), not all at once on load
+                  prefetch={false}
+                  onPointerEnter={() => router.prefetch(path(app.path))}
                   href={path(app.path)}
                   transitionTypes={["app-open"]}
                   className="os-dock-link"

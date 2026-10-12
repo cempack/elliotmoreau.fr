@@ -65,44 +65,16 @@ export function menubarBottom() {
 
 const px = (v: number) => `${Math.round(v * 10) / 10}px`;
 
-type VTDocument = Document & {
-  __reactViewTransition?: ViewTransition | null;
-  activeViewTransition?: ViewTransition | null;
-};
-let vtToken = 0;
-let vtTimer = 0;
-
-/**
- * React leaves the page "live" under transitions that don't touch the
- * root, where a frosted group has nothing to blur: html[data-os-vt] asks
- * window.css to capture the root while a window comes or goes, until that
- * transition finishes.
- */
-function markWindowTransition() {
-  const root = document.documentElement;
-  const token = ++vtToken;
-  const clear = () => {
-    if (token === vtToken) delete root.dataset.osVt;
-  };
-  root.dataset.osVt = "";
-  window.clearTimeout(vtTimer);
-  const doc = document as VTDocument;
-  const vt = doc.__reactViewTransition ?? doc.activeViewTransition;
-  vt?.finished.then(clear, clear);
-  vtTimer = window.setTimeout(clear, vt ? 6000 : 1500);
-}
-
 /**
  * Writes the geometry of a window snapshot for window.css. The
  * ::view-transition-group is cut down to the part of the window that is on
  * screen below the menu bar (`t` from its top, `vis` tall) so a long page
- * reads as a window, not a column; the group carries the frosted backdrop
+ * reads as a window, not a column; the group carries the window's tint
  * and the shadow, and scales about the Dock icon (`ox`, `oy` in its own
  * coordinates; `gx`, `gy` let the keyframes undo the scale's effect on the
  * group's positioning transform).
  */
 function writeGeometry(prefix: "in" | "out", r: DOMRect, top: number, icon: Point) {
-  markWindowTransition();
   const vh = window.innerHeight;
   const t = Math.max(0, menubarBottom() - top);
   const vis = Math.max(1, Math.min(top + r.height, vh) - (top + t));

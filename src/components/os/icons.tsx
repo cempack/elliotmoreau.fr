@@ -2,6 +2,8 @@
 
 import type { AppId } from "./apps";
 import { byFill, pxPath } from "@/lib/pxpath";
+import { useArtPalette } from "@/hooks/useTheme";
+import type { ArtPalette } from "@/lib/theme";
 
 /**
  * CONTRACT (owner: dock agent)
@@ -17,50 +19,30 @@ import { byFill, pxPath } from "@/lib/pxpath";
 
 export type IconId = AppId | "terminal" | "spotlight" | "more";
 
-// Moss, plus a few shading tones derived from its accents.
-const C = {
-  paper: "#ebe9e1",
-  paper2: "#bcc2ba",
-  paper3: "#8f988f",
-  ink950: "#0a0c0b",
-  ink900: "#101311",
-  ink800: "#161a17",
-  ink700: "#1f2420",
-  ink600: "#2b322d",
-  ink500: "#3f4842",
-  signal: "#b0cc86",
-  signalDeep: "#86a35c",
-  ion: "#89b4a8",
-  ionLight: "#d5e6df",
-  ionDeep: "#5f8f84",
-  lilac: "#aea3c8",
-  lilacDeep: "#7d7699",
-  ember: "#e0bd6e",
-  emberDeep: "#c99645",
-  emberLight: "#f1dfb8",
-  flare: "#e2786b",
-  night: "#16211f",
-} as const;
+// The theme's pixel-art tones (artPalette), by role: resolved at render so
+// the icons follow the live Dos Moos palette.
+type Role = keyof ArtPalette;
 
-/** Tile tint per icon (the app accent); other agents can reuse it. */
+/** Tile tint per icon (the app accent), as a CSS colour that follows the
+    live theme; other agents can reuse it. */
 export const ICON_ACCENT: Record<IconId, string> = {
-  home: C.signal,
-  work: C.ion,
-  writing: C.ember,
-  atlas: C.lilac,
-  now: C.flare,
-  contact: C.signal,
-  admin: C.ember,
-  terminal: C.paper3,
-  spotlight: C.lilac,
-  more: C.paper3,
+  home: "var(--color-signal)",
+  work: "var(--color-ion)",
+  writing: "var(--color-ember)",
+  atlas: "var(--color-lilac)",
+  now: "var(--color-flare)",
+  contact: "var(--color-signal)",
+  admin: "var(--color-ember)",
+  terminal: "var(--color-label-3)",
+  spotlight: "var(--color-lilac)",
+  more: "var(--color-label-3)",
 };
 
 type Glyph = {
-  pal: Record<string, string>;
+  pal: Record<string, Role>;
   rows: readonly string[];
   /** phosphor bloom around the cells, for the terminal */
-  bloom?: string;
+  bloom?: Role;
 };
 
 /* Each map is 16×16. "." is empty; every other character is a palette key.
@@ -69,7 +51,7 @@ type Glyph = {
 const GLYPHS: Record<IconId, Glyph> = {
   // Desktop: a window onto the emOS night, a low sun setting behind hills
   home: {
-    pal: { W: C.paper, n: C.night, E: C.ember, Y: C.emberLight, S: C.signal, s: C.signalDeep, F: C.flare },
+    pal: { W: "paper", n: "night", E: "ember", Y: "emberLight", S: "signal", s: "signalDeep", F: "flare" },
     rows: [
       "................",
       "................",
@@ -91,7 +73,7 @@ const GLYPHS: Record<IconId, Glyph> = {
   },
   // Projects: a folder, a sheet peeking out, </> on the front
   work: {
-    pal: { d: C.ionDeep, I: C.ion, J: C.ionLight, w: C.paper, k: C.ink900 },
+    pal: { d: "ionDeep", I: "ion", J: "ionLight", w: "paper", k: "ink900" },
     rows: [
       "................",
       "................",
@@ -113,7 +95,7 @@ const GLYPHS: Record<IconId, Glyph> = {
   },
   // Writing: a spiral notepad with a French red margin, a pen across it
   writing: {
-    pal: { W: C.paper, g: C.paper3, F: C.flare, E: C.ember, e: C.emberDeep, k: C.ink900 },
+    pal: { W: "paper", g: "paper3", F: "flare", E: "ember", e: "emberDeep", k: "ink900" },
     rows: [
       "................",
       "..k.k.k.k.......",
@@ -135,7 +117,7 @@ const GLYPHS: Record<IconId, Glyph> = {
   },
   // Atlas: a folded map, a dashed route, a pin where it ends
   atlas: {
-    pal: { A: C.paper2, B: C.paper3, r: C.signalDeep, F: C.flare, W: C.paper },
+    pal: { A: "paper2", B: "paper3", r: "signalDeep", F: "flare", W: "paper" },
     rows: [
       "..........FFF...",
       ".........FWFFF..",
@@ -157,7 +139,7 @@ const GLYPHS: Record<IconId, Glyph> = {
   },
   // Now: a live dot and a pixel level meter
   now: {
-    pal: { F: C.flare, E: C.ember, S: C.signal, W: C.paper },
+    pal: { F: "flare", E: "ember", S: "signal", W: "paper" },
     rows: [
       "................",
       "................",
@@ -177,9 +159,9 @@ const GLYPHS: Record<IconId, Glyph> = {
       "................",
     ],
   },
-  // Mail: an envelope sealed in lime
+  // Mail: an envelope sealed in the accent
   contact: {
-    pal: { W: C.paper, w: C.paper2, g: C.paper3, S: C.signal, s: C.signalDeep },
+    pal: { W: "paper", w: "paper2", g: "paper3", S: "signal", s: "signalDeep" },
     rows: [
       "................",
       "................",
@@ -201,7 +183,7 @@ const GLYPHS: Record<IconId, Glyph> = {
   },
   // Admin: a brass key
   admin: {
-    pal: { E: C.ember, J: C.emberLight, d: C.emberDeep },
+    pal: { E: "ember", J: "emberLight", d: "emberDeep" },
     rows: [
       "................",
       "................",
@@ -223,8 +205,8 @@ const GLYPHS: Record<IconId, Glyph> = {
   },
   // Terminal: a prompt and a cursor, with phosphor glow
   terminal: {
-    pal: { S: C.signal, W: C.paper },
-    bloom: C.signal,
+    pal: { S: "signal", W: "paper" },
+    bloom: "signal",
     rows: [
       "................",
       "................",
@@ -246,7 +228,7 @@ const GLYPHS: Record<IconId, Glyph> = {
   },
   // Spotlight: a magnifier over a glint of sky
   spotlight: {
-    pal: { W: C.paper, I: C.ion, J: C.ionLight, g: C.paper3, k: C.ink900 },
+    pal: { W: "paper", I: "ion", J: "ionLight", g: "paper3", k: "ink900" },
     rows: [
       "................",
       "................",
@@ -268,7 +250,7 @@ const GLYPHS: Record<IconId, Glyph> = {
   },
   // More: four tiny app tiles
   more: {
-    pal: { S: C.signal, I: C.ion, E: C.ember, L: C.lilac },
+    pal: { S: "signal", I: "ion", E: "ember", L: "lilac" },
     rows: [
       "................",
       "................",
@@ -290,8 +272,8 @@ const GLYPHS: Record<IconId, Glyph> = {
   },
 };
 
-type Run = { x: number; y: number; w: number; fill: string };
-type Prepared = { runs: Run[]; shadow: Run[]; bloom: Run[] };
+type Run<F = string> = { x: number; y: number; w: number; fill: F };
+type Prepared = { runs: Run<Role>[]; shadow: Run[]; bloom: Run[] };
 
 const prepared = new Map<IconId, Prepared>();
 
@@ -300,7 +282,7 @@ function prepare(id: IconId): Prepared {
   const hit = prepared.get(id);
   if (hit) return hit;
   const g = GLYPHS[id];
-  const runs: Run[] = [];
+  const runs: Run<Role>[] = [];
   const shadow: Run[] = [];
   const filled = g.rows.map((r) => Array.from(r.padEnd(16, ".").slice(0, 16)).map((ch) => ch !== "."));
   g.rows.forEach((row, y) => {
@@ -310,7 +292,7 @@ function prepare(id: IconId): Prepared {
       const ch = cells[x];
       let w = 1;
       while (x + w < 16 && cells[x + w] === ch) w++;
-      if (ch !== ".") runs.push({ x, y, w, fill: g.pal[ch] ?? C.paper });
+      if (ch !== ".") runs.push({ x, y, w, fill: g.pal[ch] ?? "paper" });
       x += w;
     }
     // the shadow is the silhouette dropped one cell, only where it shows
@@ -358,27 +340,21 @@ export function glyphCell(size: number) {
   return Math.max(0.5, c);
 }
 
-function mix(a: string, b: string, t: number) {
-  const pa = parseInt(a.slice(1), 16);
-  const pb = parseInt(b.slice(1), 16);
-  const ch = (p: number, s: number) => (p >> s) & 255;
-  const m = (s: number) => Math.round(ch(pa, s) + (ch(pb, s) - ch(pa, s)) * t);
-  return `rgb(${m(16)} ${m(8)} ${m(0)})`;
-}
-
 function GlyphRects({ id }: { id: IconId }) {
+  const P = useArtPalette();
   const { runs, shadow, bloom } = prepare(id);
+  const glow = GLYPHS[id].bloom;
   return (
     <>
-      {bloom.length > 0 && (
-        <g fill={GLYPHS[id].bloom} opacity={0.16}>
+      {glow && bloom.length > 0 && (
+        <g fill={P[glow]} opacity={0.16}>
           <path d={pxPath(bloom)} />
         </g>
       )}
-      <g fill={C.ink950} opacity={0.42}>
+      <g fill={P.ink950} opacity={0.42}>
         <path d={pxPath(shadow)} />
       </g>
-      {[...byFill(runs, (r) => r.fill)].map(([fill, rs]) => (
+      {[...byFill(runs, (r) => P[r.fill])].map(([fill, rs]) => (
         <path key={fill} d={pxPath(rs)} fill={fill} />
       ))}
     </>
@@ -429,8 +405,8 @@ export function AppIcon({
         width: size,
         height: size,
         borderRadius: Math.round(size * 0.2),
-        background: mix(C.ink800, accent, neutral ? 0.03 : 0.08),
-        boxShadow: `inset 0 0 0 1px rgb(196 206 194 / 0.16), 0 ${(size / 10).toFixed(1)}px ${(size / 5).toFixed(1)}px -${(size / 10).toFixed(1)}px rgb(0 0 0 / 0.6)`,
+        background: `color-mix(in srgb, var(--color-ink-800), ${accent} ${neutral ? 3 : 8}%)`,
+        boxShadow: `inset 0 0 0 1px color-mix(in srgb, var(--color-border-active) 16%, transparent), 0 ${(size / 10).toFixed(1)}px ${(size / 5).toFixed(1)}px -${(size / 10).toFixed(1)}px rgb(0 0 0 / 0.6)`,
       }}
     >
       <svg

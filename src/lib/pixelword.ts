@@ -1,3 +1,5 @@
+import { SNAPSHOT_THEME, artPalette, mix, type ArtPalette } from "./theme";
+
 /**
  * Hand-drawn bold pixel wordmark ("Elliot Moreau").
  * Original variable-width glyphs for this site — '#' is ink, '.' is empty.
@@ -154,19 +156,24 @@ export const WORDMARK_LINES = ["Elliot", "Moreau"] as const;
 export const EMOS_LINES = ["emos"] as const;
 
 /* Canonical wordmark band stack, in omarchy's laser-band proportions,
- * wearing Moss inks: a paper-white crest, the signal-lime band, a
- * lime-to-ion seafoam middle cooling into lilac, and an indigo foot that
+ * wearing the theme's inks: a paper-white crest, the signal band, a
+ * signal-to-ion seafoam middle cooling into lilac, and a deep foot that
  * sinks into the night.
  * Both the canvas engine and the SSR wordmark read these, so first paint
- * and live frames wear one gradient. */
-export const WORDMARK_BANDS: [number, string][] = [
-  [5, "#EBE9E1"],
-  [3, "#B0CC86"],
-  [4, "#8FC2A8"],
-  [3, "#6F8FA0"],
-  [4, "#3B4F5A"],
-];
-export const WORDMARK_BAND_ROWS = WORDMARK_BANDS.reduce((n, [c]) => n + c, 0);
+ * and live frames wear one gradient: pass both the same palette. */
+const BAND_COUNTS = [5, 3, 4, 3, 4] as const;
+export type WordmarkBands = [number, string][];
+
+/** The band stack in a palette's inks (counts are fixed). */
+export function wordmarkBands(p: ArtPalette): WordmarkBands {
+  const cool = mix(p.ion, p.lilac, 0.35);
+  const inks = [p.paper, p.signal, mix(p.signal, p.ion, 0.7), mix(cool, p.ink900, 0.25), mix(cool, p.ink900, 0.62)];
+  return BAND_COUNTS.map((n, k) => [n, inks[k]] as [number, string]);
+}
+
+/** The stack in the snapshot theme's inks: the default where no palette is passed. */
+export const WORDMARK_BANDS: WordmarkBands = wordmarkBands(artPalette(SNAPSHOT_THEME.tokens));
+export const WORDMARK_BAND_ROWS = BAND_COUNTS.reduce<number>((n, c) => n + c, 0);
 
 /** Fractional position 0..1 (top → bottom of the band span) → band index. */
 export function bandIndexFor(f: number): number {
@@ -174,12 +181,13 @@ export function bandIndexFor(f: number): number {
   return Math.min(WORDMARK_BAND_ROWS - 1, Math.floor(clamped * WORDMARK_BAND_ROWS));
 }
 
-/** Ink for a band index (clamped to the foot for out-of-range input). */
-export function bandInk(band: number): string {
+/** Ink for a band index (clamped to the foot for out-of-range input), from
+    `bands` (wordmarkBands(palette)) or the snapshot stack. */
+export function bandInk(band: number, bands: WordmarkBands = WORDMARK_BANDS): string {
   let acc = 0;
-  for (const [count, ink] of WORDMARK_BANDS) {
+  for (const [count, ink] of bands) {
     acc += count;
     if (band < acc) return ink;
   }
-  return WORDMARK_BANDS[WORDMARK_BANDS.length - 1][1];
+  return bands[bands.length - 1][1];
 }

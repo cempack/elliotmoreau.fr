@@ -1,10 +1,11 @@
 import "server-only";
 import type { AddressObject, ParsedMail } from "mailparser";
 import { db, tx } from "../db";
-import { elliotAddresses } from "./config";
+import { DAY, LIMITS, RATE, elliotAddresses, siteMailtoAddresses } from "./config";
 import { mailSubject } from "./compose";
-import { newId } from "./crypto";
-import { addRef, insertMessage, latestNamed, messageByMessageId, threadForRefs, threadsByEmail, type ThreadDb } from "./store";
+import { encryptToken, hashToken, newId, newToken } from "./crypto";
+import { takeRate } from "./rate";
+import { addRef, emailMarkedSpam, insertMessage, latestNamed, messageByMessageId, threadForRefs, threadsByEmail, type ThreadDb } from "./store";
 import { normalizeBody, normalizeSubject, stripQuoted } from "./strip";
 
 /**
@@ -23,6 +24,12 @@ import { normalizeBody, normalizeSubject, stripQuoted } from "./strip";
  * teach us the id Proton gave them. The same letter seen twice (the admin
  * reply and its Sent copy) is caught by Message-ID, then by the same
  * normalised text in the same thread within 15 minutes of each other.
+ *
+ * One more way in: a letter in the inbox addressed to the site's mailto
+ * address (hello+site@, see config siteMailtoAddresses) that belongs to
+ * no thread starts one, as if it had come through the form: someone wrote
+ * from their own mail app after clicking on the site. Everything else in
+ * the inbox is ignored.
  */
 
 export type Incoming = {
@@ -31,6 +38,8 @@ export type Incoming = {
   references: string[];
   /** lowercased addresses */
   from?: string;
+  /** the sender's display name, when given */
+  fromName?: string;
   to: string[];
   subject: string;
   date: Date;
@@ -71,6 +80,7 @@ export function toIncoming(p: ParsedMail, fallbackId: string, internalDate?: Dat
     inReplyTo: p.inReplyTo ? bracket(p.inReplyTo.split(/\s+/)[0]) : undefined,
     references: refs.map(bracket).filter(Boolean),
     from: addresses(p.from)[0],
+    fromName: (Array.isArray(p.from) ? p.from[0] : p.from)?.value?.[0]?.name?.trim() || undefined,
     to: [...addresses(p.to), ...addresses(p.cc)],
     subject: p.subject ?? "",
     date,
@@ -123,6 +133,7 @@ export function ingest(kind: "sent" | "inbox", m: Incoming, now = new Date()): O
       }
     } else if (m.from) thread = bySubject(m.from, m.subject, m.date);
   }
+  if (!thread && kind === "inbox") thread = threadFromMailto(m);
   if (!thread || thread.status === "spam") return "ignored";
 
   const email = thread.email.toLowerCase();
@@ -178,9 +189,50 @@ export function ingest(kind: "sent" | "inbox", m: Incoming, now = new Date()): O
   return "stored";
 }
 
+/** French by its accents or its greeting, else English (the thread's link and replies follow it) */
+const looksFrench = (text: string) => /[àâçéèêëîïôûùœ]|\b(bonjour|salut|merci|cordialement)\b/i.test(text);
+
+/**
+ * A letter to the site's mailto address that belongs to no thread starts
+ * one: same shape as a form letter (a private link for the visitor, the
+ * admin sees it as new), from the sender's address and name. Spam-marked
+ * senders and Elliot himself don't; at most RATE.mailtoDay a day.
+ */
+function threadFromMailto(m: Incoming): ThreadDb | undefined {
+  const site = siteMailtoAddresses();
+  if (!m.from || !m.to.some((a) => site.has(a))) return undefined;
+  if (elliotAddresses().has(m.from) || emailMarkedSpam(m.from)) return undefined;
+  if (!takeRate([{ key: "imap:mailto:d", max: RATE.mailtoDay, windowMs: DAY }])) return undefined;
+  const at = m.date.toISOString();
+  const token = newToken();
+  const thread: ThreadDb = {
+    id: newId(8),
+    token_hash: hashToken(token),
+    token_enc: encryptToken(token),
+    name: (m.fromName || m.from.split("@")[0]).slice(0, LIMITS.name),
+    email: m.from.slice(0, LIMITS.email),
+    subject: (m.subject.trim() || "(no subject)").slice(0, LIMITS.subject),
+    lang: looksFrench(`${m.subject} ${m.text}`) ? "fr" : "en",
+    status: "open",
+    ip_hash: null,
+    created_at: at,
+    last_at: at,
+    admin_unread: 0,
+    visitor_unread: 0,
+  };
+  db()
+    .prepare(
+      `INSERT INTO threads (id, token_hash, token_enc, name, email, subject, lang, status, ip_hash, created_at, last_at, admin_unread, visitor_unread)
+       VALUES (@id, @token_hash, @token_enc, @name, @email, @subject, @lang, @status, @ip_hash, @created_at, @last_at, 0, 0)`
+    )
+    .run(thread);
+  return thread;
+}
+
 /** quick check on headers alone: is this message worth downloading? */
 export function worthFetching(kind: "sent" | "inbox", meta: { from?: string; to: string[]; emos: boolean; refs: string[] }) {
   if (meta.emos) return true;
+  if (kind === "inbox" && meta.to.some((a) => siteMailtoAddresses().has(a))) return true;
   if (meta.refs.length && threadForRefs(meta.refs)) return true;
   const known = db().prepare(`SELECT 1 FROM threads WHERE email = ? COLLATE NOCASE AND status != 'spam' LIMIT 1`);
   if (kind === "sent") return meta.to.some((a) => known.get(a));

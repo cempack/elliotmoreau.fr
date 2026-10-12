@@ -4,15 +4,17 @@ import { useMemo, useState, useSyncExternalStore } from "react";
 import { encode } from "uqr";
 import { useI18n } from "@/i18n/client";
 import { useSound } from "@/lib/sound";
+import { useArtPalette } from "@/hooks/useTheme";
 
 /**
- * Continue on your phone: a transfer ticket in the About panel with a
- * pixel QR code of exactly this page (app, filter, post, place: the whole
- * URL with its query and hash), to pick up on a phone. Drawn in the site's
- * pixels: data modules as small LED squares, the three finder eyes with
- * moss pupils, the emOS mark punched out of the middle (error correction
- * H carries it), and the code "prints" in when the panel opens. Hidden on
- * phones: you're already there.
+ * Continue on your phone: a compact row in the About panel with a pixel QR
+ * code of exactly this page (app, filter, post, place: the whole URL with
+ * its query and hash), to pick up on a phone. Drawn in the site's pixels on
+ * a small paper tile (a code needs a light ground to scan): data modules
+ * as LED squares, the three finder eyes with pupils in the theme's accent,
+ * the emOS mark punched out of the middle (error correction H carries it).
+ * It "prints" in when the panel opens. Hidden on phones: you're already
+ * there.
  */
 
 const subscribe = (cb: () => void) => {
@@ -25,8 +27,6 @@ const subscribe = (cb: () => void) => {
 };
 const href = () => window.location.href;
 
-const INK = "#101311";
-const PUPIL = "#5f7f3c";
 
 /** "elliotmoreau.fr/work?q=go" */
 const short = (url: string) => url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
@@ -35,6 +35,9 @@ const short = (url: string) => url.replace(/^https?:\/\/(www\.)?/, "").replace(/
 const MARK = ["eee.m.m", "e.e.mmm", "eee.m.m", "e...m.m", "eee.m.m"];
 
 function QrArt({ url }: { url: string }) {
+  const P = useArtPalette();
+  const INK = P.ink900;
+  const PUPIL = P.signalDeep;
   const qr = useMemo(() => encode(url, { ecc: "H", border: 0 }), [url]);
   const n = qr.size;
   // the hole for the mark: odd, centred, about a fifth of the code
@@ -98,17 +101,18 @@ export function PhoneTicket() {
         <QrArt url={url} />
       </div>
       <div className="os-ticket-body">
-        <p className="os-ticket-k">emOS · {a.transfer}</p>
         <h3 id="os-ticket-title" className="os-ticket-title">
           {a.phoneTitle}
         </h3>
         <p className="os-ticket-text">{a.phoneBody}</p>
-        <p className="os-ticket-url" title={url}>
-          {short(url)}
-        </p>
-        <button type="button" className="os-ticket-copy" onClick={copy} data-copied={copied || undefined}>
-          {copied ? a.copied : a.copyLink}
-        </button>
+        <div className="os-ticket-row">
+          <p className="os-ticket-url" title={url}>
+            {short(url)}
+          </p>
+          <button type="button" className="os-ticket-copy" onClick={copy} data-copied={copied || undefined}>
+            {copied ? a.copied : a.copyLink}
+          </button>
+        </div>
       </div>
     </section>
   );

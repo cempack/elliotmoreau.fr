@@ -1,4 +1,5 @@
-import { WORDMARK_BAND_ROWS, WORDMARK_BANDS } from "./pixelword";
+import { WORDMARK_BAND_ROWS, wordmarkBands } from "./pixelword";
+import { SNAPSHOT_THEME, alpha, artPalette, mix, type ArtPalette } from "./theme";
 
 // Tiny terminal-text-effect engine in the spirit of ttfx/terminaltexteffects:
 // an effect runs over a grid of character cells and hands back a symbol +
@@ -10,14 +11,14 @@ export type TtfxTone = "bone" | "ember" | "glacier" | "sage";
 
 const GLYPHS = [..."アイウエオカキクケコサシスセソ0123456789XYZ<>*+#$%&@?/\\|"];
 
-// Moss resting inks for flat labels: bone is the paper-white text
+// the theme's resting inks for flat labels: bone is the paper-white text
 // colour, so a settled label hands back to plain text without a shift
-const LOCKED: Record<TtfxTone, string> = {
-  bone: "#EBE9E1",
-  ember: "#E0BD6E",
-  glacier: "#89B4A8",
-  sage: "#B0CC86",
-};
+const lockedInks = (p: ArtPalette): Record<TtfxTone, string> => ({
+  bone: p.paper,
+  ember: p.ember,
+  glacier: p.ion,
+  sage: p.signal,
+});
 
 function mulberry32(seed: number) {
   let a = seed >>> 0;
@@ -76,11 +77,11 @@ export function textBitmap(text: string): Bitmap {
 /* Hero field: omarchy-landing-style composite loop.                    */
 /* One canvas, three layers every frame:                                */
 /*  1. ambient lattice — drifting value-noise + twinkle, Bayer-dithered */
-/*     into sparse moss/sage cells;                                     */
+/*     into sparse accent-tinted cells;                                 */
 /*  2. wordmark — a full-grid ttfx effect that etches the bitmap, then  */
 /*     rests in per-row gradient bands;                                 */
 /*  3. light — the raw pointer (unsmoothed, eased strength) plus an     */
-/*     autonomous wandering sprite lift nearby cells to green.          */
+/*     autonomous wandering sprite lift nearby cells to the accent.     */
 /* The loop never ends: effect, hold, next effect. Pause off-screen,    */
 /* die under reduced motion (the caller gates both).                    */
 /* ------------------------------------------------------------------ */
@@ -92,59 +93,82 @@ const BAYER = [
   61, 29, 53, 21,
 ];
 
-const FIELD = {
-  bg: [0, 0, 0, 0] as const, // transparent: the page shows through
-  dim: "#1E2A26", // moss lattice
-  mid: "#4E6A60", // sage dusk
-  lit: "#EBE9E1", // paper white
-  hover: "#B0CC86", // moss under the light
-  crest: "#E3EED2", // white-hot moss
-  extrude: "#050807", // far step of the in-canvas 3D solid, receding up-back
-  extrudeNear: "#1B2A26", // near step: deep moss sides
-  extrudeTop: "#FBF9F4", // top-face light on skyline edges
-};
+/** the snapshot theme's tones: what the field wears when no palette is passed */
+const SNAPSHOT_ART = artPalette(SNAPSHOT_THEME.tokens);
 
-// Moss lights: disturbance frontiers wear every accent — flare, ember,
-// signal, lilac, ion — over paper white.
-const THEME = {
-  red: "#E2786B",
-  green: "#B0CC86",
-  yellow: "#E0BD6E",
-  blue: "#AEA3C8",
-  cyan: "#89B4A8",
-  bone: "#EBE9E1",
-};
-const BRIGHTS = [THEME.red, THEME.yellow, THEME.green, THEME.blue, THEME.cyan, THEME.bone];
-
-// every effect wears its own rest identity: five inks over the shared
-// band counts, all pulled from Moss (paper crest, a lit middle, an
-// indigo foot) — so no two effects ever rest in the same colours.
-// Decrypt is the canonical stack (WORDMARK_BANDS): the entrance hands off
-// from the SSR wordmark without a colour jump.
 type Palette = [string, string, string, string, string];
-const PALETTES: Record<GridEffect, Palette> = {
-  "grid-decrypt": ["#EBE9E1", "#B0CC86", "#8FC2A8", "#6F8FA0", "#3B4F5A"],
-  "grid-matrix": ["#EBE9E1", "#B0CC86", "#86A35C", "#4E6A60", "#2C3D38"],
-  "grid-laser": ["#EBE9E1", "#BCC2BA", "#89B4A8", "#4E6A60", "#2C3D38"],
-  "grid-blackhole": ["#EBE9E1", "#B0CC86", "#E2786B", "#6A8A7A", "#2C3D38"],
-  "grid-waves": ["#EBE9E1", "#89B4A8", "#AEA3C8", "#5E7F75", "#2C3D38"],
-  "grid-beams": ["#EBE9E1", "#E3EED2", "#B0CC86", "#4E6A60", "#2C3D38"],
-  "grid-rings": ["#EBE9E1", "#AEA3C8", "#B0CC86", "#5E7F75", "#2C3D38"],
-  "grid-spotlights": ["#EBE9E1", "#E0BD6E", "#B0CC86", "#4E6A60", "#2C3D38"],
-  "grid-fireworks": ["#EBE9E1", "#B0CC86", "#E0BD6E", "#4E6A60", "#2C3D38"],
-  "grid-colorshift": ["#EBE9E1", "#B0CC86", "#89B4A8", "#AEA3C8", "#2C3D38"],
-  "grid-prism": ["#EBE9E1", "#EBE9E1", "#E2786B", "#89B4A8", "#2C3D38"],
-};
-const stopsFrom = (pal: Palette): [number, string][] =>
-  WORDMARK_BANDS.map(([n], k) => [n, pal[k]] as [number, string]);
-const STOP_SETS: Record<GridEffect, [number, string][]> = Object.fromEntries(
-  (Object.keys(PALETTES) as GridEffect[]).map((e) => [e, stopsFrom(PALETTES[e])])
-) as Record<GridEffect, [number, string][]>;
-// fireworks rests rainbow: one bright per band row, cycling the theme
-STOP_SETS["grid-fireworks"] = Array.from(
-  { length: WORDMARK_BAND_ROWS },
-  (_, i) => [1, BRIGHTS[i % BRIGHTS.length]] as [number, string]
-);
+
+/** every ink the field paints, from one palette (built once per run) */
+function heroInks(p: ArtPalette) {
+  const FIELD = {
+    bg: [0, 0, 0, 0] as const, // transparent: the page shows through
+    dim: mix(p.ink800, p.ion, 0.1), // tinted lattice
+    mid: mix(p.ion, p.ink900, 0.5), // dusk
+    lit: p.paper, // paper white
+    hover: p.signal, // the accent under the light
+    crest: mix(p.signal, p.paper, 0.75), // white-hot accent
+    extrude: mix(p.ink950, "#000000", 0.5), // far step of the in-canvas 3D solid, receding up-back
+    extrudeNear: mix(p.ink900, p.ion, 0.13), // near step: deep tinted sides
+    extrudeTop: mix(p.paper, "#ffffff", 0.7), // top-face light on skyline edges
+  };
+
+  // theme lights: disturbance frontiers wear every accent — flare, ember,
+  // signal, lilac, ion — over paper white.
+  const THEME = {
+    red: p.flare,
+    green: p.signal,
+    yellow: p.ember,
+    blue: p.lilac,
+    cyan: p.ion,
+    bone: p.paper,
+  };
+  const BRIGHTS = [THEME.red, THEME.yellow, THEME.green, THEME.blue, THEME.cyan, THEME.bone];
+
+  // every effect wears its own rest identity: five inks over the shared
+  // band counts, all pulled from the theme (paper crest, a lit middle, a
+  // deep foot) — so no two effects ever rest in the same colours.
+  // Decrypt is the canonical stack (wordmarkBands): the entrance hands off
+  // from the SSR wordmark without a colour jump (given the same palette).
+  const canon = wordmarkBands(p);
+  const dusk = FIELD.mid;
+  const sea = mix(p.ion, p.ink900, 0.25);
+  const foot = mix(p.ion, p.ink900, 0.75);
+  const PALETTES: Record<GridEffect, Palette> = {
+    "grid-decrypt": canon.map(([, ink]) => ink) as Palette,
+    "grid-matrix": [p.paper, p.signal, p.signalDeep, dusk, foot],
+    "grid-laser": [p.paper, p.paper2, p.ion, dusk, foot],
+    "grid-blackhole": [p.paper, p.signal, p.flare, sea, foot],
+    "grid-waves": [p.paper, p.ion, p.lilac, p.ionDeep, foot],
+    "grid-beams": [p.paper, FIELD.crest, p.signal, dusk, foot],
+    "grid-rings": [p.paper, p.lilac, p.signal, p.ionDeep, foot],
+    "grid-spotlights": [p.paper, p.ember, p.signal, dusk, foot],
+    "grid-fireworks": [p.paper, p.signal, p.ember, dusk, foot],
+    "grid-colorshift": [p.paper, p.signal, p.ion, p.lilac, foot],
+    "grid-prism": [p.paper, p.paper, p.flare, p.ion, foot],
+  };
+  const stopsFrom = (pal: Palette): [number, string][] =>
+    canon.map(([n], k) => [n, pal[k]] as [number, string]);
+  const STOP_SETS: Record<GridEffect, [number, string][]> = Object.fromEntries(
+    (Object.keys(PALETTES) as GridEffect[]).map((e) => [e, stopsFrom(PALETTES[e])])
+  ) as Record<GridEffect, [number, string][]>;
+  // fireworks rests rainbow: one bright per band row, cycling the theme
+  STOP_SETS["grid-fireworks"] = Array.from(
+    { length: WORDMARK_BAND_ROWS },
+    (_, i) => [1, BRIGHTS[i % BRIGHTS.length]] as [number, string]
+  );
+
+  return {
+    FIELD,
+    THEME,
+    BRIGHTS,
+    STOP_SETS,
+    LOCKED: lockedInks(p),
+    sheen: p.signalLight, // the frozen load glow
+    beam: p.signal, // the beams sweep
+    laser: mix(p.paper, "#ffffff", 0.4), // the laser scanline
+  };
+}
+
 const palInk = (stops: [number, string][], band: number): string => {
   let acc = 0;
   for (const [count, ink] of stops) {
@@ -213,6 +237,9 @@ export type HeroFieldOpts = {
   /** Permanent soft light wash hugging the wordmark, like the load
       animation's glow frozen in place: 0 = off (default), 1 = full. */
   restSheen?: number;
+  /** The theme's art palette the field paints in (useArtPalette() on the
+      client); default: the snapshot theme. A new palette means a new run. */
+  palette?: ArtPalette;
 };
 
 export function playHeroField(
@@ -240,7 +267,9 @@ export function playHeroField(
     restGhost = restFade,
     restGrout = false,
     restSheen = 0,
+    palette = SNAPSHOT_ART,
   } = opts;
+  const { FIELD, THEME, BRIGHTS, STOP_SETS, LOCKED, sheen, beam, laser } = heroInks(palette);
   const fadeOn = restFade < 1 || restGhost < 1;
   const restFlat = restTone ? LOCKED[restTone] : null;
 
@@ -313,7 +342,7 @@ export function playHeroField(
   let sheenGrad: CanvasGradient | null = null;
 
   // scattered background pixel dust: sparse chunky squares that drift and
-  // twinkle behind the word, brighter ones in green
+  // twinkle behind the word, brighter ones in the accent
   type Mote = { fx: number; fy: number; big: boolean; ph: number; sp: number; tone: number };
   const motes: Mote[] = motesOn
     ? Array.from({ length: 44 }, () => ({
@@ -598,7 +627,7 @@ export function playHeroField(
         const my = wrap(m.fy + 0.03 * Math.cos(tSec * 0.1 * m.sp + m.ph * 1.7)) * H;
         const tw = 0.5 + 0.5 * Math.sin(tSec * (0.5 + m.sp * 0.7) + m.ph * 2);
         ctx.globalAlpha = 0.07 + 0.3 * tw * tw;
-        // mostly brass and moss, with red / blue / cyan motes sprinkled in
+        // mostly accent and dusk, with flare / lilac / ion motes sprinkled in
         ctx.fillStyle =
           m.tone < 0.12
             ? THEME.red
@@ -884,9 +913,9 @@ export function playHeroField(
       if (!sheenGrad || sheenAmt !== restSheen) {
         sheenAmt = restSheen;
         const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1 / m);
-        g.addColorStop(0, `rgba(201,220,192,${0.15 * restSheen})`);
-        g.addColorStop(0.6, `rgba(201,220,192,${0.06 * restSheen})`);
-        g.addColorStop(1, "rgba(201,220,192,0)");
+        g.addColorStop(0, alpha(sheen, 0.15 * restSheen));
+        g.addColorStop(0.6, alpha(sheen, 0.06 * restSheen));
+        g.addColorStop(1, alpha(sheen, 0));
         sheenGrad = g;
       }
       ctx.save();
@@ -899,17 +928,17 @@ export function playHeroField(
 
     if (cy.effect === "grid-beams" && !holding && beamX > -0.15 * W && beamX < 1.15 * W) {
       const grad = ctx.createLinearGradient(beamX - 34, 0, beamX + 34, 0);
-      grad.addColorStop(0, "rgba(198,255,94,0)");
-      grad.addColorStop(0.5, "rgba(198,255,94,0.22)");
-      grad.addColorStop(1, "rgba(198,255,94,0)");
+      grad.addColorStop(0, alpha(beam, 0));
+      grad.addColorStop(0.5, alpha(beam, 0.22));
+      grad.addColorStop(1, alpha(beam, 0));
       ctx.fillStyle = grad;
       ctx.fillRect(beamX - 34, 0, 68, H);
     }
     if (cy.effect === "grid-laser" && !holding && laserY > -0.1 * H && laserY < 1.1 * H) {
       const grad = ctx.createLinearGradient(0, laserY - 30, 0, laserY + 30);
-      grad.addColorStop(0, "rgba(245,242,236,0)");
-      grad.addColorStop(0.5, "rgba(245,242,236,0.25)");
-      grad.addColorStop(1, "rgba(245,242,236,0)");
+      grad.addColorStop(0, alpha(laser, 0));
+      grad.addColorStop(0.5, alpha(laser, 0.25));
+      grad.addColorStop(1, alpha(laser, 0));
       ctx.fillStyle = grad;
       ctx.fillRect(0, laserY - 30, W, 60);
     }
