@@ -373,17 +373,6 @@
   gap: 0.4375rem;
   color: var(--color-label-3);
 }
-.app-work-source-dot {
-  width: 6px;
-  height: 6px;
-  background: var(--color-flare);
-}
-.app-work-source[data-source="live"] .app-work-source-dot {
-  background: var(--color-ion);
-}
-.app-work-source[data-source="sample"] .app-work-source-dot {
-  background: var(--color-ember);
-}
 
 /* ───────────────────────────── featured hero ───────────────────────────── */
 

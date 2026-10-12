@@ -92,11 +92,6 @@ export const G_CHECK: Cells = [
   [2, 5],
 ];
 
-/** The status dot: one steady pixel, flare when `live`. */
-export function LiveDot({ live = true, className = "" }: { live?: boolean; className?: string }) {
-  return <span aria-hidden className={`app-now-dot ${className}`} data-live={live || undefined} />;
-}
-
 /**
  * Pixel cava: columns of 4px cells stepping through their own patterns
  * while music plays. Decorative; it isn't the audio, and it doesn't claim

@@ -65,7 +65,6 @@ export function StatusBar({
           ·
         </span>
         <span className="app-work-source" data-source={source}>
-          <span className="app-work-source-dot" aria-hidden />
           {source === "live" ? s.live : source === "sample" ? s.sample : s.offline}
         </span>
       </p>

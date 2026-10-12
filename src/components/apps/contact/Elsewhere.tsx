@@ -85,7 +85,6 @@ function SpotifyLetter({ track, playing }: { track: TrackInfo; playing: boolean 
       )}
       <div className="app-contact-ledge-text">
         <p className="app-contact-ledge-k" data-live={playing || undefined}>
-          {playing && <span className="app-contact-net-dot" aria-hidden />}
           {playing ? c.playingNow : c.lastPlayed}
         </p>
         <p className="app-contact-ledge-title">{track.title}</p>

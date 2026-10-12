@@ -7,7 +7,7 @@ import { useI18n } from "@/i18n/client";
 import { timeAgo } from "@/lib/format";
 import { SOCIALS } from "@/lib/socials";
 import type { SpotifyStatus, TrackInfo } from "@/lib/spotify";
-import { G_ARROW, LiveDot } from "../bits";
+import { G_ARROW } from "../bits";
 import { Crate } from "../Crate";
 import { Deck } from "../Deck";
 import { fill, fmtMs, useOnScreen, useTrackProgress } from "../lib";
@@ -24,7 +24,6 @@ export function ListeningMeta({ status, track, playing }: Listen) {
   const ago = last && mounted && track.playedAt ? timeAgo(track.playedAt, lang) : "";
   return (
     <span className="app-now-status" data-live={playing || undefined}>
-      <LiveDot live={playing} />
       {playing ? l.playing : last ? l.last : l.paused}
       {ago && <span className="app-now-status-ago tabular">{ago}</span>}
     </span>

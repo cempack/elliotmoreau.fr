@@ -6,7 +6,6 @@ import { QUARTER, useQuarterHour } from "@/hooks/useQuarterHour";
 import { useSpotifyStatus } from "@/hooks/useSpotifyStatus";
 import { LANG_COLORS } from "@/lib/langColors";
 import { moonAt, sunAt, type SkyPhase } from "@/lib/sun";
-import { composite, paintPlateLayers, plateSeed } from "@/components/apps/writing/plate";
 import { draftOnDesk, letterLines, loadDraft } from "@/components/apps/contact/mail";
 import { useMaybeSiteData } from "./SiteData";
 import { useSky } from "./sky";
@@ -23,9 +22,9 @@ import { useTerminalHistory } from "./Terminal";
  * - Projects: up to three sheets stand in the folder for the three most
  *   recently pushed repos, each tab in its language's colour; one pushed
  *   in the last 24 hours stands a cell higher.
- * - Writing: the latest post's sky (its plate) is pasted on the notepad.
- * - Now: while music plays, or after it, the meter becomes the album's
- *   sleeve with the record peeking out (further out while it plays).
+ * - Now: while music plays the tonearm is down on the record, and the
+ *   label takes the colour of the album's cover (the last one played
+ *   after the music stops).
  * - Mail: a saved draft opens the envelope, the letter standing up with
  *   ink lines as long as the draft's.
  * - Terminal: a dim line for each command run this session (up to four)
@@ -164,112 +163,112 @@ export function workFills(base: Base, repos: { language: string; pushedAt: strin
   return f;
 }
 
-/* ─────────────────────── Writing: the latest sky ─────────────────────── */
+/* ─────────────────────── Now: the record ─────────────────────── */
 
-const thumbs = new Map<string, string[]>();
+/** the tonearm, set down on the record's outer grooves */
+const ARM_ON: [number, number, string][] = [
+  [14, 3, "paper2"],
+  [14, 4, "paper2"],
+  [13, 5, "paper2"],
+  [12, 6, "paper2"],
+  [11, 7, "paper2"],
+  [10, 8, "paper"],
+  [9, 9, "paper"],
+  [10, 9, "paper"],
+];
 
-const TW = 6;
-const TH = 4;
+export type Label = { light: string; deep: string };
 
-/** a post's plate, 6×4 cells (block-averaged from a small paint), cached by seed */
-export function plateThumb(seed: string): string[] {
-  const hit = thumbs.get(seed);
-  if (hit) return hit;
-  const B = 8;
-  const W = TW * B;
-  const H = TH * B;
-  const layers = paintPlateLayers(seed, W, H);
-  const px = new Uint8ClampedArray(W * H * 4);
-  composite(layers, [0, 0, 0, 0], px);
-  const out: string[] = [];
-  const hex = (n: number) => Math.round(n).toString(16).padStart(2, "0");
-  for (let ty = 0; ty < TH; ty++)
-    for (let tx = 0; tx < TW; tx++) {
-      let r = 0;
-      let g = 0;
-      let b = 0;
-      for (let y = ty * B; y < (ty + 1) * B; y++)
-        for (let x = tx * B; x < (tx + 1) * B; x++) {
-          const i = (y * W + x) * 4;
-          r += px[i];
-          g += px[i + 1];
-          b += px[i + 2];
-        }
-      const n = B * B;
-      out.push(`#${hex(r / n)}${hex(g / n)}${hex(b / n)}`);
-    }
-  thumbs.set(seed, out);
-  return out;
-}
-
-export function writingFills(base: Base, thumb: string[] | null): Fills {
+/** The deck: while a track plays the arm is on the record; the label takes the cover's colour. */
+export function nowFills(base: Base, playing: boolean, label: Label | null): Fills {
   const f = baseFills(base);
-  if (!thumb) return f;
-  // pasted at the top of the page, under the pen; the lines below stay
-  for (let ty = 0; ty < TH; ty++)
-    for (let tx = 0; tx < TW; tx++) {
-      const i = at(4 + tx, 4 + ty);
-      if (f[i] === "paper" || f[i] === "paper3") f[i] = thumb[ty * TW + tx];
-    }
-  return f;
-}
-
-/* ─────────────────────── Now: the sleeve ─────────────────────── */
-
-export function nowFills(cover: string[] | null, playing: boolean): Fills | null {
-  if (!cover) return null;
-  const f: Fills = new Array(N * N).fill(null);
-  // the record, behind the sleeve: further out while it plays
-  const disc = playing
-    ? [
-        [13, 3, 12],
-        [14, 4, 11],
-      ]
-    : [[13, 4, 11]];
-  for (const [x, y0, y1] of disc) for (let y = y0; y <= y1; y++) f[at(x, y)] = "ink950";
   if (playing) {
-    f[at(14, 7)] = "signal";
-    f[at(14, 8)] = "signal";
+    // lift the resting arm (below its pivot) and set it down on the grooves
+    for (let y = 3; y < N; y++) for (let x = 13; x <= 14; x++) f[at(x, y)] = null;
+    for (const [x, y, role] of ARM_ON) f[at(x, y)] = role;
   }
-  for (let y = 0; y < 12; y++) for (let x = 0; x < 12; x++) f[at(1 + x, 2 + y)] = cover[y * 12 + x];
+  if (label)
+    for (let y = 0; y < N; y++)
+      for (let x = 0; x < N; x++) if (f[at(x, y)] === "flare") f[at(x, y)] = y >= 9 ? label.deep : label.light;
   return f;
 }
 
-const covers = new Map<string, string[] | null>();
+const labels = new Map<string, Label | null>();
 
-/** an album cover sampled to 12×12 cells (null when the image can't be read) */
-function loadCover(url: string): Promise<string[] | null> {
-  if (covers.has(url)) return Promise.resolve(covers.get(url) ?? null);
+const toHex = (r: number, g: number, b: number) => `#${[r, g, b].map((v) => Math.round(v).toString(16).padStart(2, "0")).join("")}`;
+function hsl(h: number, s: number, l: number) {
+  const k = (n: number) => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const c = (n: number) => 255 * (l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1)));
+  return toHex(c(0), c(8), c(4));
+}
+
+/**
+ * An album cover's one colour for the label: the most vivid hue on the
+ * sleeve (a hue histogram weighted by saturation), its lightness and
+ * saturation reined in to sit with the theme. A greyscale sleeve gets a
+ * silver label. null when the image can't be read.
+ */
+function loadLabel(url: string): Promise<Label | null> {
+  if (labels.has(url)) return Promise.resolve(labels.get(url) ?? null);
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.decoding = "async";
+    const done = (v: Label | null) => {
+      labels.set(url, v);
+      resolve(v);
+    };
     img.onload = () => {
       try {
+        const S = 16;
         const c = document.createElement("canvas");
-        c.width = 12;
-        c.height = 12;
+        c.width = S;
+        c.height = S;
         const ctx = c.getContext("2d");
         if (!ctx) throw new Error("no 2d");
-        ctx.imageSmoothingQuality = "high";
-        ctx.drawImage(img, 0, 0, 12, 12);
-        const d = ctx.getImageData(0, 0, 12, 12).data;
-        const hex = (n: number) => n.toString(16).padStart(2, "0");
-        // a few tones per channel, so it reads as pixel art and not a photo
-        const q = (n: number) => Math.min(255, Math.round(n / 51) * 51);
-        const out: string[] = [];
-        for (let i = 0; i < 144; i++) out.push(`#${hex(q(d[i * 4]))}${hex(q(d[i * 4 + 1]))}${hex(q(d[i * 4 + 2]))}`);
-        covers.set(url, out);
-        resolve(out);
+        ctx.drawImage(img, 0, 0, S, S);
+        const d = ctx.getImageData(0, 0, S, S).data;
+        const bins = Array.from({ length: 12 }, () => ({ w: 0, s: 0, l: 0 }));
+        let total = 0;
+        for (let i = 0; i < S * S; i++) {
+          const r = d[i * 4] / 255;
+          const g = d[i * 4 + 1] / 255;
+          const b = d[i * 4 + 2] / 255;
+          const max = Math.max(r, g, b);
+          const min = Math.min(r, g, b);
+          const l = (max + min) / 2;
+          const sat = max === min ? 0 : (max - min) / (1 - Math.abs(2 * l - 1));
+          let h = 0;
+          if (max !== min) {
+            if (max === r) h = ((g - b) / (max - min) + 6) % 6;
+            else if (max === g) h = (b - r) / (max - min) + 2;
+            else h = (r - g) / (max - min) + 4;
+            h *= 60;
+          }
+          // vivid, mid-light pixels count most
+          const w = sat * sat * (1 - Math.abs(2 * l - 1));
+          const bin = bins[Math.floor(h / 30) % 12];
+          bin.w += w;
+          bin.s += sat * w;
+          bin.l += l * w;
+          total += w;
+        }
+        const top = bins.reduce((a, b) => (b.w > a.w ? b : a));
+        if (total < 4 || top.w <= 0) {
+          done({ light: "#c9cdc6", deep: "#9aa29b" });
+          return;
+        }
+        const idx = bins.indexOf(top);
+        const hue = idx * 30 + 15;
+        const sat = Math.min(0.72, Math.max(0.35, top.s / top.w));
+        const light = Math.min(0.62, Math.max(0.46, top.l / top.w));
+        done({ light: hsl(hue, sat, light), deep: hsl(hue, sat, light - 0.13) });
       } catch {
-        covers.set(url, null);
-        resolve(null);
+        done(null);
       }
     };
-    img.onerror = () => {
-      covers.set(url, null);
-      resolve(null);
-    };
+    img.onerror = () => done(null);
     img.src = url;
   });
 }
@@ -357,35 +356,26 @@ export function useWorkGlyph(base: Base): LiveGlyph | null {
   }, [hydrated, base, repos, quarter]);
 }
 
-export function useWritingGlyph(base: Base): LiveGlyph | null {
+export function useNowGlyph(base: Base): LiveGlyph | null {
   const hydrated = useHydrated();
-  const latest = useMaybeSiteData()?.posts?.[0];
-  return useMemo(() => {
-    if (!hydrated || !latest) return null;
-    const seed = plateSeed(latest);
-    return { key: `writing:${seed}`, fills: writingFills(base, plateThumb(seed)) };
-  }, [hydrated, base, latest]);
-}
-
-export function useNowGlyph(): LiveGlyph | null {
   const site = useMaybeSiteData();
   const { track, playing } = useSpotifyStatus(site?.spotify ?? null);
   const art = track?.image ?? "";
-  // the album art, sampled once per cover (effects run only after hydration)
-  const [cover, setCover] = useState<{ url: string; cells: string[] | null } | null>(null);
+  // the cover's colour, read once per cover (effects run only after hydration)
+  const [label, setLabel] = useState<{ url: string; label: Label | null } | null>(null);
   useEffect(() => {
     if (!art) return;
     let on = true;
-    loadCover(art).then((cells) => on && setCover({ url: art, cells }));
+    loadLabel(art).then((l) => on && setLabel({ url: art, label: l }));
     return () => {
       on = false;
     };
   }, [art]);
-  const cells = cover && cover.url === art ? cover.cells : null;
+  const tint = label && label.url === art ? label.label : null;
   return useMemo(() => {
-    const fills = nowFills(cells, playing);
-    return fills ? { key: `now:${art}:${playing ? 1 : 0}`, fills } : null;
-  }, [cells, art, playing]);
+    if (!hydrated || (!playing && !tint)) return null;
+    return { key: `now:${playing ? 1 : 0}:${tint?.light ?? ""}`, fills: nowFills(base, playing, tint) };
+  }, [hydrated, base, playing, tint]);
 }
 
 export function useMailGlyph(): LiveGlyph | null {

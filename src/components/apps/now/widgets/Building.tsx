@@ -10,8 +10,8 @@ import { SOCIALS } from "@/lib/socials";
 import type { ActivityInfo, RepoInfo } from "@/lib/github";
 import { loc } from "@/lib/content";
 import { useNowContent } from "@/components/os/SiteData";
-import { G_ARROW, LiveDot } from "../bits";
-import { fill, useNow } from "../lib";
+import { G_ARROW } from "../bits";
+import { fill } from "../lib";
 
 /** Header: the GitHub handle. */
 export function BuildingMeta() {
@@ -36,8 +36,6 @@ export function Building({ activity, repos }: { activity: ActivityInfo | null; r
   const at = (r: RepoInfo) =>
     Math.max(Date.parse(r.pushedAt) || 0, activity && activity.repo === r.name ? Date.parse(activity.createdAt) || 0 : 0);
   const recent = [...repos].sort((a, z) => at(z) - at(a)).slice(0, 3);
-  const now = useNow(60_000);
-  const fresh = now && activity ? now.getTime() - +new Date(activity.createdAt) < 86_400_000 : false;
   const f = useNowContent().focus;
 
   return (
@@ -85,7 +83,6 @@ export function Building({ activity, repos }: { activity: ActivityInfo | null; r
             }
           >
             <span className="app-now-push-repo">
-              <LiveDot live={fresh} />
               {activity.repo}
             </span>
             {activity.message && <span className="app-now-push-msg">{activity.message}</span>}

@@ -52,7 +52,6 @@ export function PlacesList({
 
   const row = (p: PlaceRow) => {
     const active = p.id === selectedId;
-    const tone = p.home ? "home" : p.status;
     return (
       <li key={p.id} role="none">
         <button
@@ -66,7 +65,6 @@ export function PlacesList({
           onClick={() => onSelect(p.id)}
         >
           {active && <m.span layoutId={thumbId} className="app-atlas-row-thumb" transition={spring.snappy} aria-hidden />}
-          <span className="app-atlas-mark" data-tone={tone} aria-hidden />
           <span className="app-atlas-row-name">{p.name[lang]}</span>
           {p.home ? (
             <span className="app-atlas-row-home">{a.status.home}</span>

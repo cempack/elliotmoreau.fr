@@ -64,17 +64,6 @@
   font-size: var(--text-footnote);
 }
 
-/* the status dot: one steady square pixel, lit when live */
-.app-now-dot {
-  flex: none;
-  width: 6px;
-  height: 6px;
-  background: var(--color-label-3);
-}
-.app-now-dot[data-live] {
-  background: var(--color-flare);
-}
-
 .app-now-status {
   display: inline-flex;
   align-items: center;
@@ -2213,7 +2202,6 @@ a.app-now-tok:hover {
   }
   .app-now-progress-bar,
   .app-now-cava,
-  .app-now-dot,
   .app-now-legend i,
   .app-now-pulse-readout i,
   .app-now-pulse-svg,

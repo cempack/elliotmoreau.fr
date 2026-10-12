@@ -58,7 +58,6 @@ function SkyTile() {
           {c.appearance}
         </h3>
         <p className="os-menubar-sky-status" aria-live="polite">
-          {mode === "auto" && <span className="os-menubar-live" data-on aria-hidden />}
           {status}
         </p>
       </div>
@@ -175,7 +174,6 @@ function FocusTile() {
       <span className="os-menubar-focus-text">
         <span className="os-menubar-tile-sub">{c.focus}</span>
         <span className="os-menubar-tile-title">
-          <span className="os-menubar-avail" aria-hidden />
           {c.available}
         </span>
       </span>

@@ -21,7 +21,6 @@ export function StatusChip({ place }: { place: PlaceRow }) {
   const tone = place.home ? "home" : place.status;
   return (
     <span className="app-atlas-chip" data-tone={tone}>
-      <span className="app-atlas-mark" data-tone={tone} aria-hidden />
       {t.atlas.status[tone === "want" ? "want" : tone === "home" ? "home" : "been"]}
     </span>
   );

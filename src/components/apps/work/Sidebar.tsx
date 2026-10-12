@@ -160,7 +160,6 @@ export function Sidebar({
 
       <div className="app-work-side-foot" data-win-hide-compact>
         <span className="app-work-source" data-source={source}>
-          <span className="app-work-source-dot" aria-hidden />
           {source === "live" ? t.work.status.live : source === "sample" ? t.work.status.sample : t.work.status.offline}
         </span>
         <a

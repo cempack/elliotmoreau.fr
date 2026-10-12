@@ -11,7 +11,6 @@ import {
   useNowGlyph,
   useTerminalGlyph,
   useWorkGlyph,
-  useWritingGlyph,
   type Fills,
   type LiveGlyph,
 } from "./liveIcons";
@@ -104,25 +103,25 @@ const GLYPHS: Record<IconId, Glyph> = {
       "................",
     ],
   },
-  // Writing: a spiral notepad with a French red margin, a pen across it
+  // Writing: la plume, a quill writing a line in red ink
   writing: {
-    pal: { W: "paper", g: "paper3", F: "flare", E: "ember", e: "emberDeep", k: "ink900" },
+    pal: { W: "paper", w: "paper2", c: "emberLight", e: "emberDeep", n: "flare", I: "flare" },
     rows: [
-      "................",
-      "..k.k.k.k.......",
-      ".WkWkWkWkWW.kk..",
-      ".WWWWWWWWWWkFFk.",
-      ".WWFggggggkEEk..",
-      ".WWFWWWWWkEEk...",
-      ".WWFggggkEEk....",
-      ".WWFWWWkEEk.....",
-      ".WWFggkwwk......",
-      ".WWFWWkWk.......",
-      ".WWFWWkk........",
-      ".WWFWWWWWW......",
-      ".WWFWWWWWW......",
-      ".WWWWWWWWW......",
-      "................",
+      "............WW..",
+      "..........WWWWw.",
+      ".........WWWWcw.",
+      "........WWWWcww.",
+      ".......WWWWcww..",
+      "......W.WWcww...",
+      ".....WWWWcw.w...",
+      "....WWWWcww.....",
+      "....W.Wcw.......",
+      ".....WWc........",
+      ".....cc.........",
+      "....c...........",
+      "...e............",
+      "..n...II...II...",
+      "...III..III..I..",
       "................",
     ],
   },
@@ -148,24 +147,25 @@ const GLYPHS: Record<IconId, Glyph> = {
       "................",
     ],
   },
-  // Now: a live dot and a pixel level meter
+  // Now: a record on the deck, the tonearm at rest (liveIcons drops it
+  // onto the record while music plays and dyes the label from the cover)
   now: {
-    pal: { F: "flare", E: "ember", S: "signal", W: "paper" },
+    pal: { v: "ink950", h: "ink500", L: "flare", p: "paper2", a: "paper2", A: "paper" },
     rows: [
       "................",
-      "................",
-      "................",
-      "..........FF....",
-      "..........FF....",
-      "....FF....FF....",
-      "....FF....FF....",
-      "....FF.FF.FF....",
-      "....EE.EE.EE.EE.",
-      ".EE.EE.EE.EE.EE.",
-      ".EE.EE.EE.EE.EE.",
-      ".SS.SS.SS.SS.SS.",
-      ".SS.SS.SS.SS.SS.",
-      ".SS.SS.SS.SS.SS.",
+      ".............aa.",
+      "....vvvv.....ap.",
+      "..vvvvvvvv....a.",
+      ".vvhhvvvvvv...a.",
+      ".vhvvvvvvvvv..a.",
+      "vvhvvLLvvvvv..a.",
+      "vvvvLppLvvvv..a.",
+      "vvvvLppLvvvv..a.",
+      "vvvvvLLvvvhv..a.",
+      ".vvvvvvvvvhv..a.",
+      ".vvvvvvvvhhv.aA.",
+      "..vvvvvvvv...AA.",
+      "....vvvv........",
       "................",
       "................",
     ],
@@ -379,14 +379,12 @@ function GlyphRects({ id, live }: { id: IconId; live?: LiveGlyph | null }) {
    its own source. */
 const HomeRects = () => <GlyphRects id="home" live={useHomeGlyph(GLYPHS.home)} />;
 const WorkRects = () => <GlyphRects id="work" live={useWorkGlyph(GLYPHS.work)} />;
-const WritingRects = () => <GlyphRects id="writing" live={useWritingGlyph(GLYPHS.writing)} />;
-const NowRects = () => <GlyphRects id="now" live={useNowGlyph()} />;
+const NowRects = () => <GlyphRects id="now" live={useNowGlyph(GLYPHS.now)} />;
 const MailRects = () => <GlyphRects id="contact" live={useMailGlyph()} />;
 const TerminalRects = () => <GlyphRects id="terminal" live={useTerminalGlyph()} />;
 const LIVE: Partial<Record<IconId, () => React.ReactElement>> = {
   home: HomeRects,
   work: WorkRects,
-  writing: WritingRects,
   now: NowRects,
   contact: MailRects,
   terminal: TerminalRects,

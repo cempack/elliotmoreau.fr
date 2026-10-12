@@ -498,15 +498,6 @@
   align-items: center;
   gap: 0.5rem;
 }
-.app-writing-source-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: var(--color-label-3);
-}
-.app-writing-source[data-source="live"] .app-writing-source-dot {
-  background: var(--color-ion);
-}
 .app-writing-keys {
   display: none;
   flex-wrap: wrap;

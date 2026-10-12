@@ -174,7 +174,6 @@ export function PostList({ posts, selected, title, source, compact, hrefFor, onP
 
       <footer className="app-writing-listfoot">
         <p className="app-writing-source" data-source={source}>
-          <span className="app-writing-source-dot" aria-hidden />
           {source === "live" ? w.sourceLive : w.sourceSample}
         </p>
         <p className="app-writing-keys" aria-hidden>

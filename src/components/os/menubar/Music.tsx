@@ -54,7 +54,6 @@ export function MusicPanel({ music }: { music: Music }) {
   return (
     <div className="os-menubar-music">
       <p className="os-menubar-kicker os-menubar-music-kicker">
-        <span className="os-menubar-live" data-on={playing || undefined} aria-hidden />
         {playing ? p.nowPlaying : track ? p.lastPlayed : p.nothing}
         {!playing && track?.playedAt && <span className="os-menubar-dim"> · {timeAgo(track.playedAt, lang)}</span>}
       </p>

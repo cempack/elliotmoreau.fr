@@ -210,13 +210,6 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
-.app-contact-eyebrow::before {
-  content: "";
-  flex: none;
-  width: 6px;
-  height: 6px;
-  background: var(--color-signal);
-}
 .app-contact-eyebrow-dim {
   margin-left: -0.125rem;
   color: var(--color-label-3);
@@ -1494,9 +1487,6 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
 .app-contact-ledge-k[data-live] {
   color: #3e5a22;
 }
-.app-contact-ledge-k .app-contact-net-dot {
-  background: #5d8a2e;
-}
 .app-contact-ledge-title {
   margin: 0.3125rem 0 0;
   color: #121513;
@@ -1543,12 +1533,6 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
 }
 .app-contact-ledge-close:hover {
   background: color-mix(in srgb, var(--color-ink-700) 14%, transparent);
-}
-.app-contact-net-dot {
-  flex: none;
-  width: 6px;
-  height: 6px;
-  background: var(--color-signal);
 }
 @media (pointer: coarse) {
   .app-contact-ledge-link {
