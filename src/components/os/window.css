@@ -371,8 +371,8 @@
   inset: 0;
   z-index: -1;
   border-radius: inherit;
-  background: color-mix(in oklab, var(--os-win-accent) 14%, rgba(255, 255, 255, 0.03));
-  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--os-win-accent) 30%, transparent);
+  /* a quiet slab of light, no tint and no edge; the icon carries the accent */
+  background: color-mix(in srgb, var(--color-label) 7.5%, transparent);
 }
 .os-win-nav-icon {
   display: grid;
@@ -396,7 +396,7 @@
   font-family: var(--font-mono);
   font-size: 0.75rem;
 }
-/* on the tinted thumb label-3 drops to ~3.9:1: lift it */
+/* on the lit thumb label-3 drops below 4.5:1: lift it */
 .os-win-nav-item[data-active] .os-win-nav-count {
   color: var(--color-label-2);
 }
@@ -545,6 +545,13 @@
   }
   .os-win-bar::before {
     background: var(--color-ink-900);
+  }
+}
+/* the source list's quiet slab needs an edge here (the strip's pill is solid) */
+@media (prefers-contrast: more) and (min-width: 1024px) {
+  .os-win-nav-thumb {
+    background: color-mix(in srgb, var(--color-label) 14%, transparent);
+    box-shadow: inset 0 0 0 1px var(--color-label-2);
   }
 }
 @media (prefers-reduced-transparency: reduce) {
