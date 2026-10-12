@@ -43,8 +43,10 @@ const parisHM = () => {
 
 /**
  * The door: on the wallpaper, one window on the quay is always lit
- * (Elliot's room). Hovering it rings it and names it; a click or a tap
- * goes through the glass.
+ * (Elliot's room). It is marked like a map marks a place: corner brackets
+ * round that one window and its name on a plate above, on a leader line,
+ * always there. Hover or focus tightens the brackets and lights the
+ * plate; a click or a tap goes through the glass.
  */
 export function LitWindow() {
   const { t } = useI18n();
@@ -55,23 +57,36 @@ export function LitWindow() {
   if (!spot) return null;
   const cx = spot.x + spot.w / 2;
   const cy = spot.y + spot.h / 2;
+  // the plate stays on screen: near an edge it hangs to the inside
+  const vw = typeof window === "undefined" ? 1440 : window.innerWidth;
+  const align = cx > vw - 80 ? "end" : cx < 80 ? "start" : "center";
   return (
     <button
       type="button"
       className="app-home-door"
       data-no-drag
+      data-align={align}
       aria-label={r.doorLabel}
       aria-expanded={open}
-      style={{ left: cx, top: cy, "--w": `${spot.w + spot.cell * 2}px`, "--h": `${spot.h + spot.cell * 2}px` } as React.CSSProperties}
+      style={
+        {
+          left: cx,
+          top: cy,
+          "--w": `${spot.w + spot.cell * 2}px`,
+          "--h": `${spot.h + spot.cell * 2}px`,
+          "--ww": `${spot.w}px`,
+          "--wh": `${spot.h}px`,
+        } as React.CSSProperties
+      }
       onPointerDown={(e) => e.stopPropagation()}
       onClick={() => {
         blip("open");
         setRoom(true, { x: cx, y: cy });
       }}
     >
-      <span className="app-home-door-ring" aria-hidden />
-      <span className="app-home-door-label" aria-hidden>
-        {r.door}
+      <span className="app-home-door-frame" aria-hidden />
+      <span className="app-home-door-tag" aria-hidden>
+        <span className="app-home-door-label">{r.door}</span>
       </span>
     </button>
   );

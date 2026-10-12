@@ -1,6 +1,7 @@
 /* ───────────── the lit window and the room behind it (Room.tsx) ───────────── */
 
-/* the door: a hit area on the wallpaper's always-lit window */
+/* the door: a hit area on the wallpaper's always-lit window, marked like a
+   map marks a place (brackets round it, its name on a plate above) */
 .app-home-door {
   position: fixed;
   z-index: 2;
@@ -10,63 +11,113 @@
   border-radius: 6px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  animation: app-home-door-in 0.5s var(--ease-out-quint) 0.6s both;
 }
-/* a paper ring around the window, and its name, on hover or focus */
-.app-home-door-ring {
+@keyframes app-home-door-in {
+  from {
+    opacity: 0;
+  }
+}
+/* four corner brackets, crisp, a few pixels off the glass */
+.app-home-door-frame {
+  --gap: 5px;
+  --c: var(--color-label);
+  --l: 6px;
+  --t: 2px;
   position: absolute;
   top: 50%;
   left: 50%;
-  width: calc(var(--w) + 8px);
-  height: calc(var(--h) + 8px);
+  width: calc(var(--ww) + 2 * var(--gap));
+  height: calc(var(--wh) + 2 * var(--gap));
   translate: -50% -50%;
-  border-radius: 5px;
-  box-shadow: 0 0 0 2px var(--color-label);
-  opacity: 0;
-  scale: 1.25;
+  background:
+    linear-gradient(var(--c), var(--c)) top left / var(--l) var(--t),
+    linear-gradient(var(--c), var(--c)) top left / var(--t) var(--l),
+    linear-gradient(var(--c), var(--c)) top right / var(--l) var(--t),
+    linear-gradient(var(--c), var(--c)) top right / var(--t) var(--l),
+    linear-gradient(var(--c), var(--c)) bottom left / var(--l) var(--t),
+    linear-gradient(var(--c), var(--c)) bottom left / var(--t) var(--l),
+    linear-gradient(var(--c), var(--c)) bottom right / var(--l) var(--t),
+    linear-gradient(var(--c), var(--c)) bottom right / var(--t) var(--l);
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.6));
   transition:
-    opacity 0.2s,
-    scale 0.3s var(--ease-out-quint);
+    width 0.3s var(--ease-out-quint),
+    height 0.3s var(--ease-out-quint);
+}
+/* the plate: on a leader line above the window */
+.app-home-door-tag {
+  position: absolute;
+  bottom: calc(50% + var(--wh) / 2 + 5px);
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  translate: -50% 0;
+  pointer-events: none;
+}
+.app-home-door-tag::after {
+  content: "";
+  width: 1px;
+  height: 0.875rem;
+  background: var(--color-label);
+  box-shadow: 1px 0 0 rgba(0, 0, 0, 0.45);
+}
+.app-home-door[data-align="end"] .app-home-door-tag {
+  right: 50%;
+  left: auto;
+  align-items: flex-end;
+  translate: 0 0;
+}
+.app-home-door[data-align="end"] .app-home-door-tag::after {
+  margin-right: -0.5px;
+}
+.app-home-door[data-align="start"] .app-home-door-tag {
+  align-items: flex-start;
+  translate: 0 0;
 }
 .app-home-door-label {
-  position: absolute;
-  bottom: calc(100% + 0.375rem);
-  left: 50%;
-  padding: 0.3125rem 0.5rem;
+  padding: 0.375rem 0.625rem;
   border-radius: 7px;
   color: var(--color-label);
   font: 500 0.75rem/1 var(--font-mono);
   white-space: nowrap;
-  background: color-mix(in srgb, var(--color-ink-950) 88%, transparent);
-  box-shadow: inset 0 0 0 1px var(--hairline);
-  opacity: 0;
-  translate: -50% 4px;
+  background: color-mix(in srgb, var(--color-ink-950) 92%, transparent);
+  box-shadow:
+    inset 0 0 0 1px var(--hairline),
+    0 6px 16px -8px rgba(0, 0, 0, 0.8);
   transition:
-    opacity 0.2s,
-    translate 0.3s var(--ease-out-quint);
-  pointer-events: none;
+    color 0.2s,
+    background-color 0.2s;
 }
+/* asked to come in: the brackets close on the glass, the plate lights */
 @media (hover: hover) and (pointer: fine) {
-  .app-home-door:hover .app-home-door-ring,
+  .app-home-door:hover .app-home-door-frame {
+    --gap: 3px;
+  }
   .app-home-door:hover .app-home-door-label {
-    opacity: 1;
-    scale: 1;
-    translate: -50% 0;
+    color: var(--color-ink-950);
+    background: var(--color-label);
   }
-  .app-home-door:hover .app-home-door-ring {
-    translate: -50% -50%;
-  }
+}
+.app-home-door:active .app-home-door-frame {
+  --gap: 2px;
 }
 .app-home-door:focus-visible {
   outline: none;
 }
-.app-home-door:focus-visible .app-home-door-ring {
-  box-shadow: 0 0 0 2px var(--color-signal);
-  opacity: 1;
-  scale: 1;
+.app-home-door:focus-visible .app-home-door-frame {
+  --c: var(--color-signal);
+  --gap: 3px;
 }
 .app-home-door:focus-visible .app-home-door-label {
-  opacity: 1;
-  translate: -50% 0;
+  color: var(--color-ink-950);
+  background: var(--color-label);
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-home-door {
+    animation: none;
+  }
 }
 
 /* the room: the whole screen (phones pan across it) */
