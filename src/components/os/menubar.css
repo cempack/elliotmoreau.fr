@@ -324,6 +324,16 @@
     width: 44px;
     padding: 0;
   }
+  /* now playing comes down to its equalizer (the cassette opens as a
+     sheet), and steps aside where the bar has no room for it */
+  .os-menubar-music-btn {
+    width: 36px;
+    min-width: 36px;
+    padding: 0;
+  }
+  .os-menubar-music-title {
+    display: none;
+  }
   .os-menubar-mark {
     width: 44px;
   }
@@ -341,6 +351,12 @@
   /* see window.css: the phone backdrop can't be trusted to blur */
   .os-menubar-tint {
     background: linear-gradient(rgba(9, 10, 16, 0.95), rgba(9, 10, 16, 0.92));
+  }
+}
+
+@media (max-width: 359px) {
+  .os-menubar-music-item {
+    display: none;
   }
 }
 

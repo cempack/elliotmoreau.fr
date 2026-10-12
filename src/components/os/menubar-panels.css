@@ -312,179 +312,373 @@
 /* ───────── now playing ───────── */
 
 .os-menubar-music {
-  display: grid;
-  gap: 12px;
   padding: 6px;
 }
 .os-menubar-music-kicker {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
-/* the cassette: canvas shell and label, sprite hubs, DOM text */
-.os-cassette-wrap {
+.os-tape-deck {
   display: grid;
-  justify-items: center;
-  gap: 10px;
+  gap: 14px;
 }
-.os-cassette {
-  position: relative;
+.os-tape-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 2px;
+}
+/* elapsed on rolling drums, then the length */
+.os-tape-time {
+  display: inline-flex;
   flex: none;
-  border-radius: 6px;
-  filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.55));
-  cursor: grab;
+  align-items: baseline;
+  gap: 0.6ch;
+  color: var(--color-label-3);
+  font: 500 12px/1.3 var(--font-mono);
+}
+.os-tape-counter {
+  display: inline-flex;
+  color: var(--color-label-2);
+}
+.os-tape-drum {
+  display: inline-block;
+  height: 1.3em;
+  overflow: hidden;
+}
+.os-tape-drum > span {
+  display: block;
+  text-align: center;
+  white-space: pre;
+  transition: transform 0.38s var(--ease-out-quint);
+}
+.os-tape-total::before {
+  content: "/ ";
+}
+
+/* the cassette: a 3D body with two faces and two edges, sized in cqw so
+   it scales as one piece from the desktop panel down to a small phone */
+.os-tape {
+  --tape-t: 11.8cqw;
+  position: relative;
+  container-type: inline-size;
+  aspect-ratio: 172 / 110;
+  perspective: 1200px;
+  outline: none;
   touch-action: pan-y;
   -webkit-tap-highlight-color: transparent;
   -webkit-user-select: none;
   user-select: none;
 }
-.os-cassette:active {
+.os-tape[data-flip] {
+  cursor: grab;
+}
+.os-tape[data-flip]:active {
   cursor: grabbing;
 }
-.os-cassette:focus-visible {
+.os-tape:focus-visible {
+  border-radius: 12px;
   outline: 2px solid var(--color-signal);
-  outline-offset: 4px;
+  outline-offset: 6px;
 }
-.os-cassette-canvas {
+.os-tape-shadow {
+  position: absolute;
+  inset: 6% 4% -3%;
+  border-radius: 4cqw;
+  background: rgba(0, 0, 0, 0.6);
+  filter: blur(12px);
+  pointer-events: none;
+}
+.os-tape-body {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  /* it turns about its own middle, half its thickness behind the face */
+  transform-origin: 50% 50% calc(var(--tape-t) / -2);
+}
+.os-tape-face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: calc(4 / 172 * 100cqw);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+.os-tape-face--b {
+  transform: translateZ(calc(var(--tape-t) * -1)) rotateY(180deg);
+}
+/* the light falls from the top left, across plastic and paper alike */
+.os-tape-face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.07), transparent 38%, transparent 62%, rgba(0, 0, 0, 0.12));
+  pointer-events: none;
+}
+.os-tape-edge {
+  position: absolute;
+  top: calc(3 / 110 * 100%);
+  bottom: calc(3 / 110 * 100%);
+  width: var(--tape-t);
+  overflow: hidden;
+  /* two shell halves and the seam where they meet */
+  background:
+    repeating-linear-gradient(180deg, transparent 0 2px, rgba(0, 0, 0, 0.18) 2px 4px) 0 38% / 100% 26% no-repeat,
+    linear-gradient(
+      90deg,
+      var(--color-ink-950) 0 2px,
+      color-mix(in srgb, var(--color-signal-deep) 80%, var(--color-signal)) 2px calc(50% - 2px),
+      var(--color-ink-950) calc(50% - 2px) calc(50% + 2px),
+      color-mix(in srgb, var(--color-signal-deep) 70%, var(--color-ink-800)) calc(50% + 2px) calc(100% - 2px),
+      var(--color-ink-950) calc(100% - 2px)
+    );
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+.os-tape-edge--l {
+  right: 100%;
+  transform-origin: right center;
+  transform: rotateY(-90deg);
+}
+.os-tape-edge--r {
+  left: 100%;
+  transform-origin: left center;
+  transform: rotateY(90deg);
+}
+.os-tape-canvas {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   image-rendering: pixelated;
 }
-.os-cassette-hub {
+/* a hub: a window onto its sprite strip, stepped frame by frame (WAAPI) */
+.os-tape-hub {
   position: absolute;
-  background-repeat: no-repeat;
-  background-size: 78px 26px;
+  overflow: hidden;
+}
+.os-tape-hub > span {
+  display: block;
+  width: 2000%;
+  height: 100%;
+  background-size: 100% 100%;
   image-rendering: pixelated;
 }
-/* six spokes, three frames, stepped off the main thread; speed ∝ 1/r */
-.os-cassette[data-playing] .os-cassette-hub {
-  animation: os-cassette-spin 0.8s steps(3) infinite;
+/* the tape crossing the head opening, streaming while it plays (one fleck
+   per 5 px, a whole number of them across the opening) */
+.os-tape-flow {
+  position: absolute;
+  overflow: hidden;
+  opacity: 0.5;
+  pointer-events: none;
 }
-@keyframes os-cassette-spin {
-  to {
-    background-position: -78px 0;
+.os-tape-flow > span {
+  display: block;
+  width: 200%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 calc(4 / 172 * 100cqw),
+    var(--color-label-2) calc(4 / 172 * 100cqw) calc(5 / 172 * 100cqw)
+  );
+}
+
+/* the label: art printed into the paper, the words typeset beside it */
+.os-tape-label {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  animation: os-tape-print 0.45s var(--ease-out-quint);
+}
+@keyframes os-tape-print {
+  from {
+    opacity: 0;
   }
 }
-.os-cassette-label {
+.os-tape-art {
   position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-.os-cassette-line {
-  position: absolute;
-  left: 86px;
-  width: 162px;
+  left: calc(7 / 172 * 100%);
+  top: calc(6 / 110 * 100%);
+  width: calc(47 / 172 * 100%);
+  height: calc(47 / 110 * 100%);
   overflow: hidden;
-  color: #262521;
-  font: 650 12px/12px var(--font-mono);
+  isolation: isolate;
+  /* the canvas's paper ink, for the art to multiply into */
+  background: color-mix(in srgb, var(--color-label) 88%, var(--color-label-2));
+}
+.os-tape-art img,
+.os-tape-art-px {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  mix-blend-mode: multiply;
+}
+.os-tape-print {
+  position: absolute;
+  left: calc(58 / 172 * 100%);
+  right: calc(26 / 172 * 100%);
+  top: calc(6 / 110 * 100%);
+  height: calc(47 / 110 * 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.7cqw;
+  min-width: 0;
+}
+.os-tape-title {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: var(--color-ink-950);
+  font: 680 max(13px, 5.1cqw) / 1.12 var(--font-sans);
+  letter-spacing: -0.015em;
+  overflow-wrap: anywhere;
+}
+.os-tape-artist,
+.os-tape-album {
+  overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-.os-cassette-line--2 {
-  color: #46443e;
-  font-weight: 500;
+.os-tape-artist {
+  color: var(--color-ink-700);
+  font: 540 max(12px, 4cqw) / 1.25 var(--font-sans);
 }
-.os-cassette-line--3 {
-  color: #66635a;
-  font-weight: 500;
+.os-tape-album {
+  color: var(--color-ink-500);
+  font: 500 max(12px, 3.5cqw) / 1.25 var(--font-sans);
 }
-.os-cassette-art {
+/* side B: a B-side tracklist */
+.os-tape-repeat {
+  color: var(--color-ink-600);
+  font: 600 max(11px, 3.4cqw) / 1.2 var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.os-tape-list {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-columns: repeat(2, minmax(0, max-content));
+  grid-template-rows: repeat(3, auto);
+  gap: 0.5cqw 3cqw;
+  margin: 1.5cqw 0 0;
+  padding: 0;
+  list-style: none;
+}
+.os-tape-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 1.3cqw;
+  min-width: 0;
+}
+.os-tape-list-k {
+  flex: none;
+  color: var(--color-ink-500);
+  font: 600 max(11px, 3.4cqw) / 1.3 var(--font-mono);
+}
+.os-tape-list-name {
+  overflow: hidden;
+  color: var(--color-ink-950);
+  font: 620 max(12px, 4cqw) / 1.3 var(--font-sans);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+/* light: faces darken as they turn away, a glint sweeps the plastic */
+.os-tape-shade {
   position: absolute;
-  left: 26px;
-  top: 26px;
-  width: 52px;
-  height: 52px;
-  object-fit: cover;
+  inset: 0;
+  background: var(--color-ink-950);
+  opacity: 0;
+  pointer-events: none;
 }
-/* no art: the title written on the blank label by hand */
-.os-cassette-hand {
+.os-tape-gloss {
   position: absolute;
-  left: 26px;
-  top: 26px;
+  inset: 0;
+  background: linear-gradient(
+      100deg,
+      transparent 38%,
+      rgba(255, 255, 255, 0.08) 46%,
+      rgba(255, 255, 255, 0.16) 50%,
+      rgba(255, 255, 255, 0.08) 54%,
+      transparent 62%
+    )
+    103% 0 / 250% 100% no-repeat;
+  pointer-events: none;
+}
+/* and once across side A as the panel opens, like taking it to the light */
+.os-tape-face:first-child .os-tape-gloss {
+  animation: os-tape-glint 1.2s var(--ease-out-quint) 0.3s backwards;
+}
+@keyframes os-tape-glint {
+  from {
+    background-position: 103% 0;
+  }
+  to {
+    background-position: -3% 0;
+  }
+}
+
+.os-tape-foot {
   display: flex;
   align-items: center;
-  width: 52px;
-  height: 52px;
-  overflow: hidden;
-  color: #4a4842;
-  font: italic 600 12px/1.15 var(--font-sans);
-  rotate: -5deg;
+  gap: 8px;
 }
-.os-cassette-repeat {
-  position: absolute;
-  left: 26px;
-  top: 24px;
-  color: #262521;
-  font: 650 12px/12px var(--font-mono);
-}
-.os-cassette-artist {
-  position: absolute;
-  width: 50px;
-  overflow: hidden;
-  color: #3a3833;
-  font: 500 12px/1.1 var(--font-sans);
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-.os-cassette-drums {
-  position: absolute;
-  left: 126px;
-  top: 130px;
-  display: flex;
-  gap: 4px;
-}
-.os-cassette-drums > span {
-  display: grid;
-  place-items: center;
-  width: 12px;
-  height: 16px;
-  color: #e8e4d8;
-  font: 600 12px/1 var(--font-mono);
-}
-.os-cassette-shade {
-  position: absolute;
-  inset: 0;
-  border-radius: 6px;
-  background: repeating-conic-gradient(#050605 0 25%, transparent 0 50%) 0 0 / 4px 4px;
-  pointer-events: none;
-}
-.os-cassette-tab {
-  position: relative;
+.os-tape-sides {
   display: inline-flex;
+  flex: none;
   gap: 2px;
   padding: 3px;
-  border: 0;
-  border-radius: 9px;
+  border-radius: 10px;
   background: color-mix(in srgb, var(--color-ink-950) 42%, transparent);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
-  -webkit-tap-highlight-color: transparent;
-  transition: scale 0.18s var(--ease-out-quint);
 }
-.os-cassette-tab::before {
-  content: "";
-  position: absolute;
-  inset: -6px -10px;
-}
-.os-cassette-tab:active {
-  scale: 0.98;
-}
-.os-cassette-tab > span {
+.os-tape-sides button {
   display: grid;
   place-items: center;
-  width: 30px;
+  width: 34px;
   height: 26px;
+  border: 0;
   border-radius: 7px;
+  background: transparent;
   color: var(--color-label-2);
   font: 700 12px/1 var(--font-mono);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
-.os-cassette-tab > span[data-on] {
+@media (hover: hover) and (pointer: fine) {
+  .os-tape-sides button:not([aria-pressed="true"]):hover {
+    color: var(--color-label);
+  }
+}
+.os-tape-sides button[aria-pressed="true"] {
   background: var(--color-signal);
   color: var(--color-ink-950);
 }
+.os-tape-open {
+  flex: 1 1 auto;
+  justify-content: space-between;
+  min-width: 0;
+}
+@media (pointer: coarse) {
+  .os-tape-sides button {
+    width: 44px;
+    height: 38px;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
-  .os-cassette[data-playing] .os-cassette-hub {
+  .os-tape-drum > span {
+    transition: none;
+  }
+  .os-tape-label,
+  .os-tape-face:first-child .os-tape-gloss {
     animation: none;
   }
 }
