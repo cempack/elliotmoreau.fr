@@ -21,7 +21,7 @@ import { worldGrid } from "../../apps/atlas/geo";
 import { INK, project, sunVector } from "../../apps/atlas/planet";
 import { MAT, WATER, buildCity } from "../wallpaper/city";
 import { lampsAt, relight, skyLight } from "../wallpaper/light";
-import { MAP, lightToulouse, paintToulouse } from "./toulouseMap";
+import { CELL, CLOUDS, MAP, lightToulouse, paintToulouse } from "./toulouseMap";
 
 type RGB = [number, number, number];
 
@@ -37,12 +37,12 @@ export const T = {
   plunge: 3400,
   /** inside the thickest cloud: the planet becomes the city */
   city: 6000,
-  /** the glide comes to rest on the Pont Saint-Pierre */
-  stop: 9700,
+  /** the descent levels off over the Pont Saint-Pierre and the view tips up, into the wallpaper */
+  reveal: 8300,
   /** the view has settled on the wallpaper's own: the Desktop comes in */
-  land: 10600,
+  land: 10100,
   /** the Desktop is all there is */
-  end: 11300,
+  end: 10800,
 } as const;
 
 export type FlightSetup = {
@@ -61,7 +61,6 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const smooth = (t: number) => t * t * (3 - 2 * t);
 const smoother = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
 const inOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
-const inOutSine = (t: number) => 0.5 - 0.5 * Math.cos(Math.PI * t);
 const outCubic = (t: number) => 1 - Math.pow(1 - t, 3);
 const logLerp = (a: number, b: number, t: number) => Math.exp(lerp(Math.log(a), Math.log(b), t));
 
@@ -125,29 +124,33 @@ function mulberry32(a: number) {
 /** a 0.5° cell of the world grid over 9 art pixels: as close as the planet goes */
 const R_MAX = 9 / (0.5 * RAD);
 
+/** One fall from orbit to the clouds (0–1 of the way, in log scale): drifting closer while the planet turns, then ever faster, never pausing between the two. */
+const fall = (t: number) => {
+  const u = c01(t / T.city);
+  return 0.08 * u + 0.92 * Math.pow(u, 3.3);
+};
+
 /** The planet's camera and apparent radius (art pixels) at t, for the space and plunge phases. */
 export function orbit(t: number, W: number, H: number) {
   const min = Math.min(W, H);
-  const portrait = W < H;
   const a = inOutCubic(c01(t / T.turned));
-  const R0 = min * (portrait ? 0.33 : 0.25);
-  const R1 = min * (portrait ? 0.44 : 0.39);
-  let R: number;
-  if (t < T.plunge) R = lerp(R0, R1, inOutSine(c01(t / T.plunge)));
-  else R = logLerp(R1, R_MAX, Math.pow(c01((t - T.plunge) / (T.city - T.plunge)), 2.2));
-  return { lat: lerp(12, HOME.lat, a), lon: lerp(-74, HOME.lon, a), R };
+  const R0 = min * (W < H ? 0.33 : 0.25);
+  return { lat: lerp(12, HOME.lat, a), lon: lerp(-74, HOME.lon, a), R: logLerp(R0, R_MAX, fall(t)) };
 }
 
-/* the city: 1 map cell ≈ 10 m; the descent starts under the clouds and ends
-   on the Pont Saint-Pierre, 10 m over the water and 300 m short of the Pont
-   Neuf: there the river is as wide as the wallpaper's bridge is long, and
-   meets it on the same row */
-const Z0 = 200;
-const Z2 = 1;
+/* the city, in map cells (CELL metres each). The descent comes down the river to a few
+   hundred metres up, 600 m short of the Pont Neuf, looking at it (lower,
+   the map's cells would fill the screen); there the view tips up and the
+   wallpaper, painted from the Pont Saint-Pierre's deck 10 m over the water
+   and 300 m short of the Pont Neuf, fills it from the top down. The last
+   metres down onto that deck happen behind it. */
+const Z0 = 2000 / CELL;
+const Z2 = 10 / CELL;
 const HFOV = 42 * RAD;
-/** how far the glide starts behind its end (cells), and how far its end is short of the Pont Neuf */
-const RUN = 44;
-const SHORT = 30;
+/** how far the descent starts behind where it levels off; how far that is, and the wallpaper's viewpoint, short of the Pont Neuf */
+const RUN = 440 / CELL;
+const BACK = 600 / CELL;
+const SHORT = 300 / CELL;
 /** the turn the descent unwinds as it comes out of the clouds, banking onto the bridge */
 const SPIN = 38 * RAD;
 
@@ -157,46 +160,66 @@ function wallpaperView(W: number, H: number) {
   return { hz: Math.round(H * lerp(0.74, 0.6, wide)), vx: W * lerp(0.4, 0.5, wide) };
 }
 
-/** Through the glide (0–1), how far along: already moving as it clears the clouds, coming to rest. */
+/** The view's geometry on a grid: focal length (art pixels), half its height as an angle, and the wallpaper's pitch and yaw. */
+function lens(W: number, H: number) {
+  const { hz, vx } = wallpaperView(W, H);
+  const f = W / 2 / Math.tan(HFOV / 2);
+  return { f, hz, half: Math.atan(H / 2 / f), thetaF: Math.atan((hz - H / 2) / f), yaw: Math.atan((vx - W / 2) / f) };
+}
+
+/** How high the descent levels off: where looking at the bridge keeps the top of the view a few degrees under the wallpaper's frame (a tall phone's view reaches further, so it stays higher). */
+function revealHeight(W: number, H: number) {
+  const { half, thetaF } = lens(W, H);
+  return Math.min(750 / CELL, Math.max(300 / CELL, BACK * Math.tan(2 * half + 8 * RAD - thetaF)));
+}
+/** Through the tip-up (0–1): the wallpaper fills the screen from here on, and the camera goes down onto the deck behind it. */
+const BEHIND = 0.78;
+
+/** Through the descent (0–1), how far along: already moving as it clears the clouds, coming to rest over the bridge. */
 const travel = (s: number) => 1.4 * s + 0.2 * s * s - 0.6 * s * s * s;
-/** ...and how far down (in log height): still falling as it clears the clouds, levelling out over the river. */
-const sink = (s: number) => 1.2 * s + 0.6 * s * s - 0.8 * s * s * s;
-const glide = (t: number) => c01((t - T.city) / (T.stop - T.city));
-/** the city camera's height in cells */
-const zAt = (t: number) => logLerp(Z0, Z2, sink(glide(t)));
+/** ...and how far down (in log height): still falling as it clears the clouds, levelling off. */
+const sink = (s: number) => s + s * s - s * s * s;
+
+/** The city camera's height in cells at t. */
+function zAt(t: number, W: number, H: number) {
+  const zR = revealHeight(W, H);
+  if (t < T.reveal) return logLerp(Z0, zR, sink(c01((t - T.city) / (T.reveal - T.city))));
+  // hardly lower while the view tips up; once the wallpaper fills the screen, down to the bridge's deck
+  const r = c01((t - T.reveal) / (T.land - T.reveal));
+  return r < BEHIND ? logLerp(zR, zR * 0.85, smooth(r / BEHIND)) : logLerp(zR * 0.85, Z2, smoother((r - BEHIND) / (1 - BEHIND)));
+}
 
 type CityRefs = { bx: number; by: number; riverX: (y: number) => number };
 
 /**
  * The city camera at t: position (map cells, z up), heading (0 = south,
- * the wallpaper's), pitch, focal length. It glides in from the north down
- * the river, looking at the Pont Neuf the whole way (steeply from up
- * there, tipping up as it comes down: never straight down from low, where
- * the map's 10 m cells would fill the view), and settles on the
- * wallpaper's exact view: its horizon row, its vanishing point.
+ * the wallpaper's), pitch, focal length. It comes in from the north down
+ * the river, looking at the Pont Neuf the whole way, levels off over the
+ * Pont Saint-Pierre and tips up onto the wallpaper's exact view: its
+ * horizon row, its vanishing point.
  */
 export function cityCam(t: number, W: number, H: number, refs: CityRefs) {
-  const { hz, vx } = wallpaperView(W, H);
-  const f = W / 2 / Math.tan(HFOV / 2);
-  const cy = H / 2;
-  const cx = W / 2;
-  const thetaF = Math.atan((hz - cy) / f);
-  const yaw = Math.atan((vx - cx) / f);
-  const yF = refs.by - SHORT;
-  const s = glide(t);
-  const y = lerp(yF - RUN, yF, travel(s));
+  const { f, hz, thetaF, yaw } = lens(W, H);
+  const yR = refs.by - BACK;
+  const s = c01((t - T.city) / (T.reveal - T.city));
+  const r = c01((t - T.reveal) / (T.land - T.reveal));
+  const y = r > BEHIND ? lerp(yR, refs.by - SHORT, smoother((r - BEHIND) / (1 - BEHIND))) : lerp(yR - RUN, yR, travel(s));
   const x = refs.riverX(y);
-  const z = zAt(t);
+  const z = zAt(t, W, H);
   const tx = refs.bx - x;
   const ty = refs.by + 1 - y;
-  const look = -Math.atan2(z - 0.6, Math.hypot(tx, ty));
-  // the last stretch turns the look on the bridge into the wallpaper's framing
-  const settle = smoother(c01((t - (T.stop - 900)) / (T.land - (T.stop - 900))));
+  const look = -Math.atan2(z - 6 / CELL, Math.hypot(tx, ty));
+  // the view tips up into the wallpaper's framing, starting as the descent levels off (so it never stops
+  // moving); it turns to the wallpaper's heading first, so its frame comes in square, edges off screen
+  const settle = smoother(c01((t - (T.reveal - 400)) / (T.land - (T.reveal - 400))));
+  const turn = smoother(c01((t - (T.reveal - 600)) / 1100));
+  const yF = refs.by - SHORT;
+  const psiF = Math.atan2(refs.bx - refs.riverX(yF), refs.by + 1 - yF) + yaw;
   return {
     x,
     y,
     z,
-    psi: Math.atan2(tx, ty) + yaw * settle + SPIN * (1 - outCubic(s)),
+    psi: lerp(Math.atan2(tx, ty) + SPIN * (1 - outCubic(s)), psiF, turn),
     theta: lerp(look, thetaF, settle),
     f,
     hz,
@@ -209,11 +232,10 @@ function finalCam(W: number, H: number, refs: CityRefs) {
   return { psi: c.psi, theta: c.theta };
 }
 
-/** Altitude in metres at t, for the readout (the city camera's height: one map cell is about 10 m). */
-export function altitude(t: number) {
-  if (t < T.plunge) return logLerp(26_000_000, 9_000_000, inOutSine(c01(t / T.plunge)));
-  if (t < T.city) return logLerp(9_000_000, Z0 * 10, Math.pow(c01((t - T.plunge) / (T.city - T.plunge)), 2.2));
-  return zAt(t) * 10;
+/** Altitude in metres at t on a W×H grid, for the readout (the city camera's height). */
+export function altitude(t: number, W: number, H: number) {
+  if (t < T.city) return logLerp(26_000_000, Z0 * CELL, fall(t));
+  return zAt(t, W, H) * CELL;
 }
 
 /** Where the readout is: the planet's camera while it turns, Toulouse after. */
@@ -287,6 +309,22 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
     const m = (c >> 4) & 63;
     wallSky[p] = !(c & WATER) && (m === MAT.SKY || m === MAT.STAR || m === MAT.CLOUD) ? 1 : 0;
   }
+  // and the colour of its river nearest the viewer (its bottom rows): the map fades into it as the view tips up
+  let ur = 0;
+  let ug = 0;
+  let ub = 0;
+  {
+    const y0 = Math.floor(H * 0.88);
+    for (let p = y0 * W; p < N; p++) {
+      ur += wall[p] & 255;
+      ug += (wall[p] >> 8) & 255;
+      ub += (wall[p] >> 16) & 255;
+    }
+    const n = N - y0 * W || 1;
+    ur /= n;
+    ug /= n;
+    ub /= n;
+  }
   // and its plain sky, row by row (the median, so the sun or the moon don't streak it): the sky behind its
   // city before the city rises into it, and the flight's sky past its frame, so the two meet without a seam
   const plate = new Uint32Array(city.hz);
@@ -317,7 +355,7 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
   const lit = new Uint32Array(map.ground.data.buffer.slice(0));
   for (let p = 0; p < MAP * MAP; p++) if (lights[p]) lit[p] = LIGHT[lights[p]];
   const mips: Uint32Array[] = [new Uint32Array(map.ground.data.buffer.slice(0))];
-  for (let lv = 1; lv < 4; lv++) {
+  for (let lv = 1; lv < 5; lv++) {
     const src = lv === 1 ? lit : mips[lv - 1];
     const sn = MAP >> (lv - 1);
     const dn = sn >> 1;
@@ -359,17 +397,25 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
   const [wr, wg, wb] = tone(() => true);
   const [hr, hg, hb] = tone((l) => l >= topL - 6);
   const cloudPx = new Uint32Array(map.clouds.data.buffer.slice(0));
-  const cloudA = new Uint8Array(MAP * MAP);
-  for (let i = 0; i < MAP * MAP; i++) {
+  const cloudA = new Uint8Array(CLOUDS * CLOUDS);
+  for (let i = 0; i < CLOUDS * CLOUDS; i++) {
     const v = cloudPx[i];
     // the cloud texture's bright pixels: the clouds themselves (their painted shadows are left out, the flight casts its own)
     cloudA[i] = (v & 255) + ((v >> 8) & 255) > 120 * Math.min(1, L.sunUp + 0.35) ? map.clouds.data[i * 4 + 3] : 0;
   }
 
-  // MAP is 256: mirrored tiling with a mask, no modulo
+  // MAP and CLOUDS are powers of two: mirrored tiling with a mask, no modulo (as locals: the hot loop reads them)
+  const M = MAP;
+  const M2 = 2 * MAP - 1;
+  const CN = CLOUDS;
+  const C2 = 2 * CLOUDS - 1;
   const mirror = (v: number) => {
-    const m = v & 511;
-    return m < 256 ? m : 511 - m;
+    const m = v & M2;
+    return m < M ? m : M2 - m;
+  };
+  const mirrorC = (v: number) => {
+    const m = v & C2;
+    return m < CN ? m : C2 - m;
   };
 
   const tile = noiseTile();
@@ -450,18 +496,14 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
     const bin = R < 260 ? 0.5 : R < 520 ? 0.25 : 0.125;
     const atmo = 2.4 / R;
     const qa = (1 + atmo) * (1 + atmo);
-    // close in, the disc covers everything and moves fast: half resolution is enough
-    const step = R > 150 ? 2 : 1;
+    // full resolution all the way in (a switch to half would show as a pop); what a cloud hides is skipped
     const x0 = Math.max(0, Math.floor(cx - R - 4));
     const x1 = Math.min(W - 1, Math.ceil(cx + R + 4));
     const y0 = Math.max(0, Math.floor(cy - R - 4));
     const y1 = Math.min(H - 1, Math.ceil(cy + R + 4));
-    for (let j = y0; j <= y1; j += step) {
-      for (let i = x0; i <= x1; i += step) {
-        if (skip) {
-          const p = j * W + i;
-          if (skip[p] && (step === 1 || (i + 1 < W && j + 1 < H && skip[p + 1] && skip[p + W] && skip[p + W + 1]))) continue;
-        }
+    for (let j = y0; j <= y1; j++) {
+      for (let i = x0; i <= x1; i++) {
+        if (skip && skip[j * W + i]) continue;
         const dx = i - cx;
         const dy = j - cy;
         const u = dx / R;
@@ -534,13 +576,6 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
           col = ink[name][rim];
         }
         out[j * W + i] = col;
-        if (step === 2) {
-          if (i + 1 < W) out[j * W + i + 1] = col;
-          if (j + 1 < H) {
-            out[(j + 1) * W + i] = col;
-            if (i + 1 < W) out[(j + 1) * W + i + 1] = col;
-          }
-        }
       }
     }
 
@@ -579,8 +614,9 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
   const fades = new Float64Array(LAYERS.length);
   const vf: Float32Array[] = [];
   const vt: number[] = [];
-  /** per pixel: which of them it shows (its index in `visible`), or -1 */
+  /** per pixel: which of them it shows (its index in `visible`), or -1; and, under a faint one, the next */
   const hit = new Int8Array(N);
+  const hit2 = new Int8Array(N);
   /** per pixel: nothing under it shows (an opaque cloud): the ground there needn't be drawn */
   const hidden = new Uint8Array(N);
   let veil = 0;
@@ -597,7 +633,8 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
     veil = 0;
     for (const l of layers) {
       const d = (l.at - t) * APPROACH;
-      if (!l.gap) veil = Math.max(veil, 1 - smooth(c01((Math.abs(d) - 0.05) / 0.3)));
+      // (thick quickly as it closes in; clearing slower, so the city comes out of it rather than cutting in)
+      if (!l.gap) veil = Math.max(veil, 1 - smooth(c01(d >= 0 ? (d - 0.05) / 0.3 : (-d - 0.05) / 0.95)));
       if (d > 0.02 && d < D_FAR) visible.push(l);
     }
     clouded = visible.length > 0;
@@ -632,6 +669,7 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
       for (let i = 0; i < W; i++) {
         const p = j * W + i;
         let h = -1;
+        let h2 = -1;
         if ((i - cx) * (i - cx) + dy2 <= R2) {
           const q = row + (i >> 1);
           const th = bayer(i, j);
@@ -639,13 +677,19 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
           const e = 0.035 * th;
           for (let k = 0; k < nv; k++) {
             if (vf[k][q] > vt[k] + e) {
-              h = k;
-              break;
+              if (h < 0) {
+                h = k;
+                if (fades[k] >= 1) break;
+              } else {
+                h2 = k;
+                break;
+              }
             }
           }
         }
         hit[p] = h;
-        hidden[p] = h >= 0 && fades[h] >= 1 ? 1 : 0;
+        hit2[p] = h2;
+        hidden[p] = (h >= 0 && fades[h] >= 1) || (h2 >= 0 && fades[h2] >= 1) ? 1 : 0;
       }
     }
   }
@@ -653,6 +697,59 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
   /** Shades the clouds over the ground: thin edges in shade, thick middles lit, the side toward the light catching it. */
   function shadeClouds(t: number, out: Uint32Array) {
     const glow = night > 0.2 ? night * 0.26 : 0;
+    /** layer `h`'s colour at a pixel, over `under` while it is still faint */
+    const shade = (h: number, i: number, j: number, q: number, upq: number, under: number) => {
+      const l = visible[h];
+      const f = l.field;
+      const n = f[q];
+      const th = bayer(i, j);
+      const k = c01((n - l.thr) / 0.3);
+      let r: number;
+      let g: number;
+      let b: number;
+      if (k < 0.5) {
+        const m = k * 2;
+        r = sR + (mR - sR) * m;
+        g = sG + (mG - sG) * m;
+        b = sB + (mB - sB) * m;
+      } else {
+        const m = (k - 0.5) * 2;
+        r = mR + (lR - mR) * m;
+        g = mG + (lG - mG) * m;
+        b = mB + (lB - mB) * m;
+      }
+      // the side facing the light (up and to the left) catches it; the far side falls into shade
+      const lt = n - f[upq];
+      if (lt > 0.003 && th < c01(lt * 50)) {
+        r += (lR - r) * 0.6;
+        g += (lG - g) * 0.6;
+        b += (lB - b) * 0.6;
+      } else if (lt < -0.005 && th < c01(-lt * 36)) {
+        r += (sR - r) * 0.5;
+        g += (sG - g) * 0.5;
+        b += (sB - b) * 0.5;
+      }
+      // at night, over the city, the thin edges glow faintly with its light
+      if (glow && k < 0.35 && l.at > T.city - 100) {
+        const m = glow * (1 - k / 0.35);
+        r += (wR - r) * m;
+        g += (wG - g) * m;
+        b += (wB - b) * m;
+      }
+      // far off, a layer is faint: blended over what's under it (a dither that sparse would read as specks),
+      // and paler, the way distant cloud is
+      const fade = fades[h];
+      if (fade < 1) {
+        const pale = (1 - fade) * 0.6;
+        r += (lR - r) * pale;
+        g += (lG - g) * pale;
+        b += (lB - b) * pale;
+        r = (under & 255) + (r - (under & 255)) * fade;
+        g = ((under >> 8) & 255) + (g - ((under >> 8) & 255)) * fade;
+        b = ((under >> 16) & 255) + (b - ((under >> 16) & 255)) * fade;
+      }
+      return pack(r, g, b);
+    };
     if (clouded) {
       for (let j = 0; j < H; j++) {
         const row = (j >> 1) * W2;
@@ -661,53 +758,12 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
           const p = j * W + i;
           const h = hit[p];
           if (h < 0) continue;
-          const l = visible[h];
-          const f = l.field;
           const q = row + (i >> 1);
-          const n = f[q];
-          const th = bayer(i, j);
-          const k = c01((n - l.thr) / 0.3);
-          let r: number;
-          let g: number;
-          let b: number;
-          if (k < 0.5) {
-            const m = k * 2;
-            r = sR + (mR - sR) * m;
-            g = sG + (mG - sG) * m;
-            b = sB + (mB - sB) * m;
-          } else {
-            const m = (k - 0.5) * 2;
-            r = mR + (lR - mR) * m;
-            g = mG + (lG - mG) * m;
-            b = mB + (lB - mB) * m;
-          }
-          // the side facing the light (up and to the left) catches it; the far side falls into shade
-          const lt = n - f[up + (i >= 2 ? (i >> 1) - 1 : i >> 1)];
-          if (lt > 0.003 && th < c01(lt * 50)) {
-            r += (lR - r) * 0.6;
-            g += (lG - g) * 0.6;
-            b += (lB - b) * 0.6;
-          } else if (lt < -0.005 && th < c01(-lt * 36)) {
-            r += (sR - r) * 0.5;
-            g += (sG - g) * 0.5;
-            b += (sB - b) * 0.5;
-          }
-          // at night, over the city, the thin edges glow faintly with its light
-          if (glow && k < 0.35 && l.at > T.city - 100) {
-            const m = glow * (1 - k / 0.35);
-            r += (wR - r) * m;
-            g += (wG - g) * m;
-            b += (wB - b) * m;
-          }
-          // far off, a layer is faint: blended over what's under it (a dither that sparse would read as specks)
-          const fade = fades[h];
-          if (fade < 1) {
-            const v = out[p];
-            r = (v & 255) + (r - (v & 255)) * fade;
-            g = ((v >> 8) & 255) + (g - ((v >> 8) & 255)) * fade;
-            b = ((v >> 16) & 255) + (b - ((v >> 16) & 255)) * fade;
-          }
-          out[p] = pack(r, g, b);
+          const upq = up + (i >= 2 ? (i >> 1) - 1 : i >> 1);
+          // a faint layer shows the one behind it through itself, not the ground
+          const h2 = hit2[p];
+          const under = h2 >= 0 ? shade(h2, i, j, q, upq, out[p]) : out[p];
+          out[p] = shade(h, i, j, q, upq, under);
         }
       }
     }
@@ -747,8 +803,6 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
   const UzF = ctF;
   const RxF = -Math.cos(fin.psi);
   const RyF = Math.sin(fin.psi);
-  /** how much later the city's furthest rows (from the horizon) resolve than its nearest */
-  const RISE = 0.9;
   /** how far past the wallpaper's frame it still shows, stretched from its edge, fading out */
   const EDGE = 0.14 * H;
   const fadeOut = (o: number) => (o <= 0 ? 1 : o >= EDGE ? 0 : 1 - smooth(o / EDGE));
@@ -779,13 +833,15 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
     const Py = c.y;
     const Pz = c.z;
     // haze reaches further the higher we are (from up there the city is crisp; on the river the horizon melts)
-    const fogD = 170 + Pz * 1.6;
-    const airHaze = Math.min(0.08, Pz / 3200);
-    // the wallpaper's city comes in as the glide comes to rest (its sky is there all along: it is at infinity)
-    const land = smoother(c01((t - (T.stop - 700)) / 1100));
+    const fogD = 1700 / CELL + Pz * 1.6;
+    const airHaze = Math.min(0.08, (Pz * CELL) / 32000);
+    // the wallpaper, sky and city, as the view tips up into it (before, its frame is just out of sight above);
+    // the map below it fades into its river, so nothing shows twice (its bridge, the map's)
+    const gate = smooth(c01((t - (T.reveal - 300)) / 600));
+    const sink = 0.86 * smooth(c01((t - T.reveal) / 800));
     const hz = c.hz;
     // cloud shadows sweep the town by day (the clouds are above us now)
-    const shade = L.sunUp * 0.3 * (1 - land);
+    const shade = L.sunUp * 0.3 * (1 - gate);
     const drift = t * 0.036;
     const starK = L.stars;
     const [fr, fg, fb] = fogC;
@@ -804,8 +860,8 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
       let o = j * W;
       const ground = dz < -1e-5;
       const tt = ground ? -Pz / dz : 0;
-      // the ground needs the wallpaper only once its city starts to rise; the sky always does
-      const needW = !ground || land > 0;
+      // the ground needs the wallpaper only once the view tips up into it; the sky always does
+      const needW = !ground || gate > 0;
       let zs = (rx0 + Rx * sx0) * FxF + (ry0 + Ry * sx0) * FyF + dz * FzF;
       let nX = (rx0 + Rx * sx0) * RxF + (ry0 + Ry * sx0) * RyF;
       let nY = (rx0 + Rx * sx0) * UxF + (ry0 + Ry * sx0) * UyF + dz * UzF;
@@ -827,22 +883,22 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
           const oy = Y < 0 ? -Y : Y > H1 ? Y - H1 : 0;
           const k = fadeOut(ox > oy ? ox : oy);
           if (k > 0) {
-            const p = (Y < 0 ? 0 : Y > H1 ? H1 : (Y + 0.5) | 0) * W + (X < 0 ? 0 : X > W1 ? W1 : (X + 0.5) | 0);
+            // just past its edge, its own pixels mirrored back (the river carries on), thinning out
+            const Xm = X < 0 ? -X : X > W1 ? 2 * W1 - X : X;
+            const Ym = Y < 0 ? -Y : Y > H1 ? 2 * H1 - Y : Y;
+            const p = (Ym < 0 ? 0 : Ym > H1 ? H1 : (Ym + 0.5) | 0) * W + (Xm < 0 ? 0 : Xm > W1 ? W1 : (Xm + 0.5) | 0);
             wv = wall[p];
             wsky = wallSky[p] === 1;
             wY = Y;
             wk = k;
           }
         }
-        // the wallpaper: its sky from the first glimpse; its city rises out of the haze as the
-        // glide settles, pixel by pixel, from the horizon outward (bridge and quays first, roofs and dome last)
+        // the wallpaper: its sky wherever it shows, its city as the view tips up into it; its
+        // edge thins out pixel by pixel (dithered), so the frame never reads as a frame
         let m = 0;
-        if (wv >= 0) {
-          if (wsky && !ground) m = wk;
-          else if (land > 0) {
-            const dn = wY > hz ? (wY - hz) / (H - hz) : (hz - wY) / hz;
-            if (bayer(i, j) < land * (1 + RISE) - RISE * (dn > 1 ? 1 : dn)) m = wk;
-          }
+        if (wv >= 0 && bayer(i + 1, j + 2) < wk) {
+          if (wsky && !ground) m = 1;
+          else m = gate;
           if (m >= 1) {
             out[o] = wv;
             continue;
@@ -855,16 +911,16 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
           const len2 = dx * dx + dy * dy + dz * dz;
           // one art pixel's footprint on the ground, stretched at grazing angles: picks the mip
           const fp = (tt * len2 * inv) / -dz;
-          const lv = fp < 1.5 ? 0 : fp < 3 ? 1 : fp < 6 ? 2 : 3;
+          const lv = fp < 1.5 ? 0 : fp < 3 ? 1 : fp < 6 ? 2 : fp < 12 ? 3 : 4;
           const wx = Px + tt * dx;
           const wy = Py + tt * dy;
           // an ordered dither between neighbouring texels of the level, so nothing reads as blocks, near or far
           const sp = 1 << lv;
           const gx = mirror(Math.floor(wx + (bayer(i, j) - 0.5) * sp)) >> lv;
           const gy = mirror(Math.floor(wy + (bayer(i + 2, j + 1) - 0.5) * sp)) >> lv;
-          let v = mips[lv][gy * (MAP >> lv) + gx];
+          let v = mips[lv][gy * (M >> lv) + gx];
           // lamps: whole cells from high up, points of light as we come close (further off, the mips have them as a glow)
-          const cell = mirror(Math.floor(wy)) * MAP + mirror(Math.floor(wx));
+          const cell = mirror(Math.floor(wy)) * M + mirror(Math.floor(wx));
           const lamp = lights[cell];
           if (lamp && lv === 0) {
             // sized by the footprint across the view, not along it: at a grazing angle a lamp stays a point, not a bar
@@ -880,7 +936,7 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
             // close over the water: ripples across the current, drifting downstream, in the river's two tones
             if (fp < 0.6 && !lamp) {
               const k = c01((0.6 - fp) / 0.4);
-              const n = nAt(wx * 1.1, wy * 3.4 + t * 0.0016);
+              const n = nAt(wx * 0.55, wy * 1.7 + t * 0.0016);
               const hi = bayer(i, j) < c01((n - 0.52) / 0.12);
               r += ((hi ? hr : wr) - r) * k;
               g += ((hi ? hg : wg) - g) * k;
@@ -908,14 +964,15 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
           } else if (fp < 0.3) {
             // and finer still: grain inside a cell (stone, roofs), fading in as we come down, and out
             // again before its specks grow into blocks of their own
-            const d = (hash2(Math.floor(wx * 5), Math.floor(wy * 5)) - 0.5) * 0.22 * c01((0.3 - fp) / 0.2) * c01((6 - 0.2 / fp) / 3);
+            const d = (hash2(Math.floor(wx * 2.5), Math.floor(wy * 2.5)) - 0.5) * 0.22 * c01((0.3 - fp) / 0.2) * c01((6 - 0.2 / fp) / 3);
             r *= 1 + d;
             g *= 1 + d;
             b *= 1 + d;
           }
           // a cloud's shadow passing over (dithered between its texels: up close they would be blocks)
           if (shade > 0) {
-            const ca = cloudA[mirror(Math.floor(wy / 1.8 - 4 + bayer(i + 1, j + 3))) * MAP + mirror(Math.floor(wx / 1.8 + drift - 5 + bayer(i + 3, j)))];
+            // (the cloud layer is coarser: 10 m to its pixel)
+            const ca = cloudA[mirrorC(Math.floor(wy / 3.6 - 4 + bayer(i + 1, j + 3))) * CN + mirrorC(Math.floor(wx / 3.6 + drift - 5 + bayer(i + 3, j)))];
             if (ca > 0) {
               const k = 1 - (ca / 255) * shade;
               r *= k;
@@ -930,6 +987,11 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
           r += (fr - r) * fog;
           g += (fg - g) * fog;
           b += (fb - b) * fog;
+          if (sink > 0) {
+            r += (ur - r) * sink;
+            g += (ug - g) * sink;
+            b += (ub - b) * sink;
+          }
         } else {
           // the sky past the wallpaper's frame: its colours by the row they take there, and stars fixed to directions
           const hz2 = Math.sqrt(dx * dx + dy * dy);
@@ -982,7 +1044,7 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
   // each phase drawn once now, so the engine has compiled it before the flight needs it (no hitch at a hand-over)
   {
     const scratch = new Uint32Array(N);
-    for (const t of [T.plunge + 900, T.city - 300, T.city + 400, T.city + 1500, T.stop - 500, T.stop + 300, T.end]) draw(t, scratch);
+    for (const t of [T.plunge + 900, T.city - 300, T.city + 400, T.city + 1500, T.reveal - 500, T.reveal + 600, T.end]) draw(t, scratch);
   }
 
   return { draw, refs };

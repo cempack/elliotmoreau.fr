@@ -163,7 +163,7 @@ export function Arrival({ skipped, onLand, onGone }: { skipped: boolean; onLand:
       const t = elapsed();
       const p = t < T.city ? whereAt(t) : HOME;
       if (coordsRef.current) coordsRef.current.textContent = t < T.city ? coords(p.lat, p.lon) : `Toulouse · ${coords(p.lat, p.lon)}`;
-      if (altRef.current) altRef.current.textContent = alt(altitude(t));
+      if (altRef.current) altRef.current.textContent = alt(altitude(t, g.W, g.H));
       if (t < T.end) read = requestAnimationFrame(readout);
     };
     read = requestAnimationFrame(readout);
