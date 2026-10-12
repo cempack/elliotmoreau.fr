@@ -145,6 +145,15 @@ const en = {
     stripOff: "Offline in Toulouse today. It’s {now} there.",
   },
 
+  /* the letterbox on the stage at rest: what its plate and window print, in words */
+  box: {
+    label: "Elliot’s letterbox in Toulouse, collected {days} from {start} to {end}.",
+    labelAway: "Elliot’s letterbox in Toulouse. His post is forwarded to {place} until {date}.",
+    labelAwayOpen: "Elliot’s letterbox in Toulouse. His post is forwarded to {place} for now.",
+    range: "{a} to {b}",
+    inBox: "In the box at {time}.",
+  },
+
   /* sent: the visitor's own letters */
   sentDir: "sent",
   sentEyebrowOne: "{n} letter",
@@ -364,6 +373,14 @@ const fr: typeof en = {
     reply: "La réponse arrive en général sous {n} jours, donc d’ici {date}.",
     strip: "En ligne à Toulouse aujourd’hui : de {start} à {end}. Il y est {now}.",
     stripOff: "Hors ligne à Toulouse aujourd’hui. Il y est {now}.",
+  },
+
+  box: {
+    label: "La boîte aux lettres d’Elliot à Toulouse, levées {days} de {start} à {end}.",
+    labelAway: "La boîte aux lettres d’Elliot à Toulouse. Faire suivre : {place}, jusqu’au {date}.",
+    labelAwayOpen: "La boîte aux lettres d’Elliot à Toulouse. Faire suivre : {place}, pour le moment.",
+    range: "du {a} au {b}",
+    inBox: "Dans la boîte à {time}.",
   },
 
   sentDir: "envoyes",

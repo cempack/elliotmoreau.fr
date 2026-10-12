@@ -1,25 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useI18n } from "@/i18n/client";
 import { fill } from "./mail";
-import { useStatus } from "@/components/os/SiteData";
+import { useAway, useStatus } from "@/components/os/SiteData";
 import { clock, readEstimate } from "./hours";
-
-/** the time now, refreshed every `ms` (null until mounted, so the server HTML matches) */
-function useNow(ms: number) {
-  const [now, setNow] = useState<Date | null>(null);
-  useEffect(() => {
-    const tick = () => setNow(new Date());
-    const first = window.setTimeout(tick, 0);
-    const id = window.setInterval(tick, ms);
-    return () => {
-      window.clearTimeout(first);
-      window.clearInterval(id);
-    };
-  }, [ms]);
-  return now;
-}
+import { readSentence } from "./levee";
+import { useNow } from "./useNow";
 
 const SCALE = ["00", "06", "12", "18", "24"];
 
@@ -28,55 +15,31 @@ const SCALE = ["00", "06", "12", "18", "24"];
  * day in Toulouse as 24 cells (his working hours lit, a mark at the time
  * now), when he's likely to read it, and when a reply usually comes. All
  * from his status (working hours, reply days, away), in his time zone,
- * with the visitor's own time beside it when theirs differs.
+ * with the visitor's own time beside it when theirs differs. A trip dated on
+ * an Atlas place counts as away too (the resolved trip, as the box reads it).
  */
 export function ReadEstimate() {
   const { t, lang } = useI18n();
   const w = t.contact.when;
   const status = useStatus();
+  const away = useAway();
   const now = useNow(30_000);
   const tz = status.workHours.tz;
   const loc = lang === "fr" ? "fr-FR" : "en-GB";
 
   const view = useMemo(() => {
     if (!now) return null;
-    const est = readEstimate(now, status);
+    const est = readEstimate(now, { ...status, away });
     const mine = Intl.DateTimeFormat().resolvedOptions().timeZone || tz;
-    const at = (d: Date) => {
-      const there = clock(d, tz, lang);
-      const here = clock(d, mine, lang);
-      return here === there ? there : `${there} (${fill(w.local, { time: here })})`;
-    };
-    const weekday = (d: Date) => new Intl.DateTimeFormat(loc, { weekday: "long", timeZone: tz }).format(d);
     const longDate = (d: Date) => new Intl.DateTimeFormat(loc, { weekday: "long", day: "numeric", month: "long", timeZone: tz }).format(d);
-    const day = est.dayOffset === 1 ? w.tomorrow : est.readAt ? fill(w.onDay, { day: weekday(est.readAt) }) : "";
-    let read: string;
-    switch (est.state) {
-      case "desk":
-        read = w.desk;
-        break;
-      case "later":
-        read = fill(w.later, { time: at(est.readAt!) });
-        break;
-      case "next":
-        read = fill(w.next, { day, time: at(est.readAt!) });
-        break;
-      case "away": {
-        const [y, mo, d] = (est.awayUntil ?? "").split("-").map(Number);
-        const until = new Intl.DateTimeFormat(loc, { day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(Date.UTC(y, mo - 1, d)));
-        read = fill(w.away, { date: until, day, time: at(est.readAt!) });
-        break;
-      }
-      default:
-        read = w.awayOpen;
-    }
+    const read = readSentence(est, { lang, tz, mine, w });
     const n = Math.max(1, status.replyDays);
     const reply = est.replyBy ? fill(n === 1 ? w.replyOne : w.reply, { n, date: longDate(est.replyBy) }) : null;
     const nowClock = clock(now, tz, lang);
     const working = est.cells.some((c) => c > 0);
     const label = working ? fill(w.strip, { start: est.start, end: est.end, now: nowClock }) : fill(w.stripOff, { now: nowClock });
     return { est, read, reply, nowClock, label };
-  }, [now, status, tz, lang, loc, w]);
+  }, [now, status, away, tz, lang, loc, w]);
 
   return (
     <section className="app-contact-when" aria-label={w.label}>

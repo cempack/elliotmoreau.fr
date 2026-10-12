@@ -17,7 +17,7 @@ import { useStatus } from "@/components/os/SiteData";
 import { Meter, type MeterHandle } from "./Meter";
 import { markAt, type Mark } from "./postmark";
 import { ReadEstimate } from "./ReadEstimate";
-import { GlobeStage, type StageHandle } from "./GlobeStage";
+import { MailStage, type StageHandle } from "./MailStage";
 import { G_ARROW, G_OPEN, G_SEND } from "./glyphs";
 import {
   EMAIL_RE,
@@ -96,15 +96,16 @@ function useFrom() {
 
 /**
  * New message: a Mail compose sheet (To, From, Subject with quick ideas,
- * the message) beside the envelope it will travel in. One action, Send (or
- * ⌘↵), and everything around it shows what it does: the envelope is a
- * live miniature of the draft, the franking meter under it strikes a
- * Toulouse postmark on it, and it folds and flies into the Dock.
+ * the message) beside Elliot's letterbox in Toulouse, which prints his real
+ * hours and when he's likely to read it. One action, Send (or ⌘↵), and
+ * everything around it shows what it does: the franking meter strikes a
+ * Toulouse postmark on the letter, and the globe flies it there.
  *
  * With mail set up (mode "send"), Send delivers it from the site: the
  * envelope seals while the server sends, and flies only once Elliot's
- * mailbox has accepted it; the card then says when it's likely to be
- * read, and the letter joins the visitor's Sent mailbox. Without it (or if
+ * mailbox has accepted it (then, while he's home, it drops into the
+ * letterbox's slot); the card says when it's likely to be read, and the
+ * letter joins the visitor's Sent mailbox. Without it (or if
  * the server says it can't), the message is handed to the viewer's own
  * mail app through a mailto: link, and the UI says so.
  *
@@ -144,7 +145,6 @@ export function Compose({
 
   const [phase, setPhaseState] = useState<Phase>("compose");
   const [returned, setReturned] = useState(false);
-  const [lifted, setLifted] = useState(false);
   /** the franking meter's postmark on the letter, once it is franked, and how hard it was struck */
   const [mark, setMark] = useState<Mark | null>(null);
   /** Send was refused (nothing written, no address): the status says why for a moment */
@@ -155,12 +155,10 @@ export function Compose({
   const [delivered, setDelivered] = useState<string | null>(null);
   /** the server couldn't send, so this one went the mailto way */
   const [fellBack, setFellBack] = useState(false);
-  const liftTimer = useRef(0);
   const refuseTimer = useRef(0);
   const sendTimer = useRef(0);
   useEffect(
     () => () => {
-      window.clearTimeout(liftTimer.current);
       window.clearTimeout(refuseTimer.current);
       window.clearTimeout(sendTimer.current);
     },
@@ -345,9 +343,6 @@ export function Compose({
   const typing = (at: number) => {
     if (startedAt.current == null) startedAt.current = at;
     if (sendError) setSendError(null);
-    setLifted(true);
-    window.clearTimeout(liftTimer.current);
-    liftTimer.current = window.setTimeout(() => setLifted(false), 900);
   };
 
   /**
@@ -433,8 +428,6 @@ export function Compose({
   };
 
   const leave = () => {
-    window.clearTimeout(liftTimer.current);
-    setLifted(false);
     if (sending) {
       setSendError(null);
       outcome.current = null;
@@ -500,11 +493,13 @@ export function Compose({
       </div>
 
       <div className="app-contact-stagecol">
-        <GlobeStage
+        <MailStage
           ref={stageRef}
           phase={phase}
+          mode={mode}
           stamped={mark != null}
-          lifted={lifted}
+          ready={blocker === null}
+          delivered={delivered}
           reduced={reduced}
           onLand={land}
           doneLabel={delivered ? c.delivered : undefined}

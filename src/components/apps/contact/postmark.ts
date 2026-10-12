@@ -32,7 +32,8 @@ export const RING = 43;
 export const DIE_W = 74;
 export const DIE_H = 43;
 
-const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+/** 4 × 4 ordered dither thresholds (0–15), row-major */
+export const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 
 /** the flamme: Saint-Sernin's five tiered stages and spire, the Garonne under it (26 × 12 inside its frame) */
 const FLAMME = [
@@ -51,7 +52,7 @@ const FLAMME = [
 ];
 
 /** glyph columns, with punctuation trimmed to its ink */
-function glyph(ch: string) {
+export function glyph(ch: string) {
   const g = PIXEL_GLYPHS[ch];
   if (!g) return null;
   let a = 0;
@@ -63,7 +64,8 @@ function glyph(ch: string) {
   return { g, a, w: b - a + 1 };
 }
 
-function textWidth(s: string, tracking = 1) {
+/** the width in cells of a 3 × 5 caps line (a space is 2) */
+export function textWidth(s: string, tracking = 1) {
   let w = 0;
   for (const ch of s) w += (ch === " " ? 2 : (glyph(ch)?.w ?? 3)) + tracking;
   return w - tracking;

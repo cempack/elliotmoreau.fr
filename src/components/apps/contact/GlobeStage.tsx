@@ -14,21 +14,24 @@ import type { Phase } from "./Compose";
 import { activationFresh, fill } from "./mail";
 
 /**
- * The stage beside the letter: a small planet in the Atlas's inks, lit by
- * the real sun, with the route a letter takes from the visitor's city (read
- * from their browser's time zone: no prompt, nothing sent) to Toulouse, or
- * to wherever Elliot is this week. The envelope waits over their city and
- * lifts a little while they type. Send seals it; it then flies the great
- * circle, out of their daylight and into his, and lands with a few pixels
- * thrown out (the Dock's Mail icon bounces too).
+ * The flight: a small planet in the Atlas's inks, lit by the real sun, with
+ * the route a letter takes from the visitor's city (read from their
+ * browser's time zone: no prompt, nothing sent) to Toulouse, or to wherever
+ * Elliot is this week. It is shown only for Send: at rest MailStage keeps it
+ * hidden and dormant behind the letterbox, loaded lazily, one planet paint
+ * and no timers. Send seals the envelope over the visitor's city; it then
+ * flies the great circle, out of their daylight and into his, and lands
+ * with a few pixels thrown out (the Dock's Mail icon bounces too).
  *
  * The mail-app path keeps the browser's rule: the app is opened at once,
  * while the click still counts, and the flight plays after; when the click
  * no longer counts, the letter seals in place and the card offers the
  * button. Reduced motion: it seals and appears at the other end.
  *
- * Everything is painted on demand: the planet once per size and every
- * minute for the terminator, the route and envelope only while they move.
+ * Everything is painted on demand: the planet once per size and, while
+ * shown, every minute for the terminator; the route and envelope only while
+ * they move. The caption is reported up (onCaption): MailStage owns the
+ * stage's one caption.
  */
 
 export type StageHandle = {
@@ -79,20 +82,33 @@ export function GlobeStage({
   ref,
   phase,
   stamped,
-  lifted,
+  lifted = false,
   reduced,
   onLand,
   doneLabel,
+  dormant = false,
+  lead = 0,
+  onArrive,
+  onCaption,
 }: {
   ref?: React.Ref<StageHandle>;
   phase: Phase;
   /** the meter has struck its postmark on the letter */
   stamped: boolean;
-  lifted: boolean;
+  /** the envelope bobs a little over the visitor's city */
+  lifted?: boolean;
   reduced: boolean;
   /** time to hand over (or the server said yes); `canOpen` is false when the browser would refuse */
   onLand: (canOpen: boolean) => boolean;
   doneLabel?: string;
+  /** hidden behind the letterbox: no minute repaint (the first paint still happens) */
+  dormant?: boolean;
+  /** ms the sealed letter waits over the visitor's city before it flies (while the box dissolves) */
+  lead?: number;
+  /** the letter has arrived (the flight ended, or it appeared there at once) */
+  onArrive?: () => void;
+  /** the caption, for the stage to show */
+  onCaption?: (text: string) => void;
 }) {
   const { t, lang } = useI18n();
   const c = t.contact;
@@ -112,15 +128,17 @@ export function GlobeStage({
   /** where the letter is: over the visitor's city, on its way, or arrived */
   const [where, setWhere] = useState<"here" | "flying" | "there">("here");
 
+  // the planet's minute: painted on mount, then every minute only while shown
   useEffect(() => {
     const tick = () => setNow(new Date());
     queueMicrotask(() => {
       setZone(visitorZone() ?? "");
       tick();
     });
+    if (dormant) return;
     const id = window.setInterval(tick, 60_000);
     return () => window.clearInterval(id);
-  }, []);
+  }, [dormant]);
 
   useEffect(() => {
     const el = wrapRef.current;
@@ -168,9 +186,13 @@ export function GlobeStage({
   const draw = useRef<(ts: number) => boolean>(() => false);
   const loop = useRef<() => void>(() => {});
   const onLandRef = useRef(onLand);
+  const onArriveRef = useRef(onArrive);
   const blipRef = useRef(blip);
+  /** when a sealed letter may start flying (performance.now() + lead at Send) */
+  const startAt = useRef(0);
   useEffect(() => {
     onLandRef.current = onLand;
+    onArriveRef.current = onArrive;
     blipRef.current = blip;
     draw.current = (ts: number) => {
     const cv = canvasRef.current;
@@ -199,7 +221,7 @@ export function GlobeStage({
       return { x: cx + p.x * cs, y: cy + p.y * cs, front: p.front && p.x * p.x + p.y * p.y <= (r + 1) * (r + 1) };
     };
     const f = flight.current;
-    const prog = f ? Math.min(1, (ts - f.t0) / FLIGHT_MS) : live.current.where === "there" ? 1 : 0;
+    const prog = f ? Math.max(0, Math.min(1, (ts - f.t0) / FLIGHT_MS)) : live.current.where === "there" ? 1 : 0;
     const ease = prog < 0.5 ? 4 * prog * prog * prog : 1 - Math.pow(-2 * prog + 2, 3) / 2;
     // the route: faint ahead, bright where the letter has been
     if (isFar && pts.length) {
@@ -274,6 +296,7 @@ export function GlobeStage({
         const slot = visibleIcon("contact");
         bounce(slot?.querySelector<HTMLElement>("[data-dock-bounce]") ?? null, 10);
         blipRef.current("success");
+        onArriveRef.current?.();
       }
       if (draw.current(ts)) raf.current = requestAnimationFrame(step);
     };
@@ -308,7 +331,7 @@ export function GlobeStage({
     setSealed(true);
     setWhere("flying");
     live.current.where = "flying";
-    flight.current = { t0: performance.now(), deliver: !land, land };
+    flight.current = { t0: Math.max(performance.now(), startAt.current), deliver: !land, land };
     loop.current();
   };
   const arriveNow = () => {
@@ -316,12 +339,14 @@ export function GlobeStage({
     setWhere("there");
     live.current.where = "there";
     loop.current();
+    onArriveRef.current?.();
   };
   const runs = useRef(0);
 
   useImperativeHandle(ref, () => ({
     send: (gate) => {
       const run = ++runs.current;
+      startAt.current = performance.now() + lead;
       if (gate) {
         setSealed(true);
         gate.then(
@@ -399,6 +424,9 @@ export function GlobeStage({
     else if (far) caption = fill(g.route, { km: view.dist, gap: view.gap });
     else caption = view.mine && view.mine === view.there ? fill(g.near, { place: dest.name }) : fill(g.time, { place: dest.name, time: view.there });
   }
+  useEffect(() => {
+    onCaption?.(caption);
+  }, [caption, onCaption]);
 
   return (
     <div className="app-contact-globe" data-where={where}>
@@ -420,9 +448,6 @@ export function GlobeStage({
           </span>
         )}
       </div>
-      <p className="app-contact-globe-caption" aria-live="polite">
-        {caption || " "}
-      </p>
     </div>
   );
 }

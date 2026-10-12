@@ -372,9 +372,10 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
 }
 
 /* ── compose ──
-   Phones: the envelope stands beside the title, in sight from the first
-   paint. Mid widths (laptops at 1024, iPads): beside the title and lead,
-   the sheet full width below. Wide: a column of its own, sticky. */
+   Phones: the letterbox stands beside the title, in sight from the first
+   paint, its caption under the habits line. Mid widths (laptops at 1024,
+   iPads): beside the title and lead, the sheet full width below. Wide: a
+   column of its own, sticky. */
 .app-contact-compose {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -382,6 +383,7 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
     "head stage"
     "lead lead"
     "habits habits"
+    "read read"
     "card card"
     "reply reply";
   column-gap: 0.75rem;
@@ -400,12 +402,15 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
 .app-contact-intro > .app-contact-habits {
   grid-area: habits;
 }
-/* narrow: the envelope takes its own grid area beside the title */
+/* narrow: the stage takes its own grid area beside the title, its caption a row of its own */
 .app-contact-stagecol {
   display: contents;
 }
-.app-contact-stagecol > .app-contact-globe {
+.app-contact-stagecol > .app-contact-stage {
   grid-area: stage;
+}
+.app-contact-stagecol > .app-contact-stage-caption {
+  grid-area: read;
 }
 .app-contact-compose > .app-contact-card {
   grid-area: card;
@@ -415,6 +420,7 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
     grid-template-columns: minmax(0, 1fr) 12rem;
     grid-template-areas:
       "intro stage"
+      "intro read"
       "card card"
       "reply reply";
     column-gap: 2rem;
@@ -438,7 +444,7 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
   .app-contact-intro {
     align-self: start;
   }
-  /* wide: the envelope in a sticky column of its own, beside the sheet */
+  /* wide: the stage in a sticky column of its own, beside the sheet (stage, caption, meter, stacked) */
   .app-contact-stagecol {
     display: block;
     grid-area: stage;
@@ -852,27 +858,77 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
   }
 }
 
-/* ── the stage: the planet and the letter's route ── */
+/* ── the stage: Elliot's letterbox at rest, the planet for the flight ── */
 .app-contact-env {
   display: block;
   width: 100%;
   height: auto;
 }
-/* wide: the planet fills its column; phones: a small planet beside the title */
+/* the box and the globe share one cell; only one is shown */
+.app-contact-stage {
+  position: relative;
+  display: grid;
+  width: 100%;
+  max-width: 20rem;
+  aspect-ratio: 1;
+  margin-inline: auto;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.app-contact-stage > * {
+  grid-area: 1 / 1;
+  min-width: 0;
+  min-height: 0;
+}
+.app-contact-postbox {
+  display: grid;
+  place-items: center;
+}
+.app-contact-postbox canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+/* the globe steps in as the box dissolves (the box dithers itself out on its canvas) */
+.app-contact-stage-globe {
+  visibility: hidden;
+  opacity: 0;
+  transition:
+    opacity 0.24s steps(4, end),
+    visibility 0s linear 0.24s;
+}
+.app-contact-stage[data-show="globe"] .app-contact-stage-globe {
+  visibility: visible;
+  opacity: 1;
+  transition:
+    opacity 0.24s steps(4, end),
+    visibility 0s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-contact-stage-globe,
+  .app-contact-stage[data-show="globe"] .app-contact-stage-globe {
+    transition: none;
+  }
+}
+/* the stage's one caption: what the box prints, in words; the flight's route; where it landed */
+.app-contact-stage-caption {
+  min-height: 2.8em;
+  margin-top: 0.75rem;
+  color: var(--color-label-2);
+  font: 500 0.75rem/1.4 var(--font-mono);
+  text-align: center;
+  text-wrap: balance;
+}
 .app-contact-globe {
   position: relative;
   display: grid;
+  align-content: center;
   justify-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 0 0.25rem;
+  height: 100%;
 }
 .app-contact-globe-disc {
   position: relative;
   width: 100%;
-  max-width: 20rem;
   aspect-ratio: 1;
-  -webkit-user-select: none;
-  user-select: none;
 }
 .app-contact-globe-canvas {
   position: absolute;
@@ -897,43 +953,35 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
   color: var(--color-label-2);
   font-style: normal;
 }
-.app-contact-globe-caption {
-  min-height: 1.25rem;
-  color: var(--color-label-2);
-  font: 500 0.75rem/1.4 var(--font-mono);
-  text-align: center;
-  text-wrap: balance;
-}
-/* phones: the planet stands beside the title; the card below says the rest */
+/* phones: the box stands beside the title; its caption runs under the habits line */
 @container app-contact (max-width: 559px) {
-  .app-contact-globe {
-    gap: 0;
-    padding: 0;
-  }
-  .app-contact-globe-disc {
+  .app-contact-stage {
     width: 8.5rem;
   }
-  .app-contact-globe-pin,
-  .app-contact-globe-caption {
-    display: none;
-  }
-}
-/* wide: the planet already gives both clocks */
-@container app-contact (min-width: 760px) {
-  .app-contact-meter-you {
-    display: none;
-  }
-}
-/* mid widths: beside the title and lead */
-@container app-contact (min-width: 560px) and (max-width: 759px) {
-  .app-contact-globe {
-    padding: 0;
-  }
-  .app-contact-globe-disc {
-    width: 12rem;
+  .app-contact-stage-caption {
+    min-height: 2.9em;
+    margin-top: 0.375rem;
+    color: var(--color-label-3);
+    text-align: left;
+    text-wrap: pretty;
   }
   .app-contact-globe-pin {
     display: none;
+  }
+}
+/* mid widths: beside the title and lead, a little taller than wide (the post cut by the edge) */
+@container app-contact (min-width: 560px) and (max-width: 759px) {
+  .app-contact-stage {
+    width: 12rem;
+    aspect-ratio: 4 / 5;
+  }
+  .app-contact-globe-pin {
+    display: none;
+  }
+}
+@media (min-width: 768px) and (max-height: 820px) {
+  .app-contact-stage {
+    max-width: 17rem;
   }
 }
 /* ── the franking meter: under the envelope on wide windows, under the sheet on narrow ones ── */
