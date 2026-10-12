@@ -172,6 +172,14 @@ export function Room() {
   // it stays mounted through its exit: shown from the moment it opens until it has left
   const [shown, setShown] = useState(open);
   if (open && !shown) setShown(true);
+  // left some other way (an app opened from the Dock, Spotlight, the address bar): the room is
+  // closed for good, or coming back to the Desktop would zoom straight back into it
+  useEffect(
+    () => () => {
+      state = { open: false, from: null };
+    },
+    []
+  );
   if (!shown || typeof document === "undefined") return null;
   return createPortal(<RoomLayer from={from} leaving={!open} onGone={() => setShown(false)} />, document.body);
 }
@@ -273,7 +281,12 @@ function RoomLayer({ from, leaving, onGone }: { from: { x: number; y: number } |
         ],
         { duration: 640, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "both" }
       );
-      return () => anims.forEach((a) => a.cancel());
+      // (on the way out, or gone with the Desktop: the wallpaper outlives it, so it is put back as it was)
+      return () => {
+        anims.forEach((a) => a.cancel());
+        city.forEach((el) => (el.style.transformOrigin = ""));
+        scene?.removeAttribute("inert");
+      };
     }
     // back out: the room shrinks into the window, the city settles back
     const done = () => {
@@ -311,6 +324,17 @@ function RoomLayer({ from, leaving, onGone }: { from: { x: number; y: number } |
     router.push(path(href), { transitionTypes: ["app-open"] });
     setRoom(false);
   };
+
+  // the Dock's Desktop icon goes back out too (it is the Desktop already, so on its own it does nothing)
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (!(e.target as Element | null)?.closest?.('[data-dock-launch="home"]')) return;
+      e.preventDefault();
+      leave();
+    };
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  });
 
   // Esc goes back out
   useEffect(() => {
