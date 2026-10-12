@@ -55,13 +55,14 @@
 .os-win-glow {
   display: none;
 }
-/* the border: even all round, like Hyprland's active border */
+/* the border: Hyprland's active border, its colour and width from the
+   theme (hyprland.conf border_size, colors.toml hyprland_active_border) */
 .os-win-rim {
   position: absolute;
   inset: 0;
   z-index: 4;
   box-sizing: border-box;
-  border: 2px solid rgba(196, 206, 194, 0.34);
+  border: var(--win-border) solid color-mix(in srgb, var(--color-border-active) 72%, transparent);
   border-radius: inherit;
   pointer-events: none;
   transition: border-color 0.25s var(--ease-out-quint);
@@ -105,7 +106,7 @@
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: linear-gradient(180deg, rgba(13, 16, 14, 0.96), rgba(13, 16, 14, 0.92));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-ink-900) 96%, transparent), color-mix(in srgb, var(--color-ink-900) 92%, transparent));
   backdrop-filter: blur(10px) saturate(1.2);
   box-shadow: inset 0 -1px 0 var(--hairline);
   opacity: 0;
@@ -118,7 +119,7 @@
    scroll offset (rows show through unblurred), so lean on the tint */
 @media (max-width: 767px) {
   .os-win-bar::before {
-    background: linear-gradient(180deg, rgba(13, 16, 14, 0.97), rgba(13, 16, 14, 0.94));
+    background: linear-gradient(180deg, color-mix(in srgb, var(--color-ink-900) 97%, transparent), color-mix(in srgb, var(--color-ink-900) 94%, transparent));
   }
 }
 .os-win-bar::after {
@@ -278,7 +279,7 @@
     flex-direction: row;
     background: linear-gradient(
       90deg,
-      rgba(10, 12, 11, 0.16) 0 var(--os-win-side-w),
+      color-mix(in srgb, var(--color-ink-950) 16%, transparent) 0 var(--os-win-side-w),
       var(--hairline) var(--os-win-side-w) calc(var(--os-win-side-w) + 1px),
       transparent calc(var(--os-win-side-w) + 1px)
     );
@@ -477,7 +478,7 @@
      the sticky title bar's frost, so the rounded corners never end in nothing) */
   .os-win-rim {
     border-width: 2px 1px 0;
-    border-color: rgba(196, 206, 194, 0.3) rgba(196, 206, 194, 0.18) transparent;
+    border-color: color-mix(in srgb, var(--color-border-active) 30%, transparent) color-mix(in srgb, var(--color-border-active) 18%, transparent) transparent;
   }
   .os-win-glass::after {
     border-left-width: 0;
@@ -506,7 +507,7 @@
     width: 2.25rem;
     height: 0.3125rem;
     border-radius: 999px;
-    background: rgba(235, 233, 225, 0.34);
+    background: color-mix(in srgb, var(--color-label) 34%, transparent);
     translate: -50% 0;
   }
   .os-win-x {
@@ -582,7 +583,7 @@
 ::view-transition-group(.app-leave),
 ::view-transition-group(.app-out) {
   border-radius: var(--radius-window);
-  background: rgba(16, 19, 17, 0.18);
+  background: color-mix(in srgb, var(--color-ink-900) 18%, transparent);
   backdrop-filter: blur(12px) blur(12px) blur(10px) saturate(1.9);
   box-shadow:
     0 60px 120px -50px rgba(0, 0, 0, 0.8),

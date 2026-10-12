@@ -9,12 +9,12 @@
 
 @layer components {
   .os-glass {
-    --os-glass-tint: rgba(16, 19, 17, 0.78);
+    --os-glass-tint: color-mix(in srgb, var(--color-ink-900) 78%, transparent);
     /* chained small blurs: one big radius aliases the dithered wallpaper */
     --os-glass-frost: blur(8px) blur(8px);
     --os-glass-rblur: 1.25px;
     --os-glass-sat: 1.2;
-    --os-glass-border: rgba(196, 206, 194, 0.16);
+    --os-glass-border: color-mix(in srgb, var(--color-border-active) 16%, transparent);
     --os-glass-shadow: 0 1px 1px rgba(0, 0, 0, 0.2), 0 18px 40px -22px rgba(0, 0, 0, 0.7);
     position: relative;
     z-index: 0;
@@ -22,14 +22,14 @@
   .os-glass[data-glass="thin"] {
     --os-glass-tint: rgba(20, 24, 21, 0.68);
     --os-glass-frost: blur(8px);
-    --os-glass-border: rgba(196, 206, 194, 0.13);
+    --os-glass-border: color-mix(in srgb, var(--color-border-active) 13%, transparent);
     --os-glass-shadow: 0 1px 1px rgba(0, 0, 0, 0.16), 0 10px 24px -14px rgba(0, 0, 0, 0.6);
   }
   .os-glass[data-glass="thick"] {
-    --os-glass-tint: rgba(13, 16, 14, 0.88);
+    --os-glass-tint: color-mix(in srgb, var(--color-ink-900) 88%, transparent);
     --os-glass-frost: blur(10px) blur(10px);
     --os-glass-rblur: 8px;
-    --os-glass-border: rgba(196, 206, 194, 0.18);
+    --os-glass-border: color-mix(in srgb, var(--color-border-active) 18%, transparent);
     --os-glass-shadow: 0 1px 2px rgba(0, 0, 0, 0.22), 0 40px 90px -40px rgba(0, 0, 0, 0.85);
   }
 
@@ -37,12 +37,12 @@
   html[data-sky="day"] .os-glass,
   html[data-sky="dawn"] .os-glass,
   html[data-sky="dusk"] .os-glass {
-    --os-glass-tint: rgba(12, 15, 13, 0.84);
+    --os-glass-tint: color-mix(in srgb, var(--color-ink-900) 84%, transparent);
   }
   html[data-sky="day"] .os-glass[data-glass="thick"],
   html[data-sky="dawn"] .os-glass[data-glass="thick"],
   html[data-sky="dusk"] .os-glass[data-glass="thick"] {
-    --os-glass-tint: rgba(10, 12, 11, 0.92);
+    --os-glass-tint: color-mix(in srgb, var(--color-ink-950) 92%, transparent);
   }
 
   .os-glass[data-glass-shadow] {
@@ -118,7 +118,7 @@
     .os-glass-pane,
     .os-glass-pane[data-live] {
       backdrop-filter: none;
-      background: #161a17;
+      background: var(--color-ink-800);
     }
     .os-glass[data-glass="thin"] > .os-glass-pane {
       background: #1b201c;
@@ -132,7 +132,7 @@
     .os-glass-pane,
     .os-glass-pane[data-live] {
       backdrop-filter: none;
-      background: #101311;
+      background: var(--color-ink-900);
     }
     .os-glass::after {
       border-color: rgba(255, 255, 255, 0.5);

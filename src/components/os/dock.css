@@ -217,7 +217,7 @@ html:active-view-transition .os-dock-solid {
   bottom: 0;
   padding: 0 max(4px, env(safe-area-inset-right)) env(safe-area-inset-bottom, 0px) max(4px, env(safe-area-inset-left));
   background: var(--color-ink-950);
-  box-shadow: inset 0 2px 0 rgba(196, 206, 194, 0.18);
+  box-shadow: inset 0 2px 0 color-mix(in srgb, var(--color-border-active) 18%, transparent);
   transition: transform 0.3s var(--ease-out-quint);
 }
 .os-tabbar-list {
@@ -375,7 +375,7 @@ html:active-view-transition .os-tabbar {
 .em-sheet.os-more {
   --sheet-radius: var(--radius-window);
   background: var(--color-ink-900);
-  border: 2px solid rgba(196, 206, 194, 0.3);
+  border: 2px solid color-mix(in srgb, var(--color-border-active) 30%, transparent);
   border-bottom: 0;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
@@ -416,7 +416,7 @@ html:active-view-transition .os-tabbar {
 }
 .os-more-row:active,
 .os-more-row[aria-current="page"] {
-  background: rgba(196, 206, 194, 0.08);
+  background: color-mix(in srgb, var(--color-border-active) 8%, transparent);
 }
 .os-more-text {
   display: grid;

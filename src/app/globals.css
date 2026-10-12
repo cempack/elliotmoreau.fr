@@ -1,27 +1,52 @@
 @import "tailwindcss";
 
-/* ─────────────────────────── emOS · Moss ───────────────────────────
-   Taken from my Omarchy theme: near-black greens, warm paper text, one
-   moss accent and three quieter lights. Every text colour is solid (no
-   opacity) and clears 4.5:1 on ink-900. */
+/* ─────────────────────────── emOS · Dos Moos ───────────────────────────
+   Elliot's Omarchy theme, live: these are the defaults (colors.toml at
+   cempack/omarchy-dos-moos-theme@ec83b09, mapped by lib/theme.ts); the
+   layout overrides them from the repo itself on every render (an
+   unlayered :root rule, lib/theme-source.ts). Every text colour is solid
+   and clears 4.5:1 on ink-900; lib/theme.ts lifts any that wouldn't. */
 @theme {
-  --color-ink-950: #0a0c0b;
-  --color-ink-900: #101311;
-  --color-ink-800: #161a17;
-  --color-ink-700: #1f2420;
-  --color-ink-600: #2b322d;
-  --color-ink-500: #3f4842;
+  --color-ink-950: #0f1011;
+  --color-ink-900: #131516;
+  --color-ink-800: #1c2224;
+  --color-ink-700: #283133;
+  --color-ink-600: #323d3f;
+  --color-ink-500: #3a4849;
 
-  --color-label: #ebe9e1;
-  --color-label-2: #bcc2ba;
-  --color-label-3: #8f988f;
+  --color-label: #f8ebe3;
+  --color-label-2: #a5b5ab;
+  --color-label-3: #72856c;
 
-  --color-signal: #b0cc86; /* moss: the accent */
-  --color-signal-deep: #86a35c;
-  --color-ion: #89b4a8; /* sage: links, live data */
-  --color-lilac: #aea3c8; /* night, secondary accents */
-  --color-ember: #e0bd6e; /* sun, warmth */
-  --color-flare: #e2786b; /* live dot, errors, close */
+  --color-signal: #819890; /* the theme's accent */
+  --color-signal-deep: #60716b;
+  --color-ion: #6d877d; /* cyan: links, live data */
+  --color-lilac: #72856c; /* magenta: night, secondary accents */
+  --color-ember: #e0c15c; /* orange: sun, warmth */
+  --color-flare: #f0334a; /* red: live dot, errors, close */
+  --color-yellow: #f4e276;
+  --color-cursor: #f4e276;
+  --color-selection-bg: #a5b5ab;
+  --color-selection-fg: #131516;
+  --color-border-active: #a5b5ab; /* Hyprland's active border */
+  --color-border-inactive: #35373a;
+
+  --color-ansi-0: #131516;
+  --color-ansi-1: #f0334a;
+  --color-ansi-2: #819890;
+  --color-ansi-3: #f4e276;
+  --color-ansi-4: #a5b5ab;
+  --color-ansi-5: #72856c;
+  --color-ansi-6: #6d877d;
+  --color-ansi-7: #d5dbd7;
+  --color-ansi-8: #3a4849;
+  --color-ansi-9: #f0334a;
+  --color-ansi-10: #819890;
+  --color-ansi-11: #f4e276;
+  --color-ansi-12: #a5b5ab;
+  --color-ansi-13: #72856c;
+  --color-ansi-14: #6d877d;
+  --color-ansi-15: #f8ebe3;
 
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
@@ -56,7 +81,7 @@
   --text-caption--line-height: 1.35;
   --text-caption--letter-spacing: 0.01em;
 
-  --radius-window: 12px;
+  --radius-window: 12px; /* hyprland.conf rounding */
   --radius-card: 10px;
   --radius-control: 8px;
 
@@ -70,8 +95,10 @@
    heavier (more blur, deeper shadow). The refracting Liquid Glass variant
    lives in components/os/Glass.tsx; these are the frosted base. */
 :root {
-  --glass-tint: rgba(22, 26, 23, 0.46);
-  --glass-tint-thick: rgba(16, 19, 17, 0.66);
+  /* hyprland.conf border_size (the theme overrides it) */
+  --win-border: 1px;
+  --glass-tint: color-mix(in srgb, var(--color-ink-800) 46%, transparent);
+  --glass-tint-thick: color-mix(in srgb, var(--color-ink-900) 66%, transparent);
   --glass-rim: rgba(255, 255, 255, 0.16);
   --glass-rim-strong: rgba(255, 255, 255, 0.28);
   --glass-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.65);
@@ -140,8 +167,8 @@
 }
 @media (prefers-reduced-transparency: reduce) {
   :root {
-    --glass-tint: rgba(22, 26, 23, 0.97);
-    --glass-tint-thick: rgba(16, 19, 17, 0.98);
+    --glass-tint: color-mix(in srgb, var(--color-ink-800) 97%, transparent);
+    --glass-tint-thick: color-mix(in srgb, var(--color-ink-900) 98%, transparent);
   }
   .glass-thin,
   .glass,
@@ -152,9 +179,9 @@
 @media (prefers-contrast: more) {
   :root {
     --hairline: rgba(255, 255, 255, 0.45);
-    --glass-tint: rgba(16, 19, 17, 0.96);
-    --glass-tint-thick: rgba(16, 19, 17, 0.98);
-    --color-label-3: #bcc2ba;
+    --glass-tint: color-mix(in srgb, var(--color-ink-900) 96%, transparent);
+    --glass-tint-thick: color-mix(in srgb, var(--color-ink-900) 98%, transparent);
+    --color-label-3: var(--color-label-2);
   }
 }
 
@@ -179,8 +206,8 @@ body {
   overflow-x: clip;
 }
 ::selection {
-  background: var(--color-signal);
-  color: var(--color-ink-950);
+  background: var(--color-selection-bg);
+  color: var(--color-selection-fg);
 }
 :focus-visible {
   outline: 2px solid var(--color-signal);
@@ -235,7 +262,7 @@ p {
   overflow: visible;
 }
 .em-palette::backdrop {
-  background: rgba(6, 8, 7, 0.45);
+  background: color-mix(in srgb, var(--color-ink-950) 45%, transparent);
   transition: opacity 0.2s ease;
 }
 .em-palette:not([data-visible])::backdrop {
@@ -243,8 +270,8 @@ p {
 }
 .em-palette-panel {
   border-radius: var(--radius-window);
-  background: rgba(12, 15, 13, 0.96);
-  border: 2px solid rgba(196, 206, 194, 0.34);
+  background: color-mix(in srgb, var(--color-ink-900) 96%, transparent);
+  border: 2px solid color-mix(in srgb, var(--color-border-active) 34%, transparent);
   box-shadow: 0 40px 100px -30px rgba(0, 0, 0, 0.85);
   overflow: hidden;
   font-family: var(--font-sans);
@@ -322,7 +349,7 @@ p {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: rgba(176, 204, 134, 0.1);
+  background: color-mix(in srgb, var(--color-signal) 10%, transparent);
 }
 .em-palette-icon {
   display: grid;
@@ -363,7 +390,7 @@ p {
   border-radius: 10px;
 }
 .em-dead[data-active] {
-  background: rgba(176, 204, 134, 0.06);
+  background: color-mix(in srgb, var(--color-signal) 6%, transparent);
 }
 .em-dead-letter {
   position: relative;
@@ -410,7 +437,7 @@ p {
   right: 44px;
   width: 30px;
   height: 36px;
-  background: #ebe9e1;
+  background: var(--color-label);
   filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.5));
   mask:
     linear-gradient(#000 0 0) center / calc(100% - var(--tile)) calc(100% - var(--tile)) no-repeat,
@@ -423,7 +450,7 @@ p {
   display: grid;
   place-items: center;
   background: #16200c;
-  color: #ebe9e1;
+  color: var(--color-label);
 }
 /* the postmark: an empty ring with the visitor's date, inked on posting */
 .em-dead-mark {
@@ -450,7 +477,7 @@ p {
   rotate: -12deg;
 }
 .em-dead-mark[data-inked] {
-  color: rgba(224, 189, 110, 0.55);
+  color: color-mix(in srgb, var(--color-ember) 55%, transparent);
 }
 .em-dead-mark[data-full] {
   color: var(--color-ember);
@@ -471,7 +498,7 @@ p {
   padding: 0;
   border-radius: 6px;
   background: #0d100e;
-  box-shadow: inset 0 0 0 1px rgba(196, 206, 194, 0.08);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-border-active) 8%, transparent);
 }
 .em-board-canvas {
   display: block;
@@ -485,7 +512,7 @@ p {
   cursor: pointer;
 }
 .em-board-row[aria-selected="true"] {
-  background: rgba(176, 204, 134, 0.1);
+  background: color-mix(in srgb, var(--color-signal) 10%, transparent);
 }
 .em-palette-empty {
   padding: 18px 12px;
@@ -528,7 +555,7 @@ p {
 .em-sheet-scrim {
   position: absolute;
   inset: 0;
-  background: rgba(10, 12, 11, 0.55);
+  background: color-mix(in srgb, var(--color-ink-950) 55%, transparent);
 }
 .em-sheet {
   position: absolute;
@@ -541,7 +568,7 @@ p {
   flex-direction: column;
   border-radius: var(--sheet-radius, 28px) var(--sheet-radius, 28px) 0 0;
   /* near-solid: whatever is behind must never fight the sheet's text */
-  background: var(--sheet-bg, rgba(16, 19, 17, 0.96));
+  background: var(--sheet-bg, color-mix(in srgb, var(--color-ink-900) 96%, transparent));
   border: 1px solid var(--ui-border);
   border-bottom: 0;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 -30px 80px -30px rgba(0, 0, 0, 0.7);
@@ -556,7 +583,7 @@ p {
   height: 5px;
   margin: 10px auto 4px;
   border-radius: 999px;
-  background: rgba(235, 233, 225, 0.3);
+  background: color-mix(in srgb, var(--color-label) 30%, transparent);
 }
 .em-sheet-content {
   overflow: auto;
@@ -883,7 +910,7 @@ html[data-intro="done"] .em-intro {
   font: 700 10px/1 var(--font-mono);
   letter-spacing: 0.04em;
   background: var(--color-ion);
-  outline: 1px dashed rgba(10, 12, 11, 0.45);
+  outline: 1px dashed color-mix(in srgb, var(--color-ink-950) 45%, transparent);
   outline-offset: -3px;
 }
 .em-stamp[data-tone="been"] {

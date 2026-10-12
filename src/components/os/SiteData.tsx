@@ -11,6 +11,9 @@ export function SiteDataProvider({ data, children }: { data: SiteData; children:
   return <Ctx.Provider value={data}>{children}</Ctx.Provider>;
 }
 
+/** The site data, or null outside the provider (pages without the OS shell). */
+export const useMaybeSiteData = () => useContext(Ctx);
+
 export function useSiteData() {
   const v = useContext(Ctx);
   if (!v) throw new Error("useSiteData outside SiteDataProvider");

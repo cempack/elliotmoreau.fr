@@ -44,8 +44,8 @@
   pointer-events: none;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0) 42px),
-    radial-gradient(120% 70% at 50% 0%, rgba(176, 204, 134, 0.03), transparent 60%),
-    linear-gradient(180deg, rgba(13, 16, 14, 0.76), rgba(10, 12, 11, 0.86) 40%, rgba(10, 12, 11, 0.9));
+    radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--color-signal) 3%, transparent), transparent 60%),
+    linear-gradient(180deg, color-mix(in srgb, var(--color-ink-900) 76%, transparent), color-mix(in srgb, var(--color-ink-950) 86%, transparent) 40%, color-mix(in srgb, var(--color-ink-950) 90%, transparent));
   backdrop-filter: blur(12px) blur(12px) blur(10px) saturate(1.9);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.16),
@@ -84,7 +84,7 @@
 .os-term-win:focus-within .os-term-glass {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    inset 0 0 0 1px rgba(176, 204, 134, 0.16);
+    inset 0 0 0 1px color-mix(in srgb, var(--color-signal) 16%, transparent);
 }
 .os-term-win:not(:focus-within) .os-win-lights:not(:hover) .os-win-light,
 html[data-term-focus] .os-win .os-win-lights:not(:hover) .os-win-light {
@@ -109,15 +109,15 @@ html[data-term-focus] .os-win .os-win-lights:not(:hover) .os-win-light {
 .os-term-title-sep {
   color: var(--color-label-3);
 }
-/* a lime block cursor as the window glyph */
+/* a block cursor as the window glyph, in the theme's cursor colour */
 .os-term-title-glyph {
   display: inline-block;
   width: 7px;
   height: 12px;
   margin-right: 9px;
   vertical-align: -2px;
-  background: var(--color-signal);
-  box-shadow: 0 0 8px rgba(176, 204, 134, 0.45);
+  background: var(--color-cursor);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--color-cursor) 45%, transparent);
 }
 
 /* ───────── session ───────── */
@@ -214,7 +214,7 @@ html[data-term-focus] .os-win .os-win-lights:not(:hover) .os-win-light {
   outline: none;
 }
 .os-term-field.is-overflow .os-term-input {
-  caret-color: var(--color-signal);
+  caret-color: var(--color-cursor);
 }
 .os-term-overlay {
   position: absolute;
@@ -229,14 +229,14 @@ html[data-term-focus] .os-win .os-win-lights:not(:hover) .os-win-light {
 .os-term-ghost {
   color: var(--color-label-3);
 }
-/* the block caret, with the glyph under it drawn in ink */
+/* the block caret in the theme's cursor colour, the glyph under it in ink */
 .os-term-caret {
   position: absolute;
   top: 0;
   left: calc(var(--x) * 1ch);
   width: 1ch;
   height: 100%;
-  background: var(--color-signal);
+  background: var(--color-cursor);
   color: var(--color-ink-950);
   white-space: pre;
   pointer-events: none;
@@ -245,7 +245,7 @@ html[data-term-focus] .os-win .os-win-lights:not(:hover) .os-win-light {
 .os-term-caret.is-idle {
   background: transparent;
   color: transparent;
-  box-shadow: inset 0 0 0 1px var(--color-signal);
+  box-shadow: inset 0 0 0 1px var(--color-cursor);
   animation: none;
 }
 @keyframes os-term-blink {
@@ -302,12 +302,12 @@ html[data-term-focus] .os-win .os-win-lights:not(:hover) .os-win-light {
   color: var(--color-signal);
   font: inherit;
   text-align: left;
-  text-decoration: underline dotted rgba(176, 204, 134, 0.5);
+  text-decoration: underline dotted color-mix(in srgb, var(--color-signal) 50%, transparent);
   text-underline-offset: 3px;
   cursor: pointer;
 }
 .os-term-cmdlink:hover {
-  background: rgba(176, 204, 134, 0.12);
+  background: color-mix(in srgb, var(--color-signal) 12%, transparent);
   text-decoration-color: transparent;
 }
 .os-term-cmdlink:focus-visible {
@@ -470,7 +470,7 @@ html[data-term-focus] .os-win .os-win-lights:not(:hover) .os-win-light {
   margin-right: 1ch;
   border-radius: 999px;
   background: var(--color-flare);
-  box-shadow: 0 0 8px rgba(226, 120, 107, 0.7);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--color-flare) 70%, transparent);
   vertical-align: 1px;
 }
 
@@ -589,7 +589,7 @@ html[data-term-focus] .os-win .os-win-lights:not(:hover) .os-win-light {
 .os-term-scrim {
   position: absolute;
   inset: 0;
-  background: rgba(10, 12, 11, 0.5);
+  background: color-mix(in srgb, var(--color-ink-950) 50%, transparent);
   pointer-events: auto;
 }
 .os-term-sheet {
@@ -607,7 +607,7 @@ html[data-term-focus] .os-win .os-win-lights:not(:hover) .os-win-light {
   outline: none;
 }
 .os-term-sheet .os-term-glass {
-  background: linear-gradient(180deg, rgba(14, 17, 15, 0.92), rgba(10, 12, 11, 0.96));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-ink-900) 92%, transparent), color-mix(in srgb, var(--color-ink-950) 96%, transparent));
 }
 .os-term-sheethead {
   flex: none;
@@ -703,7 +703,7 @@ html[data-term-focus] .os-win .os-win-lights:not(:hover) .os-win-light {
   inset: -5px -4px;
 }
 .os-term-chip:active {
-  background: rgba(176, 204, 134, 0.16);
+  background: color-mix(in srgb, var(--color-signal) 16%, transparent);
 }
 .os-term-sheet .os-term-line {
   padding: 10px 16px 12px;

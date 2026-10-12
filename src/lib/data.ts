@@ -4,6 +4,8 @@ import { getLatestPosts, type GhostPost } from "./ghost";
 import { getActivity, getPushes, getRepos, type ActivityInfo, type PushHistory, type RepoInfo } from "./github";
 import { getSpotifyStatus, type SpotifyStatus } from "./spotify";
 import { getWeather, type Weather } from "./weather";
+import { getTheme } from "./theme-source";
+import type { Theme } from "./theme";
 import { FIXTURE_ACTIVITY, FIXTURE_POSTS, FIXTURE_PUSHES, FIXTURE_REPOS, FIXTURE_SPOTIFY } from "./fixtures";
 import { getSiteContent } from "@/server/content";
 import type { CurrentAway, NowContent, PlaceRow, PublicLive, Status } from "./content";
@@ -30,6 +32,8 @@ export type SiteData = {
   away: CurrentAway | null;
   /** Toulouse's weather now (the wallpaper's sky, the sundial's caption); null when unknown */
   weather: Weather | null;
+  /** the Dos Moos palette, live from its repo (the snapshot when GitHub is out of reach) */
+  theme: Theme;
 };
 
 /** sample data stands in for unreachable sources everywhere except the
@@ -51,13 +55,14 @@ export const getSiteData = cache(async (): Promise<SiteData> => {
   const { hiddenRepos, ...publicLive } = live;
   const hidden = new Set(hiddenRepos.map((n) => n.toLowerCase()));
   const skip = hidden.size ? (repo: string) => hidden.has(repo.toLowerCase()) : undefined;
-  const [posts, spotify, repos, activity, pushes, weather] = await Promise.all([
+  const [posts, spotify, repos, activity, pushes, weather, theme] = await Promise.all([
     getLatestPosts(12),
     live.showSpotify ? getSpotifyStatus().catch(() => null) : null,
     getRepos(),
     getActivity(skip),
     getPushes(skip),
     getWeather(),
+    getTheme(),
   ]);
   const pick = <T,>(live: T | null | undefined, sample: T, empty: T): [T, Source] => {
     const has = Array.isArray(live) ? live.length > 0 : live != null;
@@ -78,6 +83,7 @@ export const getSiteData = cache(async (): Promise<SiteData> => {
     pushes: h && skip ? { ...h, days: h.days.filter((d) => !skip(d.repo)) } : h,
     sources: { posts: ps, spotify: ss, repos: rs, activity: as, pushes: hs },
     weather,
+    theme,
     ...content,
     live: publicLive,
   };

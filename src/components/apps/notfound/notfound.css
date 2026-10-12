@@ -44,10 +44,10 @@
   overflow: visible;
 }
 .app-nf-matrix-ghost {
-  fill: rgba(174, 163, 200, 0.075);
+  fill: color-mix(in srgb, var(--color-lilac) 7.5%, transparent);
 }
 .app-nf-matrix-ghost--dead {
-  fill: rgba(174, 163, 200, 0.12);
+  fill: color-mix(in srgb, var(--color-lilac) 12%, transparent);
 }
 .app-nf-matrix-bloom {
   opacity: 0.42;
@@ -191,7 +191,7 @@
   border-radius: var(--radius-window);
   /* a Hyprland window: the 2px rim, then the drop */
   box-shadow:
-    0 0 0 2px rgba(196, 206, 194, 0.32),
+    0 0 0 2px color-mix(in srgb, var(--color-border-active) 32%, transparent),
     0 30px 70px -26px rgba(0, 0, 0, 0.78);
   touch-action: none;
   user-select: none;
@@ -214,7 +214,7 @@
    after the refraction, so the pixel grid behind bends crisply instead
    of smearing, and a deeper tint for the text */
 .app-nf-alert .os-glass {
-  --os-glass-tint: rgba(12, 15, 13, 0.86);
+  --os-glass-tint: color-mix(in srgb, var(--color-ink-900) 86%, transparent);
   --os-glass-rblur: 4px;
 }
 html[data-sky="day"] .app-nf-alert .os-glass {
@@ -256,7 +256,7 @@ html[data-sky="day"] .app-nf-alert .os-glass {
   gap: 0.4375rem;
   padding: 0.3125rem 0.625rem 0.3125rem 0.5625rem;
   border-radius: 999px;
-  background: rgba(16, 19, 17, 0.9);
+  background: color-mix(in srgb, var(--color-ink-900) 90%, transparent);
   box-shadow:
     inset 0 0 0 1px var(--hairline),
     inset 0 1px 0 rgba(255, 255, 255, 0.06),
@@ -338,7 +338,7 @@ html[data-sky="day"] .app-nf-alert .os-glass {
 }
 .app-nf-frag {
   position: absolute;
-  box-shadow: 0 1px 0 rgba(10, 12, 11, 0.5);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--color-ink-950) 50%, transparent);
 }
 
 .app-nf-title {
@@ -369,7 +369,7 @@ html[data-sky="day"] .app-nf-alert .os-glass {
   margin-top: 1.125rem;
   padding: 0.625rem 0.75rem 0.6875rem;
   border-radius: var(--radius-control);
-  background: rgba(10, 12, 11, 0.52);
+  background: color-mix(in srgb, var(--color-ink-950) 52%, transparent);
   box-shadow:
     inset 0 0 0 1px var(--hairline),
     inset 0 1px 3px rgba(0, 0, 0, 0.4);
@@ -404,7 +404,7 @@ html[data-sky="day"] .app-nf-alert .os-glass {
   padding: 0 0.0625rem;
   border-radius: 3px;
   font: inherit;
-  text-decoration: underline dotted rgba(176, 204, 134, 0.55);
+  text-decoration: underline dotted color-mix(in srgb, var(--color-signal) 55%, transparent);
   text-underline-offset: 3px;
   cursor: pointer;
   transition: background-color 0.15s var(--ease-out-quint);
@@ -417,7 +417,7 @@ html[data-sky="day"] .app-nf-alert .os-glass {
   inset: -6px 0;
 }
 .app-nf-zsh-key--btn:hover:not([aria-disabled]) {
-  background: rgba(176, 204, 134, 0.18);
+  background: color-mix(in srgb, var(--color-signal) 18%, transparent);
 }
 .app-nf-zsh-key--btn[aria-disabled] {
   color: var(--color-label-3);

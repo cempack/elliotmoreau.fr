@@ -97,12 +97,12 @@ html[data-sky="dusk"] .app-home-scene {
   z-index: 0;
   border-radius: inherit;
   pointer-events: none;
-  --os-glass-tint: rgba(13, 16, 14, 0.9);
+  --os-glass-tint: color-mix(in srgb, var(--color-ink-900) 90%, transparent);
 }
 /* tiles wear the windows' 2px border */
 .app-home-widget-glass {
   --os-glass-rim: 2px;
-  --os-glass-border: rgba(196, 206, 194, 0.26);
+  --os-glass-border: color-mix(in srgb, var(--color-border-active) 26%, transparent);
 }
 .app-home-widget .app-home-widget-hit {
   position: absolute;
@@ -242,7 +242,7 @@ html[data-sky="night"] .app-home-sundial svg {
   top: 0;
   z-index: 0;
   pointer-events: none;
-  fill: rgba(235, 233, 225, 0.5);
+  fill: color-mix(in srgb, var(--color-label) 50%, transparent);
 }
 .app-home-sun-track-now,
 .app-home-sun-track-ring {
@@ -531,7 +531,7 @@ html[data-sky="night"] .app-home-sundial svg {
   max-width: var(--app-home-hello-w);
   padding: 18px 20px;
   border-radius: var(--radius-window);
-  color: #f4f2ea;
+  color: var(--color-label);
   box-shadow:
     0 1px 1px rgba(0, 0, 0, 0.2),
     0 22px 44px -22px rgba(0, 0, 0, 0.72);
@@ -548,9 +548,9 @@ html[data-sky="night"] .app-home-sundial svg {
   z-index: 0;
   border-radius: inherit;
   pointer-events: none;
-  --os-glass-tint: rgba(13, 16, 14, 0.8);
+  --os-glass-tint: color-mix(in srgb, var(--color-ink-900) 80%, transparent);
   --os-glass-rim: 2px;
-  --os-glass-border: rgba(196, 206, 194, 0.26);
+  --os-glass-border: color-mix(in srgb, var(--color-border-active) 26%, transparent);
 }
 .app-home-hello-greeting {
   font-size: 1.5rem;
@@ -560,7 +560,7 @@ html[data-sky="night"] .app-home-sundial svg {
 }
 .app-home-hello-lead {
   margin-top: 8px;
-  color: #c9cec6;
+  color: var(--color-label-2);
   font-size: 0.875rem;
   line-height: 1.5;
   text-wrap: pretty;
@@ -596,14 +596,14 @@ html[data-sky="night"] .app-home-sundial svg {
 }
 /* the way in: a cream pill, the moss arrow */
 .app-home-btn--primary {
-  background: #f1efe7;
-  color: #121614;
+  background: var(--color-label);
+  color: var(--color-ink-950);
 }
 .app-home-btn--primary:hover {
-  background: #fff;
+  background: color-mix(in srgb, var(--color-label) 82%, #fff);
 }
 .app-home-btn-arrow {
-  color: #4f6b33;
+  color: var(--color-signal-deep);
   transition: translate 0.35s var(--ease-spring);
 }
 @media (hover: hover) and (pointer: fine) {
@@ -612,7 +612,7 @@ html[data-sky="night"] .app-home-sundial svg {
   }
 }
 .app-home-btn--ghost {
-  color: #f1efe7;
+  color: var(--color-label);
 }
 .app-home-btn--ghost:hover {
   background: rgba(255, 255, 255, 0.08);
@@ -707,7 +707,7 @@ html[data-sky="night"] .app-home-sundial svg {
 html[data-sky="day"] .app-home-icon:not([data-selected]) .app-home-icon-label,
 html[data-sky="dawn"] .app-home-icon:not([data-selected]) .app-home-icon-label,
 html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
-  background: rgba(10, 12, 11, 0.52);
+  background: color-mix(in srgb, var(--color-ink-950) 52%, transparent);
 }
 .app-home-icon[data-selected] .app-home-icon-label {
   background: var(--color-signal);
@@ -733,10 +733,10 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   z-index: 4;
   width: 0;
   height: 0;
-  border: 1px solid rgba(176, 204, 134, 0.75);
+  border: 1px solid color-mix(in srgb, var(--color-signal) 75%, transparent);
   border-radius: 3px;
-  background: rgba(176, 204, 134, 0.09);
-  box-shadow: inset 0 0 0 1px rgba(10, 12, 11, 0.25);
+  background: color-mix(in srgb, var(--color-signal) 9%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-ink-950) 25%, transparent);
   opacity: 0;
   pointer-events: none;
 }

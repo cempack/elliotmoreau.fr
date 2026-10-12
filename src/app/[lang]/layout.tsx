@@ -11,6 +11,8 @@ import { MotionProvider } from "@/components/motion/MotionProvider";
 import { OSShell } from "@/components/os/OSShell";
 import { SKY_SCRIPT } from "@/components/os/sky-script";
 import { InlineScript } from "@/components/InlineScript";
+import { getTheme } from "@/lib/theme-source";
+import { themeCss } from "@/lib/theme";
 
 // Both locales are prerendered; any other `lang` is turned away by the
 // hasLocale() check below. Not `dynamicParams = false`: with it, a page
@@ -21,11 +23,10 @@ export function generateStaticParams() {
   return LOCALES.map((lang) => ({ lang }));
 }
 
-export const viewport: Viewport = {
-  themeColor: "#0a0c0b",
-  colorScheme: "dark",
-  viewportFit: "cover",
-};
+export async function generateViewport(): Promise<Viewport> {
+  const { tokens } = await getTheme();
+  return { themeColor: tokens.ink950, colorScheme: "dark", viewportFit: "cover" };
+}
 
 export async function generateMetadata({ params }: LayoutProps<"/[lang]">): Promise<Metadata> {
   const { lang } = await params;
@@ -64,11 +65,13 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
   const { lang } = await params;
   if (!hasLocale(lang)) notFound();
   const dict = getShellDict(lang);
-  const data = await getShellData();
+  const [data, theme] = await Promise.all([getShellData(), getTheme()]);
   return (
     <html lang={lang} suppressHydrationWarning className={`${inter.variable} ${mono.variable}`}>
       <head>
         <link rel="me" href="https://mastodon.social/@cempack" />
+        {/* the palette, live from the Dos Moos theme repo (lib/theme-source) */}
+        <style id="em-theme" dangerouslySetInnerHTML={{ __html: themeCss(theme.tokens) }} />
         <InlineScript html={SKY_SCRIPT + INTRO_SCRIPT} />
       </head>
       <body className="min-h-svh bg-ink-950 text-label">
