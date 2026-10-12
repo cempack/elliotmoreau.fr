@@ -88,7 +88,10 @@ export function Listening({ status, track, playing }: Listen) {
   const progress = useTrackProgress(track, playing, on);
   const artistsAll = status?.artists;
   const artists = useMemo(() => (artistsAll ?? []).slice(0, 5), [artistsAll]);
-  const crateLabels = useMemo(() => ({ title: l.topArtists, hint: l.crateHint }), [l.topArtists, l.crateHint]);
+  const crateLabels = useMemo(
+    () => ({ title: l.topArtists, hint: l.crateHint, prev: l.cratePrev, next: l.crateNext, open: l.crateOpen }),
+    [l.topArtists, l.crateHint, l.cratePrev, l.crateNext, l.crateOpen]
+  );
   const seed = track ? `${track.title} · ${track.artist}` : null;
 
   return (
