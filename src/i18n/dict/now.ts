@@ -11,6 +11,22 @@ const en = {
     paused: "Right now I’m {doing}, with {track} on pause, and it’s {time} in Toulouse.",
     quiet: "Right now I’m {doing}, and it’s {time} in Toulouse.",
   },
+  day: {
+    label: "Today in Toulouse",
+    slider: "Today in Toulouse: drag to go back in the day",
+    hint: "Drag the sun",
+    nowAt: "now {time}",
+    summary: "Today so far: {songs} and {pushes}. Drag the sun to go back.",
+    songOne: "one song",
+    songs: "{n} songs",
+    pushOne: "one push",
+    pushes: "{n} pushes",
+    empty: "Nothing played or pushed yet today.",
+    both: "At {time} I was listening to {track} by {artist}, and pushing “{msg}” to {repo}.",
+    track: "At {time} I was listening to {track} by {artist}.",
+    push: "At {time} I was pushing “{msg}” to {repo}.",
+    none: "At {time}, nothing playing and nothing pushed.",
+  },
   whatIs: "What’s a now page?",
   updated: "Updated {date}",
   today: "today",
@@ -38,7 +54,6 @@ const en = {
 
   widgets: {
     listening: "Listening",
-    here: "Here & now",
     building: "Building",
     pulse: "Pulse",
     reading: "Reading & learning",
@@ -61,16 +76,6 @@ const en = {
     profile: "Spotify profile",
   },
 
-  here: {
-    sky: "{phase} in Toulouse",
-    pinned: "{phase}, pinned",
-    phases: { dawn: "Dawn", day: "Day", dusk: "Dusk", night: "Night" },
-    forYou: "It’s {you} where you are.",
-    same: "Same time zone as you.",
-    ahead: "Toulouse is {n} ahead of you.",
-    behind: "Toulouse is {n} behind you.",
-    clockLabel: "Toulouse time",
-  },
 
   building: {
     sourceOf: "{name} source code on GitHub",
@@ -131,6 +136,22 @@ const fr: typeof en = {
     paused: "Ces jours-ci, {doing}, j’ai mis {track} en pause, et il est {time} à Toulouse.",
     quiet: "Ces jours-ci, {doing}, et il est {time} à Toulouse.",
   },
+  day: {
+    label: "Aujourd’hui à Toulouse",
+    slider: "Aujourd’hui à Toulouse : glissez pour remonter dans la journée",
+    hint: "Faites glisser le soleil",
+    nowAt: "maintenant {time}",
+    summary: "Aujourd’hui pour l’instant : {songs} et {pushes}. Faites glisser le soleil pour remonter le temps.",
+    songOne: "un morceau",
+    songs: "{n} morceaux",
+    pushOne: "un push",
+    pushes: "{n} pushs",
+    empty: "Rien écouté ni poussé pour l’instant aujourd’hui.",
+    both: "À {time}, j’écoutais {track} de {artist}, et je poussais « {msg} » sur {repo}.",
+    track: "À {time}, j’écoutais {track} de {artist}.",
+    push: "À {time}, je poussais « {msg} » sur {repo}.",
+    none: "À {time}, rien en lecture et rien de poussé.",
+  },
   whatIs: "C’est quoi, une page /now ?",
   updated: "Mis à jour le {date}",
   today: "aujourd’hui",
@@ -158,7 +179,6 @@ const fr: typeof en = {
 
   widgets: {
     listening: "En écoute",
-    here: "Ici et maintenant",
     building: "En chantier",
     pulse: "Pouls",
     reading: "Lire, apprendre",
@@ -181,16 +201,6 @@ const fr: typeof en = {
     profile: "Profil Spotify",
   },
 
-  here: {
-    sky: "{phase} à Toulouse",
-    pinned: "{phase}, épinglé",
-    phases: { dawn: "Aube", day: "Jour", dusk: "Crépuscule", night: "Nuit" },
-    forYou: "Chez vous, il est {you}.",
-    same: "Nous sommes sur le même fuseau.",
-    ahead: "Toulouse a {n} d’avance sur vous.",
-    behind: "Toulouse a {n} de retard sur vous.",
-    clockLabel: "Heure de Toulouse",
-  },
 
   building: {
     sourceOf: "{name} : code source sur GitHub",

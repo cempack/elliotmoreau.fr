@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { getNamespaces, hasLocale } from "@/i18n";
 import { I18nScope } from "@/i18n/client";
 import { appMetadata } from "@/i18n/metadata";
-import { getSiteData } from "@/lib/data";
+import { getDayData, getSiteData } from "@/lib/data";
 import { NowApp } from "@/components/apps/now/NowApp";
 
 export const revalidate = 300;
@@ -16,10 +16,10 @@ export default async function NowPage({ params }: PageProps<"/[lang]/now">) {
   if (!hasLocale(lang)) notFound();
   // the app reads live data from the shell's SiteData; the page sends its
   // strings and the push history (the shell leaves it out), for the Pulse
-  const { pushes } = await getSiteData();
+  const [{ pushes }, day] = await Promise.all([getSiteData(), getDayData()]);
   return (
     <I18nScope dict={getNamespaces(lang, "now")}>
-      <NowApp pushes={pushes} />
+      <NowApp pushes={pushes} day={day} />
     </I18nScope>
   );
 }

@@ -10,10 +10,11 @@ import { useFinePointer, useHydrated } from "@/hooks/env";
 import { useSpotifyStatus } from "@/hooks/useSpotifyStatus";
 import { Board, useBoard, type BoardWidget } from "./board/Board";
 import { NowHero } from "./Hero";
-import { G_BOOK, G_BUILD, G_CHECK, G_CLOCK, G_NOTE, G_PEN, G_PULSE, G_RESET } from "./bits";
+import { G_BOOK, G_BUILD, G_CHECK, G_NOTE, G_PEN, G_PULSE, G_RESET } from "./bits";
 import { fill, useNow } from "./lib";
+import { TodaySky } from "./Day";
+import type { DayData } from "@/lib/data";
 import { Listening, ListeningMeta } from "./widgets/Listening";
-import { HereMeta, HereNow } from "./widgets/HereNow";
 import { Building, BuildingMeta } from "./widgets/Building";
 import { Pulse } from "./widgets/Pulse";
 import { Reading } from "./widgets/Reading";
@@ -22,11 +23,12 @@ import { useSiteData } from "@/components/os/SiteData";
 import type { PushHistory } from "@/lib/github";
 
 /** default arrangements: each packs the 4-column grid, and the 2-column
-    one, with no holes: Listening, Here and Building on top, then Pulse
-    beside Writing (or beside Reading and a narrower Writing). A saved
-    layout that still lists a widget that's gone simply drops it. */
-const ORDER_READING: readonly string[] = ["listening", "here", "building", "pulse", "reading", "writing"];
-const ORDER: readonly string[] = ["listening", "here", "building", "pulse", "writing"];
+    one, with no holes: Listening, Building and Writing on top, Pulse as a
+    wide strip below (or Listening, Building and Reading on top, then
+    Writing beside Pulse). A saved layout that still lists a widget that's
+    gone simply drops it. */
+const ORDER_READING: readonly string[] = ["listening", "building", "reading", "writing", "pulse"];
+const ORDER: readonly string[] = ["listening", "building", "writing", "pulse"];
 
 /** "2026-10-10" → a long date in the page language (UTC: no off-by-one). */
 function longDate(iso: string, lang: "en" | "fr") {
@@ -46,7 +48,7 @@ function longDate(iso: string, lang: "en" | "fr") {
  * here is a made-up metric. The push history comes from the page itself
  * (the shell's data leaves it out).
  */
-export function NowApp({ pushes }: { pushes: PushHistory | null }) {
+export function NowApp({ pushes, day }: { pushes: PushHistory | null; day: DayData }) {
   const data = useSiteData();
   const { t, lang } = useI18n();
   const n = t.now;
@@ -99,15 +101,6 @@ export function NowApp({ pushes }: { pushes: PushHistory | null }) {
       children: <Listening {...listen} />,
     },
     {
-      id: "here",
-      size: "T",
-      label: n.widgets.here,
-      accent: "var(--color-ember)",
-      glyph: G_CLOCK,
-      meta: <HereMeta />,
-      children: <HereNow />,
-    },
-    {
       id: "building",
       size: "T",
       label: n.widgets.building,
@@ -115,15 +108,6 @@ export function NowApp({ pushes }: { pushes: PushHistory | null }) {
       glyph: G_BUILD,
       meta: <BuildingMeta />,
       children: <Building activity={data.activity} />,
-    },
-    {
-      id: "pulse",
-      size: "L",
-      label: n.widgets.pulse,
-      accent: "var(--color-flare)",
-      glyph: G_PULSE,
-      meta: <span className="app-now-status app-now-status--mono">GitHub</span>,
-      children: <Pulse pushes={pushes} />,
     },
     ...(hasReading
       ? [
@@ -139,11 +123,20 @@ export function NowApp({ pushes }: { pushes: PushHistory | null }) {
       : []),
     {
       id: "writing",
-      size: hasReading ? "T" : "L",
+      size: hasReading ? "L" : "T",
       label: n.widgets.writing,
       accent: "var(--color-ion)",
       glyph: G_PEN,
       children: <Writing posts={data.posts} />,
+    },
+    {
+      id: "pulse",
+      size: hasReading ? "L" : "W",
+      label: n.widgets.pulse,
+      accent: "var(--color-flare)",
+      glyph: G_PULSE,
+      meta: <span className="app-now-status app-now-status--mono">GitHub</span>,
+      children: <Pulse pushes={pushes} />,
     },
   ];
 
@@ -186,6 +179,7 @@ export function NowApp({ pushes }: { pushes: PushHistory | null }) {
     <AppWindow app="now" toolbar={toolbar}>
       <div className="app-now">
         <NowHero listen={listen} updated={updatedAgo ? `${updated} · ${updatedAgo}` : updated} />
+        <TodaySky day={day} />
 
         <div className="app-now-hintrow">
           <p className="app-now-hint" aria-hidden>

@@ -237,6 +237,19 @@ export async function getPushes(skip?: Skip): Promise<PushHistory | null> {
   return { days, since: oldest ? toulouseDay.format(new Date(oldest)) : days[days.length - 1]?.d ?? "" };
 }
 
+export type DayPush = { at: string; repo: string; msg: string };
+
+/** Pushes in the last 24 hours, newest first, with their times (hidden repos left out). */
+export async function getDayPushes(skip?: Skip): Promise<DayPush[] | null> {
+  const all = await getEvents();
+  if (!all) return null;
+  const since = Date.now() - 24 * 3600_000;
+  return all
+    .filter(shown(skip))
+    .filter((e) => e.type === "PushEvent" && e.created_at && e.repo?.name && Date.parse(e.created_at) >= since)
+    .map((e) => ({ at: e.created_at as string, repo: e.repo!.name!.replace(`${USER}/`, ""), msg: firstLine(e.payload?.commits?.[0]?.message) }));
+}
+
 /* ───────────────────────── this site's own history (Terminal: git log) ───────────────────────── */
 
 const SITE = "elliotmoreau.fr";

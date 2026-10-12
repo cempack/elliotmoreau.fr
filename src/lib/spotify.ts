@@ -152,3 +152,28 @@ export async function getSpotifyStatus(): Promise<SpotifyStatus | null> {
   if (!spotifyConfigured()) return null;
   return cachedStatus();
 }
+
+export type DayTrack = { at: string; title: string; artist: string; image: string; url: string };
+
+async function fetchDay(): Promise<DayTrack[] | null> {
+  const res = await sp<SpRecent>("/me/player/recently-played?limit=50");
+  if (res.status === 401 || !res.json) return null;
+  return (res.json.items ?? [])
+    .filter((i) => i.track?.name && i.played_at)
+    .map((i) => ({
+      at: i.played_at as string,
+      title: i.track!.name as string,
+      artist: (i.track!.artists ?? []).map((a) => a.name).filter(Boolean).join(", "),
+      // a sleeve on the day's strip: 64 covers it
+      image: pick(i.track!.album?.images, 64),
+      url: i.track!.external_urls?.spotify ?? "",
+    }));
+}
+
+const cachedDay = unstable_cache(fetchDay, ["spotify-day"], { revalidate: 120, tags: ["spotify"] });
+
+/** The last 50 plays with their times (Spotify keeps no more), newest first: the /now page's day. */
+export async function getDayTracks(): Promise<DayTrack[] | null> {
+  if (!spotifyConfigured()) return null;
+  return cachedDay();
+}

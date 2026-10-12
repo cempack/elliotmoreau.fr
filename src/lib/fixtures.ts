@@ -1,6 +1,6 @@
 import type { GhostPost } from "./ghost";
-import type { ActivityInfo, PushHistory, RepoInfo } from "./github";
-import type { SpotifyStatus } from "./spotify";
+import type { ActivityInfo, DayPush, PushHistory, RepoInfo } from "./github";
+import type { DayTrack, SpotifyStatus } from "./spotify";
 
 /**
  * Sample data for local work and preview builds, used only when a live
@@ -206,3 +206,22 @@ waybar &amp; disown
 <h2>Know when to stop</h2>
 <p>A setup is done when the next change would be for the screenshot rather than for the work. That moment comes sooner than you think.</p>
 `;
+
+/** A sample day (outside production, when Spotify or GitHub can't be reached): plays and pushes over the last hours, relative to `now`. */
+export function fixtureDay(now = Date.now()): { tracks: DayTrack[]; pushes: DayPush[] } {
+  const H = 3_600_000;
+  const plays: [number, string, string][] = [
+    [0.2, "Midnight City", "M83"], [0.6, "Lisztomania", "Phoenix"], [1.1, "1901", "Phoenix"], [1.9, "Digital Love", "Daft Punk"],
+    [2.4, "Something About Us", "Daft Punk"], [3.2, "Playground Love", "Air"], [4.6, "La femme d’argent", "Air"], [5.3, "Genesis", "Justice"],
+    [5.8, "D.A.N.C.E.", "Justice"], [6.7, "Wait", "M83"], [13.5, "Outro", "M83"], [14.1, "Alive", "Daft Punk"],
+  ];
+  const pushes: [number, string, string][] = [
+    [0.4, "elliotmoreau.fr", "tune the springs until they feel right"], [1.3, "elliotmoreau.fr", "the letter crosses the world"],
+    [2.1, "elliotmoreau.fr", "rework the cassette"], [5.5, "dotfiles", "waybar: quieter clock"], [6.2, "elliotmoreau.fr", "calmer post rows"],
+    [13.8, "omarchy-dos-moos-theme", "warmer ember"],
+  ];
+  return {
+    tracks: plays.map(([h, title, artist]) => ({ at: new Date(now - h * H).toISOString(), title, artist, image: "", url: "" })),
+    pushes: pushes.map(([h, repo, msg]) => ({ at: new Date(now - h * H).toISOString(), repo, msg })),
+  };
+}

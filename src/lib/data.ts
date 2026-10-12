@@ -1,12 +1,12 @@
 import "server-only";
 import { cache } from "react";
 import { getLatestPosts, type GhostPost } from "./ghost";
-import { getActivity, getPushes, getRepos, type ActivityInfo, type PushHistory, type RepoInfo } from "./github";
-import { getSpotifyStatus, type SpotifyStatus } from "./spotify";
+import { getActivity, getDayPushes, getPushes, getRepos, type ActivityInfo, type DayPush, type PushHistory, type RepoInfo } from "./github";
+import { getDayTracks, getSpotifyStatus, type DayTrack, type SpotifyStatus } from "./spotify";
 import { getWeather, type Weather } from "./weather";
 import { getTheme } from "./theme-source";
 import type { Theme } from "./theme";
-import { FIXTURE_ACTIVITY, FIXTURE_POSTS, FIXTURE_PUSHES, FIXTURE_REPOS, FIXTURE_SPOTIFY } from "./fixtures";
+import { FIXTURE_ACTIVITY, FIXTURE_POSTS, FIXTURE_PUSHES, FIXTURE_REPOS, FIXTURE_SPOTIFY, fixtureDay } from "./fixtures";
 import { getSiteContent } from "@/server/content";
 import type { CurrentAway, NowContent, PlaceRow, PublicLive, Status } from "./content";
 
@@ -97,4 +97,24 @@ export const getSiteData = cache(async (): Promise<SiteData> => {
 export const getShellData = cache(async (): Promise<SiteData> => {
   const d = await getSiteData();
   return { ...d, pushes: null };
+});
+
+export type DayData = { tracks: DayTrack[]; pushes: DayPush[] };
+
+/**
+ * The last day, for /now's sky: the plays Spotify remembers (with their
+ * times) and the pushes of the last 24 hours. Same fallbacks as the rest:
+ * samples outside production, empty in it.
+ */
+export const getDayData = cache(async (): Promise<DayData> => {
+  const fx = fixturesAllowed();
+  const { live } = getSiteContent();
+  const hidden = new Set(live.hiddenRepos.map((n) => n.toLowerCase()));
+  const skip = hidden.size ? (repo: string) => hidden.has(repo.toLowerCase()) : undefined;
+  const [tracks, pushes] = await Promise.all([live.showSpotify ? getDayTracks().catch(() => null) : null, getDayPushes(skip).catch(() => null)]);
+  const sample = fx ? fixtureDay() : { tracks: [], pushes: [] };
+  return {
+    tracks: live.showSpotify ? (tracks ?? sample.tracks) : [],
+    pushes: pushes ?? sample.pushes,
+  };
 });
