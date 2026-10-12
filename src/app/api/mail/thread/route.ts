@@ -16,6 +16,12 @@ export async function POST(req: Request) {
   if (!tokens.length) return json({ ok: false, error: "invalid" }, 400);
   if (typeof input.read === "string" && tokens.includes(input.read)) markVisitorRead(input.read);
   const threads: Record<string, ReturnType<typeof visitorThread>> = {};
-  for (const t of tokens) threads[t] = visitorThread(t);
+  try {
+    for (const t of tokens) threads[t] = visitorThread(t);
+  } catch (e) {
+    // the database is unreachable: "try again", never "not on file"
+    console.error("[mail] thread read failed:", (e as Error)?.message ?? e);
+    return json({ ok: false, error: "failed" }, 503);
+  }
   return json({ ok: true, threads });
 }

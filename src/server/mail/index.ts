@@ -187,27 +187,29 @@ export async function sendFromVisitor(input: {
   return { ok: true, token, threadId: thread.id };
 }
 
-/** The visitor's view of a thread (never their own address back), or null. */
+/**
+ * The visitor's view of a thread (never their own address back), or null
+ * when the token names none. Throws if the database can't be read, so a
+ * caller can tell "not on file" from "try again later".
+ */
 export function visitorThread(token: string): VisitorThread | null {
   if (typeof token !== "string" || !TOKEN_RE.test(token)) return null;
-  return safely(() => {
-    const t = threadByTokenHash(hashToken(token));
-    if (!t) return null;
-    // a send error is the admin's business, not the visitor's
-    const messages = messagesOf(t.id).map((m) => toMessage({ ...m, error: null }));
-    return {
-      id: t.id,
-      name: t.name,
-      subject: t.subject,
-      lang: t.lang,
-      // the visitor sees only whose turn it is (never "archived" or "spam")
-      status: messages[messages.length - 1]?.direction === "out" ? "answered" : "open",
-      createdAt: t.created_at,
-      lastAt: t.last_at,
-      visitorUnread: t.visitor_unread,
-      messages,
-    };
-  }, null);
+  const t = threadByTokenHash(hashToken(token));
+  if (!t) return null;
+  // a send error is the admin's business, not the visitor's
+  const messages = messagesOf(t.id).map((m) => toMessage({ ...m, error: null }));
+  return {
+    id: t.id,
+    name: t.name,
+    subject: t.subject,
+    lang: t.lang,
+    // the visitor sees only whose turn it is (never "archived" or "spam")
+    status: messages[messages.length - 1]?.direction === "out" ? "answered" : "open",
+    createdAt: t.created_at,
+    lastAt: t.last_at,
+    visitorUnread: t.visitor_unread,
+    messages,
+  };
 }
 
 /** the visitor opened the thread: Elliot's replies are read */
