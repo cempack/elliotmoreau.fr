@@ -5,7 +5,7 @@ import { Monogram } from "@/components/Monogram";
 import { GLYPH_PIN } from "@/components/glyphs";
 import { PixelLabel } from "@/components/PixelLabel";
 import type { Locale } from "@/i18n/config";
-import type { Place } from "@/lib/places";
+import type { PlaceRow } from "@/lib/content";
 import { isoOf } from "./geo";
 import { fmtAxis } from "./fmt";
 
@@ -25,7 +25,7 @@ export function Stamp({
   lang = "en",
   postmark = false,
 }: {
-  place: Place;
+  place: PlaceRow;
   size?: "lg" | "sm";
   /** short pixel text on the value strip (lg, A–Z 0–9), e.g. "1050 KM" */
   value?: string;
@@ -100,7 +100,7 @@ function ringText(name: string, lat: number, lang: Locale): [string, string] {
 /** Circular date-stamp with wavy cancellation lines. Both ring lines
     read upright (the top one over the arc, the bottom one under it), and
     it is drawn 1:1 so its 12px lettering stays 12px. */
-function Postmark({ place, name, lang }: { place: Place; name: string; lang: Locale }) {
+function Postmark({ place, name, lang }: { place: PlaceRow; name: string; lang: Locale }) {
   const uid = `app-atlas-pm${useId().replace(/[^\w-]/g, "")}`;
   const top = `${uid}-t`;
   const bottom = `${uid}-b`;

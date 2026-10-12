@@ -1,10 +1,10 @@
 "use client";
 
+import { useMemo } from "react";
 import { useI18n } from "@/i18n/client";
 import { travelStats } from "./geo";
+import { useAtlas } from "./useAtlas";
 import { fill, useKm } from "./fmt";
-
-const STATS = travelStats();
 
 /** Countries been · furthest from home · continents. (How many are still
     to come is the list's own NEXT count, so it isn't repeated here.) */
@@ -12,6 +12,8 @@ export function Stats({ layout = "strip" }: { layout?: "strip" | "grid" }) {
   const { t, lang } = useI18n();
   const s = t.atlas.stats;
   const fmt = useKm();
+  const atlas = useAtlas();
+  const STATS = useMemo(() => travelStats(atlas), [atlas]);
   const cells = [
     { k: s.countries, v: String(STATS.countries), sub: fill(s.countriesSub, { n: STATS.places }) },
     { k: s.furthest, v: fmt(STATS.furthestKm), unit: t.atlas.km, sub: STATS.furthest.name[lang] },

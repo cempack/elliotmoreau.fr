@@ -9,7 +9,7 @@ import { project, rubberband, spring, springFrom } from "@/lib/motion";
 import { useSound } from "@/lib/sound";
 import { lenisRef } from "@/lib/lenisRef";
 import { timeAgo } from "@/lib/format";
-import { SOCIALS } from "@/lib/places";
+import { SOCIALS } from "@/lib/socials";
 import { useReduced } from "@/hooks/env";
 import { RepoArt } from "./RepoArt";
 import { GLYPH_STAR, PixelGlyph } from "@/components/glyphs";

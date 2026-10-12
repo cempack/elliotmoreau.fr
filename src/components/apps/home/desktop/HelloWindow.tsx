@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useImperativeHandle, useRef } from "react";
 import { animate, m, useMotionValue, type MotionStyle } from "motion/react";
 import { useI18n } from "@/i18n/client";
-import { PLACES } from "@/lib/places";
+import { usePlaces } from "@/components/os/SiteData";
 import { spring, springFrom } from "@/lib/motion";
 import { useSound } from "@/lib/sound";
 import { PixelGlyph, type Cells } from "@/components/glyphs";
@@ -15,10 +15,6 @@ import { G_PLANE } from "./icons";
 import { isPhone, menubarPx } from "./layout";
 
 const fill = (s: string, v: Record<string, string | number>) => s.replace(/\{(\w+)\}/g, (_, k: string) => String(v[k] ?? ""));
-
-/** places been (home included) and the first one on the list */
-const BEEN = PLACES.filter((p) => p.status === "been").length;
-const NEXT = PLACES.find((p) => p.status === "want");
 
 /* 7×7 glyph for the file in the title bar */
 const G_DOC: Cells = [
@@ -353,7 +349,11 @@ export function HelloWindow({
 function StatusChips({ label, lang }: { label: string; lang: "en" | "fr" }) {
   const { t, path } = useI18n();
   const h = t.home.hello;
-  if (BEEN === 0) return null;
+  // places been (home included) and the first one on the list
+  const places = usePlaces();
+  const been = places.filter((p) => p.status === "been").length;
+  const next = places.find((p) => p.status === "want");
+  if (been === 0) return null;
   // the clock, the last push and the latest post are widgets beside it;
   // the travels are nowhere else on this screen
   return (
@@ -363,12 +363,12 @@ function StatusChips({ label, lang }: { label: string; lang: "en" | "fr" }) {
           href={path("/atlas")}
           transitionTypes={["app-open"]}
           className="app-home-chip app-home-chip--link"
-          aria-label={fill(NEXT ? h.openAtlasNext : h.openAtlas, { n: BEEN, next: NEXT?.name[lang] ?? "" })}
+          aria-label={fill(next ? h.openAtlasNext : h.openAtlas, { n: been, next: next?.name[lang] ?? "" })}
         >
           <PixelGlyph cells={G_PLANE} size={11} className="app-home-chip-plane" />
-          <span className="app-home-chip-v">{fill(h.places, { n: BEEN })}</span>
-          {NEXT && (
-            <span className="app-home-chip-k">{fill(h.next, { place: NEXT.name[lang] })}</span>
+          <span className="app-home-chip-v">{fill(h.places, { n: been })}</span>
+          {next && (
+            <span className="app-home-chip-k">{fill(h.next, { place: next.name[lang] })}</span>
           )}
         </Link>
       </li>

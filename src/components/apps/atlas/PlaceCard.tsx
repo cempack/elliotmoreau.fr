@@ -9,13 +9,14 @@ import { spring } from "@/lib/motion";
 import { useReduced } from "@/hooks/env";
 import { PixelGlyph } from "@/components/glyphs";
 import { G_CHEVRON } from "@/components/os/window/glyphs";
-import { HOME, type Place } from "@/lib/places";
-import { BEEN, NEXT, ORDERED, bearingDeg, compassIndex, distanceKm } from "./geo";
+import type { PlaceRow } from "@/lib/content";
+import { bearingDeg, compassIndex, distanceKm } from "./geo";
+import { useAtlas } from "./useAtlas";
 import { Stamp } from "./Stamp";
 import { capitalize, fill, useCoords, useKm } from "./fmt";
 
 /** The status chip: Home / Visited / Next up, marker drawn like the globe's. */
-export function StatusChip({ place }: { place: Place }) {
+export function StatusChip({ place }: { place: PlaceRow }) {
   const { t } = useI18n();
   const tone = place.home ? "home" : place.status;
   return (
@@ -96,8 +97,8 @@ function KineticName({ text, id }: { text: string; id: string }) {
 /**
  * The inspector for one place: status, region, coordinates (copyable),
  * the perforated stamp, the name in kinetic display type, distance and
- * heading from home (or the routes out, for home), a short note, and
- * previous / next.
+ * heading from home (or the routes out, for home), its note (from the
+ * database), and previous / next.
  */
 export function PlaceCard({
   place,
@@ -105,7 +106,7 @@ export function PlaceCard({
   compact = false,
   titleId,
 }: {
-  place: Place;
+  place: PlaceRow;
   onSelect: (id: string) => void;
   compact?: boolean;
   titleId: string;
@@ -116,14 +117,16 @@ export function PlaceCard({
   const { notify } = useToast();
   const reduced = useReduced();
   const coordsText = useCoords();
-  const isHome = !!place.home || place.id === HOME.id;
-  const km = distanceKm(HOME, place);
-  const heading = bearingDeg(HOME, place);
+  const { home, been, next: upcoming, ordered } = useAtlas();
+  const isHome = place.home || place.id === home.id;
+  const km = distanceKm(home, place);
+  const heading = bearingDeg(home, place);
   const name = place.name[lang];
   const region = a.regions[place.region.en] ?? capitalize(place.region[lang]);
-  const i = ORDERED.findIndex((p) => p.id === place.id);
-  const prev = ORDERED[(i - 1 + ORDERED.length) % ORDERED.length];
-  const next = ORDERED[(i + 1) % ORDERED.length];
+  const note = place.note?.[lang] ?? "";
+  const i = Math.max(0, ordered.findIndex((p) => p.id === place.id));
+  const prev = ordered[(i - 1 + ordered.length) % ordered.length] ?? place;
+  const next = ordered[(i + 1) % ordered.length] ?? place;
   const copy = async () => {
     const text = `${place.lat.toFixed(4)}, ${place.lon.toFixed(4)}`;
     try {
@@ -197,9 +200,9 @@ export function PlaceCard({
               <div className="app-atlas-fact app-atlas-fact--wide">
                 <dt>{a.card.routes}</dt>
                 <dd>
-                  <span className="app-atlas-fact-big tabular">{BEEN.length - 1 + NEXT.length}</span>
+                  <span className="app-atlas-fact-big tabular">{been.length - 1 + upcoming.length}</span>
                   <span className="app-atlas-fact-sub">
-                    {fill(a.card.routesSub, { been: BEEN.length - 1, next: NEXT.length })}
+                    {fill(a.card.routesSub, { been: been.length - 1, next: upcoming.length })}
                   </span>
                 </dd>
               </div>
@@ -231,7 +234,7 @@ export function PlaceCard({
             )}
           </dl>
           <p className="app-atlas-note" data-sheet-half="">
-            {isHome ? `${a.notes[place.id] ?? ""} ${a.card.homeLine}` : a.notes[place.id]}
+            {isHome ? [note, a.card.homeLine].filter(Boolean).join(" ") : note}
           </p>
           {compact && (
             <dl className="app-atlas-facts app-atlas-facts--details">
@@ -254,7 +257,7 @@ export function PlaceCard({
           <span>{prev.name[lang]}</span>
         </button>
         <span className="app-atlas-step-count tabular" aria-hidden>
-          {String(i + 1).padStart(2, "0")} / {String(ORDERED.length).padStart(2, "0")}
+          {String(i + 1).padStart(2, "0")} / {String(ordered.length).padStart(2, "0")}
         </span>
         <button type="button" className="app-atlas-step app-atlas-step--next" onClick={() => onSelect(next.id)} aria-label={fill(a.labelled, { label: a.card.next, value: next.name[lang] })}>
           <span>{next.name[lang]}</span>

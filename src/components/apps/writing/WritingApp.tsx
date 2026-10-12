@@ -99,7 +99,10 @@ export function WritingApp({ initialSlug = null }: { initialSlug?: string | null
   );
   const visibleSlugs = useMemo(() => new Set(posts.map((p) => p.slug)), [posts]);
   const [picked, setPicked] = useState<string | null>(null);
-  const selected = picked ?? linkSlug ?? data.posts[0]?.slug ?? null;
+  // with nothing picked or linked, the reader opens on the post pinned in
+  // the admin panel (Live data), else the latest
+  const pinned = known(data.live.pinnedPost) ? data.live.pinnedPost : null;
+  const selected = picked ?? linkSlug ?? pinned ?? data.posts[0]?.slug ?? null;
   const post = posts.find((p) => p.slug === selected) ?? posts[0] ?? null;
   const index = post ? posts.findIndex((p) => p.slug === post.slug) : -1;
   const folderName = (tag && folders.find((f) => f.slug === tag)?.name) || w.all;

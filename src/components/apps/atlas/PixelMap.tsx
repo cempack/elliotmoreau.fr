@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { PLACES, type Place } from "@/lib/places";
+import type { PlaceRow } from "@/lib/content";
+import { usePlaces } from "@/components/os/SiteData";
 import { tileFor } from "./geo";
 import { TILE_H, TILE_W } from "./landmass";
 
@@ -25,8 +26,8 @@ const MARK: Record<string, RGB> = { home: hex("#b0cc86"), been: hex("#e0bd6e"), 
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 const bayer = (x: number, y: number) => (BAYER[((y & 3) << 2) | (x & 3)] + 0.5) / 16;
 
-/** Paints the postcard map of a place into a TILE_W × TILE_H canvas. */
-function paintMap(place: Place, ctx: CanvasRenderingContext2D) {
+/** Paints the postcard map of a place (and the others in its frame) into a TILE_W × TILE_H canvas. */
+function paintMap(place: PlaceRow, others: readonly PlaceRow[], ctx: CanvasRenderingContext2D) {
   const W = TILE_W;
   const H = TILE_H;
   const tile = tileFor(place);
@@ -92,11 +93,11 @@ function paintMap(place: Place, ctx: CanvasRenderingContext2D) {
   }
 
   // every place inside the frame; this one last and largest
-  const px = (p: Place) => ({
+  const px = (p: PlaceRow) => ({
     x: Math.floor((p.lon - tile.west) / tile.dLon),
     y: Math.floor((tile.north - p.lat) / tile.dLat),
   });
-  for (const p of PLACES) {
+  for (const p of others) {
     if (p.id === place.id) continue;
     const { x, y } = px(p);
     if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1) continue;
@@ -122,12 +123,15 @@ function paintMap(place: Place, ctx: CanvasRenderingContext2D) {
   ctx.putImageData(img, 0, 0);
 }
 
-/** A crisp pixel map of a place, drawn once (static canvas). */
-export function PixelMap({ place, className = "" }: { place: Place; className?: string }) {
+/** A crisp pixel map of a place, drawn once (static canvas). The other
+    markers in the frame are the site's places unless `places` is given. */
+export function PixelMap({ place, places, className = "" }: { place: PlaceRow; places?: readonly PlaceRow[]; className?: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
+  const site = usePlaces();
+  const others = places ?? site;
   useEffect(() => {
     const ctx = ref.current?.getContext("2d");
-    if (ctx) paintMap(place, ctx);
-  }, [place]);
+    if (ctx) paintMap(place, others, ctx);
+  }, [place, others]);
   return <canvas ref={ref} width={TILE_W} height={TILE_H} aria-hidden className={className} />;
 }

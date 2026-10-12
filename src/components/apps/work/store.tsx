@@ -105,7 +105,8 @@ export function WorkProvider({ data, children }: { data: SiteData; children: Rea
     () => (terms.length && filter.kind !== "all" ? repos.filter((r) => matches(r, terms)).length : 0),
     [repos, terms, filter.kind]
   );
-  const featured = useMemo(() => pickFeatured(repos), [repos]);
+  const featuredName = data.live.featuredRepo;
+  const featured = useMemo(() => pickFeatured(repos, featuredName), [repos, featuredName]);
   const stars = useMemo(() => visible.reduce((s, r) => s + r.stars, 0), [visible]);
   const sel = selected && visible.some((r) => r.name === selected) ? selected : null;
   const qlRepo = ql ? (repos.find((r) => r.name === ql.name) ?? null) : null;

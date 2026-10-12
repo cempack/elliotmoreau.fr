@@ -3,8 +3,9 @@
 import { m } from "motion/react";
 import { useI18n } from "@/i18n/client";
 import { spring } from "@/lib/motion";
-import { HOME, type Place } from "@/lib/places";
-import { BEEN, NEXT, distanceKm } from "./geo";
+import type { PlaceRow } from "@/lib/content";
+import { distanceKm } from "./geo";
+import { useAtlas } from "./useAtlas";
 import { useKm } from "./fmt";
 
 /**
@@ -29,7 +30,7 @@ export function PlacesList({
   const { t, lang } = useI18n();
   const a = t.atlas;
   const fmt = useKm();
-  const been = [...BEEN.filter((p) => p.home), ...BEEN.filter((p) => !p.home)];
+  const { home, been, next } = useAtlas();
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
     const keys = ["ArrowDown", "ArrowUp", "Home", "End"];
@@ -45,7 +46,7 @@ export function PlacesList({
     if (id) onSelect(id);
   };
 
-  const row = (p: Place) => {
+  const row = (p: PlaceRow) => {
     const active = p.id === selectedId;
     const tone = p.home ? "home" : p.status;
     return (
@@ -67,7 +68,7 @@ export function PlacesList({
             <span className="app-atlas-row-home">{a.status.home}</span>
           ) : (
             <span className="app-atlas-row-km tabular">
-              {fmt(distanceKm(HOME, p))}
+              {fmt(distanceKm(home, p))}
               <span className="app-atlas-row-unit">{"\u00a0"}{a.km}</span>
             </span>
           )}
@@ -76,7 +77,7 @@ export function PlacesList({
     );
   };
 
-  const group = (key: "been" | "next", places: Place[]) => (
+  const group = (key: "been" | "next", places: PlaceRow[]) => (
     <div role="group" aria-labelledby={`${thumbId}-${key}`} className="app-atlas-places-group">
       <p id={`${thumbId}-${key}`} className="app-atlas-places-h" role="presentation">
         <span>{a[key]}</span>
@@ -93,7 +94,7 @@ export function PlacesList({
   return (
     <div className="app-atlas-places" role="listbox" aria-label={a.placesLabel} onKeyDown={onKeyDown}>
       {group("been", been)}
-      {group("next", NEXT)}
+      {group("next", next)}
     </div>
   );
 }

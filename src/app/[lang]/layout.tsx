@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
-import { Analytics } from "@vercel/analytics/react";
 import { inter, mono } from "@/app/fonts";
 import "../globals.css";
 import { getDict, getShellDict, hasLocale, LOCALES, localePath, SITE_URL } from "@/i18n";
@@ -13,7 +12,11 @@ import { OSShell } from "@/components/os/OSShell";
 import { SKY_SCRIPT } from "@/components/os/sky-script";
 import { InlineScript } from "@/components/InlineScript";
 
-export const dynamicParams = false;
+// Both locales are prerendered; any other `lang` is turned away by the
+// hasLocale() check below. Not `dynamicParams = false`: with it, a page
+// whose cache entry revalidateContent() expired has no fallback and 404s
+// until the next deploy (Next drops the expired entry, then refuses to
+// re-render a "not generated" param), so admin saves would break the site.
 export function generateStaticParams() {
   return LOCALES.map((lang) => ({ lang }));
 }
@@ -85,7 +88,6 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
             </SoundProvider>
           </MotionProvider>
         </I18nProvider>
-        <Analytics />
       </body>
     </html>
   );

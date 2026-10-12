@@ -1,7 +1,8 @@
 "use client";
 
 import { useI18n } from "@/i18n/client";
-import { NOW, loc, type Book } from "@/content/now";
+import { loc, type Book } from "@/lib/content";
+import { useNowContent } from "@/components/os/SiteData";
 import { hashString } from "../lib";
 
 /** a book spine colour from the title: stable, from the palette */
@@ -28,7 +29,7 @@ function Spine({ book }: { book: Book }) {
 export function Reading() {
   const { t, lang } = useI18n();
   const r = t.now.reading;
-  const books = NOW.reading as Book[];
+  const { reading: books, learning } = useNowContent();
   return (
     <div className="app-now-read">
       <div>
@@ -68,11 +69,11 @@ export function Reading() {
           <p className="app-now-muted">{r.none}</p>
         )}
       </div>
-      {NOW.learning.length > 0 && (
+      {learning.length > 0 && (
         <div>
           <h3 className="app-now-label">{r.learning}</h3>
           <ul className="app-now-learn">
-            {NOW.learning.map((l) => (
+            {learning.map((l) => (
               <li key={l.label.en}>
                 <span className="app-now-learn-label">{loc(l.label, lang)}</span>
                 {l.note && <span className="app-now-learn-note">{loc(l.note, lang)}</span>}

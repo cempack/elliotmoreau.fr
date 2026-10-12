@@ -1,13 +1,13 @@
 import type { MetadataRoute } from "next";
 import { LOCALES, SITE_URL, localePath, type Locale } from "@/i18n/config";
 import { getSiteData } from "@/lib/data";
-import { NOW } from "@/content/now";
+import { getNowContent } from "@/server/content";
 
 /**
  * Every app in both languages, each entry carrying its hreflang
  * alternates (en, fr, x-default → en). `lastModified` is only set where
  * there's a real date behind it: the newest post (Writing), the latest
- * push (Projects), the hand-edited /now date, and the newest of those for
+ * push (Projects), the /now date (edited in the admin panel), and the newest of those for
  * the Desktop, which shows them all. Atlas and Mail carry none.
  */
 
@@ -32,7 +32,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const data = await getSiteData().catch(() => null);
   const writing = newest((data?.posts ?? []).map((p) => p.published_at));
   const work = newest((data?.repos ?? []).map((r) => r.pushedAt));
-  const now = newest([NOW.updated]);
+  const now = newest([getNowContent().updated]);
   const lastModified: Partial<Record<Route, Date>> = {
     "/": newest([writing?.toISOString(), work?.toISOString(), now?.toISOString(), data?.activity?.createdAt]),
     "/work": work,

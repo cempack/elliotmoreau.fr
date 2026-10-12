@@ -5,7 +5,7 @@ import { PixelGlyph } from "@/components/glyphs";
 import { useHydrated } from "@/hooks/env";
 import { useI18n } from "@/i18n/client";
 import { timeAgo } from "@/lib/format";
-import { SOCIALS } from "@/lib/places";
+import { SOCIALS } from "@/lib/socials";
 import type { SpotifyStatus, TrackInfo } from "@/lib/spotify";
 import { G_ARROW, LiveDot } from "../bits";
 import { Crate } from "../Crate";

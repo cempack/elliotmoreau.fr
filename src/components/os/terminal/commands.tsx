@@ -6,7 +6,8 @@ import type { TrackInfo } from "@/lib/spotify";
 import type { SoundKind } from "@/lib/sound";
 import { timeAgo } from "@/lib/format";
 import { LANG_COLORS, LANG_FALLBACK } from "@/lib/langColors";
-import { PLACES, SOCIALS, fmtCoords } from "@/lib/places";
+import { SOCIALS } from "@/lib/socials";
+import { fmtCoords } from "@/lib/content";
 import { APPS, type AppDef, type AppId } from "../apps";
 import { type SkyMode, type SkyPhase } from "../sky";
 import { phaseOf, sunAt } from "@/lib/sun";
@@ -128,7 +129,7 @@ function filesIn(ctx: RunCtx, all = false): { name: string; dir?: boolean; dim?:
     case "writing":
       return ctx.data.posts.slice(0, 12).map((p) => ({ name: `${p.slug}.md` }));
     case "atlas":
-      return PLACES.map((p) => ({ name: p.id, dim: p.status === "want" }));
+      return ctx.data.places.map((p) => ({ name: p.id, dim: p.status === "want" }));
     case "now":
       return [{ name: "now.md" }];
     case "contact":
@@ -312,7 +313,7 @@ function neofetch(ctx: RunCtx) {
   const dpr = Math.round(Math.min(window.devicePixelRatio || 1, 3) * 10) / 10;
   const rows: [string, React.ReactNode][] = [
     [t.os, "emOS 26.10 Moss"],
-    [t.host, "elliotmoreau.fr (Vercel)"],
+    [t.host, "elliotmoreau.fr (Railway)"],
     [t.kernel, "Next.js 16.3 · React 19.2"],
     [t.shell, "zsh 5.9"],
     [t.wm, t.wmValue],
@@ -408,7 +409,7 @@ function catFile(file: string, ctx: RunCtx): Output {
       );
   }
   if (ctx.cwd.id === "atlas") {
-    const place = PLACES.find((p) => p.id === f.toLowerCase());
+    const place = ctx.data.places.find((p) => p.id === f.toLowerCase());
     if (place)
       return (
         <div className="os-term-block">

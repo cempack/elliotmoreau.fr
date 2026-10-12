@@ -1,35 +1,48 @@
-import { HOME, PLACES, type Place } from "@/lib/places";
+import { homeOf, orderPlaces, type PlaceRow } from "@/lib/content";
 import { TILES, TILE_H, TILE_W, WORLD, WORLD_H, WORLD_W } from "./landmass";
 
-/* ───────────────────────────── place facts ─────────────────────────────
-   What the Atlas needs beyond lib/places: the country each place belongs
-   to (the Canaries are Spain, Northern Ireland is the UK) and its
+/* ───────────────────────────── the places ─────────────────────────────
+   The Atlas draws whatever the database holds (usePlaces), so everything
+   here is a function of that list. Each place carries the country it
+   belongs to (the Canaries are Spain, Northern Ireland is the UK) and its
    continent, so the stats count countries and continents honestly. */
 
-type Continent = "europe" | "north-america" | "south-america" | "asia" | "africa" | "oceania" | "antarctica";
+/** ISO code for the stamp (falls back to the id's first letters). */
+export const isoOf = (p: PlaceRow) => p.iso || p.id.slice(0, 2).toUpperCase();
 
-const FACTS: Record<string, { iso: string; continent: Continent }> = {
-  france: { iso: "FR", continent: "europe" },
-  canada: { iso: "CA", continent: "north-america" },
-  ireland: { iso: "IE", continent: "europe" },
-  "northern-ireland": { iso: "GB", continent: "europe" },
-  canaries: { iso: "ES", continent: "europe" },
-  spain: { iso: "ES", continent: "europe" },
-  japan: { iso: "JP", continent: "asia" },
-  usa: { iso: "US", continent: "north-america" },
-  "south-africa": { iso: "ZA", continent: "africa" },
-  norway: { iso: "NO", continent: "europe" },
+/** A stand-in home for an empty list (the database always has one). */
+const NOWHERE: PlaceRow = {
+  id: "home",
+  name: { en: "Home", fr: "Chez moi" },
+  region: { en: "", fr: "" },
+  lat: 43.6047,
+  lon: 1.4442,
+  status: "been",
+  home: true,
+  iso: "FR",
+  continent: "europe",
+  sort: 0,
 };
 
-/** ISO code for the stamp (falls back to the id's first letters). */
-export const isoOf = (p: Place) => FACTS[p.id]?.iso ?? p.id.slice(0, 2).toUpperCase();
+export type Atlas = {
+  /** display order everywhere: home first, then been, then next */
+  ordered: PlaceRow[];
+  home: PlaceRow;
+  /** home first, then the rest */
+  been: PlaceRow[];
+  next: PlaceRow[];
+  byId: (id: string | null | undefined) => PlaceRow | undefined;
+};
 
-export const BEEN = PLACES.filter((p) => p.status === "been");
-export const NEXT = PLACES.filter((p) => p.status === "want");
-/** Display order everywhere: home first, then been, then next. */
-export const ORDERED = [...BEEN.filter((p) => p.home), ...BEEN.filter((p) => !p.home), ...NEXT];
-
-export const placeById = (id: string | null | undefined) => PLACES.find((p) => p.id === id);
+/** Everything the Atlas derives from the list (memoise it: see useAtlas). */
+export function atlasOf(places: readonly PlaceRow[]): Atlas {
+  const ordered = orderPlaces(places);
+  const home = homeOf(ordered) ?? NOWHERE;
+  const been = ordered.filter((p) => p.status === "been");
+  const next = ordered.filter((p) => p.status === "want");
+  const ids = new Map(ordered.map((p) => [p.id, p]));
+  return { ordered, home, been, next, byId: (id) => (id ? ids.get(id) : undefined) };
+}
 
 /* ───────────────────────────── sphere maths ───────────────────────────── */
 
@@ -92,9 +105,9 @@ export function angleBetween(a: Vec3, b: Vec3) {
     is on the near side and bows across the disc like an airline map (a
     route through the centre of an orthographic view is a straight line).
     Home looks a little south-west of itself, so the routes out bow too. */
-export function focusFor(p: Place) {
-  if (p.home || p.id === HOME.id) return { lat: p.lat - 4, lon: p.lon - 9 };
-  const a = toVec(HOME.lat, HOME.lon);
+export function focusFor(p: PlaceRow, home: PlaceRow) {
+  if (p.home || p.id === home.id) return { lat: p.lat - 4, lon: p.lon - 9 };
+  const a = toVec(home.lat, home.lon);
   const b = toVec(p.lat, p.lon);
   const m = slerp(a, b, 0.5);
   const c: Vec3 = [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
@@ -114,14 +127,14 @@ export function focusFor(p: Place) {
 
 /* ───────────────────────────── trip stats ───────────────────────────── */
 
-export function travelStats() {
-  const countries = new Set(BEEN.map(isoOf));
-  const nextCountries = new Set(NEXT.map(isoOf).filter((c) => !countries.has(c)));
-  const continents = new Set(BEEN.map((p) => FACTS[p.id]?.continent).filter(Boolean));
-  let furthest: Place = HOME;
+export function travelStats({ home, been, next }: Atlas) {
+  const countries = new Set(been.map(isoOf));
+  const nextCountries = new Set(next.map(isoOf).filter((c) => !countries.has(c)));
+  const continents = new Set(been.map((p) => p.continent).filter(Boolean));
+  let furthest: PlaceRow = home;
   let km = 0;
-  for (const p of BEEN) {
-    const d = distanceKm(HOME, p);
+  for (const p of been) {
+    const d = distanceKm(home, p);
     if (d > km) {
       km = d;
       furthest = p;
@@ -129,9 +142,9 @@ export function travelStats() {
   }
   return {
     countries: countries.size,
-    places: BEEN.length,
+    places: been.length,
     next: nextCountries.size,
-    nextPlaces: NEXT.length,
+    nextPlaces: next.length,
     furthest,
     furthestKm: km,
     continents: continents.size,
@@ -165,7 +178,7 @@ export type TileGeo = { w: number; h: number; west: number; north: number; dLon:
 
 /** The postcard map for a place: the baked tile, or one sampled from the
     world grid for places added after the bake. */
-export function tileFor(p: Place): TileGeo {
+export function tileFor(p: PlaceRow): TileGeo {
   const t = TILES[p.id];
   const span = t?.span ?? 24;
   const lat = t?.lat ?? p.lat;

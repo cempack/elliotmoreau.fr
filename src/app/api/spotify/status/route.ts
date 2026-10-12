@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { getSpotifyStatus, spotifyConfigured } from "@/lib/spotify";
+import { getLive } from "@/server/content";
 
 export const revalidate = 30;
 
 export async function GET() {
-  if (!spotifyConfigured()) {
-    // tokens missing: stay quiet, the section hides itself
+  // tokens missing, or the music switched off in the admin panel: stay
+  // quiet, the sections hide themselves
+  if (!spotifyConfigured() || !getLive().showSpotify) {
     return NextResponse.json({ disabled: true });
   }
   const status = await getSpotifyStatus();

@@ -2,8 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import type { MotionValue } from "motion/react";
-import type { Place } from "@/lib/places";
-import { HOME } from "@/lib/places";
+import type { PlaceRow } from "@/lib/content";
 import { angleBetween, focusFor, slerp, toVec, worldGrid, type Vec3 } from "./geo";
 
 /**
@@ -49,7 +48,7 @@ const ION: RGB = [139, 233, 255];
 const PAPER = "#EBE9E1";
 
 type RGB = [number, number, number];
-type Arc = { to: Place; pts: Vec3[]; lift: number[]; cols: string[]; want: boolean; delay: number };
+type Arc = { to: PlaceRow; pts: Vec3[]; lift: number[]; cols: string[]; want: boolean; delay: number };
 
 const RAD = Math.PI / 180;
 const LAT_MIN = -55 * RAD;
@@ -136,7 +135,9 @@ function rubber(v: number, min: number, max: number, dim: number) {
 }
 
 export type AtlasGlobeProps = {
-  places: Place[];
+  places: PlaceRow[];
+  /** where every route starts; read once at mount (remount for a new home) */
+  home: PlaceRow;
   selectedId: string;
   onSelect: (id: string) => void;
   /** allow autonomous motion (twinkle, flights, idle drift) */
@@ -159,6 +160,7 @@ export type AtlasGlobeProps = {
 
 export function AtlasGlobe({
   places,
+  home,
   selectedId,
   onSelect,
   ambient,
@@ -175,11 +177,11 @@ export function AtlasGlobe({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const tipRef = useRef<HTMLSpanElement>(null);
   // live props for the imperative loop (synced after commit)
-  const live = useRef({ places, selectedId, onSelect, ambient, margin, hint, onCamera });
+  const live = useRef({ places, home, selectedId, onSelect, ambient, margin, hint, onCamera });
   const api = useRef<{ focus: (cut: boolean) => void; wake: () => void } | null>(null);
 
   useEffect(() => {
-    live.current = { places, selectedId, onSelect, ambient, margin, hint, onCamera };
+    live.current = { places, home, selectedId, onSelect, ambient, margin, hint, onCamera };
     api.current?.wake();
   });
 
@@ -199,6 +201,8 @@ export function AtlasGlobe({
     // re-projects the whole planet every frame
     const coarse = window.matchMedia("(pointer: coarse)").matches;
     const grid = worldGrid();
+    // fixed for this mount: AtlasApp mounts a new globe when the places move
+    const HOME = live.current.home;
     const homeV = toVec(HOME.lat, HOME.lon);
 
     // ── camera: centre latitude/longitude (radians), springs + momentum ──
@@ -212,12 +216,12 @@ export function AtlasGlobe({
       coasting: false,
     };
     const startPlace = live.current.places.find((p) => p.id === live.current.selectedId) ?? HOME;
-    const start = focusFor(startPlace);
+    const start = focusFor(startPlace, HOME);
     cam.lat = Math.min(LAT_MAX, Math.max(LAT_MIN, start.lat * RAD));
     cam.lon = start.lon * RAD;
 
     /** how far in to frame a place's route: short hops fill the disc */
-    const zoomFor = (p: Place) => {
+    const zoomFor = (p: PlaceRow) => {
       if (p.home || p.id === HOME.id) return 1;
       const ang = angleBetween(homeV, toVec(p.lat, p.lon));
       return Math.min(ZOOM_MAX, Math.max(1, ZOOM_FRAME / Math.max(1e-3, ang)));
@@ -594,7 +598,7 @@ export function AtlasGlobe({
 
     const focus = (cut: boolean) => {
       const p = live.current.places.find((q) => q.id === live.current.selectedId) ?? HOME;
-      const f = focusFor(p);
+      const f = focusFor(p, HOME);
       const tLat = Math.min(LAT_MAX, Math.max(LAT_MIN, f.lat * RAD));
       const tLon = cam.lon + wrapPi(f.lon * RAD - cam.lon);
       cam.coasting = false;

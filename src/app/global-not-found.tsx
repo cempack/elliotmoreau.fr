@@ -1,7 +1,6 @@
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import { cookies, headers } from "next/headers";
-import { Analytics } from "@vercel/analytics/react";
 import { inter, mono } from "@/app/fonts";
 import { getDict, getNamespaces, getShellDict, hasLocale, LANG_COOKIE, SITE_URL, type Locale } from "@/i18n";
 import { I18nProvider } from "@/i18n/client";
@@ -83,7 +82,6 @@ export default async function GlobalNotFound() {
             </SoundProvider>
           </MotionProvider>
         </I18nProvider>
-        <Analytics />
       </body>
     </html>
   );

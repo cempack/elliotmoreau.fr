@@ -3,7 +3,8 @@
 import { useI18n } from "@/i18n/client";
 import { EmosLogo } from "@/components/os/EmosLogo";
 import type { RepoInfo } from "@/lib/github";
-import { NOW, loc } from "@/content/now";
+import { loc } from "@/lib/content";
+import { useNowContent } from "@/components/os/SiteData";
 
 const PALETTE = [
   ["ink", "#161a17"],
@@ -28,11 +29,12 @@ export function SetupMeta() {
 export function Setup({ repos }: { repos: RepoInfo[] }) {
   const { t, lang } = useI18n();
   const s = t.now.setup;
+  const { setup } = useNowContent();
   const counts = new Map<string, number>();
   for (const r of repos) if (r.language) counts.set(r.language, (counts.get(r.language) ?? 0) + 1);
   const langs = [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([l]) => l).slice(0, 4);
 
-  const rows: [string, string][] = NOW.setup.filter((r) => !("todo" in r && r.todo)).map((r) => [loc(r.key, lang), loc(r.value, lang)]);
+  const rows: [string, string][] = setup.filter((r) => !r.todo).map((r) => [loc(r.key, lang), loc(r.value, lang)]);
   if (langs.length) rows.push([s.langs, langs.join(", ")]);
 
   return (

@@ -14,15 +14,6 @@ export type Filter =
 
 export const SORTS: SortKey[] = ["recent", "stars", "name"];
 
-/* ───────────────────────────── config ───────────────────────────── */
-
-/**
- * The featured project, first match wins. Edit freely: names that no
- * longer exist are skipped, and with no match the most-starred repo is
- * featured instead.
- */
-export const PINNED: string[] = ["omarchy-dos-moos-theme"];
-
 /* ───────────────────────────── helpers ───────────────────────────── */
 
 export const sameFilter = (a: Filter, b: Filter) =>
@@ -98,12 +89,13 @@ function tally(pairs: [string, number][]) {
 export const languagesOf = (repos: RepoInfo[]) => tally(repos.map((r) => [r.language, r.stars]));
 export const tagsOf = (repos: RepoInfo[]) => tally(repos.flatMap((r) => r.topics.map((t) => [t, r.stars] as [string, number])));
 
-export function pickFeatured(repos: RepoInfo[]): RepoInfo | null {
-  for (const name of PINNED) {
-    const hit = repos.find((r) => r.name === name);
-    if (hit) return hit;
-  }
-  return sortRepos(repos, "stars")[0] ?? null;
+/**
+ * The featured project: the one named in the admin panel (Live data), or
+ * the most-starred repo when none is set or it no longer exists.
+ */
+export function pickFeatured(repos: RepoInfo[], name?: string): RepoInfo | null {
+  const hit = name ? repos.find((r) => r.name.toLowerCase() === name.toLowerCase()) : undefined;
+  return hit ?? sortRepos(repos, "stars")[0] ?? null;
 }
 
 /* ───────────────────────────── text ───────────────────────────── */

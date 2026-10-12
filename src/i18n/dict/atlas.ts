@@ -62,7 +62,8 @@ const en = {
   km: "km",
   /** an accessible name with its value: "Next place: Canada" */
   labelled: "{label}: {value}",
-  /** display names for lib/places regions (keyed by the English value) */
+  /** display names for place regions (keyed by the English value); a
+      region not listed here shows as written in the admin panel */
   regions: {
     europe: "Europe",
     "north america": "North America",
@@ -74,19 +75,6 @@ const en = {
   } as Record<string, string>,
   /** 16-point compass rose, clockwise from north */
   compass: ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"],
-  /** one short line per place id (drafts for Elliot to edit) */
-  notes: {
-    france: "Home. Where I work, and where every trip starts and ends.",
-    canada: "Big skies and long drives.",
-    ireland: "Green everywhere, and weather that changes every hour.",
-    "northern-ireland": "The Causeway Coast, and a lot of wind.",
-    canaries: "Volcanic landscapes and sun in winter.",
-    spain: "Late dinners and long evenings.",
-    japan: "First on the list: the trains, the food, the cities.",
-    usa: "A road trip through the national parks.",
-    "south-africa": "Cape Town and the coast.",
-    norway: "Fjords, and hopefully the northern lights.",
-  } as Record<string, string>,
 };
 
 const fr: typeof en = {
@@ -159,19 +147,6 @@ const fr: typeof en = {
     oceania: "Océanie",
   },
   compass: ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSO", "SO", "OSO", "O", "ONO", "NO", "NNO"],
-  notes: {
-    france: "Chez moi. Là où je travaille, et où chaque voyage commence et finit.",
-    canada: "De grands ciels et de longues routes.",
-    ireland: "Du vert partout, et une météo qui change toutes les heures.",
-    "northern-ireland": "La Chaussée des Géants, et beaucoup de vent.",
-    canaries: "Des paysages volcaniques et du soleil en hiver.",
-    spain: "Des dîners tardifs et de longues soirées.",
-    japan: "En tête de liste : les trains, la cuisine, les villes.",
-    usa: "Un road trip à travers les parcs nationaux.",
-    "south-africa": "Le Cap et la côte.",
-    norway: "Les fjords, et avec un peu de chance les aurores boréales.",
-  },
-
 };
 
 const atlas = { en, fr };

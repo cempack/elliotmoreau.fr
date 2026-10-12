@@ -7,8 +7,9 @@ import { nearest, project, rubberband, spring } from "@/lib/motion";
 import { useReduced } from "@/hooks/env";
 import { PixelGlyph } from "@/components/glyphs";
 import { G_CHEVRON } from "@/components/os/window/glyphs";
-import { HOME } from "@/lib/places";
-import { ORDERED, distanceKm } from "./geo";
+import type { PlaceRow } from "@/lib/content";
+import { distanceKm } from "./geo";
+import { useAtlas } from "./useAtlas";
 import { PixelMap } from "./PixelMap";
 import { Stamp } from "./Stamp";
 import { StatusChip } from "./PlaceCard";
@@ -60,6 +61,7 @@ export function Postcards({
   const fmt = useKm();
   const coords = useCoords();
   const reduced = useReduced();
+  const { home, ordered } = useAtlas();
   const viewRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLUListElement>(null);
   const x = useMotionValue(0);
@@ -208,10 +210,10 @@ export function Postcards({
     settle(Number.isFinite(to) ? to : nearest(-left, pts));
   };
 
-  const card = (p: (typeof ORDERED)[number], i: number) => {
+  const card = (p: PlaceRow, i: number) => {
     const name = p.name[lang];
     const active = p.id === selectedId;
-    const km = distanceKm(HOME, p);
+    const km = distanceKm(home, p);
     return (
       <li key={p.id} className="app-atlas-pc-li">
         <button
@@ -271,7 +273,7 @@ export function Postcards({
     return (
       <div className="app-atlas-pcs" data-compact={compact || undefined} data-stack="">
         <ul className="app-atlas-pcs-stack" role="list" aria-label={a.postcards.label} onKeyDown={onKeyDown} onBlur={onBlur}>
-          {ORDERED.map(card)}
+          {ordered.map(card)}
         </ul>
       </div>
     );
@@ -318,7 +320,7 @@ export function Postcards({
           onKeyDown={onKeyDown}
           onBlur={onBlur}
         >
-          {ORDERED.map(card)}
+          {ordered.map(card)}
         </m.ul>
       </div>
     </div>
