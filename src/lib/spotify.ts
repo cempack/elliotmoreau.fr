@@ -1,4 +1,5 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 // Server-only Spotify helper: refresh-token flow, short cache.
 
 const TOKEN_URL = "https://accounts.spotify.com/api/token";
@@ -31,7 +32,6 @@ async function accessToken(): Promise<string | null> {
       grant_type: "refresh_token",
       refresh_token: process.env.SPOTIFY_REFRESH_TOKEN as string,
     }),
-    cache: "no-store",
   });
   if (!res.ok) return null;
   const json = (await res.json()) as { access_token?: string; expires_in?: number };
@@ -48,7 +48,6 @@ async function sp<T>(path: string): Promise<{ status: number; json: T | null }> 
   if (!token) return { status: 401, json: null };
   const res = await fetch(`${API}${path}`, {
     headers: { Authorization: `Bearer ${token}` },
-    cache: "no-store",
   });
   if (res.status === 204) return { status: 204, json: null };
   if (!res.ok) return { status: res.status, json: null };
@@ -111,8 +110,7 @@ export type SpotifyStatus = {
   artists: { name: string; image: string; url: string }[];
 };
 
-export async function getSpotifyStatus(): Promise<SpotifyStatus | null> {
-  if (!spotifyConfigured()) return null;
+async function fetchStatus(): Promise<SpotifyStatus | null> {
   const [nowRes, recentRes, artistsRes] = await Promise.all([
     sp<SpNow>("/me/player/currently-playing"),
     sp<SpRecent>("/me/player/recently-played?limit=1"),
@@ -139,4 +137,18 @@ export async function getSpotifyStatus(): Promise<SpotifyStatus | null> {
       url: a.external_urls?.spotify ?? "",
     }));
   return { now, recent, artists };
+}
+
+const cachedStatus = unstable_cache(fetchStatus, ["spotify-status"], { revalidate: 30, tags: ["spotify"] });
+
+/**
+ * What's playing, the last track and the top artists, shared for 30 s
+ * across every request. Uncached fetches here made every page that shows
+ * music (all of them: the menu bar) render on demand instead of from the
+ * static cache, and called Spotify four times per visit. The client still
+ * polls /api/spotify/status for the live state.
+ */
+export async function getSpotifyStatus(): Promise<SpotifyStatus | null> {
+  if (!spotifyConfigured()) return null;
+  return cachedStatus();
 }

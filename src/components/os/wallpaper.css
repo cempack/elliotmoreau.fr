@@ -185,23 +185,8 @@ html[data-sky="dusk"] .os-wallpaper {
   inset: 0;
   background: #e2786b;
   box-shadow: calc(var(--c) * 2) 0 0 0 #ebe9e1;
-  opacity: 0.2;
-  animation: os-wp-blink 1.7s steps(1, end) infinite;
-  will-change: opacity;
-}
-@keyframes os-wp-blink {
-  0% {
-    opacity: 1;
-  }
-  10% {
-    opacity: 0.22;
-  }
-  50% {
-    opacity: 0.6;
-  }
-  58% {
-    opacity: 0.22;
-  }
+  /* steady navigation lights: nothing on the site blinks */
+  opacity: 0.75;
 }
 /* by day: a white glint pulling a fading contrail */
 .os-wallpaper-plane[data-day] .os-wallpaper-plane-light {

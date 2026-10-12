@@ -8,6 +8,8 @@ import { NextResponse, type NextRequest } from "next/server";
  * Every request also carries its locale as `x-em-lang`, for the one
  * render that has no `[lang]` param: app/global-not-found.tsx (the 404).
  *
+ * www. redirects to the bare domain, so the site has one address.
+ *
  * The site has no server actions, so a request naming one (a Next-Action
  * header) is a scanner probing for them: it is turned away here, before
  * Next logs a "Server Reference ID" error for it.
@@ -17,6 +19,9 @@ const LANG_HEADER = "x-em-lang";
 export function proxy(request: NextRequest) {
   if (request.headers.has("next-action")) return new NextResponse(null, { status: 404 });
   const { pathname, search } = request.nextUrl;
+  // one address: www.elliotmoreau.fr/… goes to elliotmoreau.fr/…
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "";
+  if (host.startsWith("www.")) return NextResponse.redirect(new URL(`${pathname}${search}`, `https://${host.slice(4)}`), 308);
   const headers = new Headers(request.headers);
   const prefixed = pathname.match(/^\/(fr|en)(?=\/|$)/);
   if (prefixed) {
