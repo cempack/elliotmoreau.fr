@@ -684,7 +684,7 @@ export function Cassette({
     <div className="os-tape-deck">
       <div className="os-tape-head">
         {head}
-        {track && total > 0 && (
+        {track && total > 0 && playing && (
           <span className="os-tape-time tabular" aria-hidden>
             <span ref={counterRef} className="os-tape-counter" />
             <span className="os-tape-total">{mmss(total)}</span>

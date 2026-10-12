@@ -2,7 +2,7 @@
 
 import { useI18n } from "@/i18n/client";
 import type { SpotifyStatus, TrackInfo } from "@/lib/spotify";
-import { PixelEq } from "./glyphs";
+import { GLYPH_NOTE, PixelEq, Pixels } from "./glyphs";
 import { fmtShortDate, useNow } from "./util";
 import { Battery } from "./day";
 import type { Day } from "@/lib/day";
@@ -33,13 +33,14 @@ export function ClockTrigger({ time, day }: { time: string | null; day?: Day | n
   );
 }
 
-/** Menu bar face: pixel equalizer + the truncated title. */
+/** Menu bar face: the equalizer while something plays (a plain note when
+    nothing does, so the button still says what it is) + the truncated title. */
 export function MusicTrigger({ music }: { music: Music }) {
   const { t } = useI18n();
   const { track, playing } = music;
   return (
     <>
-      <PixelEq playing={playing} />
+      {playing ? <PixelEq playing /> : <Pixels cells={GLYPH_NOTE} size={14} className="os-menubar-idle" />}
       <span className="os-menubar-music-title" data-playing={playing || undefined}>
         {track ? track.title : t.shell.music.offline}
       </span>

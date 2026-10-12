@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useI18n } from "@/i18n/client";
-import { useFinePointer, useReduced } from "@/hooks/env";
+import { useFinePointer, useMedia, useReduced } from "@/hooks/env";
 import { DesktopIcons } from "./DesktopIcons";
 import { useTerminal } from "@/components/os/Terminal";
 import { termQueue } from "@/components/os/terminal/queue";
@@ -37,6 +37,7 @@ export function DesktopScene() {
   const term = useTerminal();
   const reduced = useReduced();
   const fine = useFinePointer();
+  const phone = useMedia("(max-width: 767px)");
   const sceneRef = useRef<HTMLElement>(null);
   const widgetsRef = useRef<HTMLDivElement>(null);
   const captionRef = useRef<HTMLDivElement>(null);
@@ -199,8 +200,9 @@ export function DesktopScene() {
       {/* the wallpaper's sun, held with a mouse or trackpad (on touch, Control Center's sky holds it) */}
       {fine && <SunHandle />}
       {/* the always-lit window on the quay, and the room behind it */}
-      <LitWindow />
-      <Room />
+      {/* the room is a desktop thing: on a phone the window is a few pixels and the room a pan */}
+      {!phone && <LitWindow />}
+      {!phone && <Room />}
 
       <div ref={captionRef} className="app-home-caption">
         <h1 className="app-home-caption-name">{t.home.name}</h1>

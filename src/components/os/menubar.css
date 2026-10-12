@@ -368,6 +368,12 @@
   }
 }
 
+/* nothing playing: a plain pixel note, so the button still says what it is */
+.os-menubar-idle {
+  flex: none;
+  color: var(--color-label-2);
+}
+
 /* pixel equalizer: 4 columns of blocks on a pitch, jumping a whole block
    at a time. --b block, --g gap. */
 .os-menubar-eq {
