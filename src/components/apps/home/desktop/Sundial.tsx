@@ -418,12 +418,12 @@ export function ClockWidget() {
           {pinned ? (
             <>
               <PixelGlyph cells={GLYPH_PIN} size={9} className="app-home-clock-pin" />
-              {fill(w.pinnedLine, { phase: w.phase[pinned] })}
+              <span className="app-home-clock-extra-text">{fill(w.pinnedLine, { phase: w.phase[pinned] })}</span>
             </>
           ) : (
             <>
               {weather && (
-                <span className="app-home-clock-weather" data-kind={wx.kind}>
+                <span className="app-home-clock-weather app-home-clock-extra-text" data-kind={wx.kind}>
                   {weather}
                 </span>
               )}

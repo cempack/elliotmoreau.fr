@@ -153,6 +153,41 @@ function skyMask(city: City) {
   return c;
 }
 
+/** where words sit on the wallpaper (anything marked data-weather-clear),
+    in art pixels: clouds part around them so they stay legible */
+function readZones(cell: number) {
+  return Array.from(document.querySelectorAll<HTMLElement>("[data-weather-clear]"))
+    .map((el) => el.getBoundingClientRect())
+    .filter((r) => r.width > 0)
+    .map((r) => [Math.floor(r.left / cell), Math.floor(r.top / cell), Math.ceil(r.right / cell), Math.ceil(r.bottom / cell)] as const);
+}
+
+/** opaque everywhere but the zones: empty inside, dithered over a margin */
+function clearing(W: number, H: number, zones: readonly (readonly [number, number, number, number])[]) {
+  const img = new ImageData(W, H);
+  const out = new Uint32Array(img.data.buffer).fill(0xff000000);
+  const m = 14;
+  for (const [l0, t0, r0, b0] of zones) {
+    // a clear border round the words, then the dithered edge
+    // close to an edge: clear all the way to it, no dotted sliver
+    const l = l0 - 8 < m * 2 ? -m : l0 - 8;
+    const t = t0 - 6 < m * 2 ? -m : t0 - 6;
+    const r = r0 + 8 > W - m * 2 ? W + m : r0 + 8;
+    const b = b0 + 6;
+    for (let y = Math.max(0, t - m); y < Math.min(H, b + m); y++) {
+      for (let x = Math.max(0, l - m); x < Math.min(W, r + m); x++) {
+        const dx = Math.max(l - x, 0, x - r);
+        const dy = Math.max(t - y, 0, y - b);
+        const d = Math.hypot(dx, dy) / m;
+        if (d < 1 && bayer(x, y) >= d) out[y * W + x] = 0;
+      }
+    }
+  }
+  const c = canvas(W, H);
+  c.getContext("2d")?.putImageData(img, 0, 0);
+  return c;
+}
+
 type Band = { img: HTMLCanvasElement; y: number; speed: number; alpha: number };
 type Drop = { x: number; y: number; end: number; v: number; len: number; near: boolean };
 type Ring = { x: number; y: number; age: number };
@@ -290,20 +325,38 @@ export function WeatherLayer({ city, cell, phase, kind, weather }: { city: City;
     };
 
     let frame = 0;
+    let zoneKey = "";
+    let clear: HTMLCanvasElement | null = null;
     const t0 = performance.now();
     const draw = (sec: number) => {
       ctx.clearRect(0, 0, W, H);
-      // in the sky only: the overcast lid and the cloud bands
-      if (lid) {
-        ctx.globalAlpha = night ? 0.5 : 0.42;
-        ctx.fillStyle = lid;
-        ctx.fillRect(0, 0, W, hz);
-      }
+      // in the sky only: the cloud bands (parted around the words), then
+      // the overcast lid under them
       for (const b of bands) {
         ctx.globalAlpha = b.alpha;
         tile(b.img, sec * b.speed * side, b.y);
       }
       ctx.globalAlpha = 1;
+      if (bands.length && frame % 24 === 0) {
+        const z = readZones(cell);
+        const key = JSON.stringify(z);
+        if (key !== zoneKey) {
+          zoneKey = key;
+          clear = z.length ? clearing(W, H, z) : null;
+        }
+      }
+      if (clear) {
+        ctx.globalCompositeOperation = "destination-in";
+        ctx.drawImage(clear, 0, 0);
+      }
+      if (lid) {
+        ctx.globalCompositeOperation = "destination-over";
+        ctx.globalAlpha = night ? 0.5 : 0.42;
+        ctx.fillStyle = lid;
+        ctx.fillRect(0, 0, W, hz);
+        ctx.globalAlpha = 1;
+      }
+      ctx.globalCompositeOperation = "source-over";
       if (mask) {
         ctx.globalCompositeOperation = "destination-in";
         ctx.drawImage(mask, 0, 0);
@@ -410,7 +463,7 @@ export function WeatherLayer({ city, cell, phase, kind, weather }: { city: City;
       window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [city, phase, kind, weather]);
+  }, [city, cell, phase, kind, weather]);
 
   if (kind === "clear") return null;
   return <canvas ref={ref} className="os-wallpaper-weather" data-kind={kind} style={{ width: city.W * cell, height: city.H * cell }} />;

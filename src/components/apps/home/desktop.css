@@ -18,7 +18,7 @@
   --app-home-grid-r: 18px;
   --app-home-grid-l: 18px;
   --app-home-grid-b: 96px; /* dock + 20 */
-  --app-home-hello-w: 440px;
+  --app-home-hello-w: 400px;
   --app-home-widget: 148px;
   /* the sky dial: 25 cells of 3 px */
   /* tertiary text; promoted to secondary under the bright skies */
@@ -56,10 +56,6 @@ html[data-sky="dusk"] .app-home-scene {
   left: var(--app-home-pad);
   z-index: 2;
   width: var(--app-home-hello-w);
-}
-/* held or flying home: it rises over the widgets and the icons */
-.app-home-hello-slot:has(.app-home-hello[data-lifted]) {
-  z-index: 5;
 }
 
 /* ── widgets: top right, beside the icon column ── */
@@ -197,6 +193,7 @@ html[data-sky="night"] .app-home-sundial svg {
 .app-home-clock-extra {
   display: flex;
   align-items: center;
+  max-width: 100%;
   gap: 4px;
   margin-top: 3px;
   color: var(--color-ion);
@@ -207,6 +204,12 @@ html[data-sky="night"] .app-home-sundial svg {
 .app-home-clock-pin {
   flex: none;
   color: var(--color-label-2);
+}
+/* long lines ("Ciel épinglé : Crépuscule") end in an ellipsis, inside the tile */
+.app-home-clock-extra-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 /* Toulouse's weather, the same the wallpaper shows; the autan in ember */
 .app-home-clock-weather {
@@ -517,192 +520,96 @@ html[data-sky="night"] .app-home-sundial svg {
   }
 }
 
-/* ───────────────────────────── README.md ─────────────────────────────
-   hello.txt, as a tiled window like the apps: a dark pane, a 2px border, a
-   mono title row with flat controls, a markdown-ish body and a statusline. */
+/* ───────────────────────────── the intro ─────────────────────────────
+   Set straight on the wallpaper, like conky text on a riced desktop: no
+   pane, no chrome. A soft shade behind the words (not a box: it has no
+   edge) keeps them legible when a cloud drifts behind. */
 .app-home-hello {
   position: relative;
   width: 100%;
-  border-radius: var(--radius-window);
-  color: var(--color-label);
+  max-width: 25rem;
+  padding: 4px 0 0 2px;
+  color: #f2f0e8;
   outline: none;
-  box-shadow:
-    0 30px 70px -36px rgba(0, 0, 0, 0.85),
-    0 12px 26px -18px rgba(0, 0, 0, 0.6);
-}
-.app-home-hello[data-closed] {
-  visibility: hidden;
-}
-.app-home-hello[data-dragging] {
-  will-change: transform;
-}
-/* picked up: a longer, softer shadow fades in under it (opacity only) */
-.app-home-hello::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  box-shadow:
-    0 48px 90px -28px rgba(0, 0, 0, 0.78),
-    0 18px 36px -18px rgba(0, 0, 0, 0.5);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s var(--ease-out-quint);
-}
-.app-home-hello[data-lifted]::before {
-  opacity: 1;
-  transition-duration: 0.18s;
-}
-/* the border: Hyprland's, brighter while held */
-.app-home-hello::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  box-sizing: border-box;
-  border: 2px solid rgba(196, 206, 194, 0.34);
-  border-radius: inherit;
-  pointer-events: none;
-  transition: border-color 0.25s var(--ease-out-quint);
-}
-.app-home-hello[data-grabbed]::after {
-  border-color: color-mix(in oklab, var(--color-signal) 70%, transparent);
-}
-.app-home-hello:focus-visible {
-  outline: 2px solid var(--color-signal);
-  outline-offset: 4px;
-}
-.app-home-hello-glass {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  --os-glass-tint: rgba(13, 16, 14, 0.93);
-}
-.app-home-hello-bar {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  height: 40px;
-  padding: 0 8px 0 14px;
-  border-bottom: 1px solid var(--hairline);
-  cursor: grab;
-  touch-action: none;
-}
-.app-home-hello[data-grabbed] .app-home-hello-bar {
-  cursor: grabbing;
-}
-.app-home-hello-file {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--color-label);
-  font: 600 0.8125rem/1 var(--font-mono);
-  pointer-events: none;
-}
-.app-home-hello-file-glyph {
-  color: var(--color-signal);
-}
-.app-home-hello-path {
-  color: var(--color-label-3);
-  font: 500 0.75rem/1 var(--font-mono);
-}
-/* window controls: flat squares on the right, like the app windows */
-.app-home-hello-lights {
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: 2px;
-  margin-left: auto;
-}
-.app-home-hello-light {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: 0;
-  border-radius: 6px;
-  background: none;
-  color: var(--color-label-2);
-  cursor: pointer;
-  transition:
-    background-color 0.15s,
-    color 0.15s;
-}
-.app-home-hello-light:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--color-label);
-}
-.app-home-hello-light--close:hover {
-  background: color-mix(in oklab, var(--color-flare) 22%, transparent);
-  color: var(--color-flare);
-}
-.app-home-hello-light:focus-visible {
-  outline-offset: 1px;
-  border-radius: 6px;
-}
-.app-home-hello-body {
-  position: relative;
-  z-index: 1;
-  padding: 18px 20px 0;
   user-select: text;
   -webkit-user-select: text;
 }
-/* a markdown heading: the # stays, in moss */
-.app-home-hello-greeting {
-  font: 600 1.25rem/1.25 var(--font-mono);
-  letter-spacing: -0.02em;
+.app-home-hello::before {
+  content: "";
+  position: absolute;
+  inset: -56px -72px -56px -64px;
+  z-index: -1;
+  background: radial-gradient(closest-side, rgba(6, 9, 8, 0.5), rgba(6, 9, 8, 0.22) 60%, transparent);
+  pointer-events: none;
 }
-.app-home-hello-hash {
-  color: var(--color-signal);
+.app-home-hello:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 10px;
+  border-radius: 6px;
+}
+.app-home-hello-greeting {
+  font-size: 2rem;
+  font-weight: 650;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.55),
+    0 2px 18px rgba(0, 0, 0, 0.35);
 }
 .app-home-hello-lead {
   margin-top: 10px;
-  color: var(--color-label-2);
+  max-width: 34ch;
+  color: rgba(242, 240, 232, 0.84);
   font-size: 0.9375rem;
-  line-height: 1.55;
+  line-height: 1.5;
   text-wrap: pretty;
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.6),
+    0 0 14px rgba(0, 0, 0, 0.35);
 }
 .app-home-hello-ctas {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 16px;
+  align-items: center;
+  gap: 6px;
+  margin-top: 18px;
 }
 .app-home-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  height: 36px;
+  gap: 7px;
+  height: 34px;
   padding: 0 14px;
-  border-radius: 8px;
-  font: 600 0.8125rem/1 var(--font-mono);
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1;
   white-space: nowrap;
   transition:
     scale 0.4s var(--ease-spring),
     background-color 0.2s,
-    box-shadow 0.2s;
+    color 0.2s;
   -webkit-tap-highlight-color: transparent;
 }
 .app-home-btn:active {
   scale: 0.97;
   transition-duration: 0.12s, 0.2s, 0.2s;
 }
+/* the way in: a small frosted pill, like the menu bar's chips */
 .app-home-btn--primary {
-  background: var(--color-signal);
-  color: var(--color-ink-950);
+  background: rgba(14, 18, 16, 0.58);
+  box-shadow: inset 0 0 0 1px rgba(196, 206, 194, 0.22);
+  color: var(--color-label);
+  -webkit-backdrop-filter: blur(12px) saturate(1.3);
+  backdrop-filter: blur(12px) saturate(1.3);
 }
 .app-home-btn--primary:hover {
-  background: #c2db9c;
+  background: rgba(14, 18, 16, 0.74);
 }
 .app-home-btn-arrow {
+  color: var(--color-signal);
   transition: translate 0.35s var(--ease-spring);
 }
 @media (hover: hover) and (pointer: fine) {
@@ -710,78 +617,25 @@ html[data-sky="night"] .app-home-sundial svg {
     translate: 2px 0;
   }
 }
+/* the other: just words */
 .app-home-btn--ghost {
-  background: transparent;
-  color: var(--color-label);
-  box-shadow: inset 0 0 0 1px rgba(196, 206, 194, 0.3);
+  padding: 0 10px;
+  color: rgba(242, 240, 232, 0.84);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }
 .app-home-btn--ghost:hover {
-  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
 }
 .app-home-btn:focus-visible {
   outline: 2px solid var(--color-signal);
   outline-offset: 3px;
-  border-radius: 8px;
 }
-
-/* the statusline: like vim's, at the foot of the window */
-.app-home-chips {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 18px -20px 0;
-  padding: 0 14px;
-  height: 32px;
-  border-top: 1px solid var(--hairline);
-  border-radius: 0 0 var(--radius-window) var(--radius-window);
-  background: rgba(6, 8, 7, 0.4);
-  color: var(--color-label-3);
-  font: 500 0.75rem/1 var(--font-mono);
-}
-.app-home-chips > li {
-  display: flex;
-  min-width: 0;
-}
-.app-home-chips::before {
-  content: "NORMAL";
-  padding: 3px 6px;
-  border-radius: 3px;
-  background: var(--color-signal);
-  color: var(--color-ink-950);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
-.app-home-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  min-width: 0;
-  color: var(--color-label-2);
-  white-space: nowrap;
-  -webkit-tap-highlight-color: transparent;
-}
-.app-home-chip--link:hover .app-home-chip-v {
-  color: var(--color-signal);
-}
-.app-home-chip--link:focus-visible {
-  outline: 2px solid var(--color-signal);
-  outline-offset: 3px;
-  border-radius: 4px;
-}
-.app-home-chip-k {
-  flex: none;
-  color: var(--color-label-3);
-}
-.app-home-chip-v {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--color-label);
-  text-overflow: ellipsis;
-  transition: color 0.15s;
-}
-.app-home-chip-plane {
-  flex: none;
-  color: var(--color-ion);
+@media (prefers-reduced-transparency: reduce) {
+  .app-home-btn--primary {
+    background: rgb(14, 18, 16);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
 }
 
 /* ───────────────────────────── icons ───────────────────────────── */
@@ -960,27 +814,15 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
     font-size: 0.75rem;
     line-height: 1.15;
   }
-  .app-home-hello-body {
-    padding: 16px 20px 16px;
-  }
   .app-home-hello-greeting {
-    font-size: 1.25rem;
+    font-size: 1.75rem;
   }
   .app-home-hello-lead {
-    margin-top: 6px;
+    margin-top: 8px;
     font-size: 0.875rem;
-    line-height: 1.5;
   }
   .app-home-hello-ctas {
     margin-top: 14px;
-  }
-  .app-home-btn {
-    height: 38px;
-    padding: 0 16px;
-  }
-  .app-home-chips {
-    margin-top: 14px;
-    padding-top: 12px;
   }
 }
 /* …and short and narrow (a laptop window, 1024 × 700): the widget column
@@ -1032,52 +874,27 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   }
 
   .app-home-hello {
-    width: 100%;
+    max-width: none;
+    padding: 6px 4px 2px;
+    text-align: center;
   }
-  .app-home-hello-lights,
-  .app-home-hello-path {
-    display: none;
-  }
-  /* the title bar: the name centred between the window's top edge and
-     the rule under it, never sitting on the rule */
-  .app-home-hello-bar {
-    height: 38px;
-    padding: 2px 16px 0;
-    cursor: default;
-    touch-action: auto;
-  }
-  .app-home-hello-bar::after {
-    display: none;
-  }
-  .app-home-hello-file {
-    position: static;
-    translate: none;
-    color: var(--app-home-l3);
-    font-size: 0.75rem;
-    font-weight: 500;
-  }
-  .app-home-hello-body {
-    padding: 12px 16px 16px;
+  .app-home-hello::before {
+    inset: -24px -16px;
   }
   .app-home-hello-greeting {
-    font-size: 1.1875rem;
+    font-size: 1.625rem;
   }
   .app-home-hello-lead {
-    margin-top: 5px;
+    margin: 6px auto 0;
     font-size: 0.875rem;
     line-height: 1.45;
   }
   .app-home-hello-ctas {
-    flex-wrap: nowrap;
-    margin-top: 14px;
+    justify-content: center;
+    margin-top: 12px;
   }
-  .app-home-hello-ctas .app-home-btn {
-    flex: 1 1 0;
+  .app-home-btn {
     height: 44px;
-    padding: 0 12px;
-  }
-  .app-home-chips {
-    display: none;
   }
 
   /* the app grid: what the tab bar doesn't already hold */
@@ -1224,32 +1041,10 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   }
 }
 
-/* touch on a desk-sized screen (tablets): every target reaches 44 px */
-@media (pointer: coarse) {
-  /* the squares stay 28px inside the 40px bar; their 44px reach is invisible */
-  .app-home-hello-lights {
-    gap: 16px;
-  }
-  .app-home-hello-light::before {
-    content: "";
-    position: absolute;
-    inset: -8px;
-  }
-  .app-home-chip--link {
-    position: relative;
-  }
-  .app-home-chip--link::after {
-    content: "";
-    position: absolute;
-    inset: -8px 0;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .app-home-widget,
   .app-home-btn,
   .app-home-icon-tile,
-  .app-home-chip--link,
   .app-home-btn-arrow {
     transition: none;
   }
@@ -1260,20 +1055,16 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
     background: var(--color-ink-950);
     text-shadow: none;
   }
-  .app-home-chip,
-  .app-home-btn--ghost {
+  .app-home-btn--primary {
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  }
+  .app-home-hello::before {
+    display: none;
   }
   .app-home-marquee {
     border-color: var(--color-signal);
   }
 }
-.app-home-chips::after {
-  content: "md · utf-8";
-  margin-left: auto;
-  white-space: nowrap;
-}
-
 /* tall phones: the two widgets are square, unless one needs more height;
    then both take the row's, side by side (never wider than their column) */
 @media (max-width: 767px) and (min-height: 761px) {

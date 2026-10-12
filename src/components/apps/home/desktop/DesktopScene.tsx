@@ -5,13 +5,12 @@ import { useI18n } from "@/i18n/client";
 import { useFinePointer, useReduced } from "@/hooks/env";
 import { useSound } from "@/lib/sound";
 import { DesktopIcons } from "./DesktopIcons";
-import { HelloWindow, type HelloHandle } from "./HelloWindow";
+import { Hello, type HelloHandle } from "./Hello";
 import { ClockWidget } from "./Sundial";
 import { SunHandle } from "./SunHandle";
 import { PushWidget } from "./BrickWall";
 import { LatestPostWidget } from "./Kiosk";
 import { type DesktopIconId } from "./icons";
-import { desktopMemory } from "./store";
 import { INTERACTIVE, intersects, type Rect } from "./physics";
 import { isPhone } from "./layout";
 
@@ -25,7 +24,7 @@ type Marquee = {
 };
 
 /**
- * `/`: one screen, nothing scrolls. On a desk, hello.txt sits top left,
+ * `/`: one screen, nothing scrolls. On a desk, the intro sits top left,
  * the widgets top right beside the app icons, which line the right edge
  * on a snap grid; drag on empty desktop for a marquee. Phones get a home
  * screen that fits above the tab bar. (The name plays in the boot.)
@@ -43,7 +42,6 @@ export function DesktopScene() {
   const mq = useRef<Marquee | null>(null);
   const suppressClick = useRef(false);
   const [selected, setSelectedState] = useState<Set<DesktopIconId>>(() => new Set());
-  const [helloClosed, setHelloClosed] = useState(() => desktopMemory.helloClosed());
 
   const setSelected = useCallback((next: Set<DesktopIconId>) => {
     setSelectedState((prev) => {
@@ -110,37 +108,11 @@ export function DesktopScene() {
     return out;
   }, []);
 
-  /* ── hello.txt ⇄ README ── */
-  const readmeCenter = () => {
-    const el = sceneRef.current?.querySelector<HTMLElement>('[data-desktop-icon="readme"] .app-home-icon-tile');
-    if (!el) return { x: window.innerWidth - 60, y: 120 };
-    const r = el.getBoundingClientRect();
-    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-  };
-
-  const closeHello = async () => {
-    const win = helloRef.current;
-    if (!win) return;
-    const hadFocus = !!sceneRef.current?.querySelector(".app-home-hello")?.contains(document.activeElement);
-    await win.close(readmeCenter());
-    desktopMemory.setHelloClosed(true);
-    setHelloClosed(true);
-    if (hadFocus) sceneRef.current?.querySelector<HTMLElement>('[data-desktop-icon="readme"]')?.focus();
-  };
-
+  /* ── the README icon points at the intro ── */
   const onReadme = () => {
-    const win = helloRef.current;
-    if (!win) return;
-    if (desktopMemory.helloClosed()) {
-      win.open(readmeCenter());
-      desktopMemory.setHelloClosed(false);
-      setHelloClosed(false);
-      blip("open");
-      requestAnimationFrame(() => helloRef.current?.focus());
-    } else {
-      win.focus();
-      win.nudge();
-    }
+    helloRef.current?.focus();
+    helloRef.current?.nudge();
+    blip("open");
   };
 
   /* ── marquee selection on empty desktop ── */
@@ -229,7 +201,7 @@ export function DesktopScene() {
       {fine && <SunHandle />}
 
       <div ref={helloSlotRef} className="app-home-hello-slot">
-        <HelloWindow ref={helloRef} closed={helloClosed} onClose={closeHello} reduced={reduced} />
+        <Hello ref={helloRef} reduced={reduced} />
       </div>
 
       <div ref={widgetsRef} className="app-home-widgets" role="group" aria-label={t.home.widgets.label}>

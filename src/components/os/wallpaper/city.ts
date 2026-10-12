@@ -192,7 +192,8 @@ export function buildCity(W: number, H: number): City {
   {
     const unit = Math.max(1.4, S * 0.007);
     const banks = [
-      { x: -0.04, y: 0.17, w: 0.24 },
+      // under the desk's intro, not behind its words
+      { x: -0.04, y: 0.3, w: 0.2 },
       { x: 0.8, y: 0.23, w: 0.24 },
       { x: 0.06, y: 0.42, w: 0.16 },
       { x: 0.83, y: 0.45, w: 0.15 },

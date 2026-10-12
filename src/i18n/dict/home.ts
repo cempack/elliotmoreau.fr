@@ -7,20 +7,10 @@ const en = {
   name: "Elliot Moreau",
   desktop: "Desktop",
   hello: {
-    file: "README.md",
-    path: "~/desktop",
     greeting: "Hi, I’m Elliot.",
-    lead: "I’m a developer in Toulouse. I build web apps and small tools, make Omarchy themes, and write about how they’re made. I travel whenever I can.",
+    lead: "Developer in Toulouse. I build web apps, small tools and Omarchy themes, and write about how they’re made.",
     work: "See the work",
     contact: "Say hello",
-    close: "Close the README",
-    minimize: "Minimize the README",
-    status: "Live status",
-    /** the places chip: "6 places visited", "next: Japan" */
-    places: "{n} places visited",
-    next: "next: {place}",
-    openAtlas: "{n} places visited. Open Atlas.",
-    openAtlasNext: "{n} places visited, {next} next. Open Atlas.",
   },
   widgets: {
     label: "Widgets",
@@ -91,20 +81,12 @@ const fr: typeof en = {
   name: "Elliot Moreau",
   desktop: "Bureau",
   hello: {
-    file: "LISEZ-MOI.md",
-    path: "~/bureau",
     greeting: "Salut, moi c’est Elliot.",
-    lead: "Je suis développeur à Toulouse. Je fais des applis web, de petits outils et des thèmes Omarchy, et j’écris sur la façon dont je les construis. Je voyage dès que je peux.",
+    lead: "Développeur à Toulouse. Je fais des applis web, de petits outils et des thèmes Omarchy, et j’écris sur leur fabrication.",
     work: "Voir mes projets",
     contact: "Dire bonjour",
-    close: "Fermer le LISEZ-MOI",
-    minimize: "Réduire le LISEZ-MOI",
-    status: "En direct",
-    places: "{n} lieux visités",
-    next: "prochain : {place}",
-    openAtlas: "{n} lieux visités. Ouvrir Atlas.",
-    openAtlasNext: "{n} lieux visités, prochain : {next}. Ouvrir Atlas.",
   },
+
   widgets: {
     label: "Widgets",
     clock: {
