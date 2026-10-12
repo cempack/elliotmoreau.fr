@@ -36,6 +36,7 @@ export function LivePane({ data, onSaved }: { data: Overview; onSaved: () => voi
       <Group title={l.featured}>
         <Select
           label={l.featured}
+          hideLabel
           wide
           value={draft.featuredRepo ?? AUTO}
           onChange={(v) => setDraft((d) => ({ ...d, featuredRepo: v || undefined }))}
@@ -80,6 +81,7 @@ export function LivePane({ data, onSaved }: { data: Overview; onSaved: () => voi
       <Group title={l.pinned}>
         <Select
           label={l.pinned}
+          hideLabel
           wide
           value={draft.pinnedPost ?? AUTO}
           onChange={(v) => setDraft((d) => ({ ...d, pinnedPost: v || undefined }))}

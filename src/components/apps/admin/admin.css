@@ -1,10 +1,14 @@
-/* The admin panel: a quiet form app in the emOS window. Brass (ember)
-   is its accent, like the key on its icon. */
+/* The admin panel: Elliot's settings, laid out like the other apps:
+   display titles, labelled cards on the window's glass, quiet filled
+   fields, and a save pill that floats up only when there is something to
+   save. Brass (ember) is its accent, like the key on its icon. */
 
 .app-admin {
   --adm-accent: var(--color-ember);
-  --adm-field: rgba(255, 255, 255, 0.04);
-  --adm-field-hover: rgba(255, 255, 255, 0.07);
+  --adm-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.022) 9rem);
+  --adm-surface-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 26px 52px -40px rgba(0, 0, 0, 0.85);
+  --adm-field: rgba(255, 255, 255, 0.055);
+  --adm-field-hover: rgba(255, 255, 255, 0.08);
   --adm-line: var(--hairline);
 }
 
@@ -130,19 +134,19 @@
   align-items: center;
   justify-content: center;
   gap: 0.375rem;
-  min-height: 2.25rem;
-  padding: 0 0.875rem;
-  border: 1px solid var(--adm-line);
+  min-height: 2.375rem;
+  padding: 0 1rem;
+  border: 0;
   border-radius: var(--radius-control);
   background: var(--adm-field);
   color: var(--color-label);
   font-size: var(--text-footnote);
-  font-weight: 500;
+  font-weight: 550;
   white-space: nowrap;
   cursor: pointer;
   transition:
     background-color 0.15s,
-    border-color 0.15s,
+    color 0.15s,
     transform 0.15s var(--ease-out-quint);
 }
 .app-admin-btn:hover:not(:disabled) {
@@ -174,7 +178,11 @@
   color: var(--color-label);
 }
 .app-admin-btn[data-kind="danger"] {
+  background: color-mix(in oklab, var(--color-flare) 10%, transparent);
   color: var(--color-flare);
+}
+.app-admin-btn[data-kind="danger"]:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--color-flare) 18%, transparent);
 }
 .app-admin-btn:focus-visible,
 .app-admin-link:focus-visible,
@@ -222,27 +230,33 @@
 /* ───────────── sections ───────────── */
 
 .app-admin-panel {
-  padding: 1.5rem clamp(1rem, 3vw, 2rem) 0;
+  padding: clamp(1.5rem, 3vw, 2.5rem) clamp(1rem, 3.5vw, 2.75rem) 0;
 }
 .app-admin-section {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  max-width: 56rem;
+  gap: 1.75rem;
+  max-width: 54rem;
+  /* room to scroll the last card clear of the save pill */
+  padding-bottom: 4.5rem;
 }
 .app-admin-section-head {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 0.75rem 1rem;
+  gap: 1rem 1.5rem;
+}
+.app-admin-section-titles {
+  min-width: 0;
 }
 .app-admin-h2 {
   color: var(--color-label);
-  font-size: var(--text-title-2);
-  font-weight: 600;
-  letter-spacing: var(--text-title-2--letter-spacing);
-  line-height: var(--text-title-2--line-height);
+  font-family: var(--font-display);
+  font-size: clamp(2.125rem, 1.5rem + 2vw, 3rem);
+  font-weight: 650;
+  line-height: 0.98;
+  letter-spacing: -0.04em;
 }
 .app-admin-h3 {
   color: var(--color-label);
@@ -251,33 +265,38 @@
   letter-spacing: var(--text-title-3--letter-spacing);
 }
 .app-admin-lede {
-  max-width: 42rem;
-  margin-top: 0.375rem;
+  max-width: 38rem;
+  margin-top: 0.75rem;
   color: var(--color-label-2);
-  font-size: var(--text-callout);
+  font-size: var(--text-body);
+  line-height: 1.5;
   text-wrap: pretty;
 }
 .app-admin-group {
   display: flex;
   flex-direction: column;
-  gap: 0.875rem;
+  gap: 0.5rem;
   min-width: 0;
-  margin: 0;
-  padding: 1rem 1.125rem 1.125rem;
-  border: 1px solid var(--adm-line);
-  border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.015);
 }
 .app-admin-legend {
-  padding: 0 0.375rem;
-  margin-left: -0.375rem;
+  padding-left: 0.25rem;
   color: var(--color-label-3);
-  font: 600 0.6875rem/1 var(--font-mono);
+  font: 600 0.6875rem/1.2 var(--font-mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.app-admin-group > .app-admin-hint {
-  margin-top: -0.25rem;
+.app-admin-group-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+  padding: 1.125rem 1.25rem 1.25rem;
+  border-radius: var(--radius-card);
+  background: var(--adm-surface);
+  box-shadow: var(--adm-surface-shadow);
+}
+.app-admin-group-card > .app-admin-hint {
+  margin-top: -0.125rem;
 }
 .app-admin-group-body {
   display: flex;
@@ -286,8 +305,8 @@
 }
 .app-admin-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr));
-  gap: 0.875rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
+  gap: 1rem;
 }
 .app-admin-row {
   display: flex;
@@ -296,9 +315,10 @@
   gap: 0.5rem;
 }
 .app-admin-empty {
-  padding: 1.5rem 0;
+  padding: 2.5rem 1rem;
   color: var(--color-label-3);
   font-size: var(--text-callout);
+  text-align: center;
 }
 
 /* ───────────── fields ───────────── */
@@ -330,18 +350,19 @@
 .app-admin-input {
   width: 100%;
   min-width: 0;
-  min-height: 2.375rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--adm-line);
-  border-radius: var(--radius-control);
+  min-height: 2.5rem;
+  padding: 0.5rem 0.875rem;
+  border: 0;
+  border-radius: 10px;
   background: var(--adm-field);
+  box-shadow: inset 0 0 0 1px transparent;
   color: var(--color-label);
   font: inherit;
   font-size: var(--text-callout);
   caret-color: var(--adm-accent);
   color-scheme: dark;
   transition:
-    border-color 0.15s,
+    box-shadow 0.15s,
     background-color 0.15s;
 }
 .app-admin-input[data-mono] {
@@ -352,14 +373,15 @@
   background: var(--adm-field-hover);
 }
 .app-admin-input:focus-visible {
-  border-color: var(--adm-accent);
+  background: var(--adm-field-hover);
+  box-shadow: inset 0 0 0 1.5px var(--adm-accent);
   outline: none;
 }
 .app-admin-input:disabled {
   opacity: 0.55;
 }
 .app-admin-input[aria-invalid="true"] {
-  border-color: var(--color-flare);
+  box-shadow: inset 0 0 0 1.5px var(--color-flare);
 }
 .app-admin-textarea {
   resize: vertical;
@@ -464,20 +486,25 @@
   display: inline-flex;
   align-self: flex-start;
   flex-wrap: wrap;
-  gap: 0.25rem;
+  gap: 0.125rem;
   padding: 0.1875rem;
-  border: 1px solid var(--adm-line);
   border-radius: calc(var(--radius-control) + 3px);
-  background: var(--adm-field);
+  background: rgba(0, 0, 0, 0.28);
+  box-shadow: inset 0 0 0 1px var(--adm-line);
 }
 .app-admin-seg-opt {
   position: relative;
-  padding: 0.375rem 0.875rem;
+  min-width: 5rem;
+  padding: 0.4375rem 1rem;
   border-radius: var(--radius-control);
   color: var(--color-label-2);
   font-size: var(--text-footnote);
-  font-weight: 500;
+  font-weight: 550;
+  text-align: center;
   cursor: pointer;
+  transition:
+    background-color 0.18s var(--ease-out-quint),
+    color 0.18s;
 }
 .app-admin-seg-opt input {
   position: absolute;
@@ -486,6 +513,7 @@
 }
 .app-admin-seg-opt[data-on] {
   background: var(--color-ink-600);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   color: var(--color-label);
 }
 .app-admin-seg-opt:has(input:focus-visible) {
@@ -499,20 +527,26 @@
   gap: 0.375rem;
 }
 .app-admin-day {
-  min-width: 3rem;
+  min-width: 3.25rem;
   min-height: 2.25rem;
-  padding: 0 0.625rem;
-  border: 1px solid var(--adm-line);
-  border-radius: var(--radius-control);
-  background: transparent;
+  padding: 0 0.75rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--adm-field);
   color: var(--color-label-3);
-  font: 500 0.8125rem/1 var(--font-mono);
+  font: 600 0.8125rem/1 var(--font-mono);
   cursor: pointer;
+  transition:
+    background-color 0.15s,
+    color 0.15s,
+    transform 0.12s var(--ease-out-quint);
+}
+.app-admin-day:active {
+  transform: scale(0.95);
 }
 .app-admin-day[aria-pressed="true"] {
-  border-color: color-mix(in oklab, var(--adm-accent) 60%, transparent);
-  background: color-mix(in oklab, var(--adm-accent) 16%, transparent);
-  color: var(--color-label);
+  background: var(--adm-accent);
+  color: var(--color-ink-950);
 }
 
 /* the working day as 24 cells, filled by how much of each hour is worked */
@@ -534,14 +568,16 @@
 .app-admin-preview {
   display: flex;
   flex-direction: column;
-  gap: 0.375rem;
-  padding: 1rem 1.125rem;
+  gap: 0.5rem;
+  padding: 1.25rem 1.375rem;
   border-radius: var(--radius-card);
-  background: color-mix(in oklab, var(--adm-accent) 8%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--adm-accent) 22%, transparent);
+  background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in oklab, var(--adm-accent) 10%, transparent), transparent 60%),
+    var(--adm-surface);
+  box-shadow: var(--adm-surface-shadow);
 }
 .app-admin-preview-label {
-  color: var(--adm-accent);
+  color: var(--color-label-3);
   font: 600 0.6875rem/1 var(--font-mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -549,10 +585,16 @@
 .app-admin-preview-line {
   display: flex;
   align-items: baseline;
-  gap: 0.5rem;
+  gap: 0.625rem;
   color: var(--color-label);
-  font-size: var(--text-headline);
+  font-size: var(--text-title-3);
+  font-weight: 550;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
   text-wrap: pretty;
+}
+.app-admin-preview-line .app-admin-dot {
+  translate: 0 -0.125rem;
 }
 
 .app-admin-dot {
@@ -603,9 +645,10 @@
   display: flex;
   flex-direction: column;
   gap: 1px;
-  padding: 0.25rem;
-  border: 1px solid var(--adm-line);
+  padding: 0.375rem;
   border-radius: var(--radius-card);
+  background: var(--adm-surface);
+  box-shadow: var(--adm-surface-shadow);
   list-style: none;
 }
 .app-admin-split .app-admin-list {
@@ -617,16 +660,18 @@
 @media (max-width: 900px) {
   .app-admin-split .app-admin-list {
     position: static;
-    max-height: 18rem;
+    max-height: none;
   }
 }
 .app-admin-list-item {
+  position: relative;
   display: flex;
   align-items: center;
-  border-radius: calc(var(--radius-card) - 4px);
+  border-radius: calc(var(--radius-card) - 6px);
+  transition: background-color 0.15s;
 }
 .app-admin-list-item[data-on] {
-  background: color-mix(in oklab, var(--adm-accent) 12%, transparent);
+  background: color-mix(in oklab, var(--adm-accent) 15%, transparent);
 }
 .app-admin-list-item:hover:not([data-on]) {
   background: var(--adm-field);
@@ -636,10 +681,11 @@
   flex: 1;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  column-gap: 0.625rem;
+  column-gap: 0.75rem;
+  row-gap: 0.125rem;
   min-width: 0;
-  min-height: 2.5rem;
-  padding: 0.375rem 0.625rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
   border: 0;
   border-radius: inherit;
   background: none;
@@ -674,6 +720,25 @@
   gap: 0.125rem;
   padding-right: 0.25rem;
 }
+/* reorder handles show where they can be used: on hover or focus with a mouse (over the
+   row's meta, so they take no room from the name), always on touch */
+@media (hover: hover) {
+  .app-admin-list-move {
+    position: absolute;
+    top: 50%;
+    right: 0.375rem;
+    padding: 0 0 0 1.5rem;
+    border-radius: 0 calc(var(--radius-card) - 6px) calc(var(--radius-card) - 6px) 0;
+    background: linear-gradient(90deg, transparent, var(--color-ink-800) 1.25rem);
+    opacity: 0;
+    translate: 0 -50%;
+    transition: opacity 0.15s;
+  }
+  .app-admin-list-item:hover .app-admin-list-move,
+  .app-admin-list-item:focus-within .app-admin-list-move {
+    opacity: 1;
+  }
+}
 .app-admin-inbox .app-admin-list-item[data-unread] .app-admin-list-name {
   font-weight: 600;
 }
@@ -681,8 +746,42 @@
 .app-admin-editor {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.25rem;
   min-width: 0;
+}
+.app-admin-editor-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.25rem);
+  font-weight: 650;
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+.app-admin-up {
+  rotate: 180deg;
+}
+.app-admin-left {
+  rotate: 90deg;
+}
+/* back to the list: only when the list and the editor take turns */
+.app-admin-back {
+  display: none;
+  align-self: flex-start;
+  margin: 0 0 -0.5rem -0.75rem;
+}
+@media (max-width: 900px) {
+  .app-admin-back {
+    display: inline-flex;
+  }
+  /* editing one place on a phone: just the way back and the place */
+  .app-admin-section:has(> .app-admin-split[data-editing]) > .app-admin-section-head {
+    display: none;
+  }
+  .app-admin-split[data-editing] > .app-admin-list {
+    display: none;
+  }
+  .app-admin-split:not([data-editing]) > .app-admin-editor {
+    display: none;
+  }
 }
 
 .app-admin-cards {
@@ -697,10 +796,10 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  padding: 0.75rem 0.875rem 0.875rem;
-  border: 1px solid var(--adm-line);
-  border-radius: var(--radius-control);
-  background: rgba(0, 0, 0, 0.12);
+  padding: 0.875rem 1rem 1rem;
+  border-radius: calc(var(--radius-card) - 4px);
+  background: rgba(0, 0, 0, 0.18);
+  box-shadow: inset 0 0 0 1px var(--adm-line);
 }
 .app-admin-card-head {
   display: flex;
@@ -878,10 +977,11 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem 1rem;
-  padding: 0.625rem 0.875rem;
-  border: 1px solid var(--adm-line);
+  gap: 0.5rem 1.25rem;
+  padding: 0.75rem 0.75rem 0.75rem 1.125rem;
   border-radius: var(--radius-card);
+  background: var(--adm-surface);
+  box-shadow: var(--adm-surface-shadow);
   font-size: var(--text-footnote);
 }
 .app-admin-health-item {
@@ -919,15 +1019,15 @@
 }
 .app-admin-message {
   max-width: 44rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--adm-line);
+  padding: 0.875rem 1.125rem;
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--adm-surface);
+  box-shadow: var(--adm-surface-shadow);
 }
 .app-admin-message[data-dir="out"] {
   align-self: flex-end;
-  border-color: color-mix(in oklab, var(--adm-accent) 30%, transparent);
-  background: color-mix(in oklab, var(--adm-accent) 7%, transparent);
+  background: color-mix(in oklab, var(--adm-accent) 9%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--adm-accent) 18%, transparent);
 }
 .app-admin-message-meta {
   margin-bottom: 0.375rem;
@@ -955,50 +1055,69 @@
 
 /* ───────────── save bar ───────────── */
 
+/* a pill that floats up at the bottom of the window while there are changes */
 .app-admin-savebar {
   position: sticky;
-  bottom: 0;
-  z-index: 2;
+  bottom: 1rem;
+  z-index: 5;
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin: 0 calc(-1 * clamp(1rem, 3vw, 2rem));
-  padding: 0.75rem clamp(1rem, 3vw, 2rem);
-  border-top: 1px solid var(--adm-line);
-  background: color-mix(in oklab, var(--color-ink-900) 88%, transparent);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  /* out of the way until there's something to save */
+  justify-content: center;
+  margin-top: -0.75rem;
   opacity: 0;
-  transform: translateY(0.5rem);
+  transform: translateY(0.75rem) scale(0.98);
   pointer-events: none;
   transition:
     opacity 0.2s var(--ease-out-quint),
-    transform 0.3s var(--ease-out-quint);
+    transform 0.32s var(--ease-out-quint);
 }
 .app-admin-savebar[data-dirty],
 .app-admin-savebar[data-error] {
   opacity: 1;
   transform: none;
+}
+.app-admin-savebar-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  max-width: 100%;
+  padding: 0.3125rem 0.3125rem 0.3125rem 1.125rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-ink-800) 97%, transparent);
+  box-shadow:
+    inset 0 0 0 1px var(--adm-line),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 20px 44px -18px rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+}
+.app-admin-savebar[data-dirty] .app-admin-savebar-pill,
+.app-admin-savebar[data-error] .app-admin-savebar-pill {
   pointer-events: auto;
+}
+.app-admin-savebar-pill .app-admin-btn {
+  border-radius: 999px;
+}
+.app-admin-savebar-msg {
+  min-width: 0;
+  margin-right: 0.5rem;
+  overflow: hidden;
+  color: var(--color-label-2);
+  font-size: var(--text-footnote);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app-admin-savebar[data-error] .app-admin-savebar-msg {
+  color: var(--color-flare);
+  white-space: normal;
 }
 @media (prefers-reduced-motion: reduce) {
   .app-admin-savebar {
     transform: none;
   }
 }
-.app-admin-savebar-msg {
-  flex: 1;
-  min-width: 0;
-  color: var(--color-label-2);
-  font-size: var(--text-footnote);
-}
-.app-admin-savebar[data-error] .app-admin-savebar-msg {
-  color: var(--color-flare);
-}
 @media (prefers-reduced-transparency: reduce) {
-  .app-admin-savebar {
-    background: var(--color-ink-900);
+  .app-admin-savebar-pill {
+    background: var(--color-ink-800);
     backdrop-filter: none;
   }
 }

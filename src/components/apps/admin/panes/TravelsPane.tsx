@@ -7,10 +7,15 @@ import { CONTINENTS, loc, type Continent, type PlaceRow } from "@/lib/content";
 import { rpc, type Overview } from "../api";
 import { useSave } from "../useSave";
 import { WorldPicker } from "../WorldPicker";
+import { PixelGlyph } from "@/components/glyphs";
+import { G_CHEVRON } from "@/components/os/window/glyphs";
 import { Btn, Group, Pair, SaveBar, Section, Segmented, Select, Text, Toggle, fill } from "../ui";
 
 // the place being edited survives the remount that follows a save
 let remembered: string | null = null;
+
+/** list and editor side by side (narrower: the list, then the editor in its place) */
+const sideBySide = () => typeof window !== "undefined" && window.matchMedia("(min-width: 901px)").matches;
 
 const blank = (sort: number): PlaceRow => ({
   id: "",
@@ -40,7 +45,10 @@ export function TravelsPane({ data, onSaved }: { data: Overview; onSaved: () => 
   const c = t.admin.common;
   const { notify } = useToast();
   const places = data.places;
-  const [selected, setSelected] = useState<string | null>(() => (remembered && places.some((p) => p.id === remembered) ? remembered : null));
+  // side by side, a place is always open (the first, unless one was being edited)
+  const [selected, setSelected] = useState<string | null>(() =>
+    remembered && places.some((p) => p.id === remembered) ? remembered : sideBySide() ? (places[0]?.id ?? null) : null
+  );
   const [isNew, setIsNew] = useState(false);
   const original = isNew ? null : (places.find((p) => p.id === selected) ?? null);
   const [draft, setDraft] = useState<PlaceRow | null>(original);
@@ -98,7 +106,7 @@ export function TravelsPane({ data, onSaved }: { data: Overview; onSaved: () => 
         </Btn>
       }
     >
-      <div className="app-admin-split">
+      <div className="app-admin-split" data-editing={draft ? "" : undefined}>
         <ol className="app-admin-list" aria-label={tr.title}>
           {places.map((p, i) => (
             <li key={p.id} className="app-admin-list-item" data-on={p.id === selected && !isNew ? "" : undefined}>
@@ -112,7 +120,7 @@ export function TravelsPane({ data, onSaved }: { data: Overview; onSaved: () => 
               </button>
               <span className="app-admin-list-move">
                 <button type="button" className="app-admin-icon" aria-label={`${c.up}: ${loc(p.name, lang)}`} disabled={i === 0} onClick={() => move(i, -1)}>
-                  ↑
+                  <PixelGlyph cells={G_CHEVRON} size={9} className="app-admin-up" />
                 </button>
                 <button
                   type="button"
@@ -121,7 +129,7 @@ export function TravelsPane({ data, onSaved }: { data: Overview; onSaved: () => 
                   disabled={i === places.length - 1}
                   onClick={() => move(i, 1)}
                 >
-                  ↓
+                  <PixelGlyph cells={G_CHEVRON} size={9} />
                 </button>
               </span>
             </li>
@@ -133,7 +141,11 @@ export function TravelsPane({ data, onSaved }: { data: Overview; onSaved: () => 
             <p className="app-admin-empty">{tr.empty}</p>
           ) : (
             <>
-              <h3 className="app-admin-h3">{isNew ? tr.newTitle : loc(draft.name, lang) || draft.id}</h3>
+              <Btn kind="ghost" className="app-admin-btn app-admin-back" onClick={() => open(null)}>
+                <PixelGlyph cells={G_CHEVRON} size={9} className="app-admin-left" />
+                {tr.title}
+              </Btn>
+              <h3 className="app-admin-h3 app-admin-editor-title">{isNew ? tr.newTitle : loc(draft.name, lang) || draft.id}</h3>
               <Pair
                 label={tr.name}
                 value={draft.name}

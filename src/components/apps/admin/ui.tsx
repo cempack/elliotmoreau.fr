@@ -39,7 +39,7 @@ export function Section({ title, lede, children, actions }: { title: string; led
   return (
     <section className="app-admin-section">
       <header className="app-admin-section-head">
-        <div>
+        <div className="app-admin-section-titles">
           <h2 className="app-admin-h2">{title}</h2>
           {lede && <p className="app-admin-lede">{lede}</p>}
         </div>
@@ -50,13 +50,19 @@ export function Section({ title, lede, children, actions }: { title: string; led
   );
 }
 
+/** a labelled card of settings: the label sits above it, like a settings list */
 export function Group({ title, children, hint }: { title: string; children: React.ReactNode; hint?: string }) {
+  const id = useId();
   return (
-    <fieldset className="app-admin-group">
-      <legend className="app-admin-legend">{title}</legend>
-      {hint && <p className="app-admin-hint">{hint}</p>}
-      <div className="app-admin-group-body">{children}</div>
-    </fieldset>
+    <section className="app-admin-group" role="group" aria-labelledby={`${id}-t`}>
+      <h3 id={`${id}-t`} className="app-admin-legend">
+        {title}
+      </h3>
+      <div className="app-admin-group-card">
+        {hint && <p className="app-admin-hint">{hint}</p>}
+        <div className="app-admin-group-body">{children}</div>
+      </div>
+    </section>
   );
 }
 
@@ -65,15 +71,17 @@ type FieldProps = {
   hint?: string;
   error?: string;
   wide?: boolean;
+  /** the card's title already says it: the label is for screen readers only */
+  hideLabel?: boolean;
   children: (id: string, describedBy?: string) => React.ReactNode;
 };
 
-export function Field({ label, hint, error, wide, children }: FieldProps) {
+export function Field({ label, hint, error, wide, hideLabel, children }: FieldProps) {
   const id = useId();
   const hintId = hint || error ? `${id}-d` : undefined;
   return (
     <div className="app-admin-field" data-wide={wide || undefined} data-error={error ? "" : undefined}>
-      <label className="app-admin-label" htmlFor={id}>
+      <label className={hideLabel ? "sr-only" : "app-admin-label"} htmlFor={id}>
         {label}
       </label>
       {children(id, hintId)}
@@ -97,6 +105,7 @@ export function Text({
   placeholder,
   disabled,
   mono,
+  hideLabel,
   ...rest
 }: {
   label: string;
@@ -105,13 +114,14 @@ export function Text({
   hint?: string;
   error?: string;
   wide?: boolean;
+  hideLabel?: boolean;
   type?: string;
   placeholder?: string;
   disabled?: boolean;
   mono?: boolean;
 } & Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange" | "value">) {
   return (
-    <Field label={label} hint={hint} error={error} wide={wide}>
+    <Field label={label} hint={hint} error={error} wide={wide} hideLabel={hideLabel}>
       {(id, d) => (
         <input
           id={id}
@@ -229,6 +239,7 @@ export function Select<T extends string>({
   hint,
   error,
   wide,
+  hideLabel,
 }: {
   label: string;
   value: T;
@@ -237,9 +248,10 @@ export function Select<T extends string>({
   hint?: string;
   error?: string;
   wide?: boolean;
+  hideLabel?: boolean;
 }) {
   return (
-    <Field label={label} hint={hint} error={error} wide={wide}>
+    <Field label={label} hint={hint} error={error} wide={wide} hideLabel={hideLabel}>
       {(id, d) => (
         <select
           id={id}
@@ -308,7 +320,7 @@ export function Btn({
   );
 }
 
-/** Undo / Save, stuck to the bottom of the section while there are changes */
+/** Revert / Save: a pill that floats up at the bottom of the window while there are changes */
 export function SaveBar({
   dirty,
   saving,
@@ -326,15 +338,17 @@ export function SaveBar({
   const c = t.admin.common;
   return (
     <div className="app-admin-savebar" data-dirty={dirty || undefined} data-error={error ? "" : undefined}>
-      <p className="app-admin-savebar-msg" role="status" aria-live="polite">
-        {error ? error : dirty ? c.unsaved : ""}
-      </p>
-      <Btn kind="ghost" onClick={onRevert} disabled={!dirty || saving}>
-        {c.revert}
-      </Btn>
-      <Btn kind="primary" onClick={onSave} disabled={!dirty || saving}>
-        {saving ? c.saving : c.save}
-      </Btn>
+      <div className="app-admin-savebar-pill">
+        <p className="app-admin-savebar-msg" role="status" aria-live="polite">
+          {error ? error : dirty ? c.unsaved : ""}
+        </p>
+        <Btn kind="ghost" onClick={onRevert} disabled={!dirty || saving}>
+          {c.revert}
+        </Btn>
+        <Btn kind="primary" onClick={onSave} disabled={!dirty || saving}>
+          {saving ? c.saving : c.save}
+        </Btn>
+      </div>
     </div>
   );
 }

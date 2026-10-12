@@ -77,7 +77,7 @@ export function NowPane({ data, onSaved }: { data: Overview; onSaved: () => void
     <Section title={n.title} lede={n.lede}>
       <Group title={n.updated}>
         <div className="app-admin-grid">
-          <Text label={n.updated} type="date" value={draft.updated} onChange={(updated) => set({ updated })} error={f("updated")} disabled={touch} />
+          <Text label={n.updated} hideLabel type="date" value={draft.updated} onChange={(updated) => set({ updated })} error={f("updated")} disabled={touch} />
         </div>
         <Toggle label={n.touch} checked={touch} onChange={setTouch} />
       </Group>
