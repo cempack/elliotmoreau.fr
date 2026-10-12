@@ -7,9 +7,9 @@ import { useSound } from "@/lib/sound";
 /**
  * The intro, set straight on the wallpaper like a riced desktop's conky
  * text: the name, one line, the two ways in. No pane, no chrome: it sits
- * on the sky with the city, clouds drifting behind it: they dim a few
- * tones as they pass under the words (data-weather-shade), and a light
- * shadow round each letter does the rest. Phones get the same words
+ * on the sky with the city, clouds drifting behind it. Every line sits on
+ * a solid ink chip (the material of the desktop's labels and the pill),
+ * so it reads on clear sky and white cloud alike. Phones get the same words
  * over the wallpaper, centred. (The README icon opens the terminal on
  * cat README.md, the longer version.)
  */
@@ -19,11 +19,13 @@ export function Hello() {
   const { blip } = useSound();
 
   return (
-    <section aria-labelledby="app-home-hello-title" className="app-home-hello" data-weather-shade>
+    <section aria-labelledby="app-home-hello-title" className="app-home-hello">
       <h2 id="app-home-hello-title" className="app-home-hello-greeting">
-        {h.greeting}
+        <span className="app-home-hello-ink">{h.greeting}</span>
       </h2>
-      <p className="app-home-hello-lead">{h.lead}</p>
+      <p className="app-home-hello-lead">
+        <span className="app-home-hello-ink">{h.lead}</span>
+      </p>
       <div className="app-home-hello-ctas">
         <Link prefetch={false} href={path("/work")} transitionTypes={["app-open"]} onClick={() => blip("open")} className="app-home-btn app-home-btn--primary">
           {h.work}

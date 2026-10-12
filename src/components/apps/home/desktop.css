@@ -521,38 +521,50 @@ html[data-sky="night"] .app-home-sundial svg {
 }
 
 /* ───────────────────────────── the intro ─────────────────────────────
-   Set straight on the wallpaper, like conky text on a riced desktop: no
-   pane, no chrome, the clouds drift behind it, dimmed a few tones under
-   the words by the wallpaper itself (data-weather-shade). Solid ink and
-   a light shadow round each glyph. */
+   Set on the wallpaper like conky text, clouds drifting behind it. Every
+   line sits on its own solid ink chip (the material of the icon labels
+   and the pill), so the words read on clear sky, white cloud or the sun
+   alike: about 17:1 whatever passes behind. */
 .app-home-hello {
-  --app-home-halo: 0 0 1px rgba(4, 7, 6, 0.85), 0 1px 3px rgba(4, 7, 6, 0.55), 0 0 12px rgba(4, 7, 6, 0.3);
+  --app-home-ink: rgb(13, 17, 15);
+  --app-home-ink-hover: rgb(27, 32, 29);
+  --app-home-ink-rim: inset 0 0 0 1px rgba(196, 206, 194, 0.13);
+  --app-home-ink-lift: 0 6px 16px -8px rgba(0, 0, 0, 0.6);
   position: relative;
   width: 100%;
-  max-width: 25rem;
-  padding: 4px 0 0 2px;
+  max-width: 26rem;
   color: #f4f2ea;
-  outline: none;
   user-select: text;
   -webkit-user-select: text;
 }
 .app-home-hello-greeting {
   font-size: 2rem;
   font-weight: 650;
-  line-height: 1.08;
+  line-height: 1.32;
   letter-spacing: -0.03em;
-  text-wrap: balance;
-  text-shadow: var(--app-home-halo);
 }
 .app-home-hello-lead {
-  margin-top: 10px;
-  max-width: 34ch;
-  color: #e6e3d9;
+  margin-top: 6px;
+  max-width: 36ch;
+  color: #e9e6dc;
   font-size: 0.9375rem;
   font-weight: 500;
-  line-height: 1.5;
+  line-height: 1.9;
   text-wrap: pretty;
-  text-shadow: var(--app-home-halo);
+}
+/* one chip per line: the background breaks with the text, each fragment
+   padded and rounded on its own */
+.app-home-hello-ink {
+  padding: 3px 10px 4px;
+  border-radius: 7px;
+  background: var(--app-home-ink);
+  box-shadow: var(--app-home-ink-rim), var(--app-home-ink-lift);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.app-home-hello-greeting .app-home-hello-ink {
+  padding: 2px 10px 5px;
+  border-radius: 10px;
 }
 .app-home-hello-ctas {
   display: flex;
@@ -583,16 +595,19 @@ html[data-sky="night"] .app-home-sundial svg {
   scale: 0.97;
   transition-duration: 0.12s, 0.2s, 0.2s;
 }
-/* the way in: a small dark pill, like the menu bar's chips */
-.app-home-btn--primary {
-  background: rgb(16, 20, 18);
-  box-shadow:
-    inset 0 0 0 1px rgba(196, 206, 194, 0.24),
-    0 4px 14px -6px rgba(0, 0, 0, 0.7);
-  color: var(--color-label);
+/* the ways in: pills of the same ink as the lines above */
+.app-home-btn--primary,
+.app-home-btn--ghost {
+  background: var(--app-home-ink);
+  box-shadow: inset 0 0 0 1px rgba(196, 206, 194, 0.24), var(--app-home-ink-lift);
+  color: #f4f2ea;
 }
-.app-home-btn--primary:hover {
-  background: rgb(26, 31, 28);
+.app-home-btn--primary:hover,
+.app-home-btn--ghost:hover {
+  background: var(--app-home-ink-hover);
+}
+.app-home-btn--ghost {
+  box-shadow: var(--app-home-ink-rim), var(--app-home-ink-lift);
 }
 .app-home-btn-arrow {
   color: var(--color-signal);
@@ -602,15 +617,6 @@ html[data-sky="night"] .app-home-sundial svg {
   .app-home-btn--primary:hover .app-home-btn-arrow {
     translate: 2px 0;
   }
-}
-/* the other: just words */
-.app-home-btn--ghost {
-  padding: 0 10px;
-  color: #f4f2ea;
-  text-shadow: var(--app-home-halo);
-}
-.app-home-btn--ghost:hover {
-  color: #fff;
 }
 .app-home-btn:focus-visible {
   outline: 2px solid var(--color-signal);
@@ -853,16 +859,16 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
 
   .app-home-hello {
     max-width: none;
-    padding: 6px 4px 2px;
+    padding: 6px 0 2px;
     text-align: center;
   }
   .app-home-hello-greeting {
     font-size: 1.625rem;
   }
   .app-home-hello-lead {
-    margin: 6px auto 0;
+    margin: 4px auto 0;
     font-size: 0.875rem;
-    line-height: 1.45;
+    line-height: 1.9;
   }
   .app-home-hello-ctas {
     justify-content: center;
@@ -1033,8 +1039,9 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   .app-home-btn--primary {
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
   }
-  .app-home-hello {
-    --app-home-halo: 0 0 2px #000, 0 0 3px #000;
+  .app-home-hello-ink,
+  .app-home-btn--ghost {
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
   }
   .app-home-marquee {
     border-color: var(--color-signal);
