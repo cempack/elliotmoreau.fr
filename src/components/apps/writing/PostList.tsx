@@ -38,7 +38,7 @@ const modified = (e: React.MouseEvent) => e.metaKey || e.ctrlKey || e.shiftKey |
 
 /**
  * The middle pane: posts grouped by year. On ≥768 a single-select listbox
- * with a roving tab stop, the selection a tinted slab that springs from
+ * with a roving tab stop, the selection a quiet slab that springs from
  * row to row (shared layout). On phones, where a row is a way into the
  * reader and nothing stays selected, a plain list of links.
  */
@@ -50,19 +50,21 @@ export function PostList({ posts, selected, title, source, compact, hrefFor, onP
   const tabStop = posts.some((p) => p.slug === selected) ? selected : posts[0]?.slug;
   const label = (p: GhostPost) => `${p.title}, ${dateLong(w, p.published_at)}, ${fmt(w.minRead, { n: p.reading_time })}`;
 
-  const body = (p: GhostPost) => (
+  // title first, then the excerpt, then when and how long: the plate is
+  // the row's one colour, and the selected row's world leans in
+  const body = (p: GhostPost, on = false) => (
     <>
       <span className="app-writing-row-text" aria-hidden>
+        <span className="app-writing-row-title">{p.title}</span>
+        {p.excerpt && <span className="app-writing-row-excerpt">{p.excerpt}</span>}
         <span className="app-writing-row-meta tabular">
           <time dateTime={p.published_at}>{dateShort(w, p.published_at)}</time>
           <span className="app-writing-dot" />
           <span>{fmt(w.minShort, { n: p.reading_time })}</span>
         </span>
-        <span className="app-writing-row-title">{p.title}</span>
-        {p.excerpt && <span className="app-writing-row-excerpt">{p.excerpt}</span>}
       </span>
       <span className="app-writing-row-art" aria-hidden>
-        <PlateThumb seed={plateSeed(p)} className="app-writing-row-plate" />
+        <PlateThumb seed={plateSeed(p)} lean={on ? 1 : 0} className="app-writing-row-plate" />
       </span>
     </>
   );
@@ -151,7 +153,7 @@ export function PostList({ posts, selected, title, source, compact, hrefFor, onP
                     }}
                   >
                     {on && <m.span layoutId="app-writing-row-thumb" className="app-writing-row-thumb" transition={spring.snappy} aria-hidden />}
-                    {body(p)}
+                    {body(p, on)}
                     {/* for the mouse only: ⌘/middle-click, "open in new tab", "copy link" */}
                     <a
                       href={hrefFor(p.slug)}
