@@ -327,6 +327,7 @@
   grid-template-areas:
     "meta stamp"
     "name name"
+    "view view"
     "body body"
     "nav nav";
   align-items: start;
@@ -471,26 +472,170 @@
   font-size: var(--text-footnote);
   line-height: 1.3;
 }
-.app-atlas-compass {
-  position: relative;
-  display: block;
-  width: 1.125rem;
-  height: 1.125rem;
-  margin-top: 0.0625rem;
-  border-radius: 999px;
-  box-shadow: inset 0 0 0 1px var(--hairline);
-  transition: rotate 0.6s var(--ease-spring);
+/* the view from home: a pixel panorama that turns (Horizon.tsx). --s is
+   CSS px per art pixel, set from the band's width so it always spans 120° */
+.app-atlas-card-view {
+  grid-area: view;
+  min-width: 0;
 }
-.app-atlas-compass::before {
+.app-atlas-horizon {
+  margin: 1.125rem 0 0;
+  padding: 0.875rem 0 0;
+  border-top: 1px solid var(--hairline);
+}
+.app-atlas-hz-band {
+  --s: 3;
+  position: relative;
+  height: calc(var(--s) * 28px);
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--color-ink-950);
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.app-atlas-hz-band[data-grabbing] {
+  cursor: grabbing;
+}
+.app-atlas-hz-band::after {
   content: "";
   position: absolute;
-  left: 50%;
-  top: 2px;
-  width: 2px;
-  height: 7px;
-  margin-left: -1px;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  pointer-events: none;
+}
+.app-atlas-hz-band:focus-visible {
+  outline-offset: 2px;
+}
+.app-atlas-hz-strip {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(var(--s) * 576px);
+  will-change: transform;
+}
+.app-atlas-hz-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+/* a flag on its pole, standing on the roofs at its compass heading */
+.app-atlas-hz-pin {
+  position: absolute;
+  left: calc(var(--x) * var(--s) * 1px);
+  bottom: calc(var(--foot) * var(--s) * 1px);
+  width: calc(var(--s) * 1px);
+  height: calc(var(--h) * var(--s) * 1px);
+  background: color-mix(in srgb, var(--color-label) 72%, transparent);
+  transition: translate 0.12s var(--ease-out-quint);
+}
+.app-atlas-hz-flag {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  width: calc(var(--s) * 4px);
+  height: calc(var(--s) * 3px);
   background: var(--color-ember);
 }
+.app-atlas-hz-pin[data-tone="want"] .app-atlas-hz-flag {
+  background: color-mix(in srgb, var(--color-ion) 22%, transparent);
+  box-shadow: inset 0 0 0 calc(var(--s) * 1px) var(--color-ion);
+}
+.app-atlas-hz-iso {
+  position: absolute;
+  top: 0;
+  left: calc(var(--s) * 6px);
+  color: var(--color-label-2);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  line-height: calc(var(--s) * 3px);
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 0 rgb(0 0 0 / 0.7), 0 0 3px rgb(0 0 0 / 0.5);
+}
+.app-atlas-hz-pin[data-on] {
+  z-index: 1;
+  background: var(--color-label);
+}
+.app-atlas-hz-pin[data-on] .app-atlas-hz-iso {
+  color: var(--color-label);
+}
+.app-atlas-hz-pin[data-lift] {
+  translate: 0 calc(var(--s) * -1px);
+  transition-duration: 0s;
+}
+@media (hover: hover) and (pointer: fine) {
+  .app-atlas-hz-pin:hover {
+    translate: 0 calc(var(--s) * -1px);
+  }
+}
+/* the compass tape's letters (its ticks are painted) */
+.app-atlas-hz-card {
+  position: absolute;
+  bottom: calc(var(--s) * 0.5px);
+  left: calc(var(--x) * var(--s) * 1px);
+  translate: -50% 0;
+  color: var(--color-label-3);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1;
+}
+/* the fixed reticle: a hairline down the middle, a notch on the tape */
+.app-atlas-hz-reticle {
+  position: absolute;
+  top: 0;
+  bottom: calc(var(--s) * 5px);
+  left: 50%;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--color-label) 55%, transparent) 30%);
+  pointer-events: none;
+}
+.app-atlas-hz-reticle::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: calc(var(--s) * 3px);
+  height: calc(var(--s) * 1.5px);
+  translate: -50% 0;
+  background: var(--color-signal);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+.app-atlas-hz-read {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0;
+  min-width: 0;
+  line-height: 1.3;
+}
+.app-atlas-hz-title {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-label);
+  font-size: var(--text-footnote);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app-atlas-hz-meta {
+  flex: none;
+  color: var(--color-label-3);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+.app-atlas-hz-stat {
+  flex: none;
+  margin-left: auto;
+  color: var(--color-label-2);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
 .app-atlas-note {
   margin: 1rem 0 0;
   color: var(--color-label-2);
@@ -1290,6 +1435,7 @@
   grid-template-areas:
     "stamp name"
     "stamp meta"
+    "view view"
     "body body"
     "nav nav";
   column-gap: 0.875rem;
@@ -1335,6 +1481,10 @@
 }
 .app-atlas-card[data-compact] .app-atlas-facts {
   column-gap: 0;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+}
+.app-atlas-card[data-compact] .app-atlas-horizon {
   margin-top: 1rem;
   padding-top: 0.75rem;
 }
@@ -1391,7 +1541,8 @@
     margin-top: 0.75rem;
     font-size: clamp(2.75rem, 3.7vw, 3.25rem);
   }
-  .app-atlas-facts {
+  .app-atlas-facts,
+  .app-atlas-horizon {
     margin-top: 0.75rem;
     padding-top: 0.625rem;
   }
@@ -1460,7 +1611,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .app-atlas-pc,
-  .app-atlas-compass {
+  .app-atlas-hz-pin {
     transition: none;
   }
   .app-atlas-name-char {

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useHydrated } from "@/hooks/env";
+import { QUARTER, useQuarterHour } from "@/hooks/useQuarterHour";
 import { useSpotifyStatus } from "@/hooks/useSpotifyStatus";
 import { LANG_COLORS } from "@/lib/langColors";
 import { moonAt, sunAt, type SkyPhase } from "@/lib/sun";
@@ -319,33 +320,6 @@ export function terminalFills(history: string[]): Fills {
 
 /* ───────────────────────── inputs ───────────────────────── */
 
-const QUARTER = 900_000;
-let quarterNow = 0;
-const quarterSubs = new Set<() => void>();
-let quarterTimer = 0;
-const quarterStore = {
-  subscribe(cb: () => void) {
-    quarterSubs.add(cb);
-    if (!quarterTimer)
-      quarterTimer = window.setInterval(() => {
-        const q = Math.floor(Date.now() / QUARTER);
-        if (q !== quarterNow) {
-          quarterNow = q;
-          quarterSubs.forEach((f) => f());
-        }
-      }, 60_000);
-    return () => {
-      quarterSubs.delete(cb);
-      if (!quarterSubs.size) {
-        window.clearInterval(quarterTimer);
-        quarterTimer = 0;
-      }
-    };
-  },
-  get: () => quarterNow || (quarterNow = Math.floor(Date.now() / QUARTER)),
-  server: () => 0,
-};
-
 const draftStore = {
   subscribe: draftOnDesk.subscribe,
   get: () => {
@@ -358,12 +332,10 @@ const draftStore = {
 /* Each icon calls only its own hook, so a dock icon subscribes to its one
    source. All return null until hydrated (the static drawing). */
 
-const useQuarter = () => useSyncExternalStore(quarterStore.subscribe, quarterStore.get, quarterStore.server);
-
 export function useHomeGlyph(base: Base): LiveGlyph | null {
   const hydrated = useHydrated();
   const { phase, mode } = useSky();
-  const quarter = useQuarter();
+  const quarter = useQuarterHour();
   return useMemo(() => {
     if (!hydrated) return null;
     const live = mode === "auto";
@@ -375,7 +347,7 @@ export function useHomeGlyph(base: Base): LiveGlyph | null {
 export function useWorkGlyph(base: Base): LiveGlyph | null {
   const hydrated = useHydrated();
   const repos = useMaybeSiteData()?.repos;
-  const quarter = useQuarter();
+  const quarter = useQuarterHour();
   return useMemo(() => {
     if (!hydrated || !repos?.length) return null;
     const top = repos.slice(0, 3);

@@ -33,6 +33,15 @@ const en = {
     /** pixel text on the home stamp's value strip (A–Z only) */
     stampHome: "HOME",
   },
+  /** the panorama in the place card: every place as a flag at its compass heading */
+  horizon: {
+    label: "View from Toulouse",
+    hint: "Drag to turn",
+    value: "{place}, {deg}° {dir}, {km} km",
+    peak: "{peak}, {m} m, {deg}° {dir}",
+    facing: "Facing {deg}° {dir}",
+    routes: "{n} routes out",
+  },
   stats: {
     label: "Travel so far",
     countries: "Countries",
@@ -108,6 +117,14 @@ const fr: typeof en = {
     steps: "Parcourir les lieux",
     stampAlt: "Timbre de {place}",
     stampHome: "MAISON",
+  },
+  horizon: {
+    label: "Vue depuis Toulouse",
+    hint: "Faites tourner",
+    value: "{place}, {deg}° {dir}, {km} km",
+    peak: "{peak}, {m} m, {deg}° {dir}",
+    facing: "Cap au {deg}° {dir}",
+    routes: "{n} liaisons",
   },
   stats: {
     label: "Mes voyages en chiffres",

@@ -176,6 +176,33 @@ function interp(keys: Key[], e: number): Interp {
   };
 }
 
+export type { RGB };
+
+/**
+ * The wallpaper's sky for an instant, for small views that echo it (the
+ * Atlas horizon): the five sky stops top to horizon, the glow round the
+ * sun, the light on things, and where the sun and moon are.
+ */
+export function skyLight(ms: number) {
+  const sun = sunAt(ms);
+  const e = sun.elevation;
+  const i = interp(sun.hourAngle < 0 ? MORNING : EVENING, e);
+  return {
+    sky: i.sky,
+    glow: i.glow,
+    glowAmt: i.glowAmt,
+    amb: i.amb,
+    sunTint: i.sun,
+    sun,
+    moon: moonAt(ms),
+    stars: 1 - smoothstep(-13, -4, e),
+    sunUp: smoothstep(-1.2, 2.5, e),
+    /** the rose light after sunset (and before sunrise) */
+    twilight: smoothstep(-10, -1, e) * (1 - smoothstep(1, 6, e)),
+  };
+}
+export type SkyLight = ReturnType<typeof skyLight>;
+
 /* ───────────────────────────── materials ───────────────────────────── */
 
 const BRICK = hex("#c4826a");

@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
-import { AnimatePresence, animate, m, useMotionValue, useTransform } from "motion/react";
+import { AnimatePresence, m } from "motion/react";
 import { useI18n } from "@/i18n/client";
 import { useSound } from "@/lib/sound";
 import { useToast } from "@/components/Toasts";
@@ -10,10 +9,11 @@ import { useReduced } from "@/hooks/env";
 import { PixelGlyph } from "@/components/glyphs";
 import { G_CHEVRON } from "@/components/os/window/glyphs";
 import type { PlaceRow } from "@/lib/content";
-import { bearingDeg, compassIndex, distanceKm } from "./geo";
+import { distanceKm } from "./geo";
 import { useAtlas } from "./useAtlas";
 import { Stamp } from "./Stamp";
-import { capitalize, fill, useCoords, useKm } from "./fmt";
+import { capitalize, fill, useCoords } from "./fmt";
+import { Horizon } from "./Horizon";
 
 /** The status chip: Home / Visited / Next up, marker drawn like the globe's. */
 export function StatusChip({ place }: { place: PlaceRow }) {
@@ -25,24 +25,6 @@ export function StatusChip({ place }: { place: PlaceRow }) {
       {t.atlas.status[tone === "want" ? "want" : tone === "home" ? "home" : "been"]}
     </span>
   );
-}
-
-/** Big tabular number that rolls from the previous value to the new one,
-    paced with the arc drawing on the globe. */
-function Rolling({ value }: { value: number }) {
-  const reduced = useReduced();
-  const fmt = useKm();
-  const mv = useMotionValue(value);
-  const text = useTransform(mv, (v) => fmt(Math.round(v)));
-  useEffect(() => {
-    if (reduced) {
-      mv.jump(value);
-      return;
-    }
-    const a = animate(mv, value, { duration: 1.05, delay: 0.32, ease: [0.22, 1, 0.36, 1] });
-    return () => a.stop();
-  }, [value, reduced, mv]);
-  return <m.span className="tabular">{text}</m.span>;
 }
 
 /** The place name in display type: letters rise out of their line on a
@@ -96,9 +78,9 @@ function KineticName({ text, id }: { text: string; id: string }) {
 
 /**
  * The inspector for one place: status, region, coordinates (copyable),
- * the perforated stamp, the name in kinetic display type, distance and
- * heading from home (or the routes out, for home), its note (from the
- * database), and previous / next.
+ * the perforated stamp, the name in kinetic display type, the view from
+ * home (every place as a flag at its heading, with the distance, or the
+ * routes out for home), its note (from the database), and previous / next.
  */
 export function PlaceCard({
   place,
@@ -117,10 +99,9 @@ export function PlaceCard({
   const { notify } = useToast();
   const reduced = useReduced();
   const coordsText = useCoords();
-  const { home, been, next: upcoming, ordered } = useAtlas();
+  const { home, ordered } = useAtlas();
   const isHome = place.home || place.id === home.id;
   const km = distanceKm(home, place);
-  const heading = bearingDeg(home, place);
   const name = place.name[lang];
   const region = a.regions[place.region.en] ?? capitalize(place.region[lang]);
   const note = place.note?.[lang] ?? "";
@@ -191,48 +172,14 @@ export function PlaceCard({
         <KineticName text={name} id={place.id} />
       </h2>
 
+      {/* the view from home: it turns to each place rather than swapping;
+          the sheet's half detent can end under it on a short screen */}
+      <div className="app-atlas-card-view">
+        <Horizon place={place} isHome={isHome} onSelect={onSelect} />
+      </div>
+
       <AnimatePresence mode="popLayout" initial={false}>
         <m.div key={place.id} className="app-atlas-card-body" {...swap}>
-          {/* the sheet's half detent ends under the note, or, on a short
-              screen, under these */}
-          <dl className="app-atlas-facts" data-sheet-half="">
-            {isHome ? (
-              <div className="app-atlas-fact app-atlas-fact--wide">
-                <dt>{a.card.routes}</dt>
-                <dd>
-                  <span className="app-atlas-fact-big tabular">{been.length - 1 + upcoming.length}</span>
-                  <span className="app-atlas-fact-sub">
-                    {fill(a.card.routesSub, { been: been.length - 1, next: upcoming.length })}
-                  </span>
-                </dd>
-              </div>
-            ) : (
-              <>
-                <div className="app-atlas-fact">
-                  <dt>{a.card.distance}</dt>
-                  <dd>
-                    <span className="app-atlas-fact-big">
-                      <Rolling value={km} />
-                      <span className="app-atlas-fact-unit">{a.km}</span>
-                    </span>
-                    <span className="app-atlas-fact-sub">{a.card.crow}</span>
-                  </dd>
-                </div>
-                <div className="app-atlas-fact">
-                  <dt>{a.card.bearing}</dt>
-                  <dd>
-                    <span className="app-atlas-fact-big tabular">
-                      {Math.round(heading)}°
-                      <span className="app-atlas-fact-unit">{a.compass[compassIndex(heading)]}</span>
-                    </span>
-                    <span className="app-atlas-fact-sub" aria-hidden>
-                      <span className="app-atlas-compass" style={{ rotate: `${heading}deg` }} />
-                    </span>
-                  </dd>
-                </div>
-              </>
-            )}
-          </dl>
           <p className="app-atlas-note" data-sheet-half="">
             {isHome ? [note, a.card.homeLine].filter(Boolean).join(" ") : note}
           </p>
