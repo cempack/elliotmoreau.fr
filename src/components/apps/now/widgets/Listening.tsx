@@ -74,10 +74,12 @@ function Progress({ progress, duration, label }: { progress: number | null; dura
 }
 
 /**
- * The record deck with the song on (or the last one played), the title and
- * the live progress under it, and the top artists in a crate beside it, or
- * under it on phones. With nothing from Spotify at all, the platter shows
- * its bare felt, the arm rests, and the crate still stands if there is one.
+ * The record deck with the song on (or the last one played) and the title
+ * and live progress beside it, then the top artists in a crate across the
+ * whole width under them: the crate takes the larger share of the widget.
+ * On phones the deck goes full width first. With nothing from Spotify at
+ * all, the platter shows its bare felt, the arm rests, and the crate still
+ * stands if there is one.
  */
 export function Listening({ status, track, playing }: Listen) {
   const { t } = useI18n();
@@ -86,7 +88,7 @@ export function Listening({ status, track, playing }: Listen) {
   const on = useOnScreen(rootRef, "40px");
   const progress = useTrackProgress(track, playing, on);
   const artistsAll = status?.artists;
-  const artists = useMemo(() => (artistsAll ?? []).slice(0, 5), [artistsAll]);
+  const artists = useMemo(() => (artistsAll ?? []).slice(0, 6), [artistsAll]);
   const crateLabels = useMemo(
     () => ({ title: l.topArtists, hint: l.crateHint, prev: l.cratePrev, next: l.crateNext, open: l.crateOpen }),
     [l.topArtists, l.crateHint, l.cratePrev, l.crateNext, l.crateOpen]

@@ -49,16 +49,6 @@
   font-weight: 400;
   letter-spacing: 0;
 }
-.app-now-label-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  color: var(--color-ion);
-  transition: color 0.2s;
-}
-.app-now-label-link:hover {
-  color: var(--color-label);
-}
 .app-now-muted {
   color: var(--color-label-3);
   font-size: var(--text-footnote);
@@ -119,13 +109,15 @@
 }
 
 .app-now-sentence {
+  position: relative;
   margin: 0;
   color: var(--color-label);
   font-size: clamp(2.125rem, 0.75rem + 6cqi, 6rem);
   font-weight: 640;
   line-height: 1.06;
   letter-spacing: -0.038em;
-  text-wrap: balance;
+  /* no balancing: a new song re-wraps the lines after it, not the ones before */
+  text-wrap: pretty;
 }
 .app-now-word {
   display: inline-block;
@@ -135,40 +127,45 @@
   padding: 0.1em 0.06em 0.16em;
   margin: -0.1em -0.06em -0.16em;
 }
-/* the entrance runs in CSS so it starts at first paint, not at hydration:
-   each word rises out of its mask and gains weight on the way. --i is the
-   word's place in the wave (on a live change, counted from the first word
-   that changed, and only remounted words play it again). */
+/* the entrance runs in CSS so it starts at first paint, not at hydration.
+   The sentence is already laid out in its final form; each word only rises
+   out of its mask (transform and opacity, nothing that reflows). --i is the
+   word's place in the wave: on a live change, counted from the first new
+   word, and only new words play it. */
 .app-now-word-in {
   display: inline-block;
-  font-variation-settings: "wght" 640;
-  animation:
-    app-now-rise 0.9s var(--ease-out-quint) both,
-    app-now-weigh 1.1s var(--ease-out-quint) both;
-  animation-delay:
-    calc(80ms + var(--i, 0) * 45ms),
-    calc(180ms + var(--i, 0) * 45ms);
+  animation: app-now-rise 0.9s var(--ease-out-quint) both;
+  animation-delay: calc(80ms + var(--i, 0) * 45ms);
+}
+.app-now-word-in[data-fresh] {
+  animation-duration: 0.75s;
+  animation-delay: calc(60ms + var(--i, 0) * 40ms);
 }
 @keyframes app-now-rise {
   from {
     transform: translateY(108%);
+    opacity: 0;
+  }
+  45% {
+    opacity: 1;
   }
   to {
     transform: none;
-  }
-}
-@keyframes app-now-weigh {
-  from {
-    font-variation-settings: "wght" 380;
-  }
-  to {
-    font-variation-settings: "wght" 640;
   }
 }
 @keyframes app-now-fade {
   from {
     opacity: 0;
   }
+}
+/* the words a change took away, rising out where they were (Hero.tsx) */
+.app-now-sentence-out {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.app-now-sentence-out .app-now-word-in {
+  animation: none;
 }
 @media (prefers-reduced-motion: reduce) {
   .app-now-word-in {
@@ -196,6 +193,11 @@
 }
 .app-now-tok--time {
   color: var(--color-ember);
+  transition: opacity 0.3s var(--ease-out-quint);
+}
+/* stand-in digits, as wide as the real ones, until the clock knows the time */
+.app-now-tok--time[data-pending] {
+  opacity: 0;
 }
 a.app-now-tok:hover {
   color: var(--color-label);
@@ -599,7 +601,7 @@ a.app-now-tok:hover {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 1.125rem;
+  gap: 0.875rem;
   min-height: 0;
 }
 .app-now-listen-now {
@@ -609,14 +611,17 @@ a.app-now-tok:hover {
   min-width: 0;
 }
 
-/* the deck: 88×64 art px at 3 CSS px each, the sleeve leaning on its left */
+/* the deck: 88×64 art px at 3 CSS px each (2 beside the crate), the sleeve
+   leaning on its left */
 .app-now-deck {
+  --app-now-deck: 264px;
   --app-now-peek: 5.25rem;
+  --app-now-sleeve: 9.5rem;
   position: relative;
   display: block;
   flex: none;
   align-self: flex-start;
-  width: calc(264px + var(--app-now-peek));
+  width: calc(var(--app-now-deck) + var(--app-now-peek));
   max-width: 100%;
   padding-left: var(--app-now-peek);
   border-radius: 6px;
@@ -662,7 +667,7 @@ a.app-now-tok:hover {
   top: 50%;
   left: 0;
   z-index: 0;
-  width: 9.5rem;
+  width: var(--app-now-sleeve);
   translate: 0 -50%;
   rotate: -2.5deg;
 }
@@ -800,28 +805,27 @@ a.app-now-tok:hover {
   font-size: 0.75rem;
 }
 
-/* ── the crate: top artists as sleeves fanned on a ledge ── */
+/* ── the crate: top artists as sleeves fanned on a ledge, the widget's width ── */
 .app-now-crate {
   container: app-now-crate / inline-size;
   display: flex;
   flex-direction: column;
-  align-items: center;
   min-width: 0;
-  padding-top: 0.875rem;
+  padding-top: 0.75rem;
   border-top: 1px solid var(--hairline);
 }
 .app-now-crate-title {
-  align-self: stretch;
+  margin-bottom: 0;
 }
 .app-now-crate-bin {
-  /* the front sleeve's size: the column's width, within reason */
-  --s: clamp(6.5rem, 40cqi, 9.5rem);
+  /* the front sleeve's size: from the crate's width here (phones), from the
+     bin's own height in the grid's fixed tiles (below) */
+  --s: clamp(7.5rem, 54cqi, 12.5rem);
+  container-type: size;
   position: relative;
-  display: grid;
-  place-items: end center;
+  display: block;
   width: 100%;
   height: calc(var(--s) + 1.75rem);
-  margin-top: 0.5rem;
   border-radius: 10px;
   outline: none;
   cursor: grab;
@@ -847,12 +851,17 @@ a.app-now-tok:hover {
   transform-origin: 50% 100%;
   will-change: transform;
 }
+@media (hover: hover) and (pointer: fine) {
+  .app-now-crate-sleeve:not([data-front]) {
+    cursor: pointer;
+  }
+}
 .app-now-crate-art {
   width: 100%;
   height: 100%;
   border-radius: 4px;
   box-shadow:
-    0 14px 22px -14px rgba(0, 0, 0, 0.9),
+    0 18px 26px -16px rgba(0, 0, 0, 0.9),
     inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 /* sleeves further from the front sit in the crate's shadow */
@@ -868,7 +877,7 @@ a.app-now-tok:hover {
 .app-now-crate-rank {
   position: absolute;
   top: -1px;
-  left: 8px;
+  left: 10px;
   display: grid;
   place-items: center;
   padding: 4px 4px 5px;
@@ -885,28 +894,26 @@ a.app-now-tok:hover {
 /* the ledge they stand on: a strip of wood with its end grain */
 .app-now-crate-ledge {
   position: absolute;
-  right: 6%;
+  right: 4%;
   bottom: 0;
-  left: 6%;
+  left: 4%;
   height: 0.75rem;
   border-radius: 2px;
   background: linear-gradient(180deg, #a7825a 0 2px, #84613f 2px calc(100% - 3px), #4a3523 calc(100% - 3px));
   box-shadow: 0 10px 16px -10px rgba(0, 0, 0, 0.9);
   pointer-events: none;
 }
-/* the artist, opening on Spotify; ‹ the covers › under it */
+/* ‹ the artist, opening on Spotify ›: the steppers keep their places */
 .app-now-crate-pager {
-  display: flex;
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr) 2.75rem;
   align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-  max-width: 100%;
-  margin-top: 0.5rem;
+  margin-top: 0.25rem;
 }
 .app-now-crate-step {
   display: grid;
   place-items: center;
-  width: 2.25rem;
+  width: 2.75rem;
   height: 2.25rem;
   border: 0;
   border-radius: 999px;
@@ -929,7 +936,7 @@ a.app-now-tok:hover {
 }
 .app-now-crate-step:disabled {
   color: var(--color-label-3);
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: default;
 }
 .app-now-crate-step:focus-visible {
@@ -943,24 +950,36 @@ a.app-now-tok:hover {
   rotate: -90deg;
 }
 .app-now-crate-name {
-  display: inline-block;
+  justify-self: center;
   max-width: 100%;
-  margin-top: 0.875rem;
+  overflow: hidden;
   color: var(--color-label);
-  font-size: var(--text-callout);
+  font-size: 1.0625rem;
   font-weight: 600;
-  line-height: 1.25;
+  letter-spacing: -0.012em;
+  line-height: 2.25rem;
   text-align: center;
   text-decoration: none;
-  text-wrap: balance;
-  overflow-wrap: anywhere;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* a new name settles in as the sleeve lands */
+.app-now-crate-name-in {
+  animation: app-now-name-in 0.24s var(--ease-out-quint);
+}
+@keyframes app-now-name-in {
+  from {
+    opacity: 0;
+  }
 }
 .app-now-crate-name svg {
   display: inline-block;
-  margin-left: 0.375rem;
+  margin-left: 0.4375rem;
   vertical-align: 1px;
   color: var(--color-label-3);
-  transition: color 0.15s, translate 0.15s var(--ease-out-quint);
+  transition:
+    color 0.15s,
+    translate 0.15s var(--ease-out-quint);
 }
 @media (hover: hover) {
   .app-now-crate-name:hover svg {
@@ -971,100 +990,54 @@ a.app-now-tok:hover {
 .app-now-crate-name:focus-visible {
   border-radius: 4px;
   outline: 2px solid var(--color-signal);
-  outline-offset: 3px;
-}
-/* every cover, small: where you are, and a tap to jump */
-.app-now-crate-strip {
-  display: flex;
-  flex: 0 1 auto;
-  justify-content: center;
-  gap: 0.375rem;
-  min-width: 0;
-}
-.app-now-crate-thumb {
-  position: relative;
-  flex: 0 1 1.375rem;
-  min-width: 0.875rem;
-  aspect-ratio: 1;
-  padding: 0;
-  border: 0;
-  border-radius: 3px;
-  background: none;
-  opacity: 0.45;
-  cursor: pointer;
-  transition:
-    opacity 0.18s var(--ease-out-quint),
-    transform 0.18s var(--ease-out-quint);
-}
-.app-now-crate-thumb::after {
-  content: "";
-  position: absolute;
-  inset: -0.5rem -0.1875rem;
-}
-.app-now-crate-thumb > .app-now-art {
-  width: 100%;
-  height: 100%;
-  border-radius: 3px;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-}
-.app-now-crate-thumb[data-on] {
-  opacity: 1;
-  transform: translateY(-2px);
-  box-shadow: 0 0 0 2px var(--color-ink-900), 0 0 0 3.5px var(--color-label-2);
-}
-@media (hover: hover) {
-  .app-now-crate-thumb:hover:not([data-on]) {
-    opacity: 0.8;
-  }
-}
-/* a narrow column (beside the deck on smaller windows): tighter steppers and covers */
-@container app-now-crate (max-width: 240px) {
-  .app-now-crate-step {
-    width: 1.75rem;
-  }
-  .app-now-crate-strip {
-    gap: 0.25rem;
-  }
+  outline-offset: -2px;
 }
 @media (prefers-reduced-motion: reduce) {
-  .app-now-crate-thumb,
   .app-now-crate-rank {
     transition: none;
+  }
+  .app-now-crate-name-in {
+    animation: none;
   }
   .app-now-deck-sleeve > .app-now-art {
     animation-duration: 0.15s;
   }
 }
 
-/* wide tiles: the deck and the track on the left, the crate beside them */
+/* wide tiles: the deck and the track side by side, the crate across the width under them */
 @container app-now-w (min-width: 480px) {
-  .app-now-listen:not([data-solo]) {
-    flex-direction: row;
-    gap: 1.5rem;
-  }
-  .app-now-listen:not([data-solo]) .app-now-listen-now {
-    flex: none;
-    width: calc(264px + 5.25rem);
-  }
-  .app-now-listen:not([data-solo]) .app-now-crate {
-    flex: 1;
-    justify-content: center;
-    padding: 0 0 0 1.5rem;
-    border-top: 0;
-    border-left: 1px solid var(--hairline);
-  }
-  .app-now-listen:not([data-solo]) .app-now-crate-title {
-    margin-bottom: auto;
-  }
-  .app-now-listen:not([data-solo]) .app-now-crate-pager {
-    margin-bottom: auto;
-  }
-  /* no crate: the deck and the track side by side */
-  .app-now-listen[data-solo] .app-now-listen-now {
+  .app-now-listen-now {
     flex-direction: row;
     align-items: center;
+    gap: 1.375rem;
+  }
+  .app-now-listen:not([data-solo]) .app-now-deck {
+    --app-now-deck: 176px;
+    --app-now-peek: 3.75rem;
+    --app-now-sleeve: 6.5rem;
+  }
+  .app-now-listen-info {
+    flex: 1;
+  }
+  /* no crate: the deck full size, the track beside it */
+  .app-now-listen[data-solo] .app-now-listen-now {
     gap: 1.5rem;
     margin-block: auto;
+  }
+}
+/* the grid's fixed tiles: the crate takes all the height the track leaves */
+@container app-now (min-width: 620px) {
+  .app-now-listen:not([data-solo]) .app-now-crate {
+    flex: 1 1 0;
+    min-height: 0;
+  }
+  .app-now-crate-bin {
+    flex: 1 1 0;
+    height: auto;
+    min-height: 7rem;
+  }
+  .app-now-crate-sleeve {
+    --s: clamp(5rem, min(100cqh - 1.75rem, 44cqw), 13rem);
   }
 }
 /* phones: the deck goes full width, the sleeve a small tab on its corner */
@@ -1263,106 +1236,87 @@ a.app-now-tok:hover {
 
 /* ───────────────────────── Building ───────────────────────── */
 
+/* the focus, big, then the last push at the foot: two things, not five */
 .app-now-build {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.5rem;
   min-height: 0;
 }
 .app-now-build-name {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5rem;
   margin: 0;
   color: var(--color-label);
-  font-size: 1.75rem;
+  font-size: clamp(2.25rem, 1.25rem + 7cqi, 3rem);
   font-weight: 680;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.04em;
   line-height: 1;
 }
+.app-now-build-name svg {
+  flex: none;
+  color: var(--color-label-3);
+  transition:
+    color 0.2s,
+    translate 0.2s var(--ease-out-quint);
+}
+@media (hover: hover) {
+  a.app-now-build-name:hover svg {
+    color: var(--color-signal);
+    translate: 1px -1px;
+  }
+}
 .app-now-build-title {
-  margin: 0.375rem 0 0;
+  margin: 1rem 0 0;
   color: var(--color-label);
-  font-size: var(--text-callout);
-  font-weight: 500;
+  font-size: 1.1875rem;
+  font-weight: 600;
+  letter-spacing: -0.016em;
   line-height: 1.3;
+  text-wrap: pretty;
 }
 .app-now-build-body {
   display: -webkit-box;
-  margin: 0.375rem 0 0;
+  margin: 0.625rem 0 0;
   overflow: hidden;
-  color: var(--color-label-3);
-  font-size: var(--text-footnote);
-  line-height: 1.4;
-  -webkit-line-clamp: 3;
+  color: var(--color-label-2);
+  font-size: var(--text-callout);
+  line-height: 1.45;
+  -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
+}
+.app-now-build-push {
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid var(--hairline);
 }
 .app-now-push {
   display: block;
-  padding: 0.625rem 0.75rem;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  box-shadow: inset 0 0 0 1px var(--hairline);
-  transition: background 0.2s;
-}
-.app-now-push:hover {
-  background: rgba(255, 255, 255, 0.07);
-}
-.app-now-push-repo {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-width: 0;
-  color: var(--color-ion);
-  font-family: var(--font-mono);
-  font-size: 0.8125rem;
 }
 .app-now-push-msg {
   display: -webkit-box;
-  margin-top: 0.3125rem;
   overflow: hidden;
-  color: var(--color-label-2);
-  font-size: var(--text-footnote);
+  color: var(--color-label);
+  font-size: var(--text-callout);
   line-height: 1.4;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
-.app-now-build-repos {
-  margin-top: auto;
-}
-.app-now-repos {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.app-now-repo {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-height: 1.875rem;
+.app-now-push-repo {
+  display: block;
+  margin-top: 0.375rem;
+  overflow: hidden;
+  color: var(--color-ion);
   font-family: var(--font-mono);
   font-size: 0.8125rem;
-  transition: color 0.2s;
-}
-.app-now-repo i {
-  flex: none;
-  width: 6px;
-  height: 6px;
-}
-.app-now-repo-name {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  color: var(--color-label-2);
   text-overflow: ellipsis;
   white-space: nowrap;
   transition: color 0.2s;
 }
-.app-now-repo:hover .app-now-repo-name {
+.app-now-push:hover .app-now-push-repo {
   color: var(--color-label);
-}
-.app-now-repo-ago {
-  flex: none;
-  color: var(--color-label-3);
-  font-size: 0.75rem;
 }
 
 /* ───────────────────────── Pulse ───────────────────────── */
@@ -1371,149 +1325,139 @@ a.app-now-tok:hover {
   display: flex;
   flex: 1;
   flex-direction: column;
+  gap: 1.25rem;
   min-height: 0;
 }
-.app-now-pulse-top {
+.app-now-pulse-head {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 0.375rem 1.5rem;
+  gap: 1rem 2rem;
+}
+.app-now-pulse-stat {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: 0;
+}
+/* the big number: rolls to a day's count while you scrub */
+.app-now-pulse-n {
+  color: var(--color-label);
+  font-size: clamp(3rem, 2rem + 5cqi, 4.25rem);
+  font-weight: 650;
+  letter-spacing: -0.045em;
+  line-height: 1;
 }
 .app-now-pulse-caption {
-  max-width: 46rem;
-  margin: 0;
-  color: var(--color-label-3);
-  font-size: var(--text-footnote);
-  line-height: 1.4;
-}
-.app-now-pulse-readout {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-width: 0;
-  max-width: 100%;
-  margin: 0;
+  margin-top: 0.5rem;
+  overflow: hidden;
   color: var(--color-label-2);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: var(--text-callout);
+  line-height: 1.3;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
-.app-now-pulse-readout-name {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--color-label);
-  text-decoration: underline 2px;
-  text-underline-offset: 4px;
-  text-overflow: ellipsis;
+/* two facts, words only: keys share a column, as wide as the longer one */
+.app-now-pulse-facts {
+  display: grid;
+  grid-template-columns: max-content max-content;
+  gap: 0.375rem 1rem;
+  margin: 0 0 0.125rem;
+  font-size: var(--text-footnote);
+  line-height: 1.3;
+  transition: opacity 0.2s;
 }
-.app-now-pulse-readout-ago {
-  flex: none;
+.app-now-pulse-facts > div {
+  display: contents;
+}
+.app-now-pulse-facts dt {
   color: var(--color-label-3);
+}
+.app-now-pulse-facts dd {
+  margin: 0;
+  color: var(--color-label);
+  font-weight: 550;
+}
+.app-now-pulse-facts dd::first-letter {
+  text-transform: uppercase;
+}
+.app-now-pulse[data-scrub] .app-now-pulse-facts {
+  opacity: 0.45;
+}
+
+.app-now-pulse-chart {
+  display: flex;
+  flex-direction: column;
+  margin-top: auto;
+}
+/* the grid's fixed tiles: the chart takes the height the numbers leave */
+@container app-now (min-width: 620px) {
+  .app-now-pulse-chart {
+    flex: 1 1 0;
+    min-height: 0;
+  }
+  .app-now-pulse-plot {
+    flex: 1 1 0;
+    min-height: 6rem;
+  }
 }
 .app-now-pulse-plot {
   position: relative;
+  height: 7.5rem;
+  border-radius: 4px;
+  outline: none;
+  touch-action: pan-y;
+  cursor: crosshair;
+}
+.app-now-pulse-plot:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 6px;
+}
+.app-now-pulse-bars {
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+}
+/* one column per day; its blocks rise out of the baseline once, in a wave */
+.app-now-pulse-col {
+  display: flex;
   flex: none;
-  margin-top: auto;
-  overflow: hidden;
+  align-items: flex-end;
+  height: 100%;
+  overflow: clip;
+  color: var(--color-ion);
+  transition:
+    color 0.15s,
+    opacity 0.15s;
 }
-.app-now-pulse-svg {
+.app-now-pulse-col[data-zero] {
+  color: var(--color-ink-500);
+}
+.app-now-pulse-col > i {
   display: block;
+  width: 100%;
+  background-position: left bottom;
+  transform: translateY(101%);
 }
-.app-now-pulse-base {
-  fill: color-mix(in srgb, var(--color-label-3) 50%, transparent);
+.app-now-pulse-plot[data-risen] .app-now-pulse-col > i {
+  transform: none;
+  transition: transform 0.7s var(--ease-out-quint) calc(var(--k, 0) * 6ms);
 }
-.app-now-pulse-ticks {
-  fill: color-mix(in srgb, var(--color-label-3) 45%, transparent);
+.app-now-pulse[data-scrub] .app-now-pulse-col {
+  opacity: 0.4;
 }
-.app-now-pulse-ev {
-  opacity: 0.8;
-  transition: opacity 0.2s;
-}
-.app-now-pulse-plot[data-run] .app-now-pulse-ev {
-  animation: app-now-blip var(--scan) linear infinite;
-}
-.app-now-pulse-plot[data-focus] .app-now-pulse-ev {
-  opacity: 0.3;
-  animation: none;
-}
-.app-now-pulse-plot[data-focus] .app-now-pulse-ev[data-on] {
+.app-now-pulse[data-scrub] .app-now-pulse-col[data-on] {
+  color: var(--color-label);
   opacity: 1;
 }
-@keyframes app-now-blip {
-  0% {
-    opacity: 1;
-  }
-  22%,
-  100% {
-    opacity: 0.8;
-  }
-}
-.app-now-pulse-now {
-  fill: var(--color-flare);
-}
-.app-now-pulse-scan {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateX(-18%);
-}
-.app-now-pulse-scan > span {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 18%;
-  /* an oscilloscope sweep: a soft wake behind one crisp pixel column */
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in oklab, var(--color-ion) 5%, transparent) 55%,
-    color-mix(in oklab, var(--color-ion) 13%, transparent) calc(100% - 3px),
-    color-mix(in oklab, var(--color-ion) 60%, transparent) calc(100% - 3px)
-  );
-  mask: linear-gradient(180deg, transparent, #000 22%, #000 78%, transparent);
-}
-.app-now-pulse-plot[data-run] .app-now-pulse-scan {
-  opacity: 1;
-  animation: app-now-scan var(--scan) linear infinite;
-}
-@keyframes app-now-scan {
-  from {
-    transform: translateX(-18%);
-  }
-  to {
-    transform: translateX(100%);
-  }
-}
-.app-now-pulse-hits {
-  position: absolute;
-  inset: 0;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.app-now-pulse-hits li {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 22px;
-  translate: -50% 0;
-}
-.app-now-pulse-hits a {
-  position: absolute;
-  inset: 0;
-  border-radius: 6px;
-}
-.app-now-pulse-hits a:focus-visible {
-  outline: 2px solid var(--color-ion);
-  outline-offset: -2px;
+.app-now-pulse-col[data-on][data-zero] {
+  color: var(--color-label-3);
 }
 .app-now-pulse-axis {
   position: relative;
-  flex: none;
-  margin-top: 0.3125rem;
+  height: 1rem;
+  margin-top: 0.5rem;
   color: var(--color-label-3);
   font-family: var(--font-mono);
   font-size: 0.75rem;
@@ -1522,115 +1466,18 @@ a.app-now-tok:hover {
 .app-now-pulse-axis span {
   position: absolute;
   top: 0;
-  translate: -50% 0;
   white-space: nowrap;
 }
-.app-now-pulse-axis .app-now-pulse-axis-now {
-  translate: -100% 0;
-  color: var(--color-flare);
+.app-now-pulse-axis .app-now-pulse-today {
+  right: 0;
+  color: var(--color-label-2);
 }
-
-.app-now-legend {
-  display: flex;
-  gap: 0.875rem;
-  color: var(--color-label-3);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-}
-.app-now-legend span {
-  text-decoration: underline 2px;
-  text-underline-offset: 4px;
-}
-
-/* ───────────────────────── Setup ───────────────────────── */
-
-.app-now-fetch {
-  display: flex;
-  flex: 1;
-  gap: 1.75rem;
-  min-height: 0;
-  font-family: var(--font-mono);
-  font-size: 0.8125rem;
-}
-.app-now-fetch-logo {
-  display: flex;
-  flex: none;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.875rem;
-  width: clamp(6.5rem, 26cqi, 9.5rem);
-  padding-top: 0.25rem;
-}
-.app-now-fetch-emos {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-.app-now-fetch-info {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-width: 0;
-}
-.app-now-fetch-prompt {
-  margin: 0 0 0.5rem;
-  color: var(--color-label-3);
-}
-.app-now-fetch-prompt span {
-  color: var(--color-signal);
-}
-.app-now-fetch-user {
-  margin: 0;
-  color: var(--color-label-3);
-}
-.app-now-fetch-user span {
-  color: var(--color-signal);
-  font-weight: 600;
-}
-.app-now-fetch-rule {
-  margin: 0;
-  overflow: hidden;
-  color: var(--color-ink-500);
-  line-height: 1.2;
-  white-space: nowrap;
-}
-/* keys share one column as wide as the longest key, in any language */
-.app-now-fetch-rows {
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  column-gap: 1.25rem;
-  margin: 0.375rem 0 0;
-  line-height: 1.72;
-}
-.app-now-fetch-rows > div {
-  display: contents;
-}
-.app-now-fetch-rows dt {
-  color: var(--color-lilac);
-  font-weight: 600;
-}
-.app-now-fetch-rows dd {
-  min-width: 0;
-  margin: 0;
-  overflow: hidden;
-  color: var(--color-label);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.app-now-fetch-pal {
-  display: flex;
-  margin-top: 0.75rem;
-}
-.app-now-fetch-pal i {
-  width: 1.5rem;
-  height: 0.875rem;
-}
-.app-now-fetch-caption {
-  margin: auto 0 0;
-  padding-top: 0.75rem;
-  color: var(--color-label-3);
-  font-family: var(--font-sans);
-  font-size: 0.75rem;
+@media (prefers-reduced-motion: reduce) {
+  .app-now-pulse-col > i,
+  .app-now-pulse-plot[data-risen] .app-now-pulse-col > i {
+    transform: none;
+    transition: none;
+  }
 }
 
 /* ───────────────────────── Reading & learning ───────────────────────── */
@@ -1909,7 +1756,7 @@ a.app-now-tok:hover {
 }
 .app-now-earlier-row {
   display: grid;
-  grid-template-columns: 3.5rem minmax(0, 1fr);
+  grid-template-columns: 4.25rem minmax(0, 1fr);
   align-items: baseline;
   gap: 0.625rem;
   padding: 0.4375rem 0;
@@ -1922,6 +1769,7 @@ a.app-now-tok:hover {
   color: var(--color-label-3);
   font-family: var(--font-mono);
   font-size: 0.75rem;
+  white-space: nowrap;
 }
 .app-now-earlier-title {
   overflow: hidden;
@@ -2028,18 +1876,6 @@ a.app-now-tok:hover {
     -webkit-line-clamp: 2;
   }
 }
-/* tablet: Setup spans the full width; like real fastfetch output, the
-   logo takes the room instead of an empty right half */
-@container app-now (min-width: 620px) and (max-width: 999px) {
-  .app-now-fetch {
-    gap: 2.5rem;
-  }
-  .app-now-fetch-logo {
-    width: clamp(9.5rem, 36cqi, 16rem);
-    padding-top: 0.5rem;
-  }
-}
-
 /* ───────────────────────── footer ───────────────────────── */
 
 /* both lines on the left */
@@ -2069,20 +1905,11 @@ a.app-now-tok:hover {
   .app-now-sky {
     min-height: 11.5rem;
   }
-  .app-now-fetch {
-    gap: 1rem;
-  }
-  .app-now-build-repos,
   .app-now-more {
     margin-top: 0.25rem;
   }
-}
-@container app-now-w (min-width: 480px) {
-  .app-now-fetch {
-    font-size: 0.875rem;
-  }
-  .app-now-fetch-rows {
-    line-height: 1.78;
+  .app-now-build-push {
+    margin-top: 0.5rem;
   }
 }
 @container app-now-w (max-width: 260px) {
@@ -2092,25 +1919,12 @@ a.app-now-tok:hover {
 }
 @container app-now-w (max-width: 240px) {
   .app-now-build-body {
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 3;
   }
   .app-now-book-title {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-}
-@container app-now-w (max-width: 380px) {
-  .app-now-fetch {
-    flex-direction: column;
-  }
-  .app-now-fetch-logo {
-    flex-direction: row;
-    width: auto;
-    gap: 1rem;
-  }
-  .app-now-fetch-emos {
-    width: 4.5rem;
   }
 }
 
@@ -2145,20 +1959,14 @@ a.app-now-tok:hover {
   .app-now-tok--focus {
     background-position: left bottom 0.1em;
   }
-  .app-now-repo,
   .app-now-more {
     min-height: 2.75rem;
   }
-  .app-now-label-link {
-    position: relative;
+  .app-now-crate-step {
+    height: 2.75rem;
   }
-  .app-now-label-link::before {
-    content: "";
-    position: absolute;
-    inset: -0.875rem -0.5rem;
-  }
-  .app-now-pulse-hits li {
-    width: 2.75rem;
+  .app-now-crate-name {
+    line-height: 2.75rem;
   }
   .app-now-status--link {
     position: relative;
@@ -2178,7 +1986,6 @@ a.app-now-tok:hover {
     box-shadow: inset 0 0 0 1px var(--color-label-3);
   }
   .app-now-tool,
-  .app-now-push,
   .app-now-post {
     box-shadow: inset 0 0 0 1px var(--color-label-3);
   }
@@ -2187,17 +1994,14 @@ a.app-now-tok:hover {
    the pixel meters, swatches and dots keep their own colours */
 @media (forced-colors: active) {
   .app-now-w-card,
-  .app-now-push,
   .app-now-post,
   .app-now-tool {
     border: 1px solid CanvasText;
   }
   .app-now-progress-bar,
   .app-now-cava,
-  .app-now-pulse-svg,
-  .app-now-repo i,
+  .app-now-pulse-bars,
   .app-now-spine,
-  .app-now-fetch-pal,
   .app-now-deck-canvas,
   .app-now-crate-bin {
     forced-color-adjust: none;
