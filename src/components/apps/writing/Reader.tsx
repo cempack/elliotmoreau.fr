@@ -4,13 +4,14 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, m, useMotionValue, useMotionValueEvent, useSpring, useTransform, type MotionValue, type Variants } from "motion/react";
 import type { GhostPost } from "@/lib/ghost";
 import { useI18n } from "@/i18n/client";
+import { SITE_URL } from "@/i18n/config";
 import { useHydrated } from "@/hooks/env";
 import { timeAgo } from "@/lib/format";
 import { spring, springFrom } from "@/lib/motion";
 import { useSound } from "@/lib/sound";
 import { useToast } from "@/components/Toasts";
 import { PixelGlyph } from "@/components/glyphs";
-import { PressAnchor, PressButton } from "@/components/ui/Pressable";
+import { PressAnchor, PressButton, PressLink } from "@/components/ui/Pressable";
 import { Plate } from "./Plate";
 import { SubscribeForm } from "./SubscribeForm";
 import { MAX_SHIFT } from "./plate";
@@ -71,7 +72,7 @@ type Props = {
 };
 
 export function Reader({ post, posts, epoch, animatePlate, reduced, compact, folderName, swipe, travel, onGo, onFilter, onBack }: Props) {
-  const { t, lang } = useI18n();
+  const { t, lang, path } = useI18n();
   const w = t.writing;
   const hydrated = useHydrated();
   const { notify } = useToast();
@@ -157,7 +158,7 @@ export function Reader({ post, posts, epoch, animatePlate, reduced, compact, fol
 
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(post.url);
+      await navigator.clipboard.writeText(`${SITE_URL}${path(`/writing/${post.slug}`)}`);
       notify(w.copied, t.shell.apps.writing);
       blip("success");
     } catch {
@@ -235,18 +236,20 @@ export function Reader({ post, posts, epoch, animatePlate, reduced, compact, fol
                 </span>
               </span>
               <span className="app-writing-ctas">
+                <PressLink href={path(`/writing/${post.slug}`)} className="app-writing-cta" aria-label={fmt(w.readLabel, { title: post.title })}>
+                  {w.read}
+                  <span aria-hidden className="app-writing-cta-arrow">
+                    →
+                  </span>
+                </PressLink>
                 <PressAnchor
                   href={post.url}
                   target="_blank"
                   rel="noopener"
-                  className="app-writing-cta"
+                  className="app-writing-iconbtn"
                   aria-label={fmt(w.readOnBlogLabel, { title: post.title })}
-                 
                 >
-                  {w.readOnBlog}
-                  <span aria-hidden className="app-writing-cta-arrow">
-                    ↗
-                  </span>
+                  <span aria-hidden>↗</span>
                 </PressAnchor>
                 <PressButton className="app-writing-iconbtn" onClick={copy} aria-label={w.copyLink}>
                   <PixelGlyph cells={G_COPY} size={14} />

@@ -182,3 +182,27 @@ export const FIXTURE_PUSHES: PushHistory = (() => {
   }
   return { days, since: fmt.format(new Date(Date.now() - 89 * 86_400_000)) };
 })();
+
+/** A sample body for any sample post (outside production, when Ghost isn't reachable). */
+export const FIXTURE_POST_HTML = `
+<p>This is sample text: the real post loads from the blog once Ghost is connected. It is here so the reader can be laid out and checked: paragraphs, headings, code, quotes, lists and images.</p>
+<h2>Start from the defaults</h2>
+<p>Every setup begins the same way. You install the thing, it works, and then you notice the twelve small frictions that make it feel like someone else’s machine. The work is in removing them one at a time, and in knowing when to stop.</p>
+<blockquote>The best configuration is the one you stop thinking about.</blockquote>
+<p>Here is the part of the config that does most of the work:</p>
+<pre><code class="language-bash">#!/usr/bin/env bash
+# rebuild the bar after a theme change
+pkill waybar
+waybar &amp; disown
+</code></pre>
+<h3>What to keep</h3>
+<ul>
+<li>One font, at two sizes.</li>
+<li>A palette of seven colours, used with intent.</li>
+<li>Shortcuts you can say out loud.</li>
+</ul>
+<p>And what to drop: anything that animates for its own sake, every status icon you never read, and the third terminal multiplexer. See <a href="https://github.com/basecamp/omarchy">Omarchy</a> for a good starting point.</p>
+<figure class="kg-card kg-image-card"><img src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200" alt="A laptop on a desk" width="1200" height="800"><figcaption>The laptop, after.</figcaption></figure>
+<h2>Know when to stop</h2>
+<p>A setup is done when the next change would be for the screenshot rather than for the work. That moment comes sooner than you think.</p>
+`;

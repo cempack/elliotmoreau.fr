@@ -42,6 +42,28 @@ export async function getLatestPosts(limit = 3): Promise<GhostPost[] | null> {
   }
 }
 
+export type GhostFullPost = GhostPost & { html: string };
+
+/** One post with its body (raw Ghost HTML: clean it with cleanPostHtml before rendering). */
+export async function getPost(slug: string): Promise<GhostFullPost | null | undefined> {
+  if (!ghostConfigured()) return undefined;
+  if (!/^[a-z0-9-]{1,191}$/.test(slug)) return null;
+  try {
+    const u =
+      `${API_URL}/ghost/api/content/posts/slug/${slug}/` +
+      `?key=${encodeURIComponent(CONTENT_KEY)}` +
+      `&fields=title,slug,excerpt,published_at,reading_time,feature_image,url,html` +
+      `&include=tags&formats=html`;
+    const res = await fetch(u, { next: { revalidate: 3600 } });
+    if (res.status === 404) return null;
+    if (!res.ok) return undefined;
+    const json = (await res.json()) as { posts?: GhostFullPost[] };
+    return json.posts?.[0] ?? null;
+  } catch {
+    return undefined;
+  }
+}
+
 const b64url = (buf: Buffer) => buf.toString("base64url");
 
 // Ghost Admin API auth: short-lived HS256 JWT, `Ghost <token>`.
