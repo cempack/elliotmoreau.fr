@@ -9,6 +9,7 @@ import { useSiteData } from "../SiteData";
 import { useSky } from "../sky";
 import { GLYPH_COMMIT, GLYPH_NOTE, GLYPH_PAGE, Pixels, SKY_GLYPH } from "./glyphs";
 import type { Music } from "./Music";
+import { Battery, useElliotsDay } from "./day";
 import {
   PARIS_TZ,
   fill,
@@ -275,11 +276,18 @@ function Calendar({ now }: { now: Date }) {
 export function NotificationPanel({ music }: { music: Music }) {
   const { t, lang } = useI18n();
   const now = useNow("minute");
+  const elliot = useElliotsDay(music.playing);
   return (
     <div className="os-menubar-nc">
       <header className="os-menubar-nc-head">
         <p className="os-menubar-kicker">{t.shell.notifications.today}</p>
         <h2 className="os-menubar-nc-date">{now ? fmtLongDate(now, lang) : " "}</h2>
+        {elliot && (
+          <p className="os-menubar-nc-day">
+            <Battery day={elliot.day} />
+            <span>{elliot.sentence}</span>
+          </p>
+        )}
       </header>
       <TimeCard />
       <Feed music={music} nowMs={now ? now.getTime() : null} />

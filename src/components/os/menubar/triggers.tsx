@@ -4,21 +4,31 @@ import { useI18n } from "@/i18n/client";
 import type { SpotifyStatus, TrackInfo } from "@/lib/spotify";
 import { PixelEq } from "./glyphs";
 import { fmtShortDate, useNow } from "./util";
+import { Battery } from "./day";
+import type { Day } from "@/lib/day";
 
 export type Music = { status: SpotifyStatus | null; track: TrackInfo | null; playing: boolean };
 
 /** Menu bar face: "Sat 10 Oct  14:32", Toulouse time. */
-export function ClockTrigger({ time }: { time: string | null }) {
-  const { lang } = useI18n();
+export function ClockTrigger({ time, day }: { time: string | null; day?: Day | null }) {
+  const { lang, t } = useI18n();
   const now = useNow("minute");
   return (
     <>
+      {day && <Battery day={day} />}
       <span className="os-menubar-date" suppressHydrationWarning>
         {now ? fmtShortDate(now, lang) : " "}
       </span>
       <time className="os-menubar-time tabular" suppressHydrationWarning>
         {time ?? "--:--"}
       </time>
+      {day?.away && (
+        <span className="os-menubar-away">
+          <span className="os-menubar-away-k">{t.shell.day.awayChip}</span>
+          <span className="os-menubar-away-city">{day.away.city}</span>
+          {day.away.time && <time className="tabular">{day.away.time}</time>}
+        </span>
+      )}
     </>
   );
 }

@@ -1030,3 +1030,17 @@
   height: 6px;
 }
 
+
+.os-menubar-nc-day {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 8px 0 0;
+  color: var(--color-label-2);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  text-wrap: pretty;
+}
+.os-menubar-nc-day .os-battery {
+  margin-top: 3px;
+}

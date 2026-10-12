@@ -25,6 +25,8 @@ const en = {
     hint: "Any password works.",
     unlock: "Unlock",
     unlockTouch: "Tap to unlock",
+    away: "Away in {city}",
+    awayTime: "{time} there",
     notes: {
       label: "Notifications",
       playing: "Now playing",
@@ -222,6 +224,8 @@ const fr: typeof en = {
     hint: "N’importe quel mot de passe fonctionne.",
     unlock: "Déverrouiller",
     unlockTouch: "Touchez pour déverrouiller",
+    away: "En voyage à {city}",
+    awayTime: "{time} là-bas",
     notes: {
       label: "Notifications",
       playing: "En écoute",

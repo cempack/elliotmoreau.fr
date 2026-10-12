@@ -13,6 +13,9 @@ import { G_COMMIT, G_PEN } from "@/components/apps/home/desktop/icons";
 import { useSiteData } from "../SiteData";
 import { Wordmark } from "./Wordmark";
 import { playStartupChord } from "./chime";
+import { Skyline } from "./Skyline";
+import { loc } from "@/lib/content";
+import { clockIn, tzForAway } from "@/lib/tz";
 
 /** The lock screen takes over from the boot here (ms from first paint). */
 const BOOT_MS = 3800;
@@ -225,6 +228,11 @@ function LockScreen({ phase, onUnlock }: { phase: Phase; onUnlock: (gesture: boo
   const music = useSpotifyStatus(data.spotify);
   const post = data.posts[0];
   const push = data.activity;
+  // travelling: the city, its skyline and its time (after mount: the clock is the browser's)
+  const away = data.away;
+  const awayCity = away ? (away.place ? loc(away.place.name, lang) : away.city) : undefined;
+  const awayTz = tzForAway(away);
+  const awayTime = hydrated && awayTz && time ? clockIn(awayTz) : null;
   const [pw, setPw] = useState("");
   const [checking, setChecking] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -269,12 +277,23 @@ function LockScreen({ phase, onUnlock }: { phase: Phase; onUnlock: (gesture: boo
   return (
     <div className="os-intro-lock" role="dialog" aria-modal="true" aria-label={s.lock}>
       <div className="os-lock-veil" />
+      {awayCity && <Skyline city={awayCity} />}
       <div className="os-lock-ui">
         <div className="os-lock-when">
           <p className="os-lock-date">{date ?? " "}</p>
           <p className="os-lock-time tabular" suppressHydrationWarning>
             {time ?? "--:--"}
           </p>
+          {awayCity && (
+            <p className="os-lock-away">
+              <span className="os-lock-away-city">{fill(s.away, { city: awayCity })}</span>
+              {awayTime && (
+                <span className="os-lock-away-time tabular" suppressHydrationWarning>
+                  {fill(s.awayTime, { time: awayTime })}
+                </span>
+              )}
+            </p>
+          )}
         </div>
 
         {notes.length > 0 && (

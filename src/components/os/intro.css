@@ -536,3 +536,29 @@ html[data-intro-up="first"]:not([data-intro="done"]) :is(.os-menubar, .os-tabbar
 html[data-intro-up="relock"] :is(.os-menubar, .os-tabbar, .os-dock) {
   visibility: hidden;
 }
+
+/* away: the other city under the clock, and its skyline at the foot */
+.os-lock-away {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px 12px;
+  margin-top: 10px;
+  font: 500 clamp(0.9375rem, 1.3vw, 1.0625rem) / 1.3 var(--font-mono);
+}
+.os-lock-away-city {
+  color: var(--color-ion);
+}
+.os-lock-away-time {
+  color: var(--color-label-2);
+}
+.os-lock-skyline {
+  position: absolute;
+  inset: auto 0 0;
+  width: 100%;
+  height: min(18vh, 150px);
+  opacity: 0.75;
+  image-rendering: pixelated;
+  pointer-events: none;
+}

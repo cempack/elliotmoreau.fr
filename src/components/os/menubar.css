@@ -679,3 +679,72 @@ html:active-view-transition .os-menubar {
     color: var(--color-label);
   }
 }
+
+/* Elliot's battery: his day in Toulouse, beside the clock */
+.os-battery {
+  flex: none;
+  margin-right: 2px;
+  overflow: visible;
+}
+.os-battery-shell {
+  fill: var(--color-label-2);
+}
+.os-battery-bar {
+  fill: rgba(255, 255, 255, 0.12);
+}
+.os-battery-bar[data-on] {
+  fill: var(--color-signal);
+}
+.os-battery[data-tone="mid"] .os-battery-bar[data-on] {
+  fill: var(--color-ember);
+}
+.os-battery[data-tone="low"] .os-battery-bar[data-on] {
+  fill: var(--color-flare);
+}
+.os-battery[data-tone="away"] .os-battery-bar[data-on] {
+  fill: var(--color-ion);
+}
+.os-battery-bolt {
+  fill: var(--color-label);
+  stroke: var(--color-ink-950);
+  stroke-width: 0.6;
+  paint-order: stroke;
+}
+@media (max-width: 767px) {
+  .os-menubar-clock .os-battery {
+    display: none;
+  }
+}
+
+/* travelling: the other city's time beside Toulouse's */
+.os-menubar-away {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 4px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  color: var(--color-ion);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  background: color-mix(in oklab, var(--color-ion) 14%, transparent);
+}
+.os-menubar-away-k {
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.os-menubar-away-city {
+  color: var(--color-label-2);
+}
+@media (max-width: 1023px) {
+  .os-menubar-away-k {
+    display: none;
+  }
+}
+@media (max-width: 767px) {
+  .os-menubar-away-city {
+    display: none;
+  }
+}

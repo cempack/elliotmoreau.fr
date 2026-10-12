@@ -17,6 +17,7 @@ import { useSiteData } from "./SiteData";
 import { MenuItem, MenuProvider, useMenu, type Align, type PanelId } from "./menubar/Panel";
 import dynamic from "next/dynamic";
 import { ClockTrigger, MusicTrigger } from "./menubar/triggers";
+import { useElliotsDay } from "./menubar/day";
 import { ControlIcon, EmosMark, SearchIcon } from "./menubar/glyphs";
 import { fill } from "./menubar/util";
 import "./menubar.css";
@@ -156,6 +157,8 @@ function Bar() {
     return () => window.removeEventListener("em:menubar", onOpen);
   }, [show]);
 
+  const elliot = useElliotsDay(music.playing);
+
   const musicLabel = music.track
     ? `${music.playing ? s.player.nowPlaying : s.player.lastPlayed}${s.colon}${music.track.title}, ${music.track.artist}`
     : s.player.nothing;
@@ -187,11 +190,12 @@ function Bar() {
       <div className="os-menubar-side os-menubar-center">
         <MenuItem
           id="notifications"
-          label={fill(s.menu.clock, { time: time ?? "" })}
+          label={`${fill(s.menu.clock, { time: time ?? "" })}${elliot ? `. ${elliot.sentence}` : ""}`}
           panelLabel={s.menu.notifications}
+          title={elliot?.sentence}
           className="os-menubar-clock"
           {...PANELS.notifications}
-          trigger={<ClockTrigger time={time} />}
+          trigger={<ClockTrigger time={time} day={elliot?.day} />}
         >
           <NotificationPanel music={music} />
         </MenuItem>
