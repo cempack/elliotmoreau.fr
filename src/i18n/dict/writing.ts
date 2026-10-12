@@ -18,6 +18,8 @@ const en = {
   /* reader */
   reader: "Reader",
   minRead: "{n} min read",
+  /** beside the post, while reading */
+  minLeft: "{n} min left",
   author: "Elliot Moreau",
   readOnBlog: "Read on the blog",
   readOnBlogLabel: "Read “{title}” on the blog (opens in a new tab)",
@@ -92,6 +94,7 @@ const fr: typeof en = {
   sourceSample: "Articles d’exemple · blog non connecté",
   reader: "Lecteur",
   minRead: "{n} min de lecture",
+  minLeft: "Encore {n} min",
   author: "Elliot Moreau",
   readOnBlog: "Lire sur le blog",
   readOnBlogLabel: "Lire « {title} » sur le blog (nouvel onglet)",

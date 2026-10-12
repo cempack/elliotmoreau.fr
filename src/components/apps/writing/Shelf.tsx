@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { GhostPost } from "@/lib/ghost";
 import { project } from "@/lib/motion";
 import { composite, paintPlateLayers, plateSeed } from "./plate";
+import type { BookFrom } from "./openBook";
 import { useThemeTokens } from "@/hooks/useTheme";
 import { mix, type ThemeTokens } from "@/lib/theme";
 
@@ -17,13 +18,15 @@ import { mix, type ThemeTokens } from "@/lib/theme";
  * the row; picking a folder sinks the others behind the lip.
  *
  * Drag it sideways and it coasts, rubber-banding at the ends; pull a book
- * up (fine pointers) or tap it to open it. Its neighbours lean into the
+ * up (fine pointers) or tap it to open it: it comes off the shelf and
+ * opens on the post (openBook.ts). Its neighbours lean into the
  * gap in whole-cell steps. An aria-hidden mirror of the list, which keeps
  * the semantics and the keys.
  */
 
 type RGB = [number, number, number];
 const hex = (h: string): RGB => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+const css = ([r, g, b]: RGB) => `rgb(${r} ${g} ${b})`;
 
 /** the shelf's inks: the wood and cloth from the live theme's ink scale and
     accent; the year bricks stay Toulouse clay */
@@ -106,7 +109,8 @@ export function Shelf({
   selected: string | null;
   /** posts this visitor opened (a ribbon) */
   opened: Set<string>;
-  onPick: (slug: string) => void;
+  /** a book taken off the shelf, with where its spine stood (to open it from there) */
+  onPick: (slug: string, from: BookFrom | null) => void;
   /** a book's full title, for the hover callout */
   label: (p: GhostPost) => string;
 }) {
@@ -386,6 +390,31 @@ export function Shelf({
     return null;
   };
 
+  /** a book's spine as it stands right now: its place on screen and its pixels */
+  const spineOf = (slug: string): BookFrom | null => {
+    const it = items.find((x) => x.kind === "book" && x.slug === slug);
+    const a = st.current.anims.get(slug);
+    const cv = canvas.current;
+    if (!dims || !it || it.kind !== "book" || !a || !cv || !wrap.current) return null;
+    const box = cv.getBoundingClientRect();
+    const base = dims.H - PLANK_H;
+    const x0 = Math.round(a.x) + Math.round(st.current.s);
+    const top = base - it.h - Math.round(a.lift);
+    const h = Math.min(it.h, base - top);
+    if (h <= 0) return null;
+    const spine = document.createElement("canvas");
+    spine.width = it.w;
+    spine.height = h;
+    spine.getContext("2d")?.drawImage(cv, x0, top, it.w, h, 0, 0, it.w, h);
+    return {
+      rect: new DOMRect(box.left + x0 * dims.cell, box.top + top * dims.cell, it.w * dims.cell, h * dims.cell),
+      spine,
+      cloth: css(it.cloth),
+      edge: css(K.EDGE),
+      label: css(K.LABEL),
+    };
+  };
+
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0 || !dims) return;
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -445,7 +474,7 @@ export function Shelf({
       v = { x: ((b.x - a.x) / dt) * 1000, y: ((b.y - a.y) / dt) * 1000 };
     }
     if (!d.axis) {
-      if (d.slug) onPick(d.slug);
+      if (d.slug) onPick(d.slug, spineOf(d.slug));
     } else if (d.axis === "x") {
       const minS = Math.min(0, dims.W - targets.width);
       const to = S.reduced ? S.s : S.s + project(v.x) / dims.cell;
@@ -458,7 +487,7 @@ export function Shelf({
       if (it && p && (-v.y > 250 || p.lift > it.h * 0.35)) {
         const a = S.anims.get(d.slug);
         if (a) a.vl = -v.y / dims.cell;
-        onPick(d.slug);
+        onPick(d.slug, spineOf(d.slug));
       }
     }
     kick();

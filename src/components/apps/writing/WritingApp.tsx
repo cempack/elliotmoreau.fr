@@ -3,6 +3,7 @@
 import "./writing.css";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { m } from "motion/react";
+import { useRouter } from "next/navigation";
 import { AppWindow } from "@/components/os/AppWindow";
 import { InlineScript } from "@/components/InlineScript";
 import { useI18n } from "@/i18n/client";
@@ -18,7 +19,8 @@ import { Reader } from "./Reader";
 import { G_LINK } from "./glyphs";
 import { useNavStack, type Settle, type View } from "./useNavStack";
 import { usePageSwipe, type Dir } from "./usePageSwipe";
-import { BLOG_URL, foldersOf } from "./util";
+import { BLOG_URL, dateLong, fmt, foldersOf } from "./util";
+import { openBook, type BookFrom } from "./openBook";
 import { useSiteData } from "@/components/os/SiteData";
 
 const PARAM = "p";
@@ -69,6 +71,7 @@ export function WritingApp({ initialSlug = null }: { initialSlug?: string | null
   const compact = useMedia("(max-width: 767px)");
   const hydrated = useHydrated();
   const { blip } = useSound();
+  const router = useRouter();
 
   // dev only: preview the empty and offline states with ?state=empty|offline
   const [devState, setDevState] = useState<"empty" | "offline" | null>(null);
@@ -434,6 +437,30 @@ export function WritingApp({ initialSlug = null }: { initialSlug?: string | null
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
+  /** a book off the shelf: it opens where it stood, onto the post */
+  const openFromShelf = (slug: string, from: BookFrom | null) => {
+    const p = data.posts.find((x) => x.slug === slug);
+    if (!p) return;
+    const href = path(`/writing/${slug}`);
+    markOpened(slug);
+    router.prefetch(href);
+    const area = stackRef.current?.closest<HTMLElement>(".os-win-main") ?? stackRef.current;
+    if (reduced || !from || !area) {
+      blip("open");
+      router.push(href);
+      return;
+    }
+    openBook({
+      post: p,
+      from,
+      bounds: area.getBoundingClientRect(),
+      meta: `${dateLong(w, p.published_at)}\n${fmt(w.minRead, { n: Math.max(1, p.reading_time || 1) })}`,
+      navigate: () => router.push(href),
+      ready: () => !!document.querySelector(`.app-writing-article[data-slug="${CSS.escape(slug)}"]`),
+      onTurn: () => blip("open"),
+    });
+  };
+
   const pickFolder = (slug: string | null) => {
     if (slug === tag) return;
     setTag(slug);
@@ -516,7 +543,7 @@ export function WritingApp({ initialSlug = null }: { initialSlug?: string | null
                     visible={visibleSlugs}
                     selected={compact ? null : (post?.slug ?? null)}
                     opened={opened}
-                    onPick={(slug) => onPress(slug, "click")}
+                    onPick={openFromShelf}
                     label={(p) => p.title}
                   />
                 }

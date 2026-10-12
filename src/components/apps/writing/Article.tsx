@@ -11,6 +11,7 @@ import { useToast } from "@/components/Toasts";
 import { PixelGlyph } from "@/components/glyphs";
 import { AppWindow } from "@/components/os/AppWindow";
 import { Plate } from "./Plate";
+import { ReadingSky } from "./ReadingSky";
 import { SubscribeForm } from "./SubscribeForm";
 import { G_BACK, G_COPY, G_MAIL, G_RSS } from "./glyphs";
 import { RSS_URL, dateLong, fmt, primaryTag } from "./util";
@@ -47,6 +48,7 @@ export function Article({
   // the floating bar (phones) gets its material once the plate has scrolled under it
   const barRef = useRef<HTMLElement>(null);
   const edgeRef = useRef<HTMLSpanElement>(null);
+  const proseRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const bar = barRef.current;
     const edge = edgeRef.current;
@@ -59,8 +61,9 @@ export function Article({
     return () => io.disconnect();
   }, []);
 
+  const subject = fmt(w.writeBackSubject, { title: post.title });
   const reply = `${path("/contact")}?${new URLSearchParams({
-    subject: fmt(w.writeBackSubject, { title: post.title }),
+    subject,
     body: `${fmt(w.writeBackFirstLine, { title: post.title, url: here })}\n\n`,
   })}`;
 
@@ -76,7 +79,7 @@ export function Article({
 
   return (
     <AppWindow app="writing" path={[{ label: "writing", href: back }, { label: post.slug }]}>
-      <article className="app-writing-article" aria-labelledby="post-title">
+      <article className="app-writing-article" aria-labelledby="post-title" data-slug={post.slug}>
         <nav ref={barRef} className="app-writing-navbar app-writing-article-bar" aria-label={w.list}>
           <Link href={back} className="app-writing-back">
             <PixelGlyph cells={G_BACK} size={14} />
@@ -110,67 +113,72 @@ export function Article({
           {sample && <p className="app-writing-article-sample">{w.sampleBody}</p>}
         </header>
 
-        {/* cleaned on the server (src/lib/postHtml.ts): an allowlist, no scripts or handlers */}
-        <div className="app-writing-prose" dangerouslySetInnerHTML={{ __html: html }} />
+        {/* the post and what follows it: the reading sky rides beside (or above) all of it */}
+        <div className="app-writing-body">
+          <ReadingSky slug={post.slug} minutes={Math.max(1, post.reading_time || 1)} proseRef={proseRef} />
+          {/* cleaned on the server (src/lib/postHtml.ts): an allowlist, no scripts or handlers */}
+          <div ref={proseRef} className="app-writing-prose" dangerouslySetInnerHTML={{ __html: html }} />
 
-        <aside className="app-writing-writeback" aria-labelledby="post-writeback">
-          <span className="app-writing-member-art" aria-hidden>
-            <PixelGlyph cells={G_MAIL} size={28} />
-          </span>
-          <div className="app-writing-member-text">
-            <p className="app-writing-member-k">{w.writeBackKicker}</p>
-            <h3 id="post-writeback" className="app-writing-member-title">
-              {w.writeBackTitle}
-            </h3>
-            <p className="app-writing-member-body">{w.writeBackBody}</p>
-          </div>
-          <Link href={reply} className="app-writing-cta app-writing-writeback-cta">
-            {w.writeBackCta}
-            <span aria-hidden className="app-writing-cta-arrow">
-              →
+          <aside className="app-writing-writeback" aria-labelledby="post-writeback">
+            <span className="app-writing-member-art" aria-hidden>
+              <PixelGlyph cells={G_MAIL} size={28} />
             </span>
-          </Link>
-        </aside>
+            <div className="app-writing-member-text">
+              <p className="app-writing-member-k">{w.writeBackKicker}</p>
+              <h3 id="post-writeback" className="app-writing-member-title">
+                {w.writeBackTitle}
+              </h3>
+              <p className="app-writing-member-body">{w.writeBackBody}</p>
+              <p className="app-writing-writeback-subject">{subject}</p>
+            </div>
+            <Link href={reply} className="app-writing-cta app-writing-writeback-cta">
+              {w.writeBackCta}
+              <span aria-hidden className="app-writing-cta-arrow">
+                →
+              </span>
+            </Link>
+          </aside>
 
-        {(newer || older) && (
-          <nav className="app-writing-article-turns" aria-label={`${w.newer} / ${w.older}`}>
-            {newer ? (
-              <Link href={path(`/writing/${newer.slug}`)} className="app-writing-article-turn" data-side="newer">
-                <span className="app-writing-article-turn-k">← {w.newer}</span>
-                <span className="app-writing-article-turn-t">{newer.title}</span>
-              </Link>
-            ) : (
-              <span />
-            )}
-            {older && (
-              <Link href={path(`/writing/${older.slug}`)} className="app-writing-article-turn" data-side="older">
-                <span className="app-writing-article-turn-k">{w.older} →</span>
-                <span className="app-writing-article-turn-t">{older.title}</span>
-              </Link>
-            )}
-          </nav>
-        )}
+          {(newer || older) && (
+            <nav className="app-writing-article-turns" aria-label={`${w.newer} / ${w.older}`}>
+              {newer ? (
+                <Link href={path(`/writing/${newer.slug}`)} className="app-writing-article-turn" data-side="newer">
+                  <span className="app-writing-article-turn-k">← {w.newer}</span>
+                  <span className="app-writing-article-turn-t">{newer.title}</span>
+                </Link>
+              ) : (
+                <span />
+              )}
+              {older && (
+                <Link href={path(`/writing/${older.slug}`)} className="app-writing-article-turn" data-side="older">
+                  <span className="app-writing-article-turn-k">{w.older} →</span>
+                  <span className="app-writing-article-turn-t">{older.title}</span>
+                </Link>
+              )}
+            </nav>
+          )}
 
-        <aside className="app-writing-member" aria-labelledby="post-member">
-          <span className="app-writing-member-art" aria-hidden>
-            <PixelGlyph cells={G_RSS} size={24} />
-          </span>
-          <div className="app-writing-member-text">
-            <p className="app-writing-member-k">{w.memberKicker}</p>
-            <h3 id="post-member" className="app-writing-member-title">
-              {w.memberTitle}
-            </h3>
-            <p className="app-writing-member-body">{w.memberBody}</p>
-          </div>
-          <div className="app-writing-member-form">
-            <SubscribeForm />
-            <a href={RSS_URL} target="_blank" rel="noopener" className="app-writing-member-alt">
-              <PixelGlyph cells={G_RSS} size={12} />
-              {w.memberRss}
-              <span aria-hidden>↗</span>
-            </a>
-          </div>
-        </aside>
+          <aside className="app-writing-member" aria-labelledby="post-member">
+            <span className="app-writing-member-art" aria-hidden>
+              <PixelGlyph cells={G_RSS} size={24} />
+            </span>
+            <div className="app-writing-member-text">
+              <p className="app-writing-member-k">{w.memberKicker}</p>
+              <h3 id="post-member" className="app-writing-member-title">
+                {w.memberTitle}
+              </h3>
+              <p className="app-writing-member-body">{w.memberBody}</p>
+            </div>
+            <div className="app-writing-member-form">
+              <SubscribeForm />
+              <a href={RSS_URL} target="_blank" rel="noopener" className="app-writing-member-alt">
+                <PixelGlyph cells={G_RSS} size={12} />
+                {w.memberRss}
+                <span aria-hidden>↗</span>
+              </a>
+            </div>
+          </aside>
+        </div>
       </article>
     </AppWindow>
   );
