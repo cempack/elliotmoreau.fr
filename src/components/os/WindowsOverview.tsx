@@ -443,15 +443,20 @@ function Layer() {
         <p className="os-ov-empty">{open.length ? o.emptyDesk : o.none}</p>
       )}
 
-      <p className="os-ov-hint">
-        {/* it wraps between its phrases, never inside one */}
-        {(fine ? o.hint : o.hintTouch).split(" · ").map((part, i) => (
-          <span key={i}>
-            {i > 0 && " · "}
-            <span className="os-ov-hint-part">{part}</span>
-          </span>
-        ))}
-      </p>
+      {ids.length > 0 && (
+        <p className="os-ov-hint">
+          {/* it wraps between its phrases, never inside one, never before a dot */}
+          {(fine ? o.hint : o.hintTouch).split(" · ").map((part, i, all) => (
+            <span key={i}>
+              <span className="os-ov-hint-part">
+                {part}
+                {i < all.length - 1 && " ·"}
+              </span>
+              {i < all.length - 1 && " "}
+            </span>
+          ))}
+        </p>
+      )}
     </m.div>
   );
 }
