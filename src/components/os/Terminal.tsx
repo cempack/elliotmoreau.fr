@@ -55,12 +55,6 @@ export function useTerminalSession() {
   return v;
 }
 
-/** This session's commands (empty outside the provider): the dock icon reads it. */
-export function useTerminalHistory(): string[] {
-  return useContext(SessionContext)?.history ?? NO_HISTORY;
-}
-const NO_HISTORY: string[] = [];
-
 export type WinRect = { x: number; y: number; w: number; h: number };
 type WindowCtx = { rect: WinRect | null; setRect: (r: WinRect) => void };
 const WindowContext = createContext<WindowCtx>({ rect: null, setRect: () => {} });

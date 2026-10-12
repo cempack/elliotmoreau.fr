@@ -192,12 +192,41 @@ export function CommandPalette({
   };
   useEffect(() => () => window.clearTimeout(pendingTimer.current), []);
 
+  // the keyboard moves the highlight: the list follows it (the pointer
+  // highlights what it's already over, so hovering never scrolls)
+  const listRef = useRef<HTMLUListElement>(null);
+  const byKey = useRef(false);
+  const activeId = results[active]?.id;
+  useEffect(() => {
+    if (!byKey.current || !activeId) return;
+    byKey.current = false;
+    const list = listRef.current;
+    const el = document.getElementById(`${listId}-${activeId}`);
+    if (!list || !el) return;
+    // an option's row carries its group's header, so that stays in view too
+    // (a departures board row is just itself); only the list scrolls, never
+    // the panel around it
+    const li = el.closest("li");
+    const row = li && !li.classList.contains("em-palette-board") ? li : el;
+    const lr = list.getBoundingClientRect();
+    const rr = row.getBoundingClientRect();
+    const pad = 8;
+    if (rr.top < lr.top + pad) list.scrollTop -= lr.top + pad - rr.top;
+    else if (rr.bottom > lr.bottom - pad) list.scrollTop += rr.bottom - (lr.bottom - pad);
+  }, [active, activeId, listId]);
+  // a new query starts the list from the top
+  useEffect(() => {
+    if (listRef.current) listRef.current.scrollTop = 0;
+  }, [query]);
+
   const onInputKey = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
+      byKey.current = true;
       setActive((a) => Math.min(results.length - 1, a + 1));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
+      byKey.current = true;
       setActive((a) => Math.max(0, a - 1));
     } else if (e.key === "Enter") {
       e.preventDefault();
@@ -265,7 +294,7 @@ export function CommandPalette({
             />
             <kbd>esc</kbd>
           </div>
-          <ul id={listId} role="listbox" className="em-palette-list" data-lenis-prevent>
+          <ul ref={listRef} id={listId} role="listbox" className="em-palette-list" data-lenis-prevent>
             {results.length === 0 && <li className="em-palette-empty">{empty}</li>}
             {showBoard && board && departCmds.length > 0 && (
               <li role="presentation" className="em-palette-board">

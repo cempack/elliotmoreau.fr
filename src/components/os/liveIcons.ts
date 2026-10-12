@@ -9,7 +9,6 @@ import { moonAt, sunAt, type SkyPhase } from "@/lib/sun";
 import { draftOnDesk, letterLines, loadDraft } from "@/components/apps/contact/mail";
 import { useMaybeSiteData } from "./SiteData";
 import { useSky } from "./sky";
-import { useTerminalHistory } from "./Terminal";
 
 /**
  * Living pixel icons: each dock icon keeps its hand-drawn 16×16 map, and
@@ -22,13 +21,11 @@ import { useTerminalHistory } from "./Terminal";
  * - Projects: up to three sheets stand in the folder for the three most
  *   recently pushed repos, each tab in its language's colour; one pushed
  *   in the last 24 hours stands a cell higher.
- * - Now: while music plays the tonearm is down on the record, and the
- *   label takes the colour of the album's cover (the last one played
- *   after the music stops).
+ * - Now: the headphones' cups take the colour of the album's cover (the
+ *   last one played after the music stops), with a note between them
+ *   while it plays.
  * - Mail: a saved draft opens the envelope, the letter standing up with
  *   ink lines as long as the draft's.
- * - Terminal: a dim line for each command run this session (up to four)
- *   above the prompt.
  *
  * A glyph is 256 fills (a palette role, a hex colour, or empty). Nothing
  * animates at rest; the sky is re-read each quarter hour. The server and
@@ -163,33 +160,33 @@ export function workFills(base: Base, repos: { language: string; pushedAt: strin
   return f;
 }
 
-/* ─────────────────────── Now: the record ─────────────────────── */
+/* ─────────────────────── Now: the headphones ─────────────────────── */
 
-/** the tonearm, set down on the record's outer grooves */
-const ARM_ON: [number, number, string][] = [
-  [14, 3, "paper2"],
-  [14, 4, "paper2"],
-  [13, 5, "paper2"],
-  [12, 6, "paper2"],
-  [11, 7, "paper2"],
-  [10, 8, "paper"],
-  [9, 9, "paper"],
-  [10, 9, "paper"],
+/** a note between the cups while music plays */
+const NOTE: [number, number][] = [
+  [8, 7],
+  [8, 8],
+  [8, 9],
+  [8, 10],
+  [9, 7],
+  [10, 8],
+  [6, 10],
+  [7, 10],
+  [6, 11],
+  [7, 11],
 ];
 
 export type Label = { light: string; deep: string };
 
-/** The deck: while a track plays the arm is on the record; the label takes the cover's colour. */
-export function nowFills(base: Base, playing: boolean, label: Label | null): Fills {
+/** The headphones: cups in the cover's colour, and a note while a track plays. */
+export function nowFills(base: Base, playing: boolean, tint: Label | null): Fills {
   const f = baseFills(base);
-  if (playing) {
-    // lift the resting arm (below its pivot) and set it down on the grooves
-    for (let y = 3; y < N; y++) for (let x = 13; x <= 14; x++) f[at(x, y)] = null;
-    for (const [x, y, role] of ARM_ON) f[at(x, y)] = role;
-  }
-  if (label)
-    for (let y = 0; y < N; y++)
-      for (let x = 0; x < N; x++) if (f[at(x, y)] === "flare") f[at(x, y)] = y >= 9 ? label.deep : label.light;
+  if (tint)
+    for (let i = 0; i < f.length; i++) {
+      if (f[i] === "flare") f[i] = tint.light;
+      else if (f[i] === "flareDeep") f[i] = tint.deep;
+    }
+  if (playing) for (const [x, y] of NOTE) f[at(x, y)] = "paper";
   return f;
 }
 
@@ -204,7 +201,7 @@ function hsl(h: number, s: number, l: number) {
 }
 
 /**
- * An album cover's one colour for the label: the most vivid hue on the
+ * An album cover's one colour for the cups: the most vivid hue on the
  * sleeve (a hue histogram weighted by saturation), its lightness and
  * saturation reined in to sit with the theme. A greyscale sleeve gets a
  * silver label. null when the image can't be read.
@@ -291,32 +288,6 @@ export function mailFills(lines: number[]): Fills {
   return f;
 }
 
-/* ─────────────────────── Terminal: what was typed ─────────────────────── */
-
-export function terminalFills(history: string[]): Fills {
-  const f: Fills = new Array(N * N).fill(null);
-  const recent = history.slice(-4);
-  // what was run, oldest on top, in dim scrollback
-  recent.forEach((cmd, k) => {
-    const y = 8 - 2 * (recent.length - 1 - k);
-    f[at(2, y)] = "signalDeep";
-    const len = Math.max(2, Math.min(10, Math.round(cmd.length / 1.5)));
-    for (let x = 0; x < len; x++) f[at(4 + x, y)] = "paper3";
-  });
-  // the live prompt and its cursor
-  for (const [x, y] of [
-    [2, 10],
-    [3, 10],
-    [3, 11],
-    [4, 11],
-    [2, 12],
-    [3, 12],
-  ])
-    f[at(x, y)] = "signal";
-  for (let x = 6; x <= 10; x++) f[at(x, 12)] = "paper";
-  return f;
-}
-
 /* ───────────────────────── inputs ───────────────────────── */
 
 const draftStore = {
@@ -385,13 +356,4 @@ export function useMailGlyph(): LiveGlyph | null {
     const lines = letterLines(draft, 3, 34, 6);
     return { key: `contact:${lines.join()}`, fills: mailFills(lines) };
   }, [draft]);
-}
-
-export function useTerminalGlyph(): LiveGlyph | null {
-  const history = useTerminalHistory();
-  return useMemo(() => {
-    if (!history.length) return null;
-    const fills = terminalFills(history);
-    return { key: `terminal:${fills.join()}`, fills };
-  }, [history]);
 }

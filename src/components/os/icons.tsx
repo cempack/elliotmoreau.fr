@@ -9,7 +9,6 @@ import {
   useHomeGlyph,
   useMailGlyph,
   useNowGlyph,
-  useTerminalGlyph,
   useWorkGlyph,
   type Fills,
   type LiveGlyph,
@@ -51,8 +50,6 @@ export const ICON_ACCENT: Record<IconId, string> = {
 type Glyph = {
   pal: Record<string, Role>;
   rows: readonly string[];
-  /** phosphor bloom around the cells, for the terminal */
-  bloom?: Role;
 };
 
 /* Each map is 16×16. "." is empty; every other character is a palette key.
@@ -147,25 +144,25 @@ const GLYPHS: Record<IconId, Glyph> = {
       "................",
     ],
   },
-  // Now: a record on the deck, the tonearm at rest (liveIcons drops it
-  // onto the record while music plays and dyes the label from the cover)
+  // Now: headphones (liveIcons tints the cups with the album cover and,
+  // while music plays, puts a note between them)
   now: {
-    pal: { v: "ink950", h: "ink500", L: "flare", p: "paper2", a: "paper2", A: "paper" },
+    pal: { A: "paper2", a: "paper3", L: "flare", l: "flareDeep" },
     rows: [
       "................",
-      ".............aa.",
-      "....vvvv.....ap.",
-      "..vvvvvvvv....a.",
-      ".vvhhvvvvvv...a.",
-      ".vhvvvvvvvvv..a.",
-      "vvhvvLLvvvvv..a.",
-      "vvvvLppLvvvv..a.",
-      "vvvvLppLvvvv..a.",
-      "vvvvvLLvvvhv..a.",
-      ".vvvvvvvvvhv..a.",
-      ".vvvvvvvvhhv.aA.",
-      "..vvvvvvvv...AA.",
-      "....vvvv........",
+      "................",
+      ".....AAAAAA.....",
+      "...AAaaaaaaAA...",
+      "..Aaa......aaA..",
+      "..Aa........aA..",
+      ".Aa..........aA.",
+      ".Aa..........aA.",
+      ".LLL........LLL.",
+      "LLLLl......lLLLL",
+      "LLLLl......lLLLL",
+      "LLLLl......lLLLL",
+      "LLLLl......lLLLL",
+      ".LLL........LLL.",
       "................",
       "................",
     ],
@@ -214,25 +211,24 @@ const GLYPHS: Record<IconId, Glyph> = {
       "................",
     ],
   },
-  // Terminal: a prompt and a cursor, with phosphor glow
+  // Terminal: a terminal window, a prompt and its cursor on the dark screen
   terminal: {
-    pal: { S: "signal", W: "paper" },
-    bloom: "signal",
+    pal: { B: "paper3", F: "flare", E: "ember", S: "signal", k: "ink950", C: "ember", U: "paper" },
     rows: [
       "................",
       "................",
-      "................",
-      "................",
-      "..SS............",
-      "...SS...........",
-      "....SS..........",
-      ".....SS.........",
-      "....SS..........",
-      "...SS...........",
-      "..SS....WWWWWW..",
-      "........WWWWWW..",
-      "................",
-      "................",
+      "..BBBBBBBBBBBB..",
+      ".BFBEBSBBBBBBBB.",
+      ".BBBBBBBBBBBBBB.",
+      ".BkkkkkkkkkkkkB.",
+      ".BkCCkkkkkkkkkB.",
+      ".BkkCCkkkkkkkkB.",
+      ".BkkkCCkkkkkkkB.",
+      ".BkkCCkkkkkkkkB.",
+      ".BkCCkkkUUUkkkB.",
+      ".BkkkkkkkkkkkkB.",
+      ".BBBBBBBBBBBBBB.",
+      "..BBBBBBBBBBBB..",
       "................",
       "................",
     ],
@@ -284,40 +280,22 @@ const GLYPHS: Record<IconId, Glyph> = {
 };
 
 type Run = { x: number; y: number; w: number; fill: string };
-type Prepared = { runs: Run[]; shadow: Run[]; bloom: Run[] };
+type Prepared = { runs: Run[]; shadow: Run[] };
 
 /** prepared glyphs by key: the static drawings, plus the live ones as they change */
 const prepared = new Map<string, Prepared>();
 
 /**
  * A glyph's 256 fills as row runs: equal neighbours merged (fewer nodes, no
- * hairline seams), the silhouette dropped one cell for the shadow and, for
- * the terminal, its bright cells dilated by one for a phosphor halo.
+ * hairline seams) and the silhouette dropped one cell for the shadow.
  */
-function prepare(key: string, make: () => Fills, glow?: Role): Prepared {
+function prepare(key: string, make: () => Fills): Prepared {
   const hit = prepared.get(key);
   if (hit) return hit;
   const fills = make();
   const filled = (x: number, y: number) => x >= 0 && x < 16 && y >= 0 && y < 16 && fills[y * 16 + x] != null;
-  // only the bright cells glow (the glow role and paper), not dim scrollback
-  const lit = (x: number, y: number) => filled(x, y) && (fills[y * 16 + x] === glow || fills[y * 16 + x] === "paper");
   const runs: Run[] = [];
   const shadow: Run[] = [];
-  const bloom: Run[] = [];
-  /** runs of consecutive cells in row y that pass `test` */
-  const scan = (y: number, test: (x: number) => boolean, push: (x: number, w: number) => void) => {
-    let x = 0;
-    while (x < 16) {
-      if (!test(x)) {
-        x++;
-        continue;
-      }
-      let w = 1;
-      while (x + w < 16 && test(x + w)) w++;
-      push(x, w);
-      x += w;
-    }
-  };
   for (let y = 0; y < 16; y++) {
     let x = 0;
     while (x < 16) {
@@ -327,15 +305,20 @@ function prepare(key: string, make: () => Fills, glow?: Role): Prepared {
       if (f != null) runs.push({ x, y, w, fill: f });
       x += w;
     }
-    scan(y, (cx) => filled(cx, y), (sx, w) => shadow.push({ x: sx, y: y + 1, w, fill: "" }));
-    if (glow)
-      scan(
-        y,
-        (cx) => [-1, 0, 1].some((dy) => [-1, 0, 1].some((dx) => lit(cx + dx, y + dy))),
-        (sx, w) => bloom.push({ x: sx, y, w, fill: glow })
-      );
+    // the shadow: the silhouette's runs, a cell lower
+    x = 0;
+    while (x < 16) {
+      if (!filled(x, y)) {
+        x++;
+        continue;
+      }
+      let w = 1;
+      while (x + w < 16 && filled(x + w, y)) w++;
+      shadow.push({ x, y: y + 1, w, fill: "" });
+      x += w;
+    }
   }
-  const out = { runs, shadow, bloom };
+  const out = { runs, shadow };
   // live keys come and go (the sky moves each quarter hour): keep the cache small
   if (prepared.size >= 64) prepared.delete(prepared.keys().next().value!);
   prepared.set(key, out);
@@ -353,18 +336,11 @@ export function glyphCell(size: number) {
 function GlyphRects({ id, live }: { id: IconId; live?: LiveGlyph | null }) {
   const P = useArtPalette();
   const g = GLYPHS[id];
-  const { runs, shadow, bloom } = live
-    ? prepare(live.key, () => live.fills, g.bloom)
-    : prepare(`@${id}`, () => baseFills(g), g.bloom);
+  const { runs, shadow } = live ? prepare(live.key, () => live.fills) : prepare(`@${id}`, () => baseFills(g));
   // a fill is a palette role, or a colour sampled from live data
   const color = (f: string) => (f.startsWith("#") ? f : (P[f as Role] ?? P.paper));
   return (
     <>
-      {g.bloom && bloom.length > 0 && (
-        <g fill={P[g.bloom]} opacity={0.16}>
-          <path d={pxPath(bloom)} />
-        </g>
-      )}
       <g fill={P.ink950} opacity={0.42}>
         <path d={pxPath(shadow)} />
       </g>
@@ -381,13 +357,11 @@ const HomeRects = () => <GlyphRects id="home" live={useHomeGlyph(GLYPHS.home)} /
 const WorkRects = () => <GlyphRects id="work" live={useWorkGlyph(GLYPHS.work)} />;
 const NowRects = () => <GlyphRects id="now" live={useNowGlyph(GLYPHS.now)} />;
 const MailRects = () => <GlyphRects id="contact" live={useMailGlyph()} />;
-const TerminalRects = () => <GlyphRects id="terminal" live={useTerminalGlyph()} />;
 const LIVE: Partial<Record<IconId, () => React.ReactElement>> = {
   home: HomeRects,
   work: WorkRects,
   now: NowRects,
   contact: MailRects,
-  terminal: TerminalRects,
 };
 
 /** Just the pixels, no tile: for tiny OS labels. `size` = glyph box in px. */
