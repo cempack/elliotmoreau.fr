@@ -2,7 +2,7 @@ import "server-only";
 
 /**
  * Toulouse's weather right now, for the wallpaper (Autan in the
- * wallpaper) and the sundial's caption: Open-Meteo's current conditions at
+ * wallpaper) and the clock widget: Open-Meteo's current conditions at
  * the Pont Saint-Pierre (no key), fetched on the server and cached 15
  * minutes. null when it doesn't answer: the scene stays clear.
  */

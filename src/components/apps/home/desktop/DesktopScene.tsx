@@ -7,7 +7,7 @@ import { DesktopIcons } from "./DesktopIcons";
 import { Hello } from "./Hello";
 import { useTerminal } from "@/components/os/Terminal";
 import { termQueue } from "@/components/os/terminal/queue";
-import { ClockWidget } from "./Sundial";
+import { ClockWidget } from "./Clock";
 import { SunHandle } from "./SunHandle";
 import { PushWidget } from "./BrickWall";
 import { LatestPostWidget } from "./Kiosk";
@@ -196,7 +196,7 @@ export function DesktopScene() {
     >
       <h1 className="sr-only">{t.home.name}</h1>
 
-      {/* the wallpaper's sun, held with a mouse or trackpad (the sundial is the handle on touch) */}
+      {/* the wallpaper's sun, held with a mouse or trackpad (on touch, Control Center's sky holds it) */}
       {fine && <SunHandle />}
 
       <div ref={helloSlotRef} className="app-home-hello-slot">

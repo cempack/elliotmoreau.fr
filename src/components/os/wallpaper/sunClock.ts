@@ -1,8 +1,8 @@
 /**
- * What the sky is showing, shared between the wallpaper and the things
- * that hold the sun (the desktop's sun handle, the sundial). Plain module
- * stores, read with useSyncExternalStore or imperatively, so a drag can
- * relight the city every frame without re-rendering React.
+ * What the sky is showing, shared between the wallpaper, the desktop's
+ * sun handle that holds it and the clock widget that reads it. Plain
+ * module stores, read with useSyncExternalStore or imperatively, so a drag
+ * can relight the city every frame without re-rendering React.
  *
  * - scrub: an instant someone is dragging the sun to (null = follow now)
  * - spot: where the wallpaper last drew the sun, in CSS px, and the view
