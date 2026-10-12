@@ -33,6 +33,21 @@ const en = {
     a: "Abort",
     e: "Edit: search emOS instead",
   },
+  /** the network map below the alert: the site as a metro diagram */
+  map: {
+    title: "network map",
+    label: "Network map of emOS",
+    cue: "Network map",
+    here: "YOU ARE HERE",
+    notServed: "Station not served",
+    search: "search",
+    blog: "blog",
+    river: "Garonne",
+    status: "no such page: {path}",
+    nearest: "nearest: {name}",
+    ride: "Ride to {name}",
+    hint: "Pick a station and ride there.",
+  },
   seo: {
     /** share-image alt text */
     homeAlt: "“Elliot Moreau” in pixel letters: {tagline}",
@@ -63,6 +78,20 @@ const fr: typeof en = {
     n: "Non",
     a: "Annuler",
     e: "Modifier : chercher dans emOS",
+  },
+  map: {
+    title: "plan du réseau",
+    label: "Plan du réseau emOS",
+    cue: "Plan du réseau",
+    here: "VOUS ÊTES ICI",
+    notServed: "Station non desservie",
+    search: "rechercher",
+    blog: "blog",
+    river: "Garonne",
+    status: "page introuvable : {path}",
+    nearest: "la plus proche : {name}",
+    ride: "Aller à {name}",
+    hint: "Choisissez une station pour y aller.",
   },
   seo: {
     homeAlt: "« Elliot Moreau » en lettres de pixels sur un ciel de nuit étoilé : {tagline}",

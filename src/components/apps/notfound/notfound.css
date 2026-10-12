@@ -708,3 +708,180 @@ html[data-sky="day"] .app-nf-alert .os-glass {
   outline: 2px solid var(--color-signal);
   outline-offset: 2px;
 }
+
+/* ── the network map, under the alert (NetworkMap.tsx) ── */
+
+/* the cue at the foot of the stage: the map is one scroll away */
+.app-nf-mapcue {
+  position: absolute;
+  bottom: calc(var(--dock-h) + 0.625rem);
+  left: 50%;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  translate: -50% 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-ink-950) 62%, transparent);
+  color: var(--color-label-2);
+  font: 500 0.75rem/1 var(--font-mono);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  transition: color 0.2s, background-color 0.2s;
+}
+@media (hover: hover) {
+  .app-nf-mapcue:hover {
+    color: var(--color-label);
+    background: color-mix(in srgb, var(--color-ink-950) 80%, transparent);
+  }
+}
+.app-nf-mapcue:active {
+  transform: scale(0.97);
+}
+
+.app-nf-net {
+  display: grid;
+  justify-items: center;
+  padding: 0 1rem var(--nf-foot, calc(var(--dock-h) + 1.5rem));
+  scroll-margin-top: calc(var(--menubar-bottom) + 1rem);
+}
+.app-nf-net-tile {
+  width: min(100%, 56rem);
+  border-radius: 14px;
+}
+.app-nf-net-bar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.875rem 1.125rem 0;
+}
+.app-nf-net-title {
+  color: var(--color-label);
+  font: 600 0.8125rem/1.2 var(--font-mono);
+}
+.app-nf-net-hint {
+  color: var(--color-label-3);
+  font-size: var(--text-footnote);
+}
+.app-nf-net-map {
+  position: relative;
+  margin: 0.5rem 0.75rem 0;
+  border-radius: 10px;
+  background: var(--color-ink-900);
+}
+.app-nf-net-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.app-nf-net-lines,
+.app-nf-net-stop {
+  transition: opacity 0.12s ease-out;
+}
+/* a route lit: the rest of the network steps back */
+.app-nf-net-svg[data-dim] .app-nf-net-lines,
+.app-nf-net-svg[data-dim] .app-nf-net-stop:not([data-on]) {
+  opacity: 0.4;
+}
+.app-nf-net-route {
+  stroke: var(--color-label);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 6 5;
+}
+.app-nf-net-stop circle {
+  fill: var(--color-label);
+  transition: fill 0.12s;
+}
+.app-nf-net-stop[data-on] circle,
+.app-nf-net-stop[data-lit] circle {
+  fill: var(--color-signal);
+}
+.app-nf-net-stop text {
+  fill: var(--color-label-2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.app-nf-net-stop[data-on] text {
+  fill: var(--color-label);
+}
+.app-nf-net-river {
+  fill: var(--color-ion);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-style: italic;
+  letter-spacing: 0.04em;
+}
+.app-nf-net-spur {
+  stroke: var(--color-flare);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 0.5 5;
+}
+.app-nf-net-pin {
+  fill: var(--color-ink-900);
+  stroke: var(--color-flare);
+  stroke-width: 3;
+}
+.app-nf-net-here {
+  fill: var(--color-flare);
+  font: 700 10px var(--font-mono);
+  letter-spacing: 0.06em;
+}
+.app-nf-net-herepath {
+  fill: var(--color-label-2);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0;
+}
+.app-nf-net-train rect {
+  fill: var(--color-flare);
+}
+.app-nf-net-train .app-nf-net-windows {
+  fill: var(--color-label);
+}
+/* each station's hit area: 44px, centred on it */
+.app-nf-net-hit {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  translate: -50% -50%;
+  border-radius: 999px;
+}
+.app-nf-net-map:not([data-wide]) .app-nf-net-hit {
+  width: 38px;
+  height: 38px;
+}
+.app-nf-net-hit:focus-visible {
+  outline-offset: -6px;
+}
+.app-nf-net-search {
+  position: absolute;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  color: var(--color-ion);
+  font: 500 0.75rem/1 var(--font-mono);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.app-nf-net-status {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  padding: 0.625rem 1.125rem 0.875rem;
+  color: var(--color-label-3);
+  font: 0.75rem/1.4 var(--font-mono);
+}
+.app-nf-net-nearest {
+  color: var(--color-label-2);
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-nf-net-lines,
+  .app-nf-net-stop,
+  .app-nf-net-stop circle {
+    transition: none;
+  }
+}

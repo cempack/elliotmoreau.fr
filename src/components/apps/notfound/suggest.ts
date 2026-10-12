@@ -29,13 +29,14 @@ const CANONICAL: Record<PublicAppId, string> = {
   contact: "contact",
 };
 
+/** `score` says how far the address was from it: 0 exact, 0.5 a prefix, else the typo count */
 export type Suggestion =
   /** one of emOS's apps: opens in place */
-  | { kind: "app"; app: AppId; to: string; certain?: boolean }
+  | { kind: "app"; app: AppId; to: string; certain?: boolean; score?: number }
   /** a post, read in Writing: `href` is its path on the site (unlocalized) */
-  | { kind: "post"; app: "writing"; to: string; name: string; href: string; certain?: boolean }
+  | { kind: "post"; app: "writing"; to: string; name: string; href: string; certain?: boolean; score?: number }
   /** a repository on GitHub (external) */
-  | { kind: "repo"; app: "work"; to: string; name: string; href: string; certain?: undefined };
+  | { kind: "repo"; app: "work"; to: string; name: string; href: string; certain?: undefined; score?: number };
 
 /** the site's real top-level paths: one letter off one of these is a typo, near-certainly */
 const ROUTES: Partial<Record<PublicAppId, string>> = { work: "work", writing: "writing", atlas: "atlas", now: "now", contact: "contact" };
@@ -161,7 +162,7 @@ export function suggest(command: string, data?: Candidates): Suggestion | null {
     }
     // the closest wins; ties keep the first found (posts, then repos)
     const best = hits.reduce<(typeof hits)[number] | null>((b, h) => (!b || h.s < b.s ? h : b), null);
-    if (best) return best.hit;
+    if (best) return { ...best.hit, score: best.s };
   }
 
   const token = segments[0];
@@ -180,5 +181,5 @@ export function suggest(command: string, data?: Candidates): Suggestion | null {
   const certain = segments.length === 1 && route != null && distance(token, route) === 1;
   // a typo is corrected to the word it misspells ("blgo" → "blog"); a
   // known word, or a deeper path under a real app, to the app itself
-  return { kind: "app", app: best.app, to: best.s === 0 ? CANONICAL[best.app] : best.alias, certain };
+  return { kind: "app", app: best.app, to: best.s === 0 ? CANONICAL[best.app] : best.alias, certain, score: best.s };
 }

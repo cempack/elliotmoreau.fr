@@ -8,12 +8,14 @@ import { useI18n } from "@/i18n/client";
 import { stripLocale } from "@/i18n/config";
 import { useSound } from "@/lib/sound";
 import { useReduced } from "@/hooks/env";
+import { scrollToY } from "@/lib/scroller";
 import { usePalette } from "@/components/ui/palette";
 import { APPS } from "@/components/os/apps";
 import { useSiteData } from "@/components/os/SiteData";
 import { dockIconCenter } from "@/components/os/window/dock";
 import { Matrix404 } from "./Matrix404";
 import { Alert } from "./Alert";
+import { NetworkMap } from "./NetworkMap";
 import { useTether } from "./useTether";
 import { commandFor, middleTruncate, suggest } from "./suggest";
 import type { Answer } from "./Zsh";
@@ -330,39 +332,54 @@ export function NotFoundApp({ standalone = false }: {
 
   const fullPath = command === "/" ? "/" : `/${command}`;
 
+  // down to the network map, under the alert
+  const toMap = () => {
+    const el = document.getElementById("network-map");
+    if (el) scrollToY(el.getBoundingClientRect().top + window.scrollY - 64, !reduced);
+  };
+
   return (
-    <div
-      ref={stageRef}
-      className="app-nf"
-      onClick={(e) => {
-        // a click on the desktop behind the alert (not the alert itself)
-        if (!(e.target as Element).closest?.(".app-nf-alert")) refuse();
-      }}
-    >
-      <div className="app-nf-backdrop" aria-hidden>
-        <Matrix404 />
+    <>
+      <div
+        ref={stageRef}
+        className="app-nf"
+        onClick={(e) => {
+          // a click on the desktop behind the alert (not the alert itself)
+          if (!(e.target as Element).closest?.(".app-nf-alert, .app-nf-mapcue")) refuse();
+        }}
+      >
+        <div className="app-nf-backdrop" aria-hidden>
+          <Matrix404 />
+        </div>
+        <div className="app-nf-center">
+          <Alert
+            tether={tether}
+            shake={shake}
+            surfaceRef={surfaceRef}
+            reduced={reduced}
+            path={middleTruncate(fullPath, 28)}
+            fullPath={fullPath}
+            command={middleTruncate(command, 40)}
+            suggestion={suggestion}
+            suggestHref={suggestHref}
+            target={target}
+            openLabel={openLabel}
+            bodyText={offering ? suggestBody : s.body}
+            answer={answer}
+            onAnswer={onAnswer}
+            onSearch={palette.open}
+            onDesktop={dismiss}
+            countdown={counting ? { left, total: AUTO_MS, onStay: () => (setStayed(true), blip("select")) } : null}
+          />
+        </div>
+        <button type="button" className="app-nf-mapcue" onClick={toMap}>
+          {s.map.cue}
+          <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden>
+            <path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
       </div>
-      <div className="app-nf-center">
-        <Alert
-          tether={tether}
-          shake={shake}
-          surfaceRef={surfaceRef}
-          reduced={reduced}
-          path={middleTruncate(fullPath, 28)}
-          fullPath={fullPath}
-          command={middleTruncate(command, 40)}
-          suggestion={suggestion}
-          suggestHref={suggestHref}
-          target={target}
-          openLabel={openLabel}
-          bodyText={offering ? suggestBody : s.body}
-          answer={answer}
-          onAnswer={onAnswer}
-          onSearch={palette.open}
-          onDesktop={dismiss}
-          countdown={counting ? { left, total: AUTO_MS, onStay: () => (setStayed(true), blip("select")) } : null}
-        />
-      </div>
-    </div>
+      <NetworkMap suggestion={suggestion} path={fullPath} go={go} home={home} />
+    </>
   );
 }
