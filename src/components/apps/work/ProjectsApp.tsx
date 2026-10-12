@@ -1,250 +1,167 @@
 "use client";
 
 import "./work.css";
-import { AnimatePresence, LayoutGroup, m } from "motion/react";
-import { AppWindow, PathBar, type Crumb } from "@/components/os/AppWindow";
+import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, m } from "motion/react";
+import { AppWindow } from "@/components/os/AppWindow";
+import { useLive, useSiteData } from "@/components/os/SiteData";
 import { Sheet } from "@/components/ui/Sheet";
 import { useI18n } from "@/i18n/client";
+import { useMedia, useReduced } from "@/hooks/env";
 import { spring } from "@/lib/motion";
-import { Collection } from "./Collection";
-import { Featured } from "./Featured";
-import { Lid } from "./Lid";
-import { Overview } from "./Overview";
-import { EmptyState, StatusBar } from "./Parts";
-import { QuickLook, QuickLookSheetBody } from "./QuickLook";
-import { Sidebar } from "./Sidebar";
-import { Toolbar } from "./Toolbar";
-import { Years } from "./Years";
-import { WorkProvider, useWork, visibleSearch } from "./store";
-import { fmt } from "./model";
-import { useLive, useSiteData } from "@/components/os/SiteData";
+import { useSound } from "@/lib/sound";
+import { SOCIALS } from "@/lib/socials";
+import { PixelGlyph } from "@/components/glyphs";
+import { ART_OFFLINE, G_ARROW, PixelArt } from "./glyphs";
+import { kindOf, shelves as toShelves, titleOf } from "./kind";
+import { pickFeatured } from "./model";
+import { ProjectCard, ProjectPicture } from "./ProjectCard";
+import { ProjectList } from "./ProjectList";
+
+/** The card beside the list from here up; a sheet over the list below.
+    Must match work.css. */
+const BESIDE = "(min-width: 768px)";
 
 /**
- * Projects: a Finder for Elliot's GitHub repos. Source list of smart
- * folders, languages and tags; live search (⌘F or /); an icon grid and a
- * list that morph into each other; a featured hero; a status bar; and
- * Quick Look, which zooms out of an item and can be flung back into it.
+ * Projects, for anyone. What Elliot has made, on shelves a visitor
+ * understands (apps and websites, games, add-ons for his desktop, tools),
+ * each with its name, what it does in a sentence and one clear button.
  *
- * State lives in WorkProvider above the window; the window's slots are
- * small components that read it, so the window frame stays still.
+ * Like Atlas: on wide screens the list sits on the left, the project's
+ * picture fills the middle and its card stands on the right; tablets keep
+ * the list and the card (picture on top); phones show the list and open a
+ * project in a sheet. `?repo=name` (Spotlight, the Desktop's pushes) opens
+ * on that project.
  */
 export function ProjectsApp() {
-  const data = useSiteData();
-  const hasRepos = data.repos.length > 0;
-  return (
-    <WorkProvider data={data}>
-      <AppWindow
-        app="work"
-        className="app-work-win"
-        subtitle={<WorkPath />}
-        toolbar={hasRepos ? <WorkToolbar variant="bar" /> : undefined}
-        sidebar={<WorkSidebar />}
-      >
-        <WorkContent />
-      </AppWindow>
-    </WorkProvider>
-  );
-}
-
-/** ~/work/lang/go?q=…: each level clears what's below it */
-function WorkPath() {
-  const { filter, query, setFilter, setQuery } = useWork();
-  const q = query.trim();
-  const all = () => {
-    setFilter({ kind: "all" });
-    setQuery("");
-  };
-  const crumbs: Crumb[] = [{ label: "work", onClick: all }];
-  if (filter.kind === "lang") crumbs.push({ label: "lang", onClick: all }, { label: filter.value.toLowerCase(), onClick: () => setQuery("") });
-  else if (filter.kind === "tag") crumbs.push({ label: "tags", onClick: all }, { label: filter.value, onClick: () => setQuery("") });
-  else if (filter.kind === "starred") crumbs.push({ label: "starred", onClick: () => setQuery("") });
-  if (q) crumbs.push({ label: `?q=${q.length > 18 ? `${q.slice(0, 17)}…` : q}`, suffix: true });
-  return <PathBar crumbs={crumbs} />;
-}
-
-function WorkSidebar() {
-  const { repos, filter, setFilter, source } = useWork();
-  return <Sidebar repos={repos} filter={filter} onFilter={setFilter} source={source} />;
-}
-
-function WorkToolbar({ variant }: { variant: "bar" | "inline" }) {
-  const w = useWork();
-  return (
-    <Toolbar
-      variant={variant}
-      query={w.query}
-      onQuery={w.setQuery}
-      view={w.effView}
-      onView={w.setView}
-      sort={w.sort}
-      onSort={w.setSort}
-      onSubmit={() => {
-        const first = w.selected ?? w.visible[0]?.name;
-        if (!first) return;
-        w.setSelected(first);
-        w.focusItem(first);
-      }}
-      disabled={w.repos.length === 0}
-    />
-  );
-}
-
-function WorkContent() {
-  const { t } = useI18n();
-  const h = t.work.heading;
-  const w = useWork();
-  const { filter, terms, query, visible } = w;
+  const { repos } = useSiteData();
   const { featuredRepo } = useLive();
-  const lidView = w.effView === "icons";
-  const yearsView = w.effView === "years";
-  const visibleSet = new Set(visible.map((r) => r.name));
+  const { t } = useI18n();
+  const w = t.work;
+  const { blip } = useSound();
+  const reduced = useReduced();
+  const beside = useMedia(BESIDE, true);
+  const shelves = useMemo(() => toShelves(repos), [repos]);
+  const ordered = useMemo(() => shelves.flatMap((s) => s.repos), [shelves]);
+  const [picked, setPicked] = useState<string | null>(null);
+  const [sheet, setSheet] = useState<string | null>(null);
+  const current = ordered.find((r) => r.name === picked) ?? pickFeatured(ordered, featuredRepo);
+  const sheetRepo = sheet ? ordered.find((r) => r.name === sheet) : undefined;
 
-  const short = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
-  const folder =
-    filter.kind === "starred"
-      ? t.work.side.starred
-      : filter.kind === "lang"
-          ? filter.value
-          : filter.kind === "tag"
-            ? `#${filter.value}`
-            : "";
-  const heading = terms.length
-    ? fmt(h.results, { q: short(query.trim(), 28) })
-    : filter.kind === "all"
-      ? h.all
-      : filter.kind === "starred"
-        ? h.starred
-        : filter.kind === "lang"
-            ? fmt(h.lang, { lang: filter.value })
-            : fmt(h.tag, { tag: filter.value });
+  // ?repo=name: open on it (a sheet on phones), then tidy the address
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const want = url.searchParams.get("repo");
+    if (!want) return;
+    const id = window.setTimeout(() => {
+      const hit = ordered.find((r) => r.name.toLowerCase() === want.toLowerCase());
+      if (hit) {
+        setPicked(hit.name);
+        if (!window.matchMedia(BESIDE).matches) setSheet(hit.name);
+      }
+      url.searchParams.delete("repo");
+      window.history.replaceState(window.history.state, "", url);
+    }, 0);
+    return () => window.clearTimeout(id);
+    // once, on arrival
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const pick = (name: string) => {
+    blip("select");
+    setPicked(name);
+    if (!window.matchMedia(BESIDE).matches) setSheet(name);
+  };
+
+  const card = (name: string | undefined, titleId: string) => {
+    const repo = ordered.find((r) => r.name === name);
+    if (!repo) return null;
+    const i = ordered.indexOf(repo);
+    const step = (to: string) => {
+      blip("select");
+      setPicked(to);
+      if (sheet) setSheet(to);
+    };
+    return (
+      <ProjectCard
+        repo={repo}
+        kind={kindOf(repo)}
+        picture
+        prev={ordered[(i - 1 + ordered.length) % ordered.length]}
+        next={ordered[(i + 1) % ordered.length]}
+        index={i}
+        total={ordered.length}
+        onStep={step}
+        titleId={titleId}
+      />
+    );
+  };
+
+  if (!current) {
+    return (
+      <AppWindow app="work">
+        <div className="app-work app-work--empty">
+          <div className="app-work-offline">
+            <PixelArt rows={ART_OFFLINE} palette={{ a: "var(--color-ink-500)", b: "var(--color-ink-700)", c: "var(--color-label-3)", d: "var(--color-label-3)" }} cell={6} />
+            <h2 className="app-work-offline-title">{w.offlineTitle}</h2>
+            <p className="app-work-offline-body">{w.offlineBody}</p>
+            <a className="app-work-btn" href={SOCIALS.github} target="_blank" rel="noopener noreferrer">
+              {w.openProfile}
+              <PixelGlyph cells={G_ARROW} size={10} />
+            </a>
+          </div>
+        </div>
+      </AppWindow>
+    );
+  }
+
+  const kind = kindOf(current);
 
   return (
-    // data-view and data-narrow let the phone layout drop the folder strip on the landing (work.css)
-    <div className="app-work" data-view={w.effView ?? undefined} data-narrow={filter.kind !== "all" || terms.length > 0 || undefined}>
-      {w.repos.length > 0 && <WorkToolbar variant="inline" />}
+    <AppWindow app="work">
+      <div className="app-work">
+        <section className="app-work-panel app-work-panel--list" aria-labelledby="app-work-title">
+          <div className="app-work-panel-scroll" data-lenis-prevent>
+            <header className="app-work-intro">
+              <h2 id="app-work-title" className="app-work-title">
+                {w.title}
+              </h2>
+              <p className="app-work-lede">{w.lede}</p>
+            </header>
+            <ProjectList shelves={shelves} selected={current.name} onPick={pick} select={beside} thumbId="app-work-thumb" />
+            <a className="app-work-all" href={SOCIALS.github} target="_blank" rel="noopener noreferrer" aria-label={w.allLabel}>
+              {w.all}
+              <PixelGlyph cells={G_ARROW} size={9} />
+            </a>
+          </div>
+        </section>
 
-      {w.repos.length === 0 ? (
-        <EmptyState kind="offline" />
-      ) : (
-        <LayoutGroup id="app-work">
-          {/* icons: the sticker lid (every repo, the non-matching dimmed) */}
-          {lidView && (
-            <div className="app-work-lid-wrap">
-              <Lid
-                repos={w.repos}
-                visible={visibleSet}
-                selected={w.selected}
-                phone={w.phone}
-                onSelect={w.setSelected}
-                onOpen={(name) => w.openQL(name)}
-                title={heading}
-                pinned={featuredRepo}
-                label={(r) => fmt(t.work.lid.sticker, { name: r.name, stars: r.stars, lang: r.language || "" })}
-              />
-              <p className="app-work-lid-legend">{t.work.lid.legend}</p>
-            </div>
-          )}
-
-          {/* years, the landing: a year of work as mountains, the projects under it (the ranges follow search and folders) */}
-          {yearsView && <Years visible={visibleSet} repos={w.repos} onOpen={(name) => w.openQL(name)} />}
-
-          <AnimatePresence initial={false} mode="popLayout">
-            {!lidView && !yearsView && w.showHero && w.featured && (
-              <m.div
-                key="hero"
-                className="app-work-hero-wrap"
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={spring.default}
-              >
-                <Featured
-                  repo={w.featured}
-                  hydrated={w.hydrated}
-                  onQuickLook={() => w.featured && w.openQL(w.featured.name, "hero")}
-                />
-              </m.div>
-            )}
-          </AnimatePresence>
-
-          {w.showHero && !yearsView && (
-            <Overview repos={w.repos} hydrated={w.hydrated} />
-          )}
-
-          {visible.length > 0 && !lidView && !yearsView && (
-            <m.div layout="position" transition={{ layout: spring.default }} className="app-work-head">
-              <h2 className="app-work-head-title">{heading}</h2>
-              <span className="app-work-head-count tabular" aria-hidden>
-                {visible.length}
-              </span>
+        {/* wide screens: the picture, large, between the list and the card */}
+        <div className="app-work-stage">
+          <AnimatePresence mode="popLayout" initial={false}>
+            <m.div
+              key={current.name}
+              className="app-work-stage-pic"
+              initial={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.97 }}
+              animate={reduced ? { opacity: 1 } : { opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, transition: { duration: 0.15 } }}
+              transition={reduced ? { duration: 0.15 } : spring.gentle}
+            >
+              <ProjectPicture repo={current} kind={kind} />
             </m.div>
-          )}
+          </AnimatePresence>
+        </div>
 
-          {lidView || yearsView ? null : visible.length > 0 ? (
-            <Collection
-              repos={visible}
-              view={w.view}
-              effView={w.effView === "years" ? null : w.effView}
-              phone={w.phone}
-              selected={w.selected}
-              onSelect={w.setSelected}
-              onOpen={(name) => w.openQL(name)}
-              terms={terms}
-              stagger={w.stagger}
-              hydrated={w.hydrated}
-              sort={w.sort}
-              onSort={w.setSort}
-            />
-          ) : terms.length > 0 ? (
-            <EmptyState
-              kind="search"
-              query={query}
-              folder={folder}
-              wider={w.widerHits}
-              onClear={() => {
-                w.setQuery("");
-                visibleSearch()?.focus();
-              }}
-              onWiden={() => w.setFilter({ kind: "all" })}
-            />
-          ) : (
-            <EmptyState kind="folder" onShowAll={() => w.setFilter({ kind: "all" })} />
-          )}
-        </LayoutGroup>
-      )}
+        <aside className="app-work-panel app-work-panel--card" aria-label={titleOf(current)}>
+          <div className="app-work-panel-scroll" data-lenis-prevent>
+            {card(current.name, "app-work-card-title")}
+          </div>
+        </aside>
 
-      <StatusBar shown={visible.length} total={w.repos.length} stars={w.stars} source={w.source} />
-
-      {w.ql?.mode === "panel" && w.qlRepo && (
-        <QuickLook
-          key={w.ql.id}
-          repo={w.qlRepo}
-          terms={terms}
-          hydrated={w.hydrated}
-          getOrigin={w.getOrigin}
-          onStep={w.stepQL}
-          onTag={w.applyTag}
-          onClosed={w.onPanelClosed}
-        />
-      )}
-      <Sheet
-        open={w.ql?.mode === "sheet" && !!w.qlRepo}
-        onClose={w.onSheetClosed}
-        label={fmt(t.work.ql.label, { name: w.qlRepo?.name ?? "" })}
-        className="app-work-sheet"
-      >
-        {w.qlRepo && (
-          <QuickLookSheetBody
-            repo={w.qlRepo}
-            terms={terms}
-            hydrated={w.hydrated}
-            onTag={(tag, dismiss) => {
-              w.afterSheet(() => w.applyTag(tag));
-              dismiss();
-            }}
-          />
-        )}
-      </Sheet>
-    </div>
+        <Sheet open={!!sheetRepo} onClose={() => setSheet(null)} label={sheetRepo ? titleOf(sheetRepo) : ""} className="app-work-sheet">
+          {card(sheet ?? undefined, "app-work-sheet-title")}
+        </Sheet>
+      </div>
+    </AppWindow>
   );
 }

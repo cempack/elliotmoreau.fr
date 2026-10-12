@@ -10,21 +10,7 @@ function cells(rows: string[]): Cells {
   return out;
 }
 
-export const G_ALL = cells(["###.###", "###.###", "###.###", ".......", "###.###", "###.###", "###.###"]);
-/** two peaks: the Years view */
-export const G_PEAKS = cells([".......", "..#....", ".###...", "####.#.", "######.", "#######", "......."]);
-export const G_CODE = cells([".......", "..#.#..", ".#...#.", "#.....#", ".#...#.", "..#.#..", "......."]);
-export const G_LIST = cells([".......", "#.#####", ".......", "#.#####", ".......", "#.#####", "......."]);
-export const G_HASH = cells(["..#.#..", "..#.#..", "#######", "..#.#..", "#######", "..#.#..", "..#.#.."]);
-export const G_SEARCH = cells([".###...", "#...#..", "#...#..", "#...#..", ".####..", ".....#.", "......#"]);
-export const G_SORT = cells([".......", "#######", ".......", "#####..", ".......", "###....", "......."]);
-export const G_CHEVRON = cells([".......", ".......", "#.....#", ".#...#.", "..#.#..", "...#...", "......."]);
 export const G_ARROW = cells([".......", "..####.", ".....#.", "....##.", "...#.#.", "..#....", ".#....."]);
-export const G_FORK = cells(["#...#..", "#...#..", "#...#..", ".#.#...", "..#....", "..#....", "..#...."]);
-export const G_EYE = cells([".......", "..###..", ".#...#.", "#..#..#", ".#...#.", "..###..", "......."]);
-export const G_COPY = cells(["####...", "#..#...", "#.####.", "###..#.", "..#..#.", "..####.", "......."]);
-export const G_CHECK = cells([".......", "......#", ".....#.", "#...#..", ".#.#...", "..#....", "......."]);
-export const G_CLOSE = cells(["#.....#", ".#...#.", "..#.#..", "...#...", "..#.#..", ".#...#.", "#.....#"]);
 
 /**
  * Small multi-colour pixel illustration from string rows; each character
@@ -74,35 +60,6 @@ export function PixelArt({
     </svg>
   );
 }
-
-/** a magnifier over an empty field: no results */
-export const ART_SEARCH = [
-  "....aaaa......",
-  "...a....a.....",
-  "..a.bb...a....",
-  "..a.b....a....",
-  "..a......a....",
-  "..a......a....",
-  "...a....a.....",
-  "....aaaac.....",
-  ".........cc...",
-  "..........cc..",
-  "...........cc.",
-  "............c.",
-];
-
-/** a little open folder: empty smart folder */
-export const ART_FOLDER = [
-  ".aaaa.........",
-  "abbbba........",
-  "abbbbbaaaaaaa.",
-  "abbbbbbbbbbbba",
-  "accccccccccccc",
-  "acddddddddddc.",
-  "acdddddddddc..",
-  "acddddddddddc.",
-  ".cccccccccccc.",
-];
 
 /** a cloud with a broken link: GitHub unreachable */
 export const ART_OFFLINE = [
