@@ -468,3 +468,73 @@ export async function getRepoDetail(name: string): Promise<RepoDetail | null> {
     ci,
   };
 }
+
+/* ───────────────────────── a year of work (Projects: the Years view) ───────────────────────── */
+
+export type YearRange = {
+  repo: string;
+  language: string;
+  url: string;
+  /** commits per week, the last 52 weeks, oldest first */
+  weeks: number[];
+  total: number;
+  last: { message: string; date: string } | null;
+};
+export type YearsInfo = {
+  /** the first week's Sunday (UTC), YYYY-MM-DD */
+  start: string;
+  ranges: YearRange[];
+};
+
+const YEARS_TTL = 30 * 60_000;
+const YEARS_REPOS = 6;
+let yearsCache: { at: number; data: YearsInfo } | null = null;
+
+/**
+ * Each of the most recently pushed repos' weekly commit counts over the
+ * last year (GitHub's own stats, recomputed by GitHub at most daily) and
+ * its last commit. A repo whose stats are still being computed (202) or
+ * that saw no commit all year is left out. Cached half an hour.
+ */
+export async function getYears(skip?: (repo: string) => boolean): Promise<YearsInfo | null> {
+  const fresh = yearsCache && Date.now() - yearsCache.at < YEARS_TTL;
+  if (!fresh) {
+    const repos = await getRepos();
+    if (!repos) return yearsCache ? { ...yearsCache.data, ranges: yearsCache.data.ranges.filter((r) => !skip?.(r.repo)) } : null;
+    let start = "";
+    const ranges = await Promise.all(
+      repos.slice(0, YEARS_REPOS + 2).map(async (r): Promise<YearRange | null> => {
+        try {
+          const name = encodeURIComponent(r.name);
+          const [stats, last] = await Promise.all([
+            fetch(`${API}/repos/${USER}/${name}/stats/commit_activity`, { headers: headers(), next: { revalidate: 6 * 3600 } }),
+            fetch(`${API}/repos/${USER}/${name}/commits?per_page=1`, { headers: headers(), next: { revalidate: 1800 } }),
+          ]);
+          if (stats.status !== 200) return null;
+          const weeks = (await stats.json()) as { week: number; total: number }[];
+          if (!Array.isArray(weeks) || weeks.length === 0) return null;
+          const total = weeks.reduce((s, w) => s + (w.total || 0), 0);
+          if (!total) return null;
+          if (!start) start = new Date(weeks[0].week * 1000).toISOString().slice(0, 10);
+          const c = last.ok ? ((await last.json()) as GhCommit[])[0] : undefined;
+          const info = c ? toInfo(c) : null;
+          return {
+            repo: r.name,
+            language: r.language,
+            url: r.url,
+            weeks: weeks.slice(-52).map((w) => w.total || 0),
+            total,
+            last: info ? { message: info.message, date: info.date } : null,
+          };
+        } catch {
+          return null;
+        }
+      })
+    );
+    const got = ranges.filter((x): x is YearRange => x !== null).slice(0, YEARS_REPOS);
+    if (!got.length) return yearsCache ? yearsCache.data : null;
+    yearsCache = { at: Date.now(), data: { start, ranges: got } };
+  }
+  const data = yearsCache!.data;
+  return { ...data, ranges: data.ranges.filter((r) => !skip?.(r.repo)) };
+}

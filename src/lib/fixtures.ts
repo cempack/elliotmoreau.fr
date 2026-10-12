@@ -1,5 +1,5 @@
 import type { GhostPost } from "./ghost";
-import type { ActivityInfo, DayPush, PushHistory, RepoInfo } from "./github";
+import type { ActivityInfo, DayPush, PushHistory, RepoInfo, YearsInfo } from "./github";
 import type { DayTrack, SpotifyStatus } from "./spotify";
 
 /**
@@ -223,5 +223,42 @@ export function fixtureDay(now = Date.now()): { tracks: DayTrack[]; pushes: DayP
   return {
     tracks: plays.map(([h, title, artist]) => ({ at: new Date(now - h * H).toISOString(), title, artist, image: "", url: "" })),
     pushes: pushes.map(([h, repo, msg]) => ({ at: new Date(now - h * H).toISOString(), repo, msg })),
+  };
+}
+
+/** A sample year of work (outside production, when GitHub can't be reached): weekly commits for the sample repos. */
+export function fixtureYears(now = Date.now()): YearsInfo {
+  const week = 7 * 86_400_000;
+  // the Sunday that starts the week 51 weeks ago (UTC), like GitHub's own stats
+  const today = new Date(now);
+  const sunday = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()) - today.getUTCDay() * 86_400_000;
+  const start = new Date(sunday - 51 * week).toISOString().slice(0, 10);
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  /** busy stretches (week index, width, height) over a quiet floor */
+  const shape = (bursts: [number, number, number][], floor: number) =>
+    Array.from({ length: 52 }, (_, i) => {
+      let v = floor * rnd();
+      for (const [at, w, h] of bursts) v += h * Math.max(0, 1 - Math.abs(i - at) / w) * (0.7 + 0.3 * rnd());
+      return Math.round(v);
+    });
+  const mk = (repo: string, language: string, weeks: number[], message: string, ago: number) => ({
+    repo,
+    language,
+    url: `https://github.com/cempack/${repo}`,
+    weeks,
+    total: weeks.reduce((a, b) => a + b, 0),
+    last: { message, date: new Date(now - ago * 86_400_000).toISOString() },
+  });
+  return {
+    start,
+    ranges: [
+      mk("elliotmoreau.fr", "TypeScript", shape([[50, 6, 46], [40, 4, 18], [30, 3, 12]], 3), "tune the springs until they feel right", 0),
+      mk("omarchy-dos-moos-theme", "Lua", shape([[26, 5, 24], [33, 3, 14]], 2), "warmer ember", 12),
+      mk("ttfx", "TypeScript", shape([[14, 4, 20], [20, 3, 10]], 1), "kerning pairs for the pixel face", 120),
+      mk("dotfiles", "Shell", shape([[8, 3, 9], [24, 2, 8], [45, 3, 9]], 2), "waybar: quieter clock", 9),
+      mk("pixel-planets", "Go", shape([[4, 4, 16], [10, 2, 8]], 1), "ring shadows", 260),
+      mk("spotify-now", "TypeScript", shape([[36, 3, 13]], 1), "cache the token", 80),
+    ],
   };
 }

@@ -14,6 +14,7 @@ import { EmptyState, StatusBar } from "./Parts";
 import { QuickLook, QuickLookSheetBody } from "./QuickLook";
 import { Sidebar } from "./Sidebar";
 import { Toolbar } from "./Toolbar";
+import { Years } from "./Years";
 import { WorkProvider, useWork, visibleSearch } from "./store";
 import { fmt } from "./model";
 import { useLive, useSiteData } from "@/components/os/SiteData";
@@ -95,6 +96,7 @@ function WorkContent() {
   const { filter, terms, query, visible } = w;
   const { featuredRepo } = useLive();
   const lidView = w.effView === "icons";
+  const yearsView = w.effView === "years";
   const visibleSet = new Set(visible.map((r) => r.name));
 
   const short = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
@@ -142,8 +144,11 @@ function WorkContent() {
             </div>
           )}
 
+          {/* years: a year of work as mountains (the ranges follow search and folders) */}
+          {yearsView && <Years visible={visibleSet} onOpen={(name) => w.openQL(name)} />}
+
           <AnimatePresence initial={false} mode="popLayout">
-            {!lidView && w.showHero && w.featured && (
+            {!lidView && !yearsView && w.showHero && w.featured && (
               <m.div
                 key="hero"
                 className="app-work-hero-wrap"
@@ -161,11 +166,11 @@ function WorkContent() {
             )}
           </AnimatePresence>
 
-          {w.showHero && (
+          {w.showHero && !yearsView && (
             <Overview repos={w.repos} hydrated={w.hydrated} />
           )}
 
-          {visible.length > 0 && !lidView && (
+          {visible.length > 0 && !lidView && !yearsView && (
             <m.div layout="position" transition={{ layout: spring.default }} className="app-work-head">
               <h2 className="app-work-head-title">{heading}</h2>
               <span className="app-work-head-count tabular" aria-hidden>
@@ -174,11 +179,11 @@ function WorkContent() {
             </m.div>
           )}
 
-          {lidView ? null : visible.length > 0 ? (
+          {lidView || yearsView ? null : visible.length > 0 ? (
             <Collection
               repos={visible}
               view={w.view}
-              effView={w.effView}
+              effView={w.effView === "years" ? null : w.effView}
               phone={w.phone}
               selected={w.selected}
               onSelect={w.setSelected}

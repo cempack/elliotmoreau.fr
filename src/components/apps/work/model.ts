@@ -5,7 +5,7 @@ import { LANG_COLORS, LANG_FALLBACK } from "@/lib/langColors";
 
 export type SortKey = "recent" | "stars" | "name";
 /** "auto" lets CSS decide (icons ≥768px, list below) so SSR never flashes */
-export type ViewMode = "auto" | "icons" | "list";
+export type ViewMode = "auto" | "icons" | "list" | "years";
 export type Filter =
   | { kind: "all" }
   | { kind: "starred" }

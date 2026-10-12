@@ -35,8 +35,8 @@ type Work = {
   terms: string[];
   view: ViewMode;
   /** what is on screen; null until hydrated while CSS decides ("auto") */
-  effView: "icons" | "list" | null;
-  setView: (v: "icons" | "list") => void;
+  effView: "icons" | "list" | "years" | null;
+  setView: (v: "icons" | "list" | "years") => void;
   stagger: boolean;
   sort: SortKey;
   setSort: (s: SortKey) => void;
@@ -154,7 +154,7 @@ export function WorkProvider({ data, children }: { data: SiteData; children: Rea
     if (f.kind === "starred") setSort("stars");
   };
 
-  const setView = (v: "icons" | "list") => {
+  const setView = (v: "icons" | "list" | "years") => {
     if (v === view) return;
     setViewState(v);
     if (v !== effView) {

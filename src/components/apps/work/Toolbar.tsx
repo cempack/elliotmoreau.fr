@@ -6,10 +6,10 @@ import { useI18n } from "@/i18n/client";
 import { spring } from "@/lib/motion";
 import { useSound } from "@/lib/sound";
 import { PixelGlyph } from "@/components/glyphs";
-import { G_ALL, G_CHECK, G_CHEVRON, G_CLOSE, G_LIST, G_SEARCH, G_SORT } from "./glyphs";
+import { G_ALL, G_CHECK, G_CHEVRON, G_CLOSE, G_LIST, G_PEAKS, G_SEARCH, G_SORT } from "./glyphs";
 import { SORTS, fmt, type SortKey } from "./model";
 
-type View = "icons" | "list";
+type View = "icons" | "list" | "years";
 
 /**
  * Search, view switch and sort, in two shapes: `bar` lives in the window's
@@ -99,14 +99,14 @@ export function Toolbar({
 
       <LayoutGroup id={`app-work-view-${variant}`}>
         <div className="app-work-seg" role="group" aria-label={tb.view}>
-          {(["icons", "list"] as const).map((v) => (
+          {(["icons", "list", "years"] as const).map((v) => (
             <button
               key={v}
               type="button"
               className="app-work-seg-btn"
               aria-pressed={view === null ? undefined : view === v}
-              aria-label={v === "icons" ? tb.icons : tb.list}
-              title={v === "icons" ? tb.icons : tb.list}
+              aria-label={tb[v]}
+              title={tb[v]}
               data-active={view === v || undefined}
               onClick={() => onView(v)}
               disabled={disabled}
@@ -114,14 +114,14 @@ export function Toolbar({
               {view === v && (
                 <m.span layoutId="thumb" className="app-work-seg-thumb" transition={spring.snappy} aria-hidden />
               )}
-              <PixelGlyph cells={v === "icons" ? G_ALL : G_LIST} size={11} />
+              <PixelGlyph cells={v === "icons" ? G_ALL : v === "list" ? G_LIST : G_PEAKS} size={11} />
             </button>
           ))}
         </div>
       </LayoutGroup>
 
-      {/* the lid lays its stickers out by size: an order only means something in the list */}
-      {view !== "icons" && <SortMenu sort={sort} onSort={onSort} disabled={disabled} />}
+      {/* the lid lays its stickers out by size, the years by work: an order only means something in the list */}
+      {view !== "icons" && view !== "years" && <SortMenu sort={sort} onSort={onSort} disabled={disabled} />}
     </div>
   );
 }

@@ -2038,3 +2038,260 @@ a.app-work-ci:hover .app-work-ci-text {
 .app-work-back-facts .app-work-ci {
   margin-left: 0;
 }
+
+/* ───────────────────────── Years: a year of work, as mountains ───────────────────────── */
+
+.app-work-years {
+  margin: 0.25rem 0 1.5rem;
+}
+.app-work-years-head {
+  margin-bottom: 1.125rem;
+}
+.app-work-years-title {
+  font-size: var(--text-title-2);
+  font-weight: 650;
+  line-height: var(--text-title-2--line-height);
+  letter-spacing: var(--text-title-2--letter-spacing);
+}
+.app-work-years-lede {
+  margin-top: 0.375rem;
+  color: var(--color-label-2);
+  font-size: var(--text-callout);
+  text-wrap: pretty;
+}
+.app-work-years-body {
+  display: grid;
+  grid-template-columns: 12.5rem minmax(0, 1fr);
+  align-items: start;
+  gap: 1.25rem;
+}
+
+/* the legend: a name per range, in its ridge's colour */
+.app-work-years-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  margin: 0;
+  padding: 0.25rem 0 0;
+  list-style: none;
+}
+.app-work-years-key {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.5rem 0.625rem;
+  border-radius: 8px;
+  text-align: left;
+  transition:
+    background-color 0.15s,
+    opacity 0.2s;
+}
+.app-work-years-key-name {
+  overflow: hidden;
+  color: var(--c);
+  font: 500 0.8125rem/1.2 var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app-work-years-key-sub {
+  color: var(--color-label-3);
+  font: 400 0.75rem/1.2 var(--font-mono);
+}
+.app-work-years-key[aria-pressed="true"] {
+  background: rgba(255, 255, 255, 0.06);
+}
+.app-work-years-key[aria-pressed="true"] .app-work-years-key-sub {
+  color: var(--color-label-2);
+}
+.app-work-years-key[data-dim] {
+  opacity: 0.55;
+}
+@media (hover: hover) and (pointer: fine) {
+  .app-work-years-key:hover {
+    background: rgba(255, 255, 255, 0.04);
+  }
+}
+.app-work-years-key:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 1px;
+}
+
+/* the stage: the picture, and the card that reads it */
+.app-work-years-main {
+  position: relative;
+  min-width: 0;
+}
+.app-work-years-stage {
+  position: relative;
+  height: clamp(18rem, 40cqi, 30rem);
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  background: #13132a;
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  outline: none;
+  touch-action: pan-y;
+  cursor: crosshair;
+  -webkit-tap-highlight-color: transparent;
+}
+.app-work-years-stage:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 3px;
+}
+.app-work-years-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  image-rendering: pixelated;
+}
+.app-work-years-state {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: var(--color-label-3);
+  font-size: var(--text-footnote);
+}
+.app-work-years-card {
+  position: absolute;
+  top: 0.875rem;
+  right: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3125rem;
+  width: min(17.5rem, calc(100% - 1.75rem));
+  padding: 0.75rem 0.875rem 0.8125rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--color-ink-950) 84%, transparent);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  cursor: default;
+}
+.app-work-years-card[data-side="left"] {
+  right: auto;
+  left: 0.875rem;
+}
+.app-work-years-card-k {
+  margin: 0;
+  color: var(--color-ember);
+  font: 500 0.6875rem/1.2 var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.app-work-years-card-t {
+  margin: 0;
+  overflow: hidden;
+  color: var(--color-label);
+  font-size: var(--text-callout);
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app-work-years-card-l {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1875rem;
+  margin: 0;
+}
+.app-work-years-card-msg {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--color-label-2);
+  font-size: var(--text-footnote);
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.app-work-years-card-ago {
+  color: var(--color-label-3);
+  font: 400 0.6875rem/1.2 var(--font-mono);
+}
+.app-work-years-card-open {
+  align-self: flex-start;
+  margin-top: 0.25rem;
+  color: var(--color-ion);
+  font-size: var(--text-footnote);
+  font-weight: 550;
+  transition: color 0.15s;
+}
+.app-work-years-card-open:hover {
+  color: var(--color-label);
+}
+
+/* months under the picture, "now" at its right end */
+.app-work-years-axis {
+  position: relative;
+  height: 1rem;
+  margin-top: 0.5rem;
+  color: var(--color-label-3);
+  font: 400 0.75rem/1 var(--font-mono);
+}
+.app-work-years-axis span {
+  position: absolute;
+  top: 0;
+  white-space: nowrap;
+}
+.app-work-years-axis .app-work-years-now {
+  right: 0;
+  color: var(--color-label-2);
+}
+.app-work-years-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-top: 0.875rem;
+  color: var(--color-label-3);
+  font-size: 0.75rem;
+}
+.app-work-years-sample {
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font: 500 0.6875rem/1.2 var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+}
+
+/* narrower windows: the picture first, the names under it */
+@container app-work (max-width: 52rem) {
+  .app-work-years-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .app-work-years-legend {
+    order: 2;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+    gap: 0.25rem;
+    padding: 0;
+  }
+}
+/* phones: the ranges stand closer; the card reads under the picture */
+@container app-work (max-width: 34rem) {
+  .app-work-years-stage {
+    height: 16rem;
+  }
+  .app-work-years-card,
+  .app-work-years-card[data-side="left"] {
+    position: static;
+    width: auto;
+    margin-top: 0.875rem;
+    padding: 0.75rem 0.875rem;
+  }
+  .app-work-years-legend {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .app-work-years-key {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.625rem 0.5rem;
+  }
+  .app-work-years-key-sub {
+    flex: none;
+  }
+}
