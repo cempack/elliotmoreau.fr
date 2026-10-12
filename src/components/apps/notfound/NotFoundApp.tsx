@@ -40,7 +40,7 @@ import type { Answer } from "./Zsh";
  * scripts), and by [lang]/not-found.tsx for an in-app notFound().
  */
 
-/** the boot/lock screen is over (it never shows under reduced motion) */
+/** the boot is over (it never shows under reduced motion) */
 const introOver = () =>
   document.documentElement.dataset.intro === "done" || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -154,7 +154,7 @@ export function NotFoundApp({ standalone = false }: {
     return () => added.forEach((el) => el.remove());
   }, [home, appHref, router, standalone]);
 
-  // once the boot/lock screen is out of the way, the alert takes focus (a
+  // once the boot is out of the way, the alert takes focus (a
   // macOS alert is the key window; screen readers announce it), and the
   // first time this session it gives a little tug to show it moves
   useEffect(() => {
@@ -198,7 +198,7 @@ export function NotFoundApp({ standalone = false }: {
   }, [suggestion, suggestHref, go]);
 
   // typo forgiveness: one letter off a real path goes there by itself after
-  // a short countdown, once the boot/lock screen is out of the way; Stay
+  // a short countdown, once the boot is out of the way; Stay
   // (or any answer) stops it
   const [armed, setArmed] = useState(false);
   const [stayed, setStayed] = useState(false);

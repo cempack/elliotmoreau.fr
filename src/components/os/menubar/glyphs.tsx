@@ -257,6 +257,15 @@ export function ChevronRight({ size = 12 }: { size?: number }) {
 export function RestartIcon({ size = 14 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden focusable="false">
+      <path d="M13.25 8.5A5.25 5.25 0 1 1 11.6 4.3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M12.25 1.75v3h-3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function PowerIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden focusable="false">
       <path d="M8 2.25v5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
       <path d="M4.6 4.2a5.25 5.25 0 1 0 6.8 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>

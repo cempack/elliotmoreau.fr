@@ -1,4 +1,4 @@
-// Strings for the system part of the shell: the boot + lock screen intro
+// Strings for the system part of the shell: the boot, the power-off screen
 // and the Terminal app. Owned by its builder: add keys to `en` and the
 // type forces the same keys in `fr`. Values must stay serializable (they
 // cross the server → client boundary), so interpolation uses {tokens}.
@@ -18,21 +18,12 @@ const en = {
     ],
     skip: "Esc to skip",
     skipTouch: "Tap to skip",
-    name: "Elliot Moreau",
-    lock: "Lock screen",
-    password: "Password",
-    placeholder: "Enter password",
-    hint: "Any password works.",
-    unlock: "Unlock",
-    unlockTouch: "Tap to unlock",
-    away: "Away in {city}",
-    awayTime: "{time} there",
-    notes: {
-      label: "Notifications",
-      playing: "Now playing",
-      played: "Last played",
-      post: "New post",
-      push: "Pushed to {repo}",
+    /** after Shut Down: a dark screen and a power button */
+    off: {
+      label: "emOS is off",
+      power: "Turn emOS on",
+      hint: "Press any key to turn emOS back on",
+      hintTouch: "Tap to turn emOS back on",
     },
   },
   term: {
@@ -68,7 +59,7 @@ const en = {
         date: "date and time in Toulouse",
         echo: "print some text",
         history: "previous commands",
-        lock: "lock the screen",
+        shutdown: "turn emOS off",
         clear: "clear the screen (Ctrl+L)",
         exit: "close the terminal (Esc)",
         git: "this site's real history",
@@ -109,7 +100,7 @@ const en = {
       foot: "I reply in English or French.",
     },
     secrets: [
-      "1. Type reboot to see the boot again, or lock to lock the screen.",
+      "1. Type reboot to see the boot again, or shutdown to turn emOS off.",
       "2. Press ` anywhere and I'll show up.",
       "3. sudo make me a sandwich",
     ],
@@ -241,6 +232,7 @@ const en = {
       vim: "You're in vim now. Kidding: type :q to leave (it even works).",
       quit: "bye",
       reboot: "Rebooting…",
+      shutdown: "Shutting down…",
       moo: "study hard, moo",
       coffee: "No coffee machine on this system.",
       ping: "pong from Toulouse, {ms} ms",
@@ -264,21 +256,11 @@ const fr: typeof en = {
     ],
     skip: "Échap pour passer",
     skipTouch: "Touchez pour passer",
-    name: "Elliot Moreau",
-    lock: "Écran verrouillé",
-    password: "Mot de passe",
-    placeholder: "Saisir le mot de passe",
-    hint: "N’importe quel mot de passe fonctionne.",
-    unlock: "Déverrouiller",
-    unlockTouch: "Touchez pour déverrouiller",
-    away: "En voyage à {city}",
-    awayTime: "{time} là-bas",
-    notes: {
-      label: "Notifications",
-      playing: "En écoute",
-      played: "Écouté récemment",
-      post: "Nouvel article",
-      push: "Push sur {repo}",
+    off: {
+      label: "emOS est éteint",
+      power: "Allumer emOS",
+      hint: "Appuyez sur une touche pour rallumer emOS",
+      hintTouch: "Touchez pour rallumer emOS",
     },
   },
   term: {
@@ -314,7 +296,7 @@ const fr: typeof en = {
         date: "date et heure à Toulouse",
         echo: "afficher du texte",
         history: "commandes précédentes",
-        lock: "verrouiller l’écran",
+        shutdown: "éteindre emOS",
         clear: "effacer l’écran (Ctrl+L)",
         exit: "fermer le terminal (Échap)",
         git: "l’historique réel de ce site",
@@ -354,7 +336,7 @@ const fr: typeof en = {
       foot: "Je réponds en français ou en anglais.",
     },
     secrets: [
-      "1. Tapez reboot pour revoir le démarrage, ou lock pour verrouiller l’écran.",
+      "1. Tapez reboot pour revoir le démarrage, ou shutdown pour éteindre emOS.",
       "2. Appuyez sur ` n’importe où et j’arrive.",
       "3. sudo make me a sandwich",
     ],
@@ -484,6 +466,7 @@ const fr: typeof en = {
       vim: "Vous êtes dans vim. Je plaisante : tapez :q pour sortir (ça marche, en plus).",
       quit: "salut",
       reboot: "Redémarrage…",
+      shutdown: "Extinction…",
       moo: "révise bien, meuh",
       coffee: "Pas de machine à café sur ce système.",
       ping: "pong depuis Toulouse, {ms} ms",

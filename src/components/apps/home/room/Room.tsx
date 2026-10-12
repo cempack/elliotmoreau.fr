@@ -43,7 +43,7 @@ const parisHM = () => {
   return { hour: Number(p.find((x) => x.type === "hour")?.value ?? 0), minute: Number(p.find((x) => x.type === "minute")?.value ?? 0) };
 };
 
-/** an element's box as laid out, transforms aside (the desk rises in under the lock screen) */
+/** an element's box as laid out, transforms aside (the desk rises in as the boot clears) */
 const layoutRect = (el: HTMLElement) => {
   let x = 0;
   let y = 0;

@@ -3,8 +3,9 @@
 Personal site of Elliot Moreau, a student at Epitech in Toulouse, built as **emOS**: the site works like my
 Omarchy desktop. A waybar-style top bar whose workspaces appear as you open apps, bordered tiled
 windows over a pixel-art valley whose sky follows the time in Toulouse, every
-page an app, Spotlight, a Terminal, a boot that plays the pixel name and a
-lock screen. Bilingual (EN at `/`, FR at `/fr`).
+page an app, Spotlight, a Terminal, and a first visit that arrives from space
+straight onto the Desktop (Restart plays the pixel-name boot; Shut Down turns
+the screen off). Bilingual (EN at `/`, FR at `/fr`).
 
 Stack: Next.js 16 (App Router) · React 19 · TypeScript · Tailwind v4 ·
 `motion` · Lenis. Deploys on Vercel.
@@ -30,7 +31,7 @@ the empty states locally.
 | Var | Used for |
 | --- | --- |
 | `GITHUB_TOKEN` | Projects + last push (higher rate limit, README screenshots) |
-| `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` / `SPOTIFY_REFRESH_TOKEN` | Now playing (top bar, lock screen, Now app) |
+| `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` / `SPOTIFY_REFRESH_TOKEN` | Now playing (top bar, Now app) |
 | `GHOST_API_URL` / `GHOST_CONTENT_KEY` | Latest posts (Writing app, Desktop, Spotlight) |
 | `GHOST_ADMIN_KEY` | Newsletter subscribe (server-side only) |
 | `NEXT_PUBLIC_BLOG_URL` | Links out to the blog |

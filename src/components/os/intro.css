@@ -1,11 +1,13 @@
-/* ─────────────────────── emOS intro: boot → lock → desktop ───────────────────────
+/* ─────────────────────── emOS intro: boot → desktop ───────────────────────
    The first-visit boot is CSS keyframes timed from first paint, so it
    plays before hydration. Timeline (ms):
      0–3400     boot: the name decrypts, the log runs, the bar fills
-     3460–3800  boot fades out; the lock screen is underneath
-     3800       lock screen settles in (JS takes over from here)
-   Skipping (data-skip) or locking later (data-mode=relock) plays the lock's
-   entrance at once. Keep BOOT_MS in Intro.tsx in step with these delays. */
+     3460–3800  boot fades out onto the Desktop, which comes in piece by
+                piece (Gate.tsx: the wallpaper settles, the menu bar drops
+                in, the Dock rises, the widgets and icons arrive)
+   A first visit that hydrates early arrives from space instead (Arrival).
+   Skipping (data-skip) clears at once. Keep BOOT_MS in Gate.tsx in step
+   with these delays. Shut Down (Off.tsx) is at the end. */
 
 .os-intro {
   position: fixed;
@@ -35,8 +37,8 @@
   background: #050706;
   animation: os-boot-out 340ms var(--ease-in-quint) 3460ms both;
 }
-/* once the lock has taken over, the faded boot screen never takes a tap */
-.os-intro:is([data-phase="lock"], [data-phase="out"]) .os-intro-boot {
+/* once the Desktop is coming in, the faded boot screen never takes a tap */
+.os-intro[data-phase="out"] .os-intro-boot {
   pointer-events: none;
 }
 .os-intro[data-skip] .os-intro-boot {
@@ -238,292 +240,8 @@
   right: 24px;
 }
 
-/* ───────── lock screen ───────── */
-
-/* No opacity on the lock itself or anything above the veil: an ancestor
-   with opacity (or an opacity animation) would stop the veil's blur. */
-.os-intro-lock {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-}
-/* the desktop behind, blurred and dimmed (hyprlock's screenshot blur) */
-.os-lock-veil {
-  position: absolute;
-  inset: 0;
-  /* dark enough on its own that nothing behind reads through, even where
-     the blur is weak; one blur radius, which every engine renders */
-  background:
-    radial-gradient(120% 70% at 50% 30%, color-mix(in srgb, var(--color-ink-950) 50%, transparent), color-mix(in srgb, var(--color-ink-950) 82%, transparent)),
-    rgba(8, 11, 10, 0.5);
-  /* prefixed first: the build keeps only the last of the pair, and
-     Chromium reads only the unprefixed one */
-  -webkit-backdrop-filter: blur(22px) saturate(1.1);
-  backdrop-filter: blur(22px) saturate(1.1);
-  animation: os-lock-in 620ms var(--ease-out-quint) 3700ms both;
-}
-.os-intro[data-skip] .os-lock-veil,
-.os-intro[data-mode="relock"] .os-lock-veil {
-  animation: os-lock-in 420ms var(--ease-out-quint) both;
-}
-.os-intro[data-phase="out"] .os-lock-veil {
-  animation: os-lock-out 520ms var(--ease-out-quint) both;
-}
-@keyframes os-lock-in {
-  from {
-    opacity: 0;
-  }
-}
-@keyframes os-lock-out {
-  to {
-    opacity: 0;
-  }
-}
-@media (prefers-reduced-transparency: reduce) {
-  .os-lock-veil {
-    backdrop-filter: none;
-    background: var(--color-ink-950);
-  }
-}
-.os-lock-ui {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: max(env(safe-area-inset-top), 9vh) 24px max(env(safe-area-inset-bottom), 7vh);
-  text-align: center;
-  transition:
-    opacity 0.34s var(--ease-out-quint),
-    transform 0.4s var(--ease-out-quint);
-}
 .os-intro[data-phase="out"] {
   pointer-events: none;
-}
-.os-intro[data-phase="out"] .os-lock-ui {
-  opacity: 0;
-  transform: translateY(-28px);
-}
-
-.os-lock-when {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.os-lock-date {
-  min-height: 1.3em;
-  color: var(--color-label-2);
-  font: 500 clamp(0.9375rem, 1.3vw, 1.125rem) / 1.3 var(--font-mono);
-}
-.os-lock-date::first-letter {
-  text-transform: uppercase;
-}
-.os-lock-time {
-  margin-top: 4px;
-  color: var(--color-label);
-  font: 300 clamp(5rem, 13vw, 10rem) / 1 var(--font-mono);
-  letter-spacing: -0.04em;
-}
-
-/* notifications: what changed while you were away */
-.os-lock-notes {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: min(380px, 100%);
-  margin-top: clamp(24px, 5vh, 48px);
-  list-style: none;
-  text-align: left;
-}
-.os-lock-note {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 11px 14px;
-  border-radius: 10px;
-  background: rgba(14, 18, 16, 0.72);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-border-active) 14%, transparent);
-}
-.os-lock-note-glyph {
-  flex: none;
-  margin-top: 2px;
-  color: var(--color-signal);
-}
-.os-lock-note-body {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-}
-.os-lock-note-kicker {
-  display: flex;
-  gap: 8px;
-  color: var(--color-label-3);
-  font: 500 11px/1.3 var(--font-mono);
-}
-.os-lock-note-when {
-  margin-left: auto;
-  white-space: nowrap;
-}
-.os-lock-note-text {
-  overflow: hidden;
-  color: var(--color-label);
-  font-size: 0.875rem;
-  font-weight: 500;
-  line-height: 1.35;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-/* who's logging in, and the field */
-.os-lock-auth {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: min(320px, 100%);
-  margin-top: auto;
-}
-.os-lock-avatar {
-  display: grid;
-  place-items: center;
-  width: 64px;
-  height: 64px;
-  border-radius: 12px;
-  background: var(--color-ink-800);
-  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-border-active) 30%, transparent);
-}
-.os-lock-logo {
-  display: block;
-  width: 40px;
-  height: auto;
-}
-.os-lock-name {
-  margin-top: 12px;
-  font: 600 1rem/1.25 var(--font-sans);
-}
-.os-lock-field {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 100%;
-  height: 46px;
-  margin-top: 16px;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--color-ink-950) 78%, transparent);
-  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-border-active) 30%, transparent);
-  transition: box-shadow 0.2s;
-}
-.os-lock-field:focus-within {
-  box-shadow: inset 0 0 0 2px var(--color-signal);
-}
-.os-lock-auth[data-checking] .os-lock-field {
-  box-shadow: inset 0 0 0 2px var(--color-signal);
-  animation: os-lock-check 0.38s ease-in-out;
-}
-@keyframes os-lock-check {
-  50% {
-    opacity: 0.6;
-  }
-}
-.os-lock-input {
-  flex: 1;
-  min-width: 0;
-  height: 100%;
-  padding: 0 0 0 16px;
-  border: 0;
-  background: none;
-  color: var(--color-label);
-  font: 500 15px/1 var(--font-mono);
-  letter-spacing: 0.08em;
-  outline: none;
-}
-.os-lock-input::placeholder {
-  color: var(--color-label-3);
-  letter-spacing: 0;
-}
-.os-lock-go {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 46px;
-  height: 46px;
-  border: 0;
-  border-radius: 10px;
-  background: none;
-  color: var(--color-label-2);
-  cursor: pointer;
-}
-.os-lock-go:hover {
-  color: var(--color-signal);
-}
-.os-lock-go:focus-visible {
-  outline-offset: -6px;
-}
-.os-lock-tap {
-  display: none;
-  width: 100%;
-  height: 50px;
-  margin-top: 16px;
-  border: 0;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--color-ink-950) 78%, transparent);
-  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-border-active) 30%, transparent);
-  color: var(--color-label);
-  font: 500 15px/1 var(--font-mono);
-}
-.os-lock-tap:active {
-  box-shadow: inset 0 0 0 2px var(--color-signal);
-}
-.os-lock-hint {
-  margin-top: 10px;
-  color: var(--color-label-3);
-  font: 500 12px/1.4 var(--font-mono);
-}
-/* touch: a tap, not a keyboard */
-@media (pointer: coarse) {
-  .os-lock-field {
-    display: none;
-  }
-  .os-lock-tap {
-    display: block;
-  }
-  .os-lock-hint {
-    display: none;
-  }
-}
-
-/* entrance: the parts settle in after the boot */
-.os-intro-lock .os-lock-when,
-.os-intro-lock .os-lock-notes,
-.os-intro-lock .os-lock-auth {
-  animation: os-lock-rise 640ms var(--ease-out-quint) both;
-}
-.os-intro-lock .os-lock-when {
-  animation-delay: 3720ms;
-}
-.os-intro-lock .os-lock-notes {
-  animation-delay: 3820ms;
-}
-.os-intro-lock .os-lock-auth {
-  animation-delay: 3900ms;
-}
-.os-intro[data-skip] .os-lock-when,
-.os-intro[data-mode="relock"] .os-lock-when {
-  animation-delay: 40ms;
-}
-.os-intro[data-skip] .os-lock-notes,
-.os-intro[data-mode="relock"] .os-lock-notes {
-  animation-delay: 120ms;
-}
-.os-intro[data-skip] .os-lock-auth,
-.os-intro[data-mode="relock"] .os-lock-auth {
-  animation-delay: 180ms;
-}
-@keyframes os-lock-rise {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
 }
 
 /* ───────── small screens ───────── */
@@ -553,50 +271,99 @@
     line-height: 17px;
     min-height: calc(8 * 17px);
   }
-  .os-lock-ui {
-    padding-top: max(env(safe-area-inset-top), 8vh);
-  }
 }
 @media (min-width: 1600px) and (min-height: 900px) {
   .os-boot-center {
     --k: 0.75;
   }
 }
-@media (max-height: 640px) {
-  .os-lock-notes > :nth-child(n + 3) {
-    display: none;
-  }
-}
 
-/* while locked, the top bar and the tab bar step away: the lock is the
-   whole screen (they stay inert underneath anyway) */
-html[data-intro-up="first"]:not([data-intro="done"]) :is(.os-menubar, .os-tabbar, .os-dock),
-html[data-intro-up="relock"] :is(.os-menubar, .os-tabbar, .os-dock) {
+/* while the boot covers the screen, the top bar and the Dock wait out of
+   sight (inert underneath anyway); they come in as it clears (Gate.tsx) */
+html[data-intro-up="first"]:not([data-intro="done"]) :is(.os-menubar, .os-tabbar, .os-dock) {
   visibility: hidden;
 }
 
-/* away: the other city under the clock, and its skyline at the foot */
-.os-lock-away {
+/* ───────── Shut Down: the screen goes dark, one power button (Off.tsx) ───────── */
+
+.os-off {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  background: #050607;
+  color: var(--color-label);
+  /* a display powering off: the picture dims away, quickly at the end */
+  animation: os-off-in 820ms cubic-bezier(0.55, 0, 0.75, 0.2) both;
+}
+@keyframes os-off-in {
+  from {
+    opacity: 0;
+  }
+}
+.os-off-ui {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: center;
-  gap: 4px 12px;
-  margin-top: 10px;
-  font: 500 clamp(0.9375rem, 1.3vw, 1.0625rem) / 1.3 var(--font-mono);
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 24px;
+  animation: os-off-ui 900ms var(--ease-out-quint) 200ms both;
 }
-.os-lock-away-city {
-  color: var(--color-ion);
+@keyframes os-off-ui {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
 }
-.os-lock-away-time {
+.os-off-power {
+  display: grid;
+  place-items: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 50%;
   color: var(--color-label-2);
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  transition:
+    color 0.2s,
+    background-color 0.2s,
+    scale 0.2s var(--ease-out-quint);
+  -webkit-tap-highlight-color: transparent;
 }
-.os-lock-skyline {
-  position: absolute;
-  inset: auto 0 0;
-  width: 100%;
-  height: min(18vh, 150px);
-  opacity: 0.75;
-  image-rendering: pixelated;
-  pointer-events: none;
+.os-off-power:hover {
+  color: var(--color-label);
+  background: rgba(255, 255, 255, 0.07);
+}
+.os-off-power:active {
+  scale: 0.95;
+}
+.os-off-power:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 4px;
+}
+.os-off-hint {
+  margin: 0;
+  color: var(--color-label-3);
+  font: 500 0.8125rem/1.4 var(--font-mono);
+  text-align: center;
+  text-wrap: balance;
+}
+.os-off-hint-touch {
+  display: none;
+}
+@media (pointer: coarse) {
+  .os-off-hint-key {
+    display: none;
+  }
+  .os-off-hint-touch {
+    display: inline;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .os-off,
+  .os-off-ui {
+    animation-duration: 0.2s;
+    animation-delay: 0s;
+  }
 }

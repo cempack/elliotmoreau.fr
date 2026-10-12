@@ -4,14 +4,15 @@
  * are strummed 45ms apart through a low-pass that opens as they ring,
  * with a short echo for air. Peaks well under the UI blips' loudness.
  *
- * Must be called from inside a user gesture. A touch `pointerdown` isn't
+ * Called from inside a user gesture (or with `onlyIfAllowed`, wherever the
+ * browser still lets the page play sound). A touch `pointerdown` isn't
  * an activation event, so a context born suspended waits for the release
  * (pointerup / touchend / click) to resume, then plays.
  */
 const NOTES = [261.63, 329.63, 392.0, 493.88, 587.33];
 const ROOT = 130.81;
 
-export function playStartupChord() {
+export function playStartupChord({ onlyIfAllowed = false }: { onlyIfAllowed?: boolean } = {}) {
   const AC =
     window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!AC) return;
@@ -86,6 +87,11 @@ export function playStartupChord() {
 
   if (ctx.state === "running") {
     play();
+    return;
+  }
+  // outside a gesture (a boot after Restart reloaded the page): now or never, never on a later click
+  if (onlyIfAllowed) {
+    void ctx.close().catch(() => {});
     return;
   }
 

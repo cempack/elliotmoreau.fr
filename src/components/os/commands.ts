@@ -18,7 +18,7 @@ import { useSky, type SkyMode } from "./sky";
 import { useTerminal } from "./Terminal";
 import type { PanelId } from "./menubar/Panel";
 import { BLOG_URL, fill, restartOS } from "./menubar/util";
-import { lockOS } from "./Intro";
+import { shutdownOS } from "./Intro";
 import { openOverview } from "./overview";
 import { useMedia } from "@/hooks/env";
 import { useSpotifyStatus } from "@/hooks/useSpotifyStatus";
@@ -178,7 +178,7 @@ export function useSpotlightCommands(): Command[] {
         keywords: "notifications calendar calendrier clock horloge time heure",
         perform: openPanel("notifications"),
       },
-      { id: "lock", group: sp.actions, label: sp.lock, keywords: "lock screen verrouiller écran", perform: lockOS },
+      { id: "shutdown", group: sp.actions, label: sp.shutdown, keywords: "shut down power off turn off halt éteindre arrêter extinction", perform: shutdownOS },
       { id: "restart", group: sp.actions, label: sp.restart, keywords: "restart reboot boot redémarrer", perform: restartOS },
     ];
 

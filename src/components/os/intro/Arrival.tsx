@@ -4,7 +4,8 @@ import { useEffect, useRef } from "react";
 import { useI18n } from "@/i18n/client";
 import { useWeather } from "../weather";
 import { paintPlanet, project, sunVector, type Camera } from "@/components/apps/atlas/planet";
-import { MAP, paintToulouse } from "./toulouseMap";
+import { skyLight } from "../wallpaper/light";
+import { MAP, lightToulouse, paintToulouse } from "./toulouseMap";
 
 /** Toulouse, where every arrival ends */
 const HOME = { lat: 43.6, lon: 1.44 };
@@ -12,7 +13,7 @@ const HOME = { lat: 43.6, lon: 1.44 };
 const TURN = 1500;
 const LOUPE = 1000;
 const MAPT = 1300;
-const DIVE = 560;
+const DIVE = 680;
 const LAND = TURN + LOUPE + MAPT;
 const END = LAND + DIVE;
 const CELL = 3;
@@ -28,10 +29,10 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
  * planet under today's real sun turns until Toulouse faces you, the loupe
  * closes in until France fills the screen (the same pixels, bigger), then
  * Toulouse from above through drifting clouds (the Garonne, the canal,
- * the pink city), and the view drops onto the Pont Neuf as the lock screen
- * and the Desktop come up under it. About four seconds; any key or tap
- * skips it (the Gate listens). `onLand` hands over to the lock screen as
- * the dive starts; `onGone` once the last pixel has faded.
+ * the pink city), and the view drops onto the Pont Neuf as the Desktop
+ * settles in under it. About four seconds; any key or tap skips it (the
+ * Gate listens). `onLand` hands over to the Desktop as the dive starts;
+ * `onGone` once the last pixel has faded.
  */
 export function Arrival({ skipped, onLand, onGone }: { skipped: boolean; onLand: () => void; onGone: () => void }) {
   const { t, lang } = useI18n();
@@ -79,8 +80,9 @@ export function Arrival({ skipped, onLand, onGone }: { skipped: boolean; onLand:
     const R = Math.max(40, Math.round((Math.min(vw, vh) / CELL) * (vw < 640 ? 0.4 : 0.34)));
     const planet = document.createElement("canvas");
     const sun = sunVector(new Date());
-    // the map, painted once
+    // the map, painted once, in the light the Desktop is about to show (the dive lands in the same hour)
     const map = paintToulouse(near);
+    lightToulouse(map, skyLight(Date.now()));
     const ground = document.createElement("canvas");
     ground.width = ground.height = MAP;
     ground.getContext("2d")?.putImageData(map.ground, 0, 0);
@@ -163,7 +165,8 @@ export function Arrival({ skipped, onLand, onGone }: { skipped: boolean; onLand:
       if (e >= LAND && !landed) {
         landed = true;
         handlers.current.onLand();
-        root.animate([{ opacity: 1 }, { opacity: 0 }], { duration: DIVE, easing: "cubic-bezier(0.4, 0, 1, 1)", fill: "forwards" });
+        // the Desktop settles in underneath as the view dissolves into it
+        root.animate([{ opacity: 1 }, { opacity: 0 }], { duration: DIVE, easing: "cubic-bezier(0.45, 0, 0.55, 1)", fill: "forwards" });
       }
       if (e >= END) {
         handlers.current.onGone();

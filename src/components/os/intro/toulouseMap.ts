@@ -229,3 +229,51 @@ export function paintToulouse(near = 1): ToulouseMap {
 
   return { ground, clouds, bridge: { x: bx, y: by } };
 }
+
+/** the light the map is painted in: noon's ambient and sun (light.ts), so noon leaves it as it is */
+const NOON: RGB = [1.34, 1.39, 1.38];
+/** moonlight: the river and the streets still read on the darkest night */
+const MOON: RGB = [0.16, 0.18, 0.27];
+
+/**
+ * The map in the Desktop's own light for an instant (`skyLight`, the
+ * wallpaper's model): the same ambient and sun the city on the wallpaper
+ * gets, so the arrival lands in the hour the Desktop shows. At night the
+ * old town's windows come on and the clouds go grey-blue.
+ */
+export function lightToulouse(
+  map: ToulouseMap,
+  L: { amb: RGB; sunTint: RGB; sun: { elevation: number }; stars: number }
+) {
+  const up = Math.max(0, Math.sin((L.sun.elevation * Math.PI) / 180));
+  const k = [0, 1, 2].map((c) => Math.min(1.12, Math.max(MOON[c] * L.stars, (L.amb[c] + L.sunTint[c] * up) / NOON[c])));
+  const g = map.ground.data;
+  const N = map.ground.width;
+  for (let i = 0; i < g.length; i += 4) {
+    const r = g[i];
+    const gr = g[i + 1];
+    const b = g[i + 2];
+    g[i] = r * k[0];
+    g[i + 1] = gr * k[1];
+    g[i + 2] = b * k[2];
+    // after dark, a few windows in the brick: warm, never everywhere
+    if (L.stars > 0.25 && r > gr + 24 && r > b + 24) {
+      const p = (i >> 2) % N;
+      const q = ((i >> 2) / N) | 0;
+      const h = hash(p, q, 9);
+      if (h < 0.04 * L.stars) {
+        const warm: RGB = h < 0.02 * L.stars ? [246, 199, 107] : [217, 137, 74];
+        g[i] = warm[0];
+        g[i + 1] = warm[1];
+        g[i + 2] = warm[2];
+      }
+    }
+  }
+  const c = map.clouds.data;
+  for (let i = 0; i < c.length; i += 4) {
+    if (!c[i + 3]) continue;
+    c[i] = c[i] * Math.min(1, k[0] + 0.1);
+    c[i + 1] = c[i + 1] * Math.min(1, k[1] + 0.1);
+    c[i + 2] = c[i + 2] * Math.min(1, k[2] + 0.12);
+  }
+}

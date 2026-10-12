@@ -177,7 +177,7 @@ const HELP: { cmd: string; label: string; key: keyof Dict["system"]["term"]["hel
   { cmd: "date", label: "date", key: "date" },
   { cmd: "echo", label: "echo <text>", key: "echo", fill: true },
   { cmd: "history", label: "history", key: "history" },
-  { cmd: "lock", label: "lock", key: "lock" },
+  { cmd: "shutdown", label: "shutdown", key: "shutdown" },
   { cmd: "clear", label: "clear", key: "clear" },
   { cmd: "exit", label: "exit", key: "exit" },
   { cmd: "moulinette", label: "moulinette", key: "moulinette" },
@@ -936,19 +936,19 @@ const COMMANDS: Command[] = [
     },
   },
   {
-    name: "lock",
-    aliases: ["hyprlock", "loginctl"],
+    name: "shutdown",
+    aliases: ["poweroff", "halt"],
     run: (_a, ctx) => {
       window.setTimeout(() => {
         ctx.close();
-        window.dispatchEvent(new CustomEvent("em:lock"));
-      }, 200);
-      return SILENT;
+        window.dispatchEvent(new CustomEvent("em:shutdown"));
+      }, 420);
+      return <Line tone="dim">{ctx.d.system.term.eggs.shutdown}</Line>;
     },
   },
   {
     name: "reboot",
-    aliases: ["restart", "shutdown"],
+    aliases: ["restart"],
     hidden: true,
     run: (_a, ctx) => {
       window.setTimeout(ctx.reboot, 650);

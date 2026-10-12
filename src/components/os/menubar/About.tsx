@@ -4,10 +4,10 @@ import "../menubar-panels.css";
 
 import { useI18n } from "@/i18n/client";
 import { useSound } from "@/lib/sound";
-import { ArrowUpRight, GithubIcon, RestartIcon, RssIcon } from "./glyphs";
+import { ArrowUpRight, GithubIcon, PowerIcon, RestartIcon, RssIcon } from "./glyphs";
 import { DataPlate } from "./DataPlate";
 import { BLOG_RSS, SITE_REPO, restartOS } from "./util";
-import { lockOS } from "../Intro";
+import { shutdownOS } from "../Intro";
 import { PhoneTicket } from "./PhoneTicket";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -83,8 +83,16 @@ export function AboutPanel() {
           <span>{a.rss}</span>
           <ArrowUpRight />
         </a>
-        <button type="button" className="os-menubar-action os-menubar-action--ghost" onClick={lockOS}>
-          <span>{t.shell.menu.lock}</span>
+        <button
+          type="button"
+          className="os-menubar-action os-menubar-action--ghost"
+          onClick={() => {
+            blip("close");
+            shutdownOS();
+          }}
+        >
+          <PowerIcon />
+          <span>{t.shell.menu.shutdown}</span>
         </button>
         <button
           type="button"

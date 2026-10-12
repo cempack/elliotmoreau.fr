@@ -62,7 +62,7 @@ function useFocusAfterKeyboardClose(pathname: string) {
 }
 
 /**
- * When the boot/lock screen lifts away, the dock rises into place. Only
+ * When the boot clears into the Desktop, the dock rises into place. Only
  * if the intro actually covered the screen (first visit, or after a
  * Restart reload), never for returning visitors who skip it before paint.
  */
@@ -72,7 +72,7 @@ function useRiseAfterIntro() {
     // returning visitors, so "visible at mount" means it really covers us
     const intro = document.querySelector(".em-intro");
     let covered = !!intro && intro.getClientRects().length > 0;
-    const onDone = () => {
+    const onDone = (e: Event) => {
       if (!covered) return;
       covered = false;
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -80,7 +80,8 @@ function useRiseAfterIntro() {
         if (!el.getClientRects().length) continue;
         el.animate([{ transform: "translateY(calc(100% + 24px))" }, { transform: "translateY(0)" }], {
           duration: 760,
-          delay: 140,
+          // the gate says when its cover lifts (Gate.tsx)
+          delay: ((e as CustomEvent<{ delay?: number }>).detail?.delay ?? 0) + 200,
           easing: "cubic-bezier(0.22, 1, 0.36, 1)",
           fill: "backwards",
         });

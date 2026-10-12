@@ -3,9 +3,8 @@ import { clockIn, tzForAway } from "./tz";
 
 /**
  * Elliot's day, as a battery: charging overnight, full in the morning,
- * draining through the working day and the evening. Pure: the menu bar,
- * the lock screen and the battery's sentence all read the same answer for
- * the same minute. Hours are Toulouse's (the working-hours zone).
+ * draining through the working day and the evening. Pure: the menu bar
+ * and the battery's sentence read the same answer for the same minute. Hours are Toulouse's (the working-hours zone).
  */
 
 export type DayPhase = "asleep" | "morning" | "desk" | "evening" | "weekend" | "away";

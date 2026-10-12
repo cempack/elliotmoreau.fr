@@ -62,15 +62,18 @@ export function DesktopScene() {
     };
   }, []);
 
-  /* ── when the lock screen lifts (first visit this session), the desk
-     rises into place under it and the icons pop in, top to bottom ── */
+  /* ── when the boot clears (first visit this session, or a Restart), the
+     Desktop comes in: the widgets and the caption rise into place and the
+     icons settle down onto the wallpaper, the way a home screen arrives ── */
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const intro = document.querySelector(".em-intro");
     if (!intro || !intro.getClientRects().length) return;
-    const play = () => {
+    const play = (e: Event) => {
       const scene = sceneRef.current;
       if (!scene) return;
+      // the gate says when its cover lifts (Gate.tsx)
+      const base = (e as CustomEvent<{ delay?: number }>).detail?.delay ?? 0;
       const ease = "linear(0, 0.157 4.6%, 0.452 11%, 0.703 18.2%, 0.86 25.2%, 0.946 32.3%, 0.985 40%, 0.998 50%, 1)";
       const desk = Array.from(scene.querySelectorAll<HTMLElement>(".app-home-widget, .app-home-caption")).filter(
         (el) => el.getClientRects().length
@@ -78,15 +81,15 @@ export function DesktopScene() {
       desk.forEach((el, i) =>
         el.animate([{ opacity: 0, transform: "translateY(28px) scale(0.98)" }, { opacity: 1, transform: "none" }], {
           duration: 900,
-          delay: 40 + i * 60,
+          delay: base + 160 + i * 70,
           easing: ease,
           fill: "backwards",
         })
       );
       scene.querySelectorAll<HTMLElement>(".app-home-icon").forEach((el, i) =>
-        el.animate([{ opacity: 0, scale: "0.6" }, { opacity: 1, scale: "1" }], {
-          duration: 650,
-          delay: 200 + i * 45,
+        el.animate([{ opacity: 0, scale: "1.35" }, { opacity: 1, scale: "1" }], {
+          duration: 720,
+          delay: base + 260 + i * 45,
           easing: ease,
           fill: "backwards",
         })

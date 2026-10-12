@@ -78,11 +78,12 @@ export function fmtLongDate(d: Date, lang: Locale) {
 /**
  * Restart emOS: forget that this session already booted, fade the screen
  * to ink like a display powering down, and load the Desktop, where the
- * boot plays.
+ * boot plays (its text, the old way: the note tells the gate it's a restart).
  */
 export function restartOS() {
   try {
     sessionStorage.removeItem("em-intro");
+    sessionStorage.setItem("em-boot", "restart");
   } catch {}
   // a reboot closes every app: no workspace survives it
   resetWorkspaces();
