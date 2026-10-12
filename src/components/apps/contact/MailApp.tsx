@@ -16,7 +16,7 @@ import { Compose, type Mode, type Phase } from "./Compose";
 import { Elsewhere } from "./Elsewhere";
 import { KeyView } from "./KeyView";
 import { SentBox } from "./SentBox";
-import { HASH, Sidebar, type Box } from "./Sidebar";
+import { HASH, MailTabs, type Box } from "./Sidebar";
 import { G_SEND_UP } from "./glyphs";
 import { draftFile, fill } from "./mail";
 import { threadStore } from "./threads";
@@ -43,9 +43,9 @@ function DraftPath() {
 }
 
 /**
- * Mail (the /contact app). Mailboxes in one window: New message (the
- * compose sheet and its envelope), Sent (the visitor's own letters and
- * Elliot's replies, once there are any), Elsewhere (profiles) and PGP key.
+ * Mail (the /contact app). One column under a row of tabs: Write (the
+ * letter), Sent (the visitor's own letters and Elliot's replies, once
+ * there are any), Elsewhere (profiles) and PGP key.
  * All stay mounted, so a half-written message survives a look at the key,
  * and the inactive ones are simply hidden. The open mailbox lives in the
  * URL hash (#sent, #elsewhere, #pgp) so it can be linked. Before
@@ -145,8 +145,8 @@ export function MailApp({ mailReady = false }: { mailReady?: boolean }) {
           )}
         </>
       }
-      sidebar={<Sidebar box={shown} onSelect={select} sent={{ show: hasSent, unread: sent.unread }} />}
     >
+      <MailTabs box={shown} onSelect={select} sent={{ show: hasSent, unread: sent.unread }} />
       <div
         className="app-contact-views"
         data-anim={switched || undefined}

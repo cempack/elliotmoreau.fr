@@ -1,9 +1,8 @@
 // Strings for the Mail app (contact). Templates use {placeholders}; the dict
 // crosses the server → client boundary, so plain strings only.
 const en = {
-  /* mailboxes (sidebar on desktop, segmented strip on phones) */
+  /* mailboxes (the tabs over the page) */
   mailboxes: "Mailboxes",
-  boxCompose: "New message",
   boxComposeShort: "Write",
   boxElsewhere: "Elsewhere",
   boxKey: "PGP key",
@@ -11,21 +10,6 @@ const en = {
   habits: "I usually reply within {n} days, in English or French.",
   habitsOne: "I usually reply within a day, in English or French.",
   keyLink: "Private? Use my key",
-  /* the franking meter under the envelope */
-  meter: {
-    label: "Franking machine",
-    caption: "Send stamps it with a Toulouse postmark.",
-    load: "How full the mail link is",
-    full: "Too long: some mail apps would cut it",
-    prints: "Prints a Toulouse postmark, {date} at {time}",
-    ahead: "{place} {time}, {n} ahead",
-    behind: "{place} {time}, {n} behind",
-    yourTime: "Your time",
-    zoneNote: "From your device’s time zone, not your location",
-    letterLoad: "How full the letter is",
-    letterFull: "Full: 10,000 characters at most",
-  },
-
   /* toolbar */
   copyAddress: "Copy address",
   copyAddressLabel: "Copy {email}",
@@ -33,7 +17,6 @@ const en = {
   elsewhereDir: "elsewhere",
 
   /* compose */
-  composeEyebrow: "New message",
   composeTitle: "Say hello.",
   composeLead: "Send opens your mail app with everything filled in.",
   composeLabel: "New message to Elliot",
@@ -240,7 +223,6 @@ const en = {
 
 const fr: typeof en = {
   mailboxes: "Boîtes",
-  boxCompose: "Nouveau message",
   boxComposeShort: "Écrire",
   boxElsewhere: "Ailleurs",
   boxKey: "Clé PGP",
@@ -248,26 +230,11 @@ const fr: typeof en = {
   habits: "Je réponds en général sous {n} jours, en français ou en anglais.",
   habitsOne: "Je réponds en général dans la journée, en français ou en anglais.",
   keyLink: "Message privé ? Ma clé",
-  meter: {
-    label: "Machine à affranchir",
-    caption: "Envoyer y appose un cachet de Toulouse.",
-    load: "Remplissage du lien mail",
-    full: "Trop long : certaines messageries le couperaient",
-    prints: "Imprime un cachet de Toulouse, le {date} à {time}",
-    ahead: "{place} {time}, {n} d’avance",
-    behind: "{place} {time}, {n} de retard",
-    yourTime: "Chez vous",
-    zoneNote: "D’après le fuseau horaire de votre appareil, pas votre position",
-    letterLoad: "Remplissage de la lettre",
-    letterFull: "Pleine : 10 000 caractères au plus",
-  },
-
   copyAddress: "Copier l’adresse",
   copyAddressLabel: "Copier {email}",
   draftsDir: "brouillons",
   elsewhereDir: "ailleurs",
 
-  composeEyebrow: "Nouveau message",
   composeTitle: "Écrivez-moi.",
   composeLead: "Envoyer ouvre votre messagerie, avec tout déjà rempli.",
   composeLabel: "Nouveau message pour Elliot",

@@ -1,8 +1,8 @@
 /* ─────────────────────────── emOS · Mail (contact) ───────────────────────────
-   A compose sheet beside the envelope it will travel in; two more
-   mailboxes (Elsewhere, PGP key) in the same window. Calm panels on the
-   window's glass (never glass on glass), mono for system text, one lime
-   action per view. */
+   One column under a row of tabs (Write, Sent, Elsewhere, PGP key). Write
+   is the letter itself, postmarked in its corner; the globe only comes out
+   for the flight once it's sent. Calm panels on the window's glass (never
+   glass on glass), one lime action per view. */
 
 /* ── window chrome bits (subtitle path, toolbar) ── */
 .app-contact-tool {
@@ -84,44 +84,82 @@
   }
 }
 
-/* ── sidebar ── */
-.app-contact-side-label {
-  padding: 0.375rem 0.625rem 0.5rem;
-  color: var(--color-label-3);
-  font-size: var(--text-footnote);
-  font-weight: 600;
+/* ── tabs: the mailboxes, one row over the page ── */
+.app-contact-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 0.25rem;
+  width: max-content;
+  max-width: calc(100% - 2rem);
+  margin: 1.25rem auto 0;
+  padding: 0.25rem;
+  overflow-x: auto;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-ink-950) 42%, transparent);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  scrollbar-width: none;
 }
-.app-contact-nav-short {
+.app-contact-tabs::-webkit-scrollbar {
   display: none;
 }
-.app-contact-reply {
-  display: grid;
+.app-contact-tab {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
   gap: 0.5rem;
-  color: var(--color-label-3);
+  height: 2.125rem;
+  padding: 0 0.9375rem;
+  border-radius: 999px;
+  color: var(--color-label-2);
   font-size: var(--text-footnote);
-  line-height: var(--text-footnote--line-height);
+  font-weight: 600;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
 }
-@media (min-width: 1024px) {
-  .app-contact-side {
-    display: flex;
-    flex-direction: column;
-    min-height: calc(var(--os-win-view-h, 100svh) - 2.25rem);
+@media (hover: hover) {
+  .app-contact-tab:not([aria-current]):hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--color-label);
   }
 }
-@media (max-width: 1023px) {
-  .app-contact-nav-long {
-    display: none;
+.app-contact-tab[aria-current] {
+  background: var(--color-signal);
+  color: var(--color-ink-950);
+}
+.app-contact-tab-count {
+  min-width: 1.25rem;
+  padding: 0.0625rem 0.375rem;
+  border-radius: 999px;
+  background: var(--color-flare);
+  color: var(--color-label);
+  font-size: 0.75rem;
+  text-align: center;
+}
+@media (pointer: coarse) {
+  .app-contact-tab {
+    height: 2.5rem;
+    font-size: var(--text-callout);
   }
-  .app-contact-nav-short {
-    display: inline;
-  }
+}
+/* a shared link (#elsewhere, #pgp) lights its own tab before React arrives */
+html[data-mail-hash] .app-contact-tab[aria-current] {
+  background: none;
+  color: var(--color-label-2);
+}
+html[data-mail-hash="elsewhere"] .app-contact-tab[href$="#elsewhere"],
+html[data-mail-hash="pgp"] .app-contact-tab[href$="#pgp"] {
+  background: var(--color-signal);
+  color: var(--color-ink-950);
 }
 
 /* ── views ── */
 .app-contact-views {
   position: relative;
   container: app-contact / inline-size;
-  padding: 2.5rem clamp(1.25rem, 3.6vw, 3.25rem) 3.5rem;
+  padding: 2rem clamp(1.25rem, 3.6vw, 3.25rem) 3.5rem;
 }
 /* the #elsewhere / #pgp targets: at the very top, and a fragment load never scrolls to them */
 .app-contact-anchor {
@@ -149,37 +187,6 @@
 /* (the pre-paint script marks <html> with data-mail-hash until React takes over) */
 html[data-mail-hash] .app-contact-sendtool {
   display: none;
-}
-/* …and the mailbox list doesn't point at New message meanwhile */
-html[data-mail-hash] .app-contact .os-win-nav-thumb {
-  opacity: 0;
-}
-html[data-mail-hash] .app-contact .os-win-nav-item[data-active],
-html[data-mail-hash] .app-contact .os-win-nav-item[data-active] :is(.os-win-nav-icon, .os-win-nav-count) {
-  color: var(--color-label-3);
-}
-html[data-mail-hash="elsewhere"] .app-contact .os-win-nav-item[href$="#elsewhere"],
-html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"] {
-  color: var(--color-label);
-}
-html[data-mail-hash="elsewhere"] .app-contact .os-win-nav-item[href$="#elsewhere"]::after,
-html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
-  opacity: 1;
-  /* the same quiet slab as WinNav's thumb */
-  background: color-mix(in srgb, var(--color-label) 7.5%, transparent);
-}
-@media (max-width: 1023px) {
-  html[data-mail-hash="elsewhere"] .app-contact .os-win-nav-item[href$="#elsewhere"],
-  html[data-mail-hash="elsewhere"] .app-contact .os-win-nav-item[href$="#elsewhere"] *,
-  html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"],
-  html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"] * {
-    color: var(--color-ink-950);
-  }
-  html[data-mail-hash="elsewhere"] .app-contact .os-win-nav-item[href$="#elsewhere"]::after,
-  html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
-    background: var(--os-win-accent);
-    box-shadow: none;
-  }
 }
 .app-contact-views[data-anim] > .app-contact-view:not([data-off]) {
   animation: app-contact-view-in 0.34s var(--ease-out-quint) both;
@@ -371,86 +378,76 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
   }
 }
 
-/* ── compose ──
-   Phones: the letterbox stands beside the title, in sight from the first
-   paint, its caption under the habits line. Mid widths (laptops at 1024,
-   iPads): beside the title and lead, the sheet full width below. Wide: a
-   column of its own, sticky. */
+/* ── compose: one column, the letter in it ── */
 .app-contact-compose {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas:
-    "head stage"
-    "lead lead"
-    "habits habits"
-    "read read"
-    "card card"
-    "reply reply";
-  column-gap: 0.75rem;
-  align-items: start;
+  max-width: 42rem;
+  margin: 0 auto;
 }
-.app-contact-intro {
-  display: contents;
-}
-.app-contact-intro > .app-contact-head {
-  grid-area: head;
-  align-self: center;
-}
-.app-contact-intro > .app-contact-lead {
-  grid-area: lead;
-}
-.app-contact-intro > .app-contact-habits {
-  grid-area: habits;
-}
-/* narrow: the stage takes its own grid area beside the title, its caption a row of its own */
 .app-contact-stagecol {
   display: contents;
 }
-.app-contact-stagecol > .app-contact-stage {
-  grid-area: stage;
+/* the flight: nothing at rest; Send brings the globe out where the letter was */
+.app-contact-flight[data-show="rest"] {
+  display: none;
 }
-.app-contact-stagecol > .app-contact-stage-caption {
-  grid-area: read;
+.app-contact-flight {
+  margin-top: 1.5rem;
 }
-.app-contact-compose > .app-contact-card {
-  grid-area: card;
+.app-contact-compose[data-phase="sending"] > .app-contact-sheet {
+  display: none;
 }
-@container app-contact (min-width: 560px) {
-  .app-contact-compose {
-    grid-template-columns: minmax(0, 1fr) 12rem;
-    grid-template-areas:
-      "intro stage"
-      "intro read"
-      "card card"
-      "reply reply";
-    column-gap: 2rem;
-  }
-  .app-contact-intro {
-    display: block;
-    grid-area: intro;
-    align-self: center;
-  }
+/* …and the greeting steps aside, so the flight and what came of it share the screen */
+.app-contact-compose:not([data-phase="compose"]) > .app-contact-intro {
+  display: none;
 }
+.app-contact-compose:not([data-phase="compose"]) > .app-contact-stagecol > .app-contact-flight {
+  margin-top: 0;
+}
+.app-contact-flight .app-contact-stage {
+  max-width: min(17rem, 100%);
+}
+/* wide: once it has landed, the globe beside what came of it */
 @container app-contact (min-width: 760px) {
-  .app-contact-compose {
-    grid-template-columns: minmax(0, 1fr) clamp(16.5rem, 31%, 20rem);
-    grid-template-rows: auto auto 1fr;
-    grid-template-areas:
-      "intro stage"
-      "card stage"
-      "reply stage";
-    column-gap: clamp(2rem, 4.5cqi, 4rem);
+  .app-contact-compose:is([data-phase="sent"], [data-phase="ready"]) {
+    display: grid;
+    grid-template-columns: 16rem minmax(0, 1fr);
+    column-gap: 2.5rem;
+    align-items: center;
+    max-width: 56rem;
   }
-  .app-contact-intro {
-    align-self: start;
-  }
-  /* wide: the stage in a sticky column of its own, beside the sheet (stage, caption, meter, stacked) */
-  .app-contact-stagecol {
+  .app-contact-compose:is([data-phase="sent"], [data-phase="ready"]) > .app-contact-stagecol {
     display: block;
-    grid-area: stage;
-    position: sticky;
-    top: calc(var(--os-win-sticky-top) + 1rem);
-    padding-top: 0.5rem;
+  }
+  .app-contact-compose:is([data-phase="sent"], [data-phase="ready"]) > .app-contact-card {
+    margin-top: 0;
+  }
+}
+/* the postmark, struck in the sheet's corner */
+.app-contact-postmark {
+  position: absolute;
+  top: 0.625rem;
+  right: 0.875rem;
+  z-index: 1;
+  width: 5.5rem;
+  color: color-mix(in oklab, var(--color-lilac) 70%, var(--color-label-3));
+  opacity: 0.7;
+  rotate: -7deg;
+  pointer-events: none;
+}
+.app-contact-postmark svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.app-contact-row--to {
+  padding-right: 7rem;
+}
+@container app-contact (max-width: 30rem) {
+  .app-contact-postmark {
+    display: none;
+  }
+  .app-contact-row--to {
+    padding-right: 0.75rem;
   }
 }
 /* keyboard focus and scrollIntoView keep fields clear of the title bar and the Dock */
@@ -858,13 +855,13 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
   }
 }
 
-/* ── the stage: Elliot's letterbox at rest, the planet for the flight ── */
+/* ── the flight: the planet, only once a letter is sent ── */
 .app-contact-env {
   display: block;
   width: 100%;
   height: auto;
 }
-/* the box and the globe share one cell; only one is shown */
+/* the flight: the globe, square, centred where the letter was */
 .app-contact-stage {
   position: relative;
   display: grid;
@@ -880,15 +877,7 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
   min-width: 0;
   min-height: 0;
 }
-.app-contact-postbox {
-  display: grid;
-  place-items: center;
-}
-.app-contact-postbox canvas {
-  display: block;
-  image-rendering: pixelated;
-}
-/* the globe steps in as the box dissolves (the box dithers itself out on its canvas) */
+/* the globe fades in in pixel steps */
 .app-contact-stage-globe {
   visibility: hidden;
   opacity: 0;
@@ -909,7 +898,7 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
     transition: none;
   }
 }
-/* the stage's one caption: what the box prints, in words; the flight's route; where it landed */
+/* the flight's one caption: its route, then where it landed */
 .app-contact-stage-caption {
   min-height: 2.8em;
   margin-top: 0.75rem;
@@ -953,198 +942,14 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
   color: var(--color-label-2);
   font-style: normal;
 }
-/* phones: the box stands beside the title; its caption runs under the habits line */
+/* phones: the route's names would crowd a small globe */
 @container app-contact (max-width: 559px) {
-  .app-contact-stage {
-    width: 8.5rem;
-  }
-  .app-contact-stage-caption {
-    min-height: 2.9em;
-    margin-top: 0.375rem;
-    color: var(--color-label-3);
-    text-align: left;
-    text-wrap: pretty;
-  }
   .app-contact-globe-pin {
     display: none;
   }
 }
-/* mid widths: beside the title and lead, a little taller than wide (the post cut by the edge) */
-@container app-contact (min-width: 560px) and (max-width: 759px) {
-  .app-contact-stage {
-    width: 12rem;
-    aspect-ratio: 4 / 5;
-  }
-  .app-contact-globe-pin {
-    display: none;
-  }
-}
-@media (min-width: 768px) and (max-height: 820px) {
-  .app-contact-stage {
-    max-width: 17rem;
-  }
-}
-/* ── the franking meter: under the envelope on wide windows, under the sheet on narrow ones ── */
-.app-contact-stagecol > .app-contact-meter {
-  grid-area: reply;
-}
-.app-contact-meter {
-  --meter-body: var(--color-ink-700);
-  --meter-panel: var(--color-ink-600);
-  --meter-bevel: var(--color-ink-500);
-  --meter-well: #121513;
-  width: 100%;
-  max-width: 26rem;
-  margin-top: 1.5rem;
-}
-.app-contact-meter-body {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) 2.25rem;
-  align-items: stretch;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  border-radius: 4px;
-  background: var(--meter-body);
-  box-shadow:
-    inset 0 0 0 1px var(--meter-bevel),
-    inset 0 2px 0 rgba(255, 255, 255, 0.04),
-    0 16px 28px -18px rgba(0, 0, 0, 0.9);
-}
-/* left: the date line, the time wheels and the notched scale */
-.app-contact-meter-counter {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 0.4375rem;
-  padding: 0.4375rem 0.5rem 0.5rem;
-  border-radius: 2px;
-  background: var(--meter-panel);
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35);
-}
-.app-contact-meter-date {
-  display: flex;
-  color: var(--color-label-3);
-}
-.app-contact-meter-date svg {
-  width: auto;
-  height: 7px;
-}
-.app-contact-meter-wheels {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-.app-contact-meter-wheel {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 14px;
-  height: 20px;
-  overflow: hidden;
-  border-radius: 1px;
-  background: linear-gradient(180deg, #0c0e0d, #1a1e1b 30% 70%, #0c0e0d);
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.6);
-  color: var(--color-ember);
-}
-.app-contact-meter-digit {
-  grid-area: 1 / 1;
-  width: 10px;
-  height: 14px;
-  fill: currentColor;
-}
-.app-contact-meter-colon {
-  width: 2px;
-  height: 8px;
-  margin-inline: 1px;
-  background: linear-gradient(var(--color-ember) 0 2px, transparent 2px 6px, var(--color-ember) 6px);
-}
-.app-contact-meter-scale {
-  display: flex;
-  gap: 2px;
-}
-.app-contact-meter-scale i {
-  width: 4px;
-  height: 6px;
-  background: #1a1e1b;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.4);
-}
-.app-contact-meter-scale i[data-on] {
-  background: var(--color-signal);
-}
-.app-contact-meter-scale i[data-cut] {
-  background: var(--color-flare);
-}
-/* centre: the die window, a live preview of what it prints */
-.app-contact-meter-die {
-  display: grid;
-  place-items: center;
-  min-width: 0;
-  padding: 0.375rem;
-  border-radius: 2px;
-  background: var(--meter-well);
-  box-shadow:
-    inset 0 0 0 1px rgba(0, 0, 0, 0.6),
-    inset 0 2px 6px rgba(0, 0, 0, 0.6);
-  color: var(--color-lilac);
-}
-.app-contact-meter-mark {
-  display: block;
-  width: 148px;
-  max-width: 100%;
-  height: auto;
-  aspect-ratio: 74 / 43;
-}
-/* right: the lever in its slot */
-.app-contact-meter-lever {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  min-height: calc(64px + 2.75rem);
-}
-.app-contact-meter-slot {
-  position: absolute;
-  top: 0.375rem;
-  left: 50%;
-  width: 6px;
-  /* exactly the handle's travel */
-  height: calc(64px + 2.75rem - 0.75rem);
-  translate: -50% 0;
-  border-radius: 3px;
-  background: #090b0a;
-  box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-.app-contact-meter-handle {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  display: grid;
-  place-items: center;
-  width: 2.25rem;
-  height: 2.75rem;
-  margin-left: -1.125rem;
-  border: 0;
-  padding: 0;
-  background: none;
-}
-/* a pixel ball on a short stem */
-.app-contact-meter-knob {
-  position: relative;
-  width: 16px;
-  height: 16px;
-  background: var(--color-ember);
-  clip-path: polygon(25% 0, 75% 0, 100% 25%, 100% 75%, 75% 100%, 25% 100%, 0 75%, 0 25%);
-  box-shadow:
-    inset 4px 4px 0 -2px #f3dca0,
-    inset -3px -3px 0 #a88a46;
-}
-/* what the machine is for, and the visitor's time against Toulouse's */
-.app-contact-meter-caption {
-  margin-top: 0.625rem;
-  padding: 0 0.125rem;
-  color: var(--color-label-3);
-  font: 500 0.75rem/1.45 var(--font-mono);
-  text-wrap: pretty;
-}
+
+
 .app-contact-habits-key {
   color: var(--color-label-2);
   text-decoration: underline;
@@ -1154,28 +959,6 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
 }
 .app-contact-habits-key:hover {
   text-decoration-color: currentColor;
-}
-@container app-contact (min-width: 760px) {
-  .app-contact-meter {
-    width: 16.5rem;
-    margin: 1.5rem auto 0;
-  }
-  .app-contact-meter-body {
-    grid-template-columns: auto minmax(0, 1fr);
-    grid-template-rows: auto auto;
-  }
-  /* the column is narrow: the die runs under the wheels, the lever on the right of both */
-  .app-contact-meter-counter {
-    grid-row: 1;
-  }
-  .app-contact-meter-die {
-    grid-column: 1 / 2;
-    grid-row: 2;
-  }
-  .app-contact-meter-lever {
-    grid-column: 2;
-    grid-row: 1 / 3;
-  }
 }
 /* the struck postmark on the envelope: no fade (real ink doesn't), one squash */
 .app-contact-env-mark[data-fresh] {

@@ -14,10 +14,10 @@ import { EmosMark } from "@/components/os/menubar/glyphs";
 import { sendLetter, type SendError } from "./api";
 import { CopyButton } from "./Copy";
 import { useStatus } from "@/components/os/SiteData";
-import { Meter, type MeterHandle } from "./Meter";
 import { markAt, type Mark } from "./postmark";
 import { ReadEstimate } from "./ReadEstimate";
 import { MailStage, type StageHandle } from "./MailStage";
+import { Postmark } from "./Postmark";
 import { G_ARROW, G_OPEN, G_SEND } from "./glyphs";
 import {
   EMAIL_RE,
@@ -170,7 +170,6 @@ export function Compose({
   };
 
   const stageRef = useRef<StageHandle>(null);
-  const meterRef = useRef<MeterHandle>(null);
   const sendRef = useRef<HTMLButtonElement>(null);
   const footRef = useRef<HTMLDivElement>(null);
   const footEndRef = useRef<HTMLSpanElement>(null);
@@ -245,9 +244,11 @@ export function Compose({
     const h = resultRef.current;
     const card = h?.closest<HTMLElement>(".app-contact-result");
     if (!h || !card) return;
-    // keep the confirmation clear of the sticky title bar before focusing it
+    // keep the confirmation (and the landed globe over it, on phones) clear of the sticky title bar before focusing it
+    const flight = card.parentElement?.querySelector<HTMLElement>('.app-contact-flight:not([data-show="rest"])');
+    const anchor = flight && flight.getBoundingClientRect().top < card.getBoundingClientRect().top ? flight : card;
     const top = parseFloat(getComputedStyle(card).scrollMarginTop) || 0;
-    const rTop = card.getBoundingClientRect().top - scrollerTop();
+    const rTop = anchor.getBoundingClientRect().top - scrollerTop();
     if (rTop < top || rTop > (scrollerBottom() - scrollerTop()) * 0.55) scrollToY(scrollTop() + rTop - top, !reduced);
     h.focus({ preventScroll: true });
   }, [phase, reduced, sendError]);
@@ -386,13 +387,14 @@ export function Compose({
     return opened;
   };
 
-  /** Send, ⌘↵ and the toolbar pull the franking meter's lever; it strikes, then the letter leaves */
+  /** Send, ⌘↵ and the toolbar: nothing written yet says so; otherwise it's postmarked and off it goes */
   const send = () => {
     if (phase !== "compose") return;
-    meterRef.current?.pull();
+    if (blocker !== null) onRefuse();
+    else onStrike();
   };
 
-  /** the die struck the envelope: the postmark is on it, and off it goes */
+  /** the postmark goes on, and off it goes */
   const onStrike = () => {
     if (phase !== "compose") return;
     setMark(markAt(new Date()));
@@ -477,10 +479,9 @@ export function Compose({
   const deliveredHere = phase === "sent" && delivered != null;
 
   return (
-    <div className="app-contact-compose">
+    <div className="app-contact-compose" data-phase={phase}>
       <div className="app-contact-intro">
         <header className="app-contact-head">
-          <p className="app-contact-eyebrow">{c.composeEyebrow}</p>
           <h2 className="app-contact-title">{c.composeTitle}</h2>
         </header>
         <p className="app-contact-lead">{sending ? c.composeLeadSend : c.composeLead}</p>
@@ -496,23 +497,11 @@ export function Compose({
         <MailStage
           ref={stageRef}
           phase={phase}
-          mode={mode}
           stamped={mark != null}
           ready={blocker === null}
-          delivered={delivered}
           reduced={reduced}
           onLand={land}
           doneLabel={delivered ? c.delivered : undefined}
-        />
-        <Meter
-          ref={meterRef}
-          empty={blocker !== null}
-          load={sending ? draft.body.length / LETTER_MAX : href.length / MAILTO_SAFE}
-          tooLong={sending ? draft.body.length >= LETTER_MAX : tooLong}
-          scale={sending ? { load: c.meter.letterLoad, full: c.meter.letterFull } : undefined}
-          reduced={reduced}
-          onStrike={onStrike}
-          onRefuse={onRefuse}
         />
       </div>
 
@@ -538,7 +527,8 @@ export function Compose({
             }
           }}
         >
-          <div className="app-contact-row">
+          <Postmark className="app-contact-postmark" />
+          <div className="app-contact-row app-contact-row--to">
             <span className="app-contact-row-label" id={`${uid}-to`}>
               {c.to}
             </span>
