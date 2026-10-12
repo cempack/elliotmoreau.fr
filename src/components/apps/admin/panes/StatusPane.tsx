@@ -61,7 +61,6 @@ export function StatusPane({ data, onSaved }: { data: Overview; onSaved: () => v
       <div className="app-admin-preview" aria-live="polite">
         <span className="app-admin-preview-label">{s.preview}</span>
         <p className="app-admin-preview-line">
-          <span className="app-admin-dot" data-state={est.state} aria-hidden />
           {preview} {fill(s.replyBy, { n: draft.replyDays })}
         </p>
         <span className="app-admin-hint">{fill(s.resolved, { where: resolved })}</span>

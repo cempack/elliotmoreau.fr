@@ -468,9 +468,6 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
   font-size: var(--text-callout);
   transition: color 0.2s;
 }
-.app-contact-row:focus-within {
-  box-shadow: inset 2px 0 0 var(--color-signal);
-}
 .app-contact-row:focus-within .app-contact-row-label {
   color: var(--color-signal);
 }
@@ -598,9 +595,6 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
 }
 .app-contact-body {
   transition: box-shadow 0.2s;
-}
-.app-contact-body:focus-within {
-  box-shadow: inset 2px 0 0 var(--color-signal);
 }
 .app-contact-textarea {
   display: block;
@@ -2029,9 +2023,6 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
   margin-block: 0.5rem;
   background: var(--hairline);
 }
-.app-contact-row--from[data-invalid] {
-  box-shadow: inset 2px 0 0 var(--color-flare);
-}
 .app-contact-row--from[data-invalid] .app-contact-row-label {
   color: var(--color-flare);
 }
@@ -2329,12 +2320,10 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
   border-radius: var(--radius-card);
   background: rgba(255, 255, 255, 0.035);
 }
-/* Elliot's replies: the accent along their edge */
+/* Elliot's replies: a touch of the accent in the fill */
 .app-contact-msg[data-dir="out"] {
   background: color-mix(in oklab, var(--color-signal) 6%, rgba(255, 255, 255, 0.03));
-  box-shadow:
-    inset 2px 0 0 var(--color-signal),
-    inset 0 0 0 1px var(--hairline);
+  box-shadow: inset 0 0 0 1px var(--hairline);
 }
 .app-contact-msg-head {
   display: flex;

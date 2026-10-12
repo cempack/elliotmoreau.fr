@@ -248,10 +248,7 @@ function Calendar({ now }: { now: Date }) {
                     >
                       {d}
                       {(post || push) && (
-                        <span className="os-menubar-cal-dots" aria-hidden>
-                          {post && <i data-kind="post" />}
-                          {push && <i data-kind="push" />}
-                        </span>
+                        <span className="os-menubar-cal-mark" data-post={post || undefined} data-push={push || undefined} aria-hidden />
                       )}
                     </span>
                   </td>
@@ -261,13 +258,10 @@ function Calendar({ now }: { now: Date }) {
           ))}
         </tbody>
       </table>
+      {/* the key: each word underlined the way its days are */}
       <p className="os-menubar-cal-legend" aria-hidden>
-        <span>
-          <i data-kind="post" /> {n.legendPost}
-        </span>
-        <span>
-          <i data-kind="push" /> {n.legendPush}
-        </span>
+        <span data-kind="post">{n.legendPost}</span>
+        <span data-kind="push">{n.legendPush}</span>
       </p>
     </section>
   );

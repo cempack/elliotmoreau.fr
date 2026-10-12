@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useI18n } from "@/i18n/client";
 import { useToast } from "@/components/Toasts";
 import { CONTINENTS, loc, type Continent, type PlaceRow } from "@/lib/content";
+import { announceContentChange } from "@/lib/contentSync";
 import { rpc, type Overview } from "../api";
 import { useSave } from "../useSave";
 import { WorldPicker } from "../WorldPicker";
@@ -73,7 +74,10 @@ export function TravelsPane({ data, onSaved }: { data: Overview; onSaved: () => 
     if (j < 0 || j >= ids.length) return;
     [ids[i], ids[j]] = [ids[j], ids[i]];
     const res = await rpc("place.reorder", { ids });
-    if (res.ok) onSaved();
+    if (res.ok) {
+      announceContentChange();
+      onSaved();
+    }
   };
 
   const onSave = async () => {
@@ -90,6 +94,7 @@ export function TravelsPane({ data, onSaved }: { data: Overview; onSaved: () => 
     if (res.ok) {
       notify(fill(tr.deleted, { name: loc(draft.name, lang) || draft.id }), t.shell.apps.admin);
       remembered = null;
+      announceContentChange();
       onSaved();
     } else setConfirming(false);
   };
@@ -111,7 +116,6 @@ export function TravelsPane({ data, onSaved }: { data: Overview; onSaved: () => 
           {places.map((p, i) => (
             <li key={p.id} className="app-admin-list-item" data-on={p.id === selected && !isNew ? "" : undefined}>
               <button type="button" className="app-admin-list-main" onClick={() => open(p)} aria-current={p.id === selected && !isNew ? "true" : undefined}>
-                <span className="app-admin-dot" data-kind={p.home ? "home" : p.status} aria-hidden />
                 <span className="app-admin-list-name">{loc(p.name, lang)}</span>
                 <span className="app-admin-list-meta">
                   {tag(p)}

@@ -13,6 +13,7 @@ import { Intro } from "./Intro";
 import { IdlePrefetch } from "./IdlePrefetch";
 import { Suspense } from "react";
 import { TrailRecorder } from "./trail";
+import { ContentSync } from "@/lib/contentSync";
 
 /**
  * emOS: the persistent chrome around every app. Order matters for
@@ -27,6 +28,7 @@ export function OSShell({ data, children }: { data: SiteData; children: React.Re
           <PaletteProvider>
             <SmoothScroll />
             <IdlePrefetch />
+            <ContentSync />
             {/* useSearchParams: kept out of the static render's way */}
             <Suspense fallback={null}>
               <TrailRecorder />

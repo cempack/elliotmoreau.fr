@@ -5,6 +5,7 @@ import { startRegistration } from "@simplewebauthn/browser";
 import { useI18n } from "@/i18n/client";
 import { useToast } from "@/components/Toasts";
 import { useSound } from "@/lib/sound";
+import { announceContentChange } from "@/lib/contentSync";
 import { auth, rpc, type AuditRow, type Overview, type Passkey, type SessionRow } from "../api";
 import { Codes } from "../Lock";
 import { Btn, Group, Section, fill, useAgo } from "../ui";
@@ -100,7 +101,10 @@ export function SystemPane({ data, onChanged }: { data: Overview; onChanged: () 
 
   const refresh = async () => {
     const r = await rpc("site.refresh");
-    if (r.ok) notify(s.refreshed, title);
+    if (r.ok) {
+      announceContentChange();
+      notify(s.refreshed, title);
+    }
   };
 
   const exportBackup = async () => {
@@ -240,14 +244,18 @@ export function SystemPane({ data, onChanged }: { data: Overview; onChanged: () 
       <Group title={s.integrations}>
         <ul className="app-admin-integ">
           {rows.map(([name, ok, value]) => (
-            <li key={name}>
-              <span className="app-admin-dot" data-kind={ok ? "ok" : "off"} aria-hidden />
+            <li key={name} data-ok={ok || undefined}>
+              <span className="app-admin-mark" aria-hidden>
+                {ok ? "✓" : "✕"}
+              </span>
               <span>{name}</span>
               <span className="app-admin-hint">{value}</span>
             </li>
           ))}
-          <li>
-            <span className="app-admin-dot" data-kind="ok" aria-hidden />
+          <li data-ok>
+            <span className="app-admin-mark" aria-hidden>
+              ✓
+            </span>
             <span>{s.site}</span>
             <span className="app-admin-hint">{integ.siteUrl}</span>
           </li>

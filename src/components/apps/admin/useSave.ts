@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useI18n } from "@/i18n/client";
 import { useToast } from "@/components/Toasts";
 import { useSound } from "@/lib/sound";
+import { announceContentChange } from "@/lib/contentSync";
 import { rpc } from "./api";
 import { fill } from "./ui";
 
@@ -27,6 +28,8 @@ export function useSave(onSaved: () => void) {
     if (res.ok) {
       blip("success");
       notify(c.saved, t.shell.apps.admin);
+      // every open page shows it now, not on the next visit
+      announceContentChange();
       onSaved();
       return true;
     }

@@ -1399,15 +1399,12 @@ a.app-now-tok:hover {
   font-size: 0.75rem;
   white-space: nowrap;
 }
-.app-now-pulse-readout i {
-  flex: none;
-  width: 6px;
-  height: 6px;
-}
 .app-now-pulse-readout-name {
   min-width: 0;
   overflow: hidden;
   color: var(--color-label);
+  text-decoration: underline 2px;
+  text-underline-offset: 4px;
   text-overflow: ellipsis;
 }
 .app-now-pulse-readout-ago {
@@ -1541,13 +1538,8 @@ a.app-now-tok:hover {
   font-size: 0.75rem;
 }
 .app-now-legend span {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-}
-.app-now-legend i {
-  width: 6px;
-  height: 6px;
+  text-decoration: underline 2px;
+  text-underline-offset: 4px;
 }
 
 /* ───────────────────────── Setup ───────────────────────── */
@@ -2202,8 +2194,6 @@ a.app-now-tok:hover {
   }
   .app-now-progress-bar,
   .app-now-cava,
-  .app-now-legend i,
-  .app-now-pulse-readout i,
   .app-now-pulse-svg,
   .app-now-repo i,
   .app-now-spine,

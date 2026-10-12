@@ -140,19 +140,11 @@ export function PulseMeta() {
   const { t } = useI18n();
   const p = t.now.pulse;
   return (
+    // each word underlined in its blips' colour
     <span className="app-now-legend" aria-hidden>
-      <span>
-        <i style={{ background: COLOR.push }} />
-        {p.push}
-      </span>
-      <span>
-        <i style={{ background: COLOR.post }} />
-        {p.post}
-      </span>
-      <span>
-        <i style={{ background: "var(--color-flare)" }} />
-        {p.now}
-      </span>
+      <span style={{ textDecorationColor: COLOR.push }}>{p.push}</span>
+      <span style={{ textDecorationColor: COLOR.post }}>{p.post}</span>
+      <span style={{ textDecorationColor: "var(--color-flare)" }}>{p.now}</span>
     </span>
   );
 }
@@ -216,8 +208,9 @@ export function Pulse({ repos, posts, activity }: { repos: RepoInfo[]; posts: Gh
         <p className="app-now-pulse-readout">
           {shown && now ? (
             <>
-              <i style={{ background: COLOR[shown.kind] }} aria-hidden />
-              <span className="app-now-pulse-readout-name">{label(shown)}</span>
+              <span className="app-now-pulse-readout-name" style={{ textDecorationColor: COLOR[shown.kind] }}>
+                {label(shown)}
+              </span>
               <span className="app-now-pulse-readout-ago">{timeAgo(new Date(shown.t).toISOString(), lang)}</span>
             </>
           ) : events.length === 0 ? (

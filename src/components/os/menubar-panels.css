@@ -946,40 +946,39 @@
   font-weight: 700;
   box-shadow: 0 6px 18px -8px color-mix(in srgb, var(--color-signal) 70%, transparent);
 }
-.os-menubar-cal-dots {
+/* a day with a post or a push: a short rule under its number (both: half each) */
+.os-menubar-cal-mark {
   position: absolute;
-  bottom: 3px;
+  bottom: 4px;
   left: 50%;
-  display: flex;
-  gap: 2px;
-  transform: translateX(-50%);
-}
-.os-menubar-cal-dots i,
-.os-menubar-cal-legend i {
-  display: block;
-  width: 4px;
-  height: 4px;
-}
-:is(.os-menubar-cal-dots, .os-menubar-cal-legend) i[data-kind="post"] {
+  width: 14px;
+  height: 2px;
+  translate: -50% 0;
+  border-radius: 1px;
   background: var(--color-ember);
 }
-:is(.os-menubar-cal-dots, .os-menubar-cal-legend) i[data-kind="push"] {
+.os-menubar-cal-mark[data-push] {
   background: var(--color-ion);
 }
-.os-menubar-cal-day[data-today] .os-menubar-cal-dots i {
+.os-menubar-cal-mark[data-post][data-push] {
+  background: linear-gradient(90deg, var(--color-ember) 50%, var(--color-ion) 50%);
+}
+.os-menubar-cal-day[data-today] .os-menubar-cal-mark {
   background: var(--color-ink-950);
 }
 .os-menubar-cal-legend {
   display: flex;
-  gap: 16px;
-  margin: 8px 4px 0;
+  gap: 18px;
+  margin: 8px 6px 0;
   font-size: 12px;
-  color: var(--color-label-3);
+  color: var(--color-label-2);
 }
 .os-menubar-cal-legend span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  text-decoration: underline 2px var(--color-ember);
+  text-underline-offset: 5px;
+}
+.os-menubar-cal-legend span[data-kind="push"] {
+  text-decoration-color: var(--color-ion);
 }
 .os-menubar-cal-legend i {
   width: 6px;

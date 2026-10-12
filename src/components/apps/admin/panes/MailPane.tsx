@@ -103,11 +103,9 @@ export function MailPane({ data, onChanged }: { data: Overview; onChanged: () =>
     <Section title={m.title}>
       <div className="app-admin-health" aria-label={m.health}>
         <span className="app-admin-health-item" data-ok={health.smtp || undefined}>
-          <span className="app-admin-dot" data-kind={health.smtp ? "ok" : "off"} aria-hidden />
           {m.smtp}: {health.smtp ? m.ok : m.off}
         </span>
         <span className="app-admin-health-item" data-ok={health.imap || undefined}>
-          <span className="app-admin-dot" data-kind={health.imap ? "ok" : "off"} aria-hidden />
           {m.imap}: {health.imap ? m.ok : m.off}
         </span>
         <span className="app-admin-hint">{health.lastSync ? fill(m.lastSync, { time: ago(health.lastSync) }) : m.never}</span>
@@ -220,8 +218,14 @@ export function MailPane({ data, onChanged }: { data: Overview; onChanged: () =>
               {threads.map((th) => (
                 <li key={th.id} className="app-admin-list-item" data-unread={th.adminUnread ? "" : undefined}>
                   <button type="button" className="app-admin-list-main" onClick={() => show(th.id)}>
-                    <span className="app-admin-dot" data-kind={th.adminUnread ? "unread" : th.status === "answered" ? "ok" : "read"} aria-hidden />
-                    <span className="app-admin-list-name">{th.name || th.email}</span>
+                    <span className="app-admin-list-name">
+                      {th.name || th.email}
+                      {th.status === "answered" && !th.adminUnread && (
+                        <span className="app-admin-answered" aria-hidden>
+                          {" "}↩
+                        </span>
+                      )}
+                    </span>
                     <span className="app-admin-list-sub">{th.subject}</span>
                     <span className="app-admin-list-meta">{ago(th.lastAt)}</span>
                   </button>
