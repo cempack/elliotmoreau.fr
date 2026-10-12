@@ -13,7 +13,7 @@ import { EmosMark } from "@/components/os/menubar/glyphs";
 import { sendLetter, type SendError } from "./api";
 import { CopyButton } from "./Copy";
 import { MAX_LINES, TEXT_CELLS } from "./Envelope";
-import { useMailStatus } from "./hours";
+import { useStatus } from "@/components/os/SiteData";
 import { Meter, type MeterHandle } from "./Meter";
 import { markAt, type Mark } from "./postmark";
 import { ReadEstimate } from "./ReadEstimate";
@@ -135,7 +135,7 @@ export function Compose({
   const state = useDraft();
   const { draft, saved, update } = state;
   const [from, setFrom] = useFrom();
-  const status = useMailStatus();
+  const status = useStatus();
   const reduced = useReduced();
   const isMac = useIsMac();
   const { blip } = useSound();

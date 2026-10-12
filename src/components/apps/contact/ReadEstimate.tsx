@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useI18n } from "@/i18n/client";
 import { fill } from "./mail";
-import { clock, readEstimate, useMailStatus } from "./hours";
+import { useStatus } from "@/components/os/SiteData";
+import { clock, readEstimate } from "./hours";
 
 /** the time now, refreshed every `ms` (null until mounted, so the server HTML matches) */
 function useNow(ms: number) {
@@ -32,7 +33,7 @@ const SCALE = ["00", "06", "12", "18", "24"];
 export function ReadEstimate() {
   const { t, lang } = useI18n();
   const w = t.contact.when;
-  const status = useMailStatus();
+  const status = useStatus();
   const now = useNow(30_000);
   const tz = status.workHours.tz;
   const loc = lang === "fr" ? "fr-FR" : "en-GB";

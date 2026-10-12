@@ -2,6 +2,7 @@ import "server-only";
 import path from "node:path";
 import { db } from "./db";
 import { env } from "./env";
+import { startMailSync } from "./mail";
 
 /**
  * Start-up work, run once per server process by src/instrumentation.ts
@@ -10,17 +11,15 @@ import { env } from "./env";
  * This list is the one registration point: a module with something to
  * start adds an entry, and a failing entry is logged without stopping the
  * others or the server. Entries must return quickly; long-running work
- * (a poller) is started here and runs in the background. The mail module's
- * entry is:
- *
- *   import { startMailSync } from "./mail";
- *   { name: "mail", run: startMailSync },
+ * (a poller) is started here and runs in the background.
  */
 export type BootTask = { name: string; run: () => void | Promise<void> };
 
 const TASKS: BootTask[] = [
   { name: "database", run: openDatabase },
   { name: "content", run: refreshPagesFromDatabase },
+  // replies to visitors, read back from Elliot's mailbox (no-op until IMAP is set up)
+  { name: "mail", run: startMailSync },
 ];
 
 const g = globalThis as unknown as { __emosBooted?: boolean };

@@ -15,14 +15,6 @@ export const DEFAULT_STATUS: MailStatus = {
   replyDays: 3,
 };
 
-/**
- * Elliot's status, for the Mail app. Until the content module's
- * useStatus() lands in SiteData, the seeded defaults; swapping is one line:
- * `export const useMailStatus = (): MailStatus => useStatus();`
- */
-export function useMailStatus(): MailStatus {
-  return DEFAULT_STATUS;
-}
 
 const fmts = new Map<string, Intl.DateTimeFormat>();
 function partsIn(d: Date, tz: string) {
