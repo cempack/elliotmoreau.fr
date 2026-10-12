@@ -144,6 +144,7 @@ openssl rand -base64 24   # ADMIN_SETUP_TOKEN
 | `GHOST_ADMIN_KEY` | newsletter signup | Same integration. Server-only. |
 | `NEXT_PUBLIC_BLOG_URL` | blog links | Baked in at build time: change it, then redeploy. |
 | `SPOTIFY_*` | music | Client ID and secret: developer.spotify.com → your app → Settings. Refresh token: run `node scripts/spotify-token.mjs` on your computer (see below). |
+| `THEME_WEBHOOK_SECRET` | instant theme updates | Optional. The site re-reads Dos Moos from its repo every 10 minutes; with this set and a webhook on the theme repo (below), a push shows up at once. |
 | `SMTP_*`, `IMAP_*`, `MAIL_*` | Mail | See docs/MAIL-SETUP.md. Without them the site still works and Mail falls back to opening your mail app. |
 
 Railway provides `PORT`, `RAILWAY_ENVIRONMENT_NAME` and
@@ -173,6 +174,22 @@ Vercel won't show a sensitive value again, so make a new token:
 3. Put `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET` and
    `SPOTIFY_REFRESH_TOKEN` on the web service. The token doesn't expire
    unless you remove the app's access in your Spotify account.
+
+### The palette follows the Dos Moos repo
+
+The site's colours, window rounding and border width come from
+[cempack/omarchy-dos-moos-theme](https://github.com/cempack/omarchy-dos-moos-theme)
+(`colors.toml` and `hyprland.conf` on `main`), re-read every 10 minutes. To
+make a push show up at once instead:
+
+1. Make a secret: `openssl rand -hex 32`, and set it as `THEME_WEBHOOK_SECRET`
+   on the web service.
+2. In the theme repo → **Settings → Webhooks → Add webhook**: payload URL
+   `https://elliotmoreau.fr/api/theme/hook`, content type
+   `application/json`, the same secret, **Just the push event**.
+
+GitHub's ping should come back green. If GitHub can't be reached, the site
+uses the palette it shipped with.
 
 ## 4. Deploy and check it on the Railway address
 

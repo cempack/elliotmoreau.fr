@@ -6,7 +6,7 @@
    layout overrides them from the repo itself on every render (an
    unlayered :root rule, lib/theme-source.ts). Every text colour is solid
    and clears 4.5:1 on ink-900; lib/theme.ts lifts any that wouldn't. */
-@theme {
+@theme static {
   --color-ink-950: #0f1011;
   --color-ink-900: #131516;
   --color-ink-800: #1c2224;
