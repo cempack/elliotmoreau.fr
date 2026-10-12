@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { m } from "motion/react";
 import { useI18n } from "@/i18n/client";
 import { useIsMac, useReduced } from "@/hooks/env";
@@ -13,12 +13,11 @@ import { PixelGlyph } from "@/components/glyphs";
 import { EmosMark } from "@/components/os/menubar/glyphs";
 import { sendLetter, type SendError } from "./api";
 import { CopyButton } from "./Copy";
-import { MAX_LINES, TEXT_CELLS } from "./Envelope";
 import { useStatus } from "@/components/os/SiteData";
 import { Meter, type MeterHandle } from "./Meter";
 import { markAt, type Mark } from "./postmark";
 import { ReadEstimate } from "./ReadEstimate";
-import { Stage, type StageHandle } from "./Stage";
+import { GlobeStage, type StageHandle } from "./GlobeStage";
 import { G_ARROW, G_OPEN, G_SEND } from "./glyphs";
 import {
   EMAIL_RE,
@@ -27,7 +26,6 @@ import {
   draftFile,
   fill,
   launchMail,
-  letterLines,
   loadFrom,
   mailtoHref,
   plural,
@@ -149,7 +147,6 @@ export function Compose({
   const [lifted, setLifted] = useState(false);
   /** the franking meter's postmark on the letter, once it is franked, and how hard it was struck */
   const [mark, setMark] = useState<Mark | null>(null);
-  const [ink, setInk] = useState(1);
   /** Send was refused (nothing written, no address): the status says why for a moment */
   const [refused, setRefused] = useState<Refusal | null>(null);
   /** the server turned the letter down, or couldn't send it */
@@ -215,8 +212,6 @@ export function Compose({
       : null;
   const activeChip = CHIPS.find((ch) => c[ch.subject] === draft.subject.trim());
   const placeholder = activeChip ? `${c.bodyPlaceholder}\n\n${c[activeChip.prompt]}` : c.bodyPlaceholder;
-  const subjectCells = draft.subject.trim() ? Math.max(3, Math.min(10, Math.round(draft.subject.trim().length * 0.36))) : 0;
-  const lines = useMemo(() => letterLines(draft.body, MAX_LINES, 34, TEXT_CELLS), [draft.body]);
   const replyDays = Math.max(1, status.replyDays);
 
   // the window subtitle names the file once the draft is saved
@@ -403,10 +398,9 @@ export function Compose({
   };
 
   /** the die struck the envelope: the postmark is on it, and off it goes */
-  const onStrike = (strength: number) => {
+  const onStrike = () => {
     if (phase !== "compose") return;
     setMark(markAt(new Date()));
-    setInk(strength);
     blip("tick");
     navigator.vibrate?.(8);
     window.clearTimeout(sendTimer.current);
@@ -506,20 +500,12 @@ export function Compose({
       </div>
 
       <div className="app-contact-stagecol">
-        <Stage
+        <GlobeStage
           ref={stageRef}
           phase={phase}
-          mark={mark}
-          markInk={ink}
-          subject={subjectCells}
-          lines={lines}
+          stamped={mark != null}
           lifted={lifted}
           reduced={reduced}
-          origin={() => {
-            const own = sendRef.current?.getBoundingClientRect();
-            if (own?.width) return own;
-            return document.querySelector(`[form="${formId}"]`)?.getBoundingClientRect() ?? null;
-          }}
           onLand={land}
           doneLabel={delivered ? c.delivered : undefined}
         />

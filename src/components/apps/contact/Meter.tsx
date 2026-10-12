@@ -235,7 +235,7 @@ export const Meter = forwardRef<
         {you && (
           <>
             {" "}
-            <span className="tabular" title={k.zoneNote}>
+            <span className="tabular app-contact-meter-you" title={k.zoneNote}>
               {you}
             </span>
           </>

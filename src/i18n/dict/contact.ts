@@ -114,6 +114,19 @@ const en = {
   viewInSent: "Open in Sent",
   fallbackBody: "Sending from the site isn’t available right now, so your mail app takes it from here, with everything filled in.",
 
+  /* the stage: the planet and the letter's route to Toulouse */
+  globe: {
+    label: "Your letter’s route, from {from} to {to}",
+    labelNear: "Where your letter goes: {to}",
+    route: "{km} km · {gap}",
+    ahead: "{place} is {h} h ahead",
+    behind: "{place} is {h} h behind",
+    same: "same time",
+    near: "Same time as {place}",
+    time: "It’s {time} in {place}",
+    landed: "Landed in {place} at {time}",
+  },
+
   /* when it'll be read (on the result card) */
   when: {
     label: "When it’ll be read",
@@ -323,6 +336,18 @@ const fr: typeof en = {
   delivered: "Remise",
   viewInSent: "Ouvrir dans Envoyés",
   fallbackBody: "L’envoi depuis le site n’est pas disponible pour le moment : votre messagerie prend le relais, avec tout déjà rempli.",
+
+  globe: {
+    label: "Le trajet de votre lettre, de {from} à {to}",
+    labelNear: "Où va votre lettre : {to}",
+    route: "{km} km · {gap}",
+    ahead: "{place} a {h} h d’avance",
+    behind: "{place} a {h} h de retard",
+    same: "même heure",
+    near: "Même heure qu’à {place}",
+    time: "Il est {time} à {place}",
+    landed: "Arrivée à {place} à {time}",
+  },
 
   when: {
     label: "Quand elle sera lue",

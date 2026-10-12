@@ -404,7 +404,7 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
 .app-contact-stagecol {
   display: contents;
 }
-.app-contact-stagecol > .app-contact-stage {
+.app-contact-stagecol > .app-contact-globe {
   grid-area: stage;
 }
 .app-contact-compose > .app-contact-card {
@@ -852,97 +852,89 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
   }
 }
 
-/* ── the stage and the envelope ── */
-.app-contact-stage {
-  position: relative;
-  display: grid;
-  justify-items: center;
-  gap: 1.125rem;
-  padding: 1.75rem 0 0.5rem;
-}
-.app-contact-stage-floor {
-  position: absolute;
-  inset: -8% -10% 12%;
-  z-index: -1;
-  background:
-    radial-gradient(closest-side, color-mix(in oklab, var(--color-signal) 11%, transparent), transparent 72%),
-    radial-gradient(40% 9% at 50% 82%, rgba(0, 0, 0, 0.42), transparent 100%);
-  pointer-events: none;
-  transition: opacity 0.4s var(--ease-out-quint);
-}
-.app-contact-stage[data-gone] .app-contact-stage-floor {
-  opacity: 0.35;
-}
-.app-contact-slot {
-  position: relative;
-  width: 16.5rem;
-  aspect-ratio: 33 / 30;
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
-  -webkit-user-drag: none;
-}
-.app-contact-slot-env {
-  position: absolute;
-  inset: 0;
-  transition: scale 0.25s var(--ease-spring);
-}
+/* ── the stage: the planet and the letter's route ── */
 .app-contact-env {
   display: block;
   width: 100%;
   height: auto;
 }
-/* where it was: an empty, pixel-dashed place on the stage */
-.app-contact-socket {
+/* wide: the planet fills its column; phones: a small planet beside the title */
+.app-contact-globe {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0 0.25rem;
+}
+.app-contact-globe-disc {
+  position: relative;
+  width: 100%;
+  max-width: 20rem;
+  aspect-ratio: 1;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.app-contact-globe-canvas {
   position: absolute;
-  inset: 30% 3% 3% 0;
-  border-radius: 4px;
-  background:
-    linear-gradient(90deg, color-mix(in srgb, var(--color-label) 18%, transparent) 50%, transparent 0) top / 16px 2px repeat-x,
-    linear-gradient(90deg, color-mix(in srgb, var(--color-label) 18%, transparent) 50%, transparent 0) bottom / 16px 2px repeat-x,
-    linear-gradient(0deg, color-mix(in srgb, var(--color-label) 18%, transparent) 50%, transparent 0) left / 2px 16px repeat-y,
-    linear-gradient(0deg, color-mix(in srgb, var(--color-label) 18%, transparent) 50%, transparent 0) right / 2px 16px repeat-y;
-  opacity: 0;
-  transition: opacity 0.25s;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
 }
-.app-contact-stage[data-carry] .app-contact-socket,
-.app-contact-stage[data-gone] .app-contact-socket {
-  opacity: 1;
+/* names beside the two markers: the city the visitor's clock is set to, and Toulouse */
+.app-contact-globe-pin {
+  position: absolute;
+  translate: -50% 0.875rem;
+  padding: 0.1875rem 0.4375rem;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-ink-950) 86%, transparent);
+  color: var(--color-label);
+  font: 500 0.6875rem/1.25 var(--font-mono);
+  white-space: nowrap;
+  pointer-events: none;
 }
-.app-contact-stage-hint {
+.app-contact-globe-pin i {
+  color: var(--color-label-2);
+  font-style: normal;
+}
+.app-contact-globe-caption {
   min-height: 1.25rem;
   color: var(--color-label-2);
   font: 500 0.75rem/1.4 var(--font-mono);
   text-align: center;
   text-wrap: balance;
 }
-.app-contact-stage-hint svg {
-  display: inline-block;
-  margin: 0 0.375rem 0 0;
-  vertical-align: -2px;
-  color: var(--color-signal);
-}
-/* after the trip: the postmark, then what became of it */
-.app-contact-stage-done {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.625rem;
-  animation: app-contact-hint-in 0.45s var(--ease-out-quint) both;
-}
-@keyframes app-contact-hint-in {
-  from {
-    opacity: 0;
-    translate: 0 4px;
+/* phones: the planet stands beside the title; the card below says the rest */
+@container app-contact (max-width: 559px) {
+  .app-contact-globe {
+    gap: 0;
+    padding: 0;
+  }
+  .app-contact-globe-disc {
+    width: 8.5rem;
+  }
+  .app-contact-globe-pin,
+  .app-contact-globe-caption {
+    display: none;
   }
 }
-.app-contact-stage-out,
-.app-contact-stage-wait {
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+/* wide: the planet already gives both clocks */
+@container app-contact (min-width: 760px) {
+  .app-contact-meter-you {
+    display: none;
+  }
 }
-.app-contact-stage-out {
-  color: var(--color-signal);
+/* mid widths: beside the title and lead */
+@container app-contact (min-width: 560px) and (max-width: 759px) {
+  .app-contact-globe {
+    padding: 0;
+  }
+  .app-contact-globe-disc {
+    width: 12rem;
+  }
+  .app-contact-globe-pin {
+    display: none;
+  }
 }
 /* ── the franking meter: under the envelope on wide windows, under the sheet on narrow ones ── */
 .app-contact-stagecol > .app-contact-meter {
@@ -1151,107 +1143,6 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
 .app-contact-status-refused {
   color: var(--color-flare);
 }
-/* phones: a small envelope beside the title */
-@container app-contact (max-width: 559px) {
-  .app-contact-stage {
-    gap: 0.625rem;
-    padding: 0.25rem 0 0;
-  }
-  .app-contact-stage-floor {
-    inset: -14% -18% 22%;
-  }
-  /* 99px: 3px per cell */
-  .app-contact-slot {
-    width: 6.1875rem;
-  }
-  /* the card says what happened: the stage keeps just the postmark */
-  .app-contact-stage-out {
-    display: none;
-  }
-  .app-contact-stage-hint {
-    max-width: 7.5rem;
-    line-height: 1.35;
-  }
-}
-/* mid widths: beside the title and lead */
-@container app-contact (min-width: 560px) and (max-width: 759px) {
-  .app-contact-stage {
-    gap: 0.875rem;
-    padding: 0;
-  }
-  /* 165px: 5px per cell */
-  .app-contact-slot {
-    width: 10.3125rem;
-  }
-  .app-contact-stage-out {
-    display: none;
-  }
-}
-/* mid widths on short windows (laptops around 1024 × 768): 132px, 4px per cell, so the row is no
-   taller than the title and lead beside it */
-@media (max-height: 820px) {
-  @container app-contact (min-width: 560px) and (max-width: 759px) {
-    .app-contact-slot {
-      width: 8.25rem;
-    }
-  }
-}
-
-/* in the air (portaled to <body>, above the Dock) */
-/* above the Dock, below the Terminal (70) */
-.app-contact-air {
-  position: fixed;
-  inset: 0;
-  z-index: 65;
-  pointer-events: none;
-}
-/* in flight: the Dock doesn't see the pointer resting on it (no tooltip, no magnification) */
-.app-contact-shield {
-  position: absolute;
-  inset: 0;
-  pointer-events: auto;
-}
-.app-contact-flyer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  transform-origin: 50% 50%;
-  filter: drop-shadow(0 22px 26px rgba(0, 0, 0, 0.5));
-  will-change: transform;
-}
-.app-contact-burst {
-  position: absolute;
-  width: 0;
-  height: 0;
-}
-.app-contact-burst i {
-  position: absolute;
-  top: -3px;
-  left: -3px;
-  width: 6px;
-  height: 6px;
-  background: var(--color-signal);
-  animation: app-contact-burst 0.6s var(--ease-out-quint) both;
-}
-.app-contact-burst i:nth-child(even) {
-  width: 4px;
-  height: 4px;
-  background: var(--color-label);
-}
-@keyframes app-contact-burst {
-  0% {
-    opacity: 0;
-    translate: 0 0;
-  }
-  15% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    translate: var(--dx) var(--dy);
-  }
-}
-
 /* ── elsewhere: one card per profile; the two with something live lead ──
    Each card is the profile (its mark, name, handle and what it's for, one
    link); a live one carries its latest in a well below. Phones and narrow
@@ -2060,13 +1951,9 @@ html[data-mail-hash="pgp"] .app-contact .os-win-nav-item[href$="#pgp"]::after {
   .app-contact-views[data-anim] > .app-contact-view:not([data-off]) {
     animation: app-contact-fade 0.15s linear both;
   }
-  .app-contact-slot-env,
   .app-contact-btn,
   .app-contact-chev {
     transition: none;
-  }
-  .app-contact-stage-done {
-    animation: app-contact-fade 0.2s linear both;
   }
   .app-contact-env-mark[data-fresh] {
     animation: app-contact-fade 0.15s linear both;
