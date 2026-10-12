@@ -18,8 +18,9 @@
   --app-home-grid-r: 18px;
   --app-home-grid-l: 18px;
   --app-home-grid-b: 96px; /* dock + 20 */
-  --app-home-hello-w: 400px;
   --app-home-widget: 148px;
+  /* the intro card: two tiles wide plus its padding */
+  --app-home-hello-w: calc(var(--app-home-widget) * 2 + 40px);
   /* the sky dial: 25 cells of 3 px */
   /* tertiary text; promoted to secondary under the bright skies */
   --app-home-l3: var(--color-label-3);
@@ -521,57 +522,55 @@ html[data-sky="night"] .app-home-sundial svg {
 }
 
 /* ───────────────────────────── the intro ─────────────────────────────
-   Set on the wallpaper like conky text, clouds drifting behind it. Every
-   line sits on its own solid ink chip (the material of the icon labels
-   and the pill), so the words read on clear sky, white cloud or the sun
-   alike: about 17:1 whatever passes behind. */
+   A chromeless card in the widgets' glass and border, two tiles wide,
+   across from them. Clouds drift behind it, softened by the glass; the
+   words sit on its tint. */
 .app-home-hello {
-  --app-home-ink: rgb(13, 17, 15);
-  --app-home-ink-hover: rgb(27, 32, 29);
-  --app-home-ink-rim: inset 0 0 0 1px rgba(196, 206, 194, 0.13);
-  --app-home-ink-lift: 0 6px 16px -8px rgba(0, 0, 0, 0.6);
   position: relative;
   width: 100%;
-  max-width: 26rem;
+  max-width: var(--app-home-hello-w);
+  padding: 18px 20px;
+  border-radius: var(--radius-window);
   color: #f4f2ea;
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.2),
+    0 22px 44px -22px rgba(0, 0, 0, 0.72);
   user-select: text;
   -webkit-user-select: text;
 }
+.app-home-hello > :not(.app-home-hello-glass) {
+  position: relative;
+  z-index: 1;
+}
+.app-home-hello-glass {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  --os-glass-tint: rgba(13, 16, 14, 0.8);
+  --os-glass-rim: 2px;
+  --os-glass-border: rgba(196, 206, 194, 0.26);
+}
 .app-home-hello-greeting {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 650;
-  line-height: 1.32;
-  letter-spacing: -0.03em;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
 }
 .app-home-hello-lead {
-  margin-top: 6px;
-  max-width: 36ch;
-  color: #e9e6dc;
-  font-size: 0.9375rem;
-  font-weight: 500;
-  line-height: 1.9;
+  margin-top: 8px;
+  color: #c9cec6;
+  font-size: 0.875rem;
+  line-height: 1.5;
   text-wrap: pretty;
-}
-/* one chip per line: the background breaks with the text, each fragment
-   padded and rounded on its own */
-.app-home-hello-ink {
-  padding: 3px 10px 4px;
-  border-radius: 7px;
-  background: var(--app-home-ink);
-  box-shadow: var(--app-home-ink-rim), var(--app-home-ink-lift);
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
-}
-.app-home-hello-greeting .app-home-hello-ink {
-  padding: 2px 10px 5px;
-  border-radius: 10px;
 }
 .app-home-hello-ctas {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  margin-top: 18px;
+  margin-top: 16px;
 }
 .app-home-btn {
   display: inline-flex;
@@ -595,22 +594,16 @@ html[data-sky="night"] .app-home-sundial svg {
   scale: 0.97;
   transition-duration: 0.12s, 0.2s, 0.2s;
 }
-/* the ways in: pills of the same ink as the lines above */
-.app-home-btn--primary,
-.app-home-btn--ghost {
-  background: var(--app-home-ink);
-  box-shadow: inset 0 0 0 1px rgba(196, 206, 194, 0.24), var(--app-home-ink-lift);
-  color: #f4f2ea;
+/* the way in: a cream pill, the moss arrow */
+.app-home-btn--primary {
+  background: #f1efe7;
+  color: #121614;
 }
-.app-home-btn--primary:hover,
-.app-home-btn--ghost:hover {
-  background: var(--app-home-ink-hover);
-}
-.app-home-btn--ghost {
-  box-shadow: var(--app-home-ink-rim), var(--app-home-ink-lift);
+.app-home-btn--primary:hover {
+  background: #fff;
 }
 .app-home-btn-arrow {
-  color: var(--color-signal);
+  color: #4f6b33;
   transition: translate 0.35s var(--ease-spring);
 }
 @media (hover: hover) and (pointer: fine) {
@@ -618,10 +611,17 @@ html[data-sky="night"] .app-home-sundial svg {
     translate: 2px 0;
   }
 }
+.app-home-btn--ghost {
+  color: #f1efe7;
+}
+.app-home-btn--ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
 .app-home-btn:focus-visible {
   outline: 2px solid var(--color-signal);
   outline-offset: 3px;
 }
+
 /* ───────────────────────────── icons ───────────────────────────── */
 .app-home-icons {
   position: absolute;
@@ -752,7 +752,6 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   .app-home-scene {
     --app-home-pad: 48px;
     --app-home-grid-r: 30px;
-    --app-home-hello-w: 480px;
     --app-home-widget: 168px;
   }
 }
@@ -760,9 +759,6 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
 /* narrower desks (small laptops, tablets): the widgets stack in a column
    beside the icons */
 @media (min-width: 768px) and (not ((pointer: coarse) and (max-height: 520px))) and (max-width: 1199px) {
-  .app-home-scene {
-    --app-home-hello-w: 400px;
-  }
   .app-home-widgets {
     grid-auto-flow: row;
   }
@@ -798,12 +794,15 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
     font-size: 0.75rem;
     line-height: 1.15;
   }
+  .app-home-hello {
+    padding: 16px 18px;
+  }
   .app-home-hello-greeting {
-    font-size: 1.75rem;
+    font-size: 1.375rem;
   }
   .app-home-hello-lead {
-    margin-top: 8px;
-    font-size: 0.875rem;
+    margin-top: 6px;
+    font-size: 0.8125rem;
   }
   .app-home-hello-ctas {
     margin-top: 14px;
@@ -859,20 +858,20 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
 
   .app-home-hello {
     max-width: none;
-    padding: 6px 0 2px;
+    padding: 18px 16px;
     text-align: center;
   }
   .app-home-hello-greeting {
-    font-size: 1.625rem;
+    font-size: 1.375rem;
   }
   .app-home-hello-lead {
-    margin: 4px auto 0;
-    font-size: 0.875rem;
-    line-height: 1.9;
+    margin: 6px auto 0;
+    max-width: 36ch;
+    line-height: 1.45;
   }
   .app-home-hello-ctas {
     justify-content: center;
-    margin-top: 12px;
+    margin-top: 14px;
   }
   .app-home-btn {
     height: 44px;
@@ -1036,13 +1035,10 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
     background: var(--color-ink-950);
     text-shadow: none;
   }
-  .app-home-btn--primary {
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  .app-home-hello-glass {
+    --os-glass-border: rgba(255, 255, 255, 0.6);
   }
-  .app-home-hello-ink,
-  .app-home-btn--ghost {
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
-  }
+
   .app-home-marquee {
     border-color: var(--color-signal);
   }

@@ -143,7 +143,7 @@ openssl rand -base64 24   # ADMIN_SETUP_TOKEN
 | `GHOST_API_URL`, `GHOST_CONTENT_KEY` | Writing | Ghost Admin → Settings → Integrations → your custom integration. |
 | `GHOST_ADMIN_KEY` | newsletter signup | Same integration. Server-only. |
 | `NEXT_PUBLIC_BLOG_URL` | blog links | Baked in at build time: change it, then redeploy. |
-| `SPOTIFY_*` | music | Same values as on Vercel. |
+| `SPOTIFY_*` | music | Client ID and secret: developer.spotify.com → your app → Settings. Refresh token: run `node scripts/spotify-token.mjs` on your computer (see below). |
 | `SMTP_*`, `IMAP_*`, `MAIL_*` | Mail | See docs/MAIL-SETUP.md. Without them the site still works and Mail falls back to opening your mail app. |
 
 Railway provides `PORT`, `RAILWAY_ENVIRONMENT_NAME` and
@@ -151,6 +151,28 @@ Railway provides `PORT`, `RAILWAY_ENVIRONMENT_NAME` and
 when GitHub, Ghost or Spotify can't be reached) is switched off in the
 environment named **production**, Railway's default. If you rename that
 environment, add `EM_NO_FIXTURES=1`.
+
+### A fresh Spotify refresh token
+
+Vercel won't show a sensitive value again, so make a new token:
+
+1. developer.spotify.com → Dashboard → your app (or **Create app**, Web
+   API) → **Settings**. Copy the **Client ID**, click **View client
+   secret** and copy it. Under **Redirect URIs** add
+   `http://127.0.0.1:8888/callback` (Spotify refuses `localhost`) and save.
+2. On your computer, in the repo folder:
+
+   ```sh
+   node scripts/spotify-token.mjs
+   ```
+
+   Paste the Client ID and secret when asked. Your browser opens Spotify's
+   consent page; accept. The terminal prints `SPOTIFY_REFRESH_TOKEN=…`
+   (and the last track you played, to prove it works) plus a ready
+   `railway variables --set …` line.
+3. Put `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET` and
+   `SPOTIFY_REFRESH_TOKEN` on the web service. The token doesn't expire
+   unless you remove the app's access in your Spotify account.
 
 ## 4. Deploy and check it on the Railway address
 
