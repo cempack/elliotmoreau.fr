@@ -511,3 +511,40 @@ html:active-view-transition .os-tabbar {
   right: 2px;
   bottom: 2px;
 }
+
+/* the tab bar's handle (like a phone's home indicator): every open window */
+.os-tabbar-handle {
+  position: absolute;
+  top: -1.375rem;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 4.5rem;
+  height: 1.375rem;
+  translate: -50% 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.os-tabbar-handle > span {
+  width: 2.5rem;
+  height: 0.3125rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-label) 55%, transparent);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+  transition:
+    width 0.2s var(--ease-out-quint),
+    background-color 0.2s;
+}
+.os-tabbar-handle:active > span {
+  width: 3rem;
+  background: var(--color-label);
+}
+.os-tabbar-handle:focus-visible {
+  outline: none;
+}
+.os-tabbar-handle:focus-visible > span {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 3px;
+}
+.os-tabbar[data-kbd] .os-tabbar-handle {
+  display: none;
+}

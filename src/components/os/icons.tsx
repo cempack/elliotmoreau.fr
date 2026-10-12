@@ -26,7 +26,7 @@ import {
  * 32 (tab bar), 48 (dock) and 64–72 (magnified).
  */
 
-export type IconId = AppId | "terminal" | "spotlight" | "more";
+export type IconId = AppId | "terminal" | "spotlight" | "more" | "overview";
 
 // The theme's pixel-art tones (artPalette), by role: resolved at render so
 // the icons follow the live Dos Moos palette.
@@ -45,6 +45,7 @@ export const ICON_ACCENT: Record<IconId, string> = {
   terminal: "var(--color-label-3)",
   spotlight: "var(--color-lilac)",
   more: "var(--color-label-3)",
+  overview: "var(--color-ion)",
 };
 
 type Glyph = {
@@ -212,6 +213,28 @@ const GLYPHS: Record<IconId, Glyph> = {
     ],
   },
   // Terminal: a terminal window, a prompt and its cursor on the dark screen
+  // Open windows: three windows floating over the river, the one you're in picked out
+  overview: {
+    pal: { W: "paper", k: "ink900", E: "ember", I: "ion", J: "ionLight", d: "ionDeep" },
+    rows: [
+      "................",
+      "................",
+      "................",
+      "......EEEE......",
+      ".WWWW.EkkE.WWWW.",
+      ".WkkW.EkkE.WkkW.",
+      ".WkkW.EEEE.WkkW.",
+      ".WWWW......WWWW.",
+      "................",
+      "................",
+      ".IIIIIIIIIIIIII.",
+      ".IJJIIIJJIIIJJI.",
+      ".IIIIIIIIIIIIII.",
+      "..dddddddddddd..",
+      "................",
+      "................",
+    ],
+  },
   terminal: {
     pal: { B: "paper3", F: "flare", E: "ember", S: "signal", k: "ink950", C: "ember", U: "paper" },
     rows: [

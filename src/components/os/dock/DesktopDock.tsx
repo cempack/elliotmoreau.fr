@@ -8,6 +8,7 @@ import { APPS, appForPath } from "../apps";
 import { AppIcon, ICON_ACCENT, type IconId } from "../icons";
 import { Glass } from "../Glass";
 import { useTerminal } from "../Terminal";
+import { openOverview, useOverviewOpen } from "../overview";
 import { DOCK_ICON, useMagnification } from "./useMagnification";
 import { bounce, isPlainClick, pressHandlers } from "./launch";
 
@@ -37,7 +38,7 @@ function Tip({ label, kbd }: { label: string; kbd: string }) {
 
 /**
  * The desktop dock (≥768px): a flat bar of pixel app icons, a hairline
- * separator, then Terminal. Tooltips, an active-app marker, press
+ * separator, then Terminal and Open windows (the overview). Tooltips, an active-app marker, press
  * feedback and a one-hop bounce when an app launches. Arrow keys rove
  * between icons.
  */
@@ -46,6 +47,7 @@ export function DesktopDock() {
   const router = useRouter();
   const active = appForPath(usePathname());
   const term = useTerminal();
+  const overview = useOverviewOpen();
   const zoneRef = useRef<HTMLElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const plateRef = useRef<HTMLDivElement>(null);
@@ -56,6 +58,7 @@ export function DesktopDock() {
   const [focusIdx, setFocusIdx] = useState<number | null>(null);
   const tabStop = focusIdx ?? Math.max(0, APPS.findIndex((a) => a.id === active.id));
   const termIdx = APPS.length;
+  const overviewIdx = APPS.length + 1;
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     const els = Array.from(e.currentTarget.querySelectorAll<HTMLElement>("[data-dock-focus]"));
@@ -154,6 +157,30 @@ export function DesktopDock() {
             </button>
             <span className="os-dock-dot" data-on={term.open ? "" : undefined} aria-hidden />
             <Tip label={t.shell.apps.terminal} kbd="`" />
+          </div>
+          {/* every open window, over the river (WindowsOverview) */}
+          <div
+            className="os-dock-item"
+            style={{ "--tile": ICON_ACCENT.overview } as React.CSSProperties}
+            data-dock-item=""
+            data-dock-scale=""
+            data-dock-launch="overview"
+          >
+            <button
+              type="button"
+              className="os-dock-link"
+              aria-label={t.shell.overview.label}
+              aria-pressed={overview}
+              aria-keyshortcuts="Control+ArrowUp"
+              tabIndex={overviewIdx === tabStop ? 0 : -1}
+              data-dock-focus=""
+              onFocus={() => setFocusIdx(overviewIdx)}
+              onClick={() => openOverview()}
+              {...pressHandlers}
+            >
+              <DockIcon app="overview" />
+            </button>
+            <Tip label={t.shell.overview.label} kbd="⌃↑" />
           </div>
         </div>
       </div>

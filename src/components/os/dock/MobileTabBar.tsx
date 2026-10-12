@@ -126,6 +126,10 @@ export function MobileTabBar() {
   return (
     <>
       <nav aria-label={t.dock.label} className="os-tabbar" data-os-dock="" data-kbd={kbd || undefined} {...swipeHandlers}>
+        {/* the handle: tap it, or swipe up anywhere on the bar, for every open window */}
+        <button type="button" className="os-tabbar-handle" aria-label={t.dock.windows} onClick={() => openOverview()}>
+          <span aria-hidden />
+        </button>
         <ul className="os-tabbar-list">
           {PRIMARY.map((id) => {
             const app = APPS.find((a) => a.id === id)!;
