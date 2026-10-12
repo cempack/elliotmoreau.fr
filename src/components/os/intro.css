@@ -237,34 +237,14 @@
   left: 0;
   image-rendering: pixelated;
 }
-.os-arrival-read,
 .os-arrival-skip {
   position: absolute;
+  right: 24px;
   bottom: max(24px, env(safe-area-inset-bottom));
   margin: 0;
   color: var(--color-label-3);
   font: 500 0.75rem/1 var(--font-mono);
   letter-spacing: 0.02em;
-}
-.os-arrival-read {
-  left: 24px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 14px;
-  max-width: calc(100% - 48px);
-  color: var(--color-label-2);
-}
-.os-arrival-alt {
-  color: var(--color-label-3);
-}
-/* on a phone the readout sits over the skip hint's line: lift it */
-@media (pointer: coarse) {
-  .os-arrival-read {
-    bottom: calc(max(24px, env(safe-area-inset-bottom)) + 22px);
-  }
-}
-.os-arrival-skip {
-  right: 24px;
 }
 
 .os-intro[data-phase="out"] {

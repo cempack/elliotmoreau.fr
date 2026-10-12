@@ -137,10 +137,15 @@ function rect(b: B, x0: number, y0: number, x1: number, y1: number, c: number) {
 const matOf = (b: B, x: number, y: number) => (b.idx[y * b.W + x] >> 4) & 63;
 
 
-export function buildCity(W: number, H: number): City {
-  const idx = new Uint16Array(W * H);
-  const b: B = { W, H, idx, rnd: mulberry32(0x70a1) };
-
+/**
+ * The scene's frame on a W×H grid: the horizon row and vanishing point,
+ * where the Pont Neuf meets each bank (xa, xb), its height, deck and
+ * waterline. A point h px above the water at depth factor f (1 at the
+ * bridge, growing toward the viewer) stands at row hz + (Lf − hz)·f − h·f;
+ * on the banks f is (vx − x)/(vx − xa) or (x − vx)/(xb − vx). The arrival
+ * reads it to give every pixel its depth.
+ */
+export function cityFrame(W: number, H: number) {
   const aspect = W / H;
   const wide = smoothstep(0.62, 1.45, aspect);
   const S = Math.min(H, W * lerp(1.15, 0.78, wide));
@@ -153,6 +158,22 @@ export function buildCity(W: number, H: number): City {
   const bridgeH = Math.max(6, Math.round(S * 0.082));
   const deck = hz - 1;
   const Lf = deck + bridgeH;
+  // the Dôme de la Grave, set back on the Saint-Cyprien quay: its depth factor, centre column, radius,
+  // where its drum stands, and its whole height (drum, dome, lantern, finial)
+  const domeF = 1 / lerp(0.84, 0.8, wide);
+  const setback = bridgeH * lerp(0.6, 1.4, wide);
+  const domeX = vx + (xb - vx) * domeF + setback * domeF;
+  const domeBase = hz + (Lf - hz) * domeF - bridgeH * 1.75 * domeF + 1;
+  const domeR = bridgeH * lerp(0.95, 0.9, wide) * domeF;
+  const domeTop = domeBase - bridgeH * 0.8 * domeF - domeR * 1.22 - domeR * 0.55 - Math.max(1, domeR * 0.18);
+  return { wide, S, hz, vx, xa, xb, bridgeH, deck, Lf, dome: { f: domeF, x: domeX, r: domeR, base: domeBase, top: domeTop } };
+}
+
+export function buildCity(W: number, H: number): City {
+  const idx = new Uint16Array(W * H);
+  const b: B = { W, H, idx, rnd: mulberry32(0x70a1) };
+
+  const { wide, S, hz, vx, xa, xb, bridgeH, deck, Lf, dome } = cityFrame(W, H);
   const top = Math.round(H * 0.09);
 
   /* ── sky: 16 bands from the top to the horizon, dithered ── */
@@ -458,12 +479,10 @@ export function buildCity(W: number, H: number): City {
     void zNear;
 
     // the dome: a drum with windows, a ribbed copper dome, a lantern
-    const zd = lerp(0.84, 0.8, wide);
-    const fd = 1 / zd;
-    const setback = bridgeH * lerp(0.6, 1.4, wide);
-    const cx = vx + (xb - vx) * fd + setback * fd;
-    const baseY = rowAt(fd, hH) + 1;
-    const rd = bridgeH * lerp(0.95, 0.9, wide) * fd;
+    const fd = dome.f;
+    const cx = dome.x;
+    const baseY = dome.base;
+    const rd = dome.r;
     const drumH = bridgeH * 0.8 * fd;
     const domeH = rd * 1.22;
     const lanR = rd * 0.24;

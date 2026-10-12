@@ -5,7 +5,7 @@ import { useI18n } from "@/i18n/client";
 import { SKY_PHASES, type SkyPhase } from "../sky";
 import { useWeather } from "../weather";
 import { pinnedMs } from "../wallpaper/sunClock";
-import { HOME, T, altitude, createFlight, whereAt } from "./flight";
+import { T, createFlight } from "./flight";
 
 /** the wallpaper's art grid (Wallpaper.tsx, gridFor): the flight paints the same pixels, so its last frame lands on them */
 function artGrid(w: number, h: number) {
@@ -28,21 +28,19 @@ function wallpaperMs() {
  * Arrive from space (a first visit, in place of the boot's text): the
  * flight in ./flight, eleven seconds from orbit to the Pont Saint-Pierre,
  * run in a worker on the canvas itself when the browser can (so the page
- * loading underneath never costs it a frame), here otherwise. A readout
- * ticks the coordinates and the altitude down. Any key or tap skips it
+ * loading underneath never costs it a frame), here otherwise. Nothing is
+ * written over it but how to skip it. Any key or tap skips it
  * (the Gate listens). Its last frames are the wallpaper itself, lit for
  * the same instant: `onLand` hands over to the Desktop there, and the
  * canvas fades over pixels it already matches; `onGone` once it has.
  */
 export function Arrival({ skipped, onLand, onGone }: { skipped: boolean; onLand: () => void; onGone: () => void }) {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const s = t.system.intro;
   // today's clouds over Toulouse
   const { kind } = useWeather();
   const near = kind === "clear" ? 1 : kind === "autan" ? 2 : 3;
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const coordsRef = useRef<HTMLSpanElement>(null);
-  const altRef = useRef<HTMLSpanElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const handlers = useRef({ onLand, onGone });
   useEffect(() => {
@@ -145,49 +143,21 @@ export function Arrival({ skipped, onLand, onGone }: { skipped: boolean; onLand:
       } else land();
     }
 
-    // the readout: where, and how high, ticking down
-    const locale = lang === "fr" ? "fr-FR" : "en-GB";
-    const deg = new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const km = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
-    const km1 = new Intl.NumberFormat(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-    const west = lang === "fr" ? "O" : "W";
-    const coords = (lat: number, lon: number) =>
-      `${deg.format(Math.abs(lat))}° ${lat >= 0 ? "N" : "S"} · ${deg.format(Math.abs(lon))}° ${lon >= 0 ? "E" : west}`;
-    const alt = (m: number) => (m >= 10_000 ? `${km.format(m / 1000)} km` : m >= 1000 ? `${km1.format(m / 1000)} km` : `${km.format(m)} m`);
-    let read = 0;
-    const readout = () => {
-      if (start < 0) {
-        read = requestAnimationFrame(readout);
-        return;
-      }
-      const t = elapsed();
-      const p = t < T.city ? whereAt(t) : HOME;
-      if (coordsRef.current) coordsRef.current.textContent = t < T.city ? coords(p.lat, p.lon) : `Toulouse · ${coords(p.lat, p.lon)}`;
-      if (altRef.current) altRef.current.textContent = alt(altitude(t, g.W, g.H));
-      if (t < T.end) read = requestAnimationFrame(readout);
-    };
-    read = requestAnimationFrame(readout);
-
     return () => {
       window.clearTimeout(watchdog);
       cancelAnimationFrame(raf);
-      cancelAnimationFrame(read);
       if (worker) {
         worker.postMessage({ type: "stop" });
         worker.terminate();
       }
     };
-    // flown once, for the weather and the language it started under
+    // flown once, for the weather it started under
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div ref={rootRef} className="os-arrival" aria-hidden>
       <canvas ref={canvasRef} className="os-arrival-canvas" />
-      <p className="os-arrival-read tabular">
-        <span ref={coordsRef} />
-        <span ref={altRef} className="os-arrival-alt" />
-      </p>
       <p className="os-arrival-skip">
         <span className="os-boot-skip">{s.skip}</span>
         <span className="os-boot-skip os-boot-skip--touch">{s.skipTouch}</span>

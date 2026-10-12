@@ -4,13 +4,14 @@
  * Toulouse faces you; the camera falls toward it and through the clouds
  * over it, layer after layer, gaps rushing past, the planet becoming the
  * city inside the thickest one; under them, Toulouse from two kilometres,
- * the descent gliding in down the Garonne, locked on the Pont Neuf, the
- * view tipping up to the horizon as it comes down to the river; and it
- * comes to rest on the Pont Saint-Pierre, where the wallpaper is painted
- * from. In those last moments the wallpaper itself, sky and city, is
- * projected into the view from its own viewpoint, so the last frame is the
- * Desktop's wallpaper, pixel for pixel: the flight doesn't cut to the
- * Desktop, it lands in it.
+ * the descent gliding in down the Garonne, locked on the Pont Neuf. Over
+ * the Pont Saint-Pierre the wallpaper's own scene takes over, far things
+ * first (sky, mountains, skyline, then the bridge, the quays last), and
+ * the camera glides the last stretch up the river at water level, every
+ * pixel at its depth so the quays stream past while the mountains hold
+ * still, coming to rest where the wallpaper is painted from. The last
+ * frame is the Desktop's wallpaper, pixel for pixel: the flight doesn't
+ * cut to the Desktop, it lands in it.
  *
  * Pure and DOM-free: `createFlight(setup).draw(t, out)` paints the frame at
  * any time t (ms) into a W×H buffer of art pixels on the wallpaper's grid
@@ -19,13 +20,13 @@
 
 import { worldGrid } from "../../apps/atlas/geo";
 import { INK, project, sunVector } from "../../apps/atlas/planet";
-import { MAT, WATER, buildCity } from "../wallpaper/city";
+import { MAT, WATER, buildCity, cityFrame } from "../wallpaper/city";
 import { lampsAt, relight, skyLight } from "../wallpaper/light";
 import { CELL, CLOUDS, MAP, lightToulouse, paintToulouse } from "./toulouseMap";
 
 type RGB = [number, number, number];
 
-export const HOME = { lat: 43.6, lon: 1.44 };
+const HOME = { lat: 43.6, lon: 1.44 };
 
 /** The timeline, in ms. */
 export const T = {
@@ -37,9 +38,13 @@ export const T = {
   plunge: 3400,
   /** inside the thickest cloud: the planet becomes the city */
   city: 6000,
-  /** the descent levels off over the Pont Saint-Pierre and the view tips up, into the wallpaper */
+  /** the wallpaper's own scene starts taking over from the map, far things first, as the glide up the river begins */
+  glide: 8000,
+  /** the descent over the map levels off over the Pont Saint-Pierre */
   reveal: 8300,
-  /** the view has settled on the wallpaper's own: the Desktop comes in */
+  /** the map is gone: only the wallpaper's scene, gliding in */
+  joined: 8900,
+  /** the glide has come to rest on the wallpaper's own view: the Desktop comes in */
   land: 10100,
   /** the Desktop is all there is */
   end: 10800,
@@ -73,6 +78,13 @@ const hex = (c: string): RGB => {
 };
 
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => (v + 0.5) / 16);
+/** what a wallpaper pixel is, for the glide in */
+const C_SKY = 0;
+const C_FAR = 1;
+const C_BRIDGE = 2;
+const C_BANK = 3;
+const C_WATER = 4;
+const C_DOME = 5;
 const bayer = (x: number, y: number) => BAYER[((y & 3) << 2) | (x & 3)];
 
 function hash2(x: number, y: number) {
@@ -140,12 +152,10 @@ export function orbit(t: number, W: number, H: number) {
 
 /* the city, in map cells (CELL metres each). The descent comes down the river to a few
    hundred metres up, 600 m short of the Pont Neuf, looking at it (lower,
-   the map's cells would fill the screen); there the view tips up and the
-   wallpaper, painted from the Pont Saint-Pierre's deck 10 m over the water
-   and 300 m short of the Pont Neuf, fills it from the top down. The last
-   metres down onto that deck happen behind it. */
+   the map's cells would fill the screen); there the wallpaper's own scene,
+   painted from the Pont Saint-Pierre's deck 10 m over the water and 300 m
+   short of the Pont Neuf, takes over for the glide in. */
 const Z0 = 2000 / CELL;
-const Z2 = 10 / CELL;
 const HFOV = 42 * RAD;
 /** how far the descent starts behind where it levels off; how far that is, and the wallpaper's viewpoint, short of the Pont Neuf */
 const RUN = 440 / CELL;
@@ -153,6 +163,11 @@ const BACK = 600 / CELL;
 const SHORT = 300 / CELL;
 /** the turn the descent unwinds as it comes out of the clouds, banking onto the bridge */
 const SPIN = 38 * RAD;
+/** where the glide in starts: how far back from the wallpaper's viewpoint (in its distances to the Pont Neuf),
+    how high (of the screen's height, at the bridge's depth) and how far down it looks (of the screen's height) */
+const GLIDE_BACK = 0.3;
+const GLIDE_UP = 0.06;
+const GLIDE_TILT = -0.08;
 
 /** The wallpaper's horizon row and vanishing point for its grid (city.ts, buildCity). */
 function wallpaperView(W: number, H: number) {
@@ -172,8 +187,6 @@ function revealHeight(W: number, H: number) {
   const { half, thetaF } = lens(W, H);
   return Math.min(750 / CELL, Math.max(300 / CELL, BACK * Math.tan(2 * half + 8 * RAD - thetaF)));
 }
-/** Through the tip-up (0–1): the wallpaper fills the screen from here on, and the camera goes down onto the deck behind it. */
-const BEHIND = 0.78;
 
 /** Through the descent (0–1), how far along: already moving as it clears the clouds, coming to rest over the bridge. */
 const travel = (s: number) => 1.4 * s + 0.2 * s * s - 0.6 * s * s * s;
@@ -184,9 +197,8 @@ const sink = (s: number) => s + s * s - s * s * s;
 function zAt(t: number, W: number, H: number) {
   const zR = revealHeight(W, H);
   if (t < T.reveal) return logLerp(Z0, zR, sink(c01((t - T.city) / (T.reveal - T.city))));
-  // hardly lower while the view tips up; once the wallpaper fills the screen, down to the bridge's deck
-  const r = c01((t - T.reveal) / (T.land - T.reveal));
-  return r < BEHIND ? logLerp(zR, zR * 0.85, smooth(r / BEHIND)) : logLerp(zR * 0.85, Z2, smoother((r - BEHIND) / (1 - BEHIND)));
+  // a little lower still while the wallpaper's scene takes over
+  return logLerp(zR, zR * 0.8, smooth(c01((t - T.reveal) / (T.joined - T.reveal))));
 }
 
 type CityRefs = { bx: number; by: number; riverX: (y: number) => number };
@@ -195,23 +207,23 @@ type CityRefs = { bx: number; by: number; riverX: (y: number) => number };
  * The city camera at t: position (map cells, z up), heading (0 = south,
  * the wallpaper's), pitch, focal length. It comes in from the north down
  * the river, looking at the Pont Neuf the whole way, levels off over the
- * Pont Saint-Pierre and tips up onto the wallpaper's exact view: its
- * horizon row, its vanishing point.
+ * Pont Saint-Pierre and turns to the wallpaper's heading, so the river runs
+ * up the screen the way it does in the scene that takes over from it.
  */
 export function cityCam(t: number, W: number, H: number, refs: CityRefs) {
   const { f, hz, thetaF, yaw } = lens(W, H);
   const yR = refs.by - BACK;
   const s = c01((t - T.city) / (T.reveal - T.city));
-  const r = c01((t - T.reveal) / (T.land - T.reveal));
-  const y = r > BEHIND ? lerp(yR, refs.by - SHORT, smoother((r - BEHIND) / (1 - BEHIND))) : lerp(yR - RUN, yR, travel(s));
+  const r = c01((t - T.reveal) / (T.joined - T.reveal));
+  // still drifting on toward the bridge while the scene takes over
+  const y = lerp(yR - RUN, yR, travel(s)) + RUN * 0.12 * smooth(r);
   const x = refs.riverX(y);
   const z = zAt(t, W, H);
   const tx = refs.bx - x;
   const ty = refs.by + 1 - y;
   const look = -Math.atan2(z - 6 / CELL, Math.hypot(tx, ty));
-  // the view tips up into the wallpaper's framing, starting as the descent levels off (so it never stops
-  // moving); it turns to the wallpaper's heading first, so its frame comes in square, edges off screen
-  const settle = smoother(c01((t - (T.reveal - 400)) / (T.land - (T.reveal - 400))));
+  // it lifts its eyes a little toward the horizon and turns to the wallpaper's heading as it levels off
+  const settle = smoother(c01((t - (T.reveal - 600)) / (T.joined - (T.reveal - 600))));
   const turn = smoother(c01((t - (T.reveal - 600)) / 1100));
   const yF = refs.by - SHORT;
   const psiF = Math.atan2(refs.bx - refs.riverX(yF), refs.by + 1 - yF) + yaw;
@@ -220,28 +232,17 @@ export function cityCam(t: number, W: number, H: number, refs: CityRefs) {
     y,
     z,
     psi: lerp(Math.atan2(tx, ty) + SPIN * (1 - outCubic(s)), psiF, turn),
-    theta: lerp(look, thetaF, settle),
+    theta: lerp(look, thetaF, 0.3 * settle),
     f,
     hz,
   };
 }
 
-/** The view the flight lands on: the wallpaper's (position, heading, pitch). */
+/** The wallpaper's own view (heading, pitch): the map's sky and the river's reflections are drawn as it sees them. */
 function finalCam(W: number, H: number, refs: CityRefs) {
-  const c = cityCam(T.land, W, H, refs);
-  return { psi: c.psi, theta: c.theta };
-}
-
-/** Altitude in metres at t on a W×H grid, for the readout (the city camera's height). */
-export function altitude(t: number, W: number, H: number) {
-  if (t < T.city) return logLerp(26_000_000, Z0 * CELL, fall(t));
-  return zAt(t, W, H) * CELL;
-}
-
-/** Where the readout is: the planet's camera while it turns, Toulouse after. */
-export function whereAt(t: number) {
-  const a = inOutCubic(c01(t / T.turned));
-  return { lat: lerp(12, HOME.lat, a), lon: lerp(-74, HOME.lon, a) };
+  const { thetaF, yaw } = lens(W, H);
+  const yF = refs.by - SHORT;
+  return { psi: Math.atan2(refs.bx - refs.riverX(yF), refs.by + 1 - yF) + yaw, theta: thetaF };
 }
 
 /* the clouds flown through: each layer passes the camera at its time. The
@@ -307,23 +308,34 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
   for (let p = 0; p < N; p++) {
     const c = city.idx[p];
     const m = (c >> 4) & 63;
-    wallSky[p] = !(c & WATER) && (m === MAT.SKY || m === MAT.STAR || m === MAT.CLOUD) ? 1 : 0;
+    wallSky[p] = m === MAT.STAR || (!(c & WATER) && (m === MAT.SKY || m === MAT.CLOUD)) ? 1 : 0;
   }
-  // and the colour of its river nearest the viewer (its bottom rows): the map fades into it as the view tips up
-  let ur = 0;
-  let ug = 0;
-  let ub = 0;
-  {
-    const y0 = Math.floor(H * 0.88);
-    for (let p = y0 * W; p < N; p++) {
-      ur += wall[p] & 255;
-      ug += (wall[p] >> 8) & 255;
-      ub += (wall[p] >> 16) & 255;
-    }
-    const n = N - y0 * W || 1;
-    ur /= n;
-    ug /= n;
-    ub /= n;
+  // what each of its pixels is, for the glide in: sky (at infinity), the far skyline, the river (a plane, its
+  // depth by row), the bridge (one depth) or a quay (its depth by column). Every pixel is drawn by asking
+  // which of those surfaces the camera sees there, nearest first, so the scene has parallax
+  const geo = cityFrame(W, H);
+  const { dome } = geo;
+  const cls = new Uint8Array(N);
+  for (let p = 0; p < N; p++) {
+    const c = city.idx[p];
+    const m = (c >> 4) & 63;
+    const x = p % W;
+    const y = (p / W) | 0;
+    let k: number = C_BANK;
+    // (a star keeps its brightness in the flag bits, the water one among them)
+    if ((c & WATER && m !== MAT.STAR) || m === MAT.FARWATER) k = C_WATER;
+    // the dome stands back from the quay's front: one depth of its own (its ribs and lantern with it)
+    else if (
+      (m === MAT.DRUM || m === MAT.COPPER || ((m === MAT.STONE || m === MAT.DARK || m === MAT.WINDOW) && Math.abs(x + 0.5 - dome.x) <= dome.r + 1)) &&
+      y >= dome.top - 1 &&
+      y < dome.base
+    )
+      k = C_DOME;
+    else if (m === MAT.SKY || m === MAT.STAR || m === MAT.CLOUD || m === MAT.RANGE || m === MAT.SNOW) k = C_SKY;
+    else if (m === MAT.FAR) k = C_FAR;
+    else if (m === MAT.LEAF) k = C_BANK;
+    else if (x >= geo.xa && x <= geo.xb) k = m === MAT.WINDOW ? C_FAR : C_BRIDGE;
+    cls[p] = k;
   }
   // and its plain sky, row by row (the median, so the sun or the moon don't streak it): the sky behind its
   // city before the city rises into it, and the flight's sky past its frame, so the two meet without a seam
@@ -835,13 +847,9 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
     // haze reaches further the higher we are (from up there the city is crisp; on the river the horizon melts)
     const fogD = 1700 / CELL + Pz * 1.6;
     const airHaze = Math.min(0.08, (Pz * CELL) / 32000);
-    // the wallpaper, sky and city, as the view tips up into it (before, its frame is just out of sight above);
-    // the map below it fades into its river, so nothing shows twice (its bridge, the map's)
-    const gate = smooth(c01((t - (T.reveal - 300)) / 600));
-    const sink = 0.86 * smooth(c01((t - T.reveal) / 800));
     const hz = c.hz;
     // cloud shadows sweep the town by day (the clouds are above us now)
-    const shade = L.sunUp * 0.3 * (1 - gate);
+    const shade = L.sunUp * 0.3;
     const drift = t * 0.036;
     const starK = L.stars;
     const [fr, fg, fb] = fogC;
@@ -860,8 +868,8 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
       let o = j * W;
       const ground = dz < -1e-5;
       const tt = ground ? -Pz / dz : 0;
-      // the ground needs the wallpaper only once the view tips up into it; the sky always does
-      const needW = !ground || gate > 0;
+      // the sky is the wallpaper's own, wherever its frame reaches
+      const needW = !ground;
       let zs = (rx0 + Rx * sx0) * FxF + (ry0 + Ry * sx0) * FyF + dz * FzF;
       let nX = (rx0 + Rx * sx0) * RxF + (ry0 + Ry * sx0) * RyF;
       let nY = (rx0 + Rx * sx0) * UxF + (ry0 + Ry * sx0) * UyF + dz * UzF;
@@ -893,16 +901,11 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
             wk = k;
           }
         }
-        // the wallpaper: its sky wherever it shows, its city as the view tips up into it; its
-        // edge thins out pixel by pixel (dithered), so the frame never reads as a frame
-        let m = 0;
-        if (wv >= 0 && bayer(i + 1, j + 2) < wk) {
-          if (wsky && !ground) m = 1;
-          else m = gate;
-          if (m >= 1) {
-            out[o] = wv;
-            continue;
-          }
+        // the wallpaper's sky wherever it shows; its edge thins out pixel by pixel (dithered), so the
+        // frame never reads as a frame
+        if (wv >= 0 && wsky && bayer(i + 1, j + 2) < wk) {
+          out[o] = wv;
+          continue;
         }
         let r: number;
         let g: number;
@@ -987,11 +990,6 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
           r += (fr - r) * fog;
           g += (fg - g) * fog;
           b += (fb - b) * fog;
-          if (sink > 0) {
-            r += (ur - r) * sink;
-            g += (ug - g) * sink;
-            b += (ub - b) * sink;
-          }
         } else {
           // the sky past the wallpaper's frame: its colours by the row they take there, and stars fixed to directions
           const hz2 = Math.sqrt(dx * dx + dy * dy);
@@ -1012,23 +1010,157 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
             b += (((pv >> 16) & 255) - b) * wk;
           }
         }
-        if (m > 0) {
-          r += ((wv & 255) - r) * m;
-          g += (((wv >> 8) & 255) - g) * m;
-          b += (((wv >> 16) & 255) - b) * m;
-        }
         out[o] = pack(r, g, b);
+      }
+    }
+  }
+
+  /* ───────────── the glide in: the wallpaper's own scene, in depth ───────────── */
+  // From T.glide the camera is down on the river, a few hundred metres short of the wallpaper's viewpoint
+  // and a little above it, looking a little down; it glides up the river onto the deck, coming to rest on
+  // the wallpaper's exact view at T.land. The scene is the wallpaper's, its pixels at their depths: the
+  // quays at theirs (by column), the river a plane (by row), the bridge at one, the far skyline further,
+  // the sky at infinity. So the quays stream past and the bridge grows while the mountains hold still.
+  const { vx, xa, xb, hz: hzW, Lf } = geo;
+  const aW = Math.max(1, Lf - hzW);
+  const FAR_F = 0.12;
+  /** the deep water's bottom rows, repeated where the glide sees water nearer than the wallpaper does */
+  const DEEP_ROWS = Math.max(4, Math.round(H * 0.06));
+  const H1g = H - 1;
+  const DOME_F = dome.f;
+  const glide = new Uint32Array(N);
+  /** the depth each pixel of the glide showed (0 sky, 1 the bridge, more nearer): the hand-over goes far to near */
+  const glideF = new Float32Array(N);
+  /** a column past the frame's edge, folded back into it (continuous: pixel i spans [i, i + 1)) */
+  const mirX = (x: number) => (x < 0 ? -x : x >= W ? 2 * W - x - 1e-6 : x);
+
+  /** the glide's camera at t: how far back (in bridge distances), how high (art px at the bridge's depth), how far it looks down (px) */
+  function glideAt(t: number) {
+    const e = 1 - Math.pow(1 - c01((t - T.glide) / (T.land - T.glide)), 2.4);
+    return { back: GLIDE_BACK * (1 - e), up: GLIDE_UP * H * (1 - e), tilt: GLIDE_TILT * H * (1 - e) };
+  }
+
+  function drawGlide(t: number, out: Uint32Array) {
+    const { back, up, tilt } = glideAt(t);
+    const kB = 1 + back;
+    const kF = 1 + back * FAR_F;
+    const kD = 1 + back * DOME_F;
+    const lastPlate = plate[plate.length - 1];
+    for (let j = 0; j < H; j++) {
+      const Yc = j + 0.5;
+      // this row, measured from the wallpaper's horizon as it would stand without the tilt
+      const Yp = Yc - tilt - hzW;
+      // the river: the plane's depth on this row, and the row it comes from
+      let fW = -1;
+      let pW = -1;
+      if (Yp > 0) {
+        const den = aW + up - back * Yp;
+        fW = den > 1e-3 ? Yp / den : 1e4;
+        const ys = hzW + aW * fW;
+        // nearer than the wallpaper's own bottom row (behind its viewpoint): the deep water's last rows, repeated
+        pW = (ys > H1g ? H1g - (((ys - H1g) | 0) % DEEP_ROWS) : ys | 0) * W;
+      }
+      const yB = hzW + Yp * kB - up;
+      const rowB = yB >= 0 && yB < H ? (yB | 0) * W : -1;
+      const yF = hzW + Yp * kF - up * FAR_F;
+      const yD = hzW + Yp * kD - up * DOME_F;
+      const rowD = yD >= 0 && yD < H ? (yD | 0) * W : -1;
+      const rowF = yF >= 0 && yF < H ? (yF | 0) * W : -1;
+      const ySky = Yc - tilt;
+      const jSky = ySky < 0 ? 0 : ySky > H1g ? H1g : ySky | 0;
+      let o = j * W;
+      for (let i = 0; i < W; i++, o++) {
+        const Xc = i + 0.5;
+        let best = -1;
+        let bv = 0;
+        // a quay: its depth from the column it stands in
+        const left = Xc < vx;
+        const u = left ? (vx - Xc) / (vx - xa) : (Xc - vx) / (xb - vx);
+        const dq = 1 - back * u;
+        if (u > 0 && dq > 0.05) {
+          const f = u / dq;
+          const xs = mirX(left ? vx - (vx - xa) * f : vx + (xb - vx) * f);
+          const ys = hzW + Yp * (1 + back * f) - up * f;
+          if (ys >= 0 && ys < H) {
+            const p = (ys | 0) * W + (xs | 0);
+            if (cls[p] === C_BANK) {
+              best = f;
+              bv = wall[p];
+            }
+          }
+        }
+        // the dome, set back from its quay
+        if (best < DOME_F && rowD >= 0) {
+          const xs = vx + (Xc - vx) * kD;
+          if (xs >= 0 && xs < W) {
+            const p = rowD + (xs | 0);
+            if (cls[p] === C_DOME) {
+              best = DOME_F;
+              bv = wall[p];
+            }
+          }
+        }
+        // the river, where it comes nearer than any quay here
+        if (fW > best) {
+          const p = pW + (mirX(vx + (Xc - vx) * (1 + back * fW)) | 0);
+          if (cls[p] === C_WATER) {
+            best = fW;
+            bv = wall[p];
+          }
+        }
+        // the bridge
+        if (best < 1 && rowB >= 0) {
+          const xs = vx + (Xc - vx) * kB;
+          if (xs >= 0 && xs < W) {
+            const p = rowB + (xs | 0);
+            if (cls[p] === C_BRIDGE) {
+              best = 1;
+              bv = wall[p];
+            }
+          }
+        }
+        // the far skyline
+        if (best < FAR_F && rowF >= 0) {
+          const xs = vx + (Xc - vx) * kF;
+          if (xs >= 0 && xs < W) {
+            const p = rowF + (xs | 0);
+            if (cls[p] === C_FAR) {
+              best = FAR_F;
+              bv = wall[p];
+            }
+          }
+        }
+        // the sky, at infinity: only the tilt moves it (where something nearer used to stand, its plain sky)
+        if (best < 0) {
+          const p = jSky * W + i;
+          bv = cls[p] === C_SKY ? wall[p] : jSky < plate.length ? plate[jSky] : lastPlate;
+          best = 0;
+        }
+        out[o] = bv;
+        glideF[o] = best;
       }
     }
   }
 
   function draw(t: number, out: Uint32Array) {
     cloudsAt(t);
+    if (t >= T.joined) drawGlide(t, out);
     // deep in the thick one there is nothing else to see
-    if (veil < 0.995) {
+    else if (veil < 0.995) {
       const skip = clouded ? hidden : null;
       if (t < T.city) drawSpace(t, out, skip);
       else drawCity(t, out, skip);
+      // the hand-over: the wallpaper's scene comes in pixel by pixel, the sky and the skyline first, the quays last
+      if (t >= T.glide) {
+        drawGlide(t, glide);
+        const u = smooth(c01((t - T.glide) / (T.joined - T.glide)));
+        for (let j = 0, o = 0; j < H; j++)
+          for (let i = 0; i < W; i++, o++) {
+            const f = glideF[o];
+            // each depth crosses over in its own fifth of the hand-over: a wave from the horizon to the viewer
+            if (bayer(i + 3, j + 1) < (u * 1.25 - 0.95 * (f / (1 + f))) * 3.5) out[o] = glide[o];
+          }
+      }
     }
     shadeClouds(t, out);
     // up out of the dark
@@ -1044,7 +1176,7 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
   // each phase drawn once now, so the engine has compiled it before the flight needs it (no hitch at a hand-over)
   {
     const scratch = new Uint32Array(N);
-    for (const t of [T.plunge + 900, T.city - 300, T.city + 400, T.city + 1500, T.reveal - 500, T.reveal + 600, T.end]) draw(t, scratch);
+    for (const t of [T.plunge + 900, T.city - 300, T.city + 400, T.city + 1500, T.glide + 300, T.joined + 200, T.end]) draw(t, scratch);
   }
 
   return { draw, refs };
