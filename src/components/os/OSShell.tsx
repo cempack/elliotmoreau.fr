@@ -9,6 +9,7 @@ import { TerminalProvider, Terminal } from "./Terminal";
 import { Wallpaper } from "./Wallpaper";
 import { MenuBar } from "./MenuBar";
 import { Dock } from "./Dock";
+import { WindowsOverview } from "./WindowsOverview";
 import { Intro } from "./Intro";
 import { IdlePrefetch } from "./IdlePrefetch";
 import { Suspense } from "react";
@@ -17,7 +18,7 @@ import { ContentSync } from "@/lib/contentSync";
 
 /**
  * emOS: the persistent chrome around every app. Order matters for
- * stacking: wallpaper (z0) → app content → dock/menu bar (z50) →
+ * stacking: wallpaper (z0) → app content → the windows overview (z45) → dock/menu bar (z50) →
  * terminal → intro (z100).
  */
 export function OSShell({ data, children }: { data: SiteData; children: React.ReactNode }) {
@@ -35,7 +36,8 @@ export function OSShell({ data, children }: { data: SiteData; children: React.Re
             </Suspense>
             <Wallpaper />
             <MenuBar />
-            <div className="relative z-10 flex min-h-svh flex-col overflow-x-clip">{children}</div>
+            <div className="os-stage relative z-10 flex min-h-svh flex-col overflow-x-clip">{children}</div>
+            <WindowsOverview />
             <Dock />
             <Terminal />
             <Intro />

@@ -12,6 +12,7 @@ import { Sheet, useSheetDismiss } from "@/components/ui/Sheet";
 import { APPS, appForPath, type AppId } from "../apps";
 import { AppIcon, type IconId } from "../icons";
 import { useTerminal } from "../Terminal";
+import { openOverview } from "../overview";
 import { bounce, isPlainClick, pressHandlers, scrollToTop } from "./launch";
 
 /** The five apps that earn a tab; the rest live behind More. */
@@ -84,6 +85,34 @@ export function MobileTabBar() {
     };
   }, []);
 
+  // a swipe up on the bar shows every open window (like a phone's app switcher)
+  const swipe = useRef<{ id: number; x: number; y: number; fired: boolean } | null>(null);
+  const swipeHandlers = {
+    onPointerDown: (e: React.PointerEvent) => {
+      if (e.pointerType === "mouse") return;
+      swipe.current = { id: e.pointerId, x: e.clientX, y: e.clientY, fired: false };
+    },
+    onPointerMove: (e: React.PointerEvent) => {
+      const s = swipe.current;
+      if (!s || s.fired || s.id !== e.pointerId) return;
+      if (s.y - e.clientY > 34 && Math.abs(e.clientX - s.x) < 44) {
+        s.fired = true;
+        openOverview();
+      }
+    },
+    onPointerCancel: () => {
+      swipe.current = null;
+    },
+    // the tap under a swipe is not a launch
+    onClickCapture: (e: React.MouseEvent) => {
+      if (swipe.current?.fired) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      swipe.current = null;
+    },
+  };
+
   const launch = (e: React.MouseEvent<HTMLElement>, on: boolean) => {
     if (!isPlainClick(e)) return;
     if (on) {
@@ -96,7 +125,7 @@ export function MobileTabBar() {
 
   return (
     <>
-      <nav aria-label={t.dock.label} className="os-tabbar" data-os-dock="" data-kbd={kbd || undefined}>
+      <nav aria-label={t.dock.label} className="os-tabbar" data-os-dock="" data-kbd={kbd || undefined} {...swipeHandlers}>
         <ul className="os-tabbar-list">
           {PRIMARY.map((id) => {
             const app = APPS.find((a) => a.id === id)!;
@@ -210,6 +239,19 @@ function MoreList({ active, afterRef }: { active: AppId; afterRef: React.RefObje
             <span className="os-more-text">
               <span className="os-more-name">{t.shell.apps.terminal}</span>
               <span className="os-more-hint">{t.dock.terminalHint}</span>
+            </span>
+            <Chevron />
+          </button>
+        </li>
+        <li>
+          <button type="button" className="os-more-row" onClick={() => thenClose(openOverview)}>
+            <span className="os-more-stack" aria-hidden>
+              <AppIcon app="writing" size={30} live={false} />
+              <AppIcon app="work" size={30} live={false} />
+            </span>
+            <span className="os-more-text">
+              <span className="os-more-name">{t.dock.windows}</span>
+              <span className="os-more-hint">{t.dock.windowsHint}</span>
             </span>
             <Chevron />
           </button>

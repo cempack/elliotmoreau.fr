@@ -19,6 +19,7 @@ import { useTerminal } from "./Terminal";
 import type { PanelId } from "./menubar/Panel";
 import { BLOG_URL, fill, restartOS } from "./menubar/util";
 import { lockOS } from "./Intro";
+import { openOverview } from "./overview";
 import { useMedia } from "@/hooks/env";
 import { useSpotifyStatus } from "@/hooks/useSpotifyStatus";
 import { DeadLetter } from "./DeadLetter";
@@ -98,6 +99,14 @@ export function useSpotlightCommands(): Command[] {
     });
 
     const actions: Command[] = [
+      {
+        id: "overview",
+        group: sp.actions,
+        label: sp.overview,
+        hint: "Ctrl ↑",
+        keywords: "windows overview mission control expose exposé fenêtres apps open switcher",
+        perform: openOverview,
+      },
       {
         id: "copy-email",
         group: sp.actions,

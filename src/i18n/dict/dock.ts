@@ -12,6 +12,8 @@ const en = {
   nowHint: "What I'm into right now",
   terminalHint: "A real shell. Type help.",
   searchHint: "Apps, posts, projects, commands",
+  windows: "Open windows",
+  windowsHint: "Every app you opened. Or swipe up on this bar.",
   running: "open",
 };
 
@@ -24,6 +26,8 @@ const fr: typeof en = {
   nowHint: "Ce qui m’occupe en ce moment",
   terminalHint: "Un vrai shell. Tapez help.",
   searchHint: "Apps, articles, projets, commandes",
+  windows: "Fenêtres ouvertes",
+  windowsHint: "Toutes les apps ouvertes. Ou balayez cette barre vers le haut.",
   running: "ouvert",
 };
 
