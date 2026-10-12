@@ -3,9 +3,9 @@
 Personal site of Elliot Moreau, a student at Epitech in Toulouse, built as **emOS**: the site works like my
 Omarchy desktop. A waybar-style top bar whose workspaces appear as you open apps, bordered tiled
 windows over a pixel-art valley whose sky follows the time in Toulouse, every
-page an app, Spotlight, a Terminal, and a first visit that arrives from space
-straight onto the Desktop (Restart plays the pixel-name boot; Shut Down turns
-the screen off). Bilingual (EN at `/`, FR at `/fr`).
+page an app, Spotlight, a Terminal, and a first visit that arrives from space:
+through the clouds, down the Garonne, landing pixel for pixel on the wallpaper
+(Restart plays the pixel-name boot; Shut Down turns the screen off). Bilingual (EN at `/`, FR at `/fr`).
 
 Stack: Next.js 16 (App Router) · React 19 · TypeScript · Tailwind v4 ·
 `motion` · Lenis. Deploys on Vercel.

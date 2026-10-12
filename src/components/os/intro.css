@@ -206,21 +206,35 @@
 
 /* ───────── arrival: from space down to the Pont Neuf (Arrival.tsx) ───────── */
 
-/* it takes over from the boot's text */
+/* it takes over from the boot's text, fading up over it */
 .os-intro[data-arrival] .os-intro-boot {
-  visibility: hidden;
+  /* its own name: a renamed animation starts over now, where os-boot-out would keep its page-load clock and vanish at once */
+  animation: os-boot-gone 1ms linear 560ms both;
+}
+@keyframes os-boot-gone {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
 }
 .os-arrival {
   position: absolute;
   inset: 0;
   z-index: 3;
+  overflow: hidden;
   background: #050607;
+  animation: os-arrival-in 520ms var(--ease-out-quint) both;
 }
+@keyframes os-arrival-in {
+  from {
+    opacity: 0;
+  }
+}
+/* the wallpaper's art grid, cell for cell (Arrival.tsx sets the size) */
 .os-arrival-canvas {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  top: 0;
+  left: 0;
   image-rendering: pixelated;
 }
 .os-arrival-read,
@@ -234,7 +248,20 @@
 }
 .os-arrival-read {
   left: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  max-width: calc(100% - 48px);
   color: var(--color-label-2);
+}
+.os-arrival-alt {
+  color: var(--color-label-3);
+}
+/* on a phone the readout sits over the skip hint's line: lift it */
+@media (pointer: coarse) {
+  .os-arrival-read {
+    bottom: calc(max(24px, env(safe-area-inset-bottom)) + 22px);
+  }
 }
 .os-arrival-skip {
   right: 24px;
@@ -282,6 +309,12 @@
    sight (inert underneath anyway); they come in as it clears (Gate.tsx) */
 html[data-intro-up="first"]:not([data-intro="done"]) :is(.os-menubar, .os-tabbar, .os-dock) {
   visibility: hidden;
+}
+/* and the live weather holds off too (the arrival lands on the bare wallpaper, pixel for
+   pixel): its own fade-in starts over once the gate clears (wallpaper.css) */
+html[data-intro-up="first"]:not([data-intro="done"]) .os-wallpaper-weather {
+  opacity: 0;
+  animation: none;
 }
 
 /* ───────── Shut Down: the screen goes dark, one power button (Off.tsx) ───────── */

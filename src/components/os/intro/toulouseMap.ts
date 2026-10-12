@@ -3,9 +3,9 @@
  * the faubourgs and the pink old town, the Garonne's long bend with its
  * stone quays and the Île du Ramier, the Canal du Midi lined with plane
  * trees, the parks, the Capitole's square, the Dôme de la Grave and the
- * Pont Neuf at the middle of the map (the arrival lands on it). Clouds
- * are a separate layer so they can drift over the town with their
- * shadows.
+ * Pont Neuf a little south of the middle (the arrival comes in from the
+ * north, down the river, and lands short of it). Clouds are a separate
+ * layer: the flight casts their shadows on the town.
  */
 
 export const MAP = 256;
@@ -53,6 +53,8 @@ export type ToulouseMap = {
   clouds: ImageData;
   /** the Pont Neuf, in map pixels */
   bridge: { x: number; y: number };
+  /** the Garonne's middle at a map row, smooth (the flight follows it in to the Pont Saint-Pierre) */
+  riverX: (y: number) => number;
 };
 
 /** `near`: how many clouds drift close over the Pont Neuf (today's weather: one on a clear day, three when it's grey) */
@@ -71,15 +73,12 @@ export function paintToulouse(near = 1): ToulouseMap {
     px[i + 3] = 255;
   };
 
-  // the Garonne: from the south, a long bend, out to the north-west; the Pont Neuf mid-map
+  // the Garonne: from the south, a long bend, out to the north-west; the
+  // Pont Neuf centred across, south of the middle (room to fly in from the north)
+  const bend = (t: number) => 150 + Math.sin(t * Math.PI * 1.15 + 0.2) * 24 - t * 70;
   const river: [number, number, number][] = [];
-  for (let t = 0; t <= 1; t += 0.0015) {
-    const y = N + 8 - t * (N + 20);
-    const x = 150 + Math.sin(t * Math.PI * 1.15 + 0.2) * 24 - t * 70;
-    river.push([x, y, 6 + Math.sin(t * 6) * 1]);
-  }
-  const mid = river.reduce((b, p) => (Math.abs(p[1] - N / 2) < Math.abs(b[1] - N / 2) ? p : b));
-  // centre the bridge horizontally
+  for (let t = 0; t <= 1; t += 0.0015) river.push([bend(t), N + 8 - t * (N + 20), 6 + Math.sin(t * 6) * 1]);
+  const mid = river.reduce((b, p) => (Math.abs(p[1] - N * 0.6) < Math.abs(b[1] - N * 0.6) ? p : b));
   const shift = N / 2 - mid[0];
   for (const p of river) p[0] += shift;
   const bx = Math.round(mid[0]);
@@ -227,19 +226,26 @@ export function paintToulouse(near = 1): ToulouseMap {
         cput(x, y, e > 0.86 ? [233, 238, 236] : under ? [196, 205, 207] : top ? [255, 255, 255] : [238, 241, 238], 1);
       }
 
-  return { ground, clouds, bridge: { x: bx, y: by } };
+  const riverX = (y: number) => bend((N + 8 - y) / (N + 20)) + shift;
+  return { ground, clouds, bridge: { x: bx, y: by }, riverX };
 }
 
 /** the light the map is painted in: noon's ambient and sun (light.ts), so noon leaves it as it is */
 const NOON: RGB = [1.34, 1.39, 1.38];
 /** moonlight: the river and the streets still read on the darkest night */
-const MOON: RGB = [0.16, 0.18, 0.27];
+const MOON: RGB = [0.21, 0.24, 0.35];
+/** the streets between the blocks (toulouseMap's Voronoi edges): the old town's, the faubourgs' */
+const STREET_OLD = hex("#6e3d33");
+const STREET = hex("#8a7464");
 
 /**
  * The map in the Desktop's own light for an instant (`skyLight`, the
  * wallpaper's model): the same ambient and sun the city on the wallpaper
  * gets, so the arrival lands in the hour the Desktop shows. At night the
- * old town's windows come on and the clouds go grey-blue.
+ * streets light up in sodium (a web, densest in the old town), a few
+ * windows come on, the quays get their lamps and the clouds go grey-blue. Returns
+ * which cells are lit windows and which are water: the flight draws
+ * windows as points however close it gets, and lets the river mirror the sky.
  */
 export function lightToulouse(
   map: ToulouseMap,
@@ -249,25 +255,40 @@ export function lightToulouse(
   const k = [0, 1, 2].map((c) => Math.min(1.12, Math.max(MOON[c] * L.stars, (L.amb[c] + L.sunTint[c] * up) / NOON[c])));
   const g = map.ground.data;
   const N = map.ground.width;
+  const lights = new Uint8Array(N * N);
+  const water = new Uint8Array(N * N);
+  for (let i = 0; i < g.length; i += 4) if (g[i + 2] > g[i] + 30 && g[i + 1] > g[i] + 20) water[i >> 2] = 1;
+  const byWater = (p: number) => {
+    const x = p % N;
+    const y = (p / N) | 0;
+    for (let j = -2; j <= 2; j++)
+      for (let k2 = -2; k2 <= 2; k2++) {
+        const X = x + k2;
+        const Y = y + j;
+        if (X >= 0 && Y >= 0 && X < N && Y < N && water[Y * N + X]) return true;
+      }
+    return false;
+  };
   for (let i = 0; i < g.length; i += 4) {
     const r = g[i];
     const gr = g[i + 1];
     const b = g[i + 2];
+    const p = i >> 2;
+    // the quays and the bridges carry lamps after dark, a few cells apart (3: lamp white)
+    if (L.stars > 0.25 && !water[p] && r > 150 && gr > 125 && b > 100 && r - b < 56 && hash(p % N, (p / N) | 0, 11) < 0.34 * L.stars && byWater(p)) lights[p] = 3;
+    // after dark the streets: sodium lamps every few cells along them, the old town's closest together
+    const old = r === STREET_OLD[0] && gr === STREET_OLD[1] && b === STREET_OLD[2];
+    if (L.stars > 0.25 && (old || (r === STREET[0] && gr === STREET[1] && b === STREET[2]))) {
+      if (hash(p % N, (p / N) | 0, 13) < (old ? 0.3 : 0.16) * L.stars) lights[p] = 1;
+    }
+    // and a few windows in the brick: warm, never everywhere (1: lamp-warm, 2: brighter)
+    else if (L.stars > 0.25 && r > gr + 24 && r > b + 24) {
+      const h = hash(p % N, (p / N) | 0, 9);
+      if (h < 0.04 * L.stars) lights[p] = h < 0.016 * L.stars ? 2 : 1;
+    }
     g[i] = r * k[0];
     g[i + 1] = gr * k[1];
     g[i + 2] = b * k[2];
-    // after dark, a few windows in the brick: warm, never everywhere
-    if (L.stars > 0.25 && r > gr + 24 && r > b + 24) {
-      const p = (i >> 2) % N;
-      const q = ((i >> 2) / N) | 0;
-      const h = hash(p, q, 9);
-      if (h < 0.04 * L.stars) {
-        const warm: RGB = h < 0.02 * L.stars ? [246, 199, 107] : [217, 137, 74];
-        g[i] = warm[0];
-        g[i + 1] = warm[1];
-        g[i + 2] = warm[2];
-      }
-    }
   }
   const c = map.clouds.data;
   for (let i = 0; i < c.length; i += 4) {
@@ -276,4 +297,5 @@ export function lightToulouse(
     c[i + 1] = c[i + 1] * Math.min(1, k[1] + 0.1);
     c[i + 2] = c[i + 2] * Math.min(1, k[2] + 0.12);
   }
+  return { lights, water };
 }

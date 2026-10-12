@@ -200,6 +200,9 @@ export function skyLight(ms: number, lat?: number, lon?: number) {
     sunUp: smoothstep(-1.2, 2.5, e),
     /** the rose light after sunset (and before sunrise) */
     twilight: smoothstep(-10, -1, e) * (1 - smoothstep(1, 6, e)),
+    /** the clouds' lit top, middle and shade, and the river */
+    cloud: i.cloud,
+    water: i.water,
   };
 }
 export type SkyLight = ReturnType<typeof skyLight>;

@@ -8,6 +8,7 @@ import { useSiteData } from "../SiteData";
 import { Wordmark } from "./Wordmark";
 import { playStartupChord } from "./chime";
 import { Arrival } from "./Arrival";
+import { T } from "./flight";
 
 /** The boot screen starts fading here (ms from first paint): see intro.css. */
 const BOOT_MS = 3460;
@@ -61,13 +62,15 @@ function wasRestart() {
  * Dock (Dock.tsx) and the Desktop's widgets and icons (DesktopScene.tsx)
  * answer the same `em:intro-done`, each on its own beat after `delay`.
  */
-function arrive(delay: number) {
+function arrive(delay: number, settle: boolean) {
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   window.dispatchEvent(new CustomEvent("em:intro-done", { detail: { delay } }));
   if (reduced) return;
-  document
-    .querySelector<HTMLElement>(".os-wallpaper")
-    ?.animate([{ scale: "1.07" }, { scale: "1" }], { duration: 1500, easing: SETTLE, fill: "backwards" });
+  // after the boot's text, the wallpaper settles in; after the flight it is already exactly in place
+  if (settle)
+    document
+      .querySelector<HTMLElement>(".os-wallpaper")
+      ?.animate([{ scale: "1.07" }, { scale: "1" }], { duration: 1500, easing: SETTLE, fill: "backwards" });
   for (const el of document.querySelectorAll<HTMLElement>(".os-menubar")) {
     el.animate([{ translate: "0 -100%", opacity: 0 }, { translate: "0 0", opacity: 1 }], {
       duration: 640,
@@ -95,11 +98,11 @@ export default function Gate({ onDone }: { onDone: () => void }) {
   const out = useRef(false);
 
   /** the gate clears: the Desktop comes in `delay` ms on, as the cover lifts */
-  const clear = (delay: number) => {
+  const clear = (delay: number, settle = true) => {
     if (out.current) return;
     out.current = true;
     setPhase("out");
-    arrive(delay);
+    arrive(delay, settle);
     // a Restart was asked for with a click: the chord, if the browser still lets this page play sound
     let off = muted;
     try {
@@ -137,7 +140,7 @@ export default function Gate({ onDone }: { onDone: () => void }) {
     const arriving = arrival === "on";
     const elapsed = performance.now() - sequenceStart();
     // (an arrival that never lands, a canvas that never drew, still ends on the Desktop)
-    const id = window.setTimeout(() => clearRef.current(160), arriving ? 8000 : Math.max(0, BOOT_MS - elapsed) + 600);
+    const id = window.setTimeout(() => clearRef.current(160), arriving ? T.end + 3000 : Math.max(0, BOOT_MS - elapsed) + 600);
     const boot = rootRef.current?.querySelector(".os-intro-boot");
     const fading = (e: Event) => {
       if (!arriving && (e as AnimationEvent).animationName === "os-boot-out") clearRef.current(160);
@@ -195,7 +198,7 @@ export default function Gate({ onDone }: { onDone: () => void }) {
     >
       {!hydrated && <script dangerouslySetInnerHTML={{ __html: PREPAINT }} />}
       <BootScreen />
-      {arrival === "on" && <Arrival skipped={skipped} onLand={() => clear(420)} onGone={() => setArrival("done")} />}
+      {arrival === "on" && <Arrival skipped={skipped} onLand={() => clear(420, false)} onGone={() => setArrival("done")} />}
     </div>
   );
 }
