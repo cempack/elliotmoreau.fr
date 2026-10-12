@@ -257,10 +257,7 @@ function MoreList({ active, afterRef }: { active: AppId; afterRef: React.RefObje
         </li>
         <li>
           <button type="button" className="os-more-row" onClick={() => thenClose(openOverview)}>
-            <span className="os-more-stack" aria-hidden>
-              <AppIcon app="writing" size={30} live={false} />
-              <AppIcon app="work" size={30} live={false} />
-            </span>
+            <AppIcon app="overview" size={44} />
             <span className="os-more-text">
               <span className="os-more-name">{t.dock.windows}</span>
               <span className="os-more-hint">{t.dock.windowsHint}</span>
