@@ -27,6 +27,36 @@ export function saveDraft(d: Draft) {
   } catch {}
 }
 
+/** Who the letter is from (sending from the site): remembered in this browser for the next one. */
+export type From = { email: string; name: string };
+
+const FROM_KEY = "em-mail-from";
+
+export function loadFrom(): From | null {
+  try {
+    const raw = localStorage.getItem(FROM_KEY);
+    if (!raw) return null;
+    const v = JSON.parse(raw) as Partial<From>;
+    if (typeof v.email !== "string" || typeof v.name !== "string") return null;
+    return { email: v.email, name: v.name };
+  } catch {
+    return null;
+  }
+}
+
+export function saveFrom(f: From) {
+  try {
+    if (!f.email.trim() && !f.name.trim()) localStorage.removeItem(FROM_KEY);
+    else localStorage.setItem(FROM_KEY, JSON.stringify(f));
+  } catch {}
+}
+
+/** the same check the server makes (one @, a dotted domain, no spaces or separators) */
+export const EMAIL_RE = /^[^\s@<>()[\]\\,;:"]{1,64}@[^\s@<>()[\]\\,;:"'_]+\.[^\s@<>()[\]\\,;:"'_]{2,}$/;
+
+/** the longest letter the site sends (characters) */
+export const LETTER_MAX = 10_000;
+
 /** RFC 6068: spaces as %20, line breaks as CRLF. */
 export function mailtoHref(email: string, { subject, body }: Draft) {
   const q: string[] = [];
