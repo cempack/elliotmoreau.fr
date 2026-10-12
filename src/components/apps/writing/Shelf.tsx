@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { GhostPost } from "@/lib/ghost";
 import { project } from "@/lib/motion";
 import { composite, paintPlateLayers, plateSeed } from "./plate";
+import { useThemeTokens } from "@/hooks/useTheme";
+import { mix, type ThemeTokens } from "@/lib/theme";
 
 /**
  * The Shelf of Spines: every post a pixel book standing over the list.
@@ -23,15 +25,21 @@ import { composite, paintPlateLayers, plateSeed } from "./plate";
 type RGB = [number, number, number];
 const hex = (h: string): RGB => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
 
-const PANEL = hex("#0b0d0c");
-const GRAIN = hex("#121513");
-const PLANK = hex("#1f2420");
-const LIP = hex("#3f4842");
-const CLOTH = ["#2b322d", "#353d37", "#414a43"].map(hex);
-const EDGE = hex("#0b0d0c");
-const LABEL = hex("#5a645c");
-const INK = hex("#bcc2ba");
-const LIME = hex("#b0cc86");
+/** the shelf's inks: the wood and cloth from the live theme's ink scale and
+    accent; the year bricks stay Toulouse clay */
+function shelfInks(t: ThemeTokens) {
+  return {
+    PANEL: hex(t.ink950),
+    GRAIN: hex(mix(t.ink950, t.ink800, 0.45)),
+    PLANK: hex(mix(t.ink800, t.ink700, 0.5)),
+    LIP: hex(t.ink600),
+    CLOTH: [mix(t.ink700, t.ink600, 0.2), t.ink600, mix(t.ink600, t.ink500, 0.35)].map(hex),
+    EDGE: hex(t.ink950),
+    LABEL: hex(mix(t.ink600, t.label3, 0.45)),
+    INK: hex(t.label2),
+    LIME: hex(t.signal),
+  };
+}
 const BRICK_A = hex("#e2786b");
 const BRICK_B = hex("#e0bd6e");
 const BRICK_SIDE = hex("#3f4842");
@@ -104,6 +112,8 @@ export function Shelf({
 }) {
   const wrap = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
+  const tokens = useThemeTokens();
+  const K = useMemo(() => shelfInks(tokens), [tokens]);
   const titles = useRef(new Map<string, HTMLSpanElement>());
   const [dims, setDims] = useState<{ W: number; H: number; cell: number } | null>(null);
   const [hover, setHoverState] = useState<{ slug: string; x: number } | null>(null);
@@ -140,7 +150,7 @@ export function Shelf({
       if (year && y !== year) out.push({ kind: "brick", year, w: 7, h: Math.min(26, dims.H - PLANK_H - 6) });
       year = y;
       const tag = p.tags?.[0]?.slug ?? "";
-      if (!tags.has(tag)) tags.set(tag, tags.size % CLOTH.length);
+      if (!tags.has(tag)) tags.set(tag, tags.size % K.CLOTH.length);
       const face = i === 0;
       const tall = seedHash(p.slug) & 1;
       // the tallest a book can be and still come 40% out of the row
@@ -148,11 +158,11 @@ export function Shelf({
       const h = face || tall ? hMax : hMax - 2;
       const w = face ? 20 : Math.max(6, Math.min(18, 4 + Math.max(1, p.reading_time || 1)));
       const skyW = face ? w - 2 : w - 1;
-      out.push({ kind: "book", slug: p.slug, post: p, w, h, cloth: CLOTH[tags.get(tag)!], face, sky: plateSlice(p, skyW, face ? 12 : SKY_H), skyW });
+      out.push({ kind: "book", slug: p.slug, post: p, w, h, cloth: K.CLOTH[tags.get(tag)!], face, sky: plateSlice(p, skyW, face ? 12 : SKY_H), skyW });
     });
     if (year) out.push({ kind: "brick", year, w: 7, h: Math.min(26, dims.H - PLANK_H - 6) });
     return out;
-  }, [posts, dims]);
+  }, [posts, dims, K]);
 
   // targets: x along the plank (sunk books close ranks), lift, lean
   const targets = useMemo(() => {
@@ -211,7 +221,7 @@ export function Shelf({
       for (let y = 0; y < H; y++) {
         for (let x = 0; x < W; x++) {
           const o = (y * W + x) * 4;
-          const c = y >= base ? (y === base ? LIP : PLANK) : bayer(x + Math.round(S.s), y) < 0.06 ? GRAIN : PANEL;
+          const c = y >= base ? (y === base ? K.LIP : K.PLANK) : bayer(x + Math.round(S.s), y) < 0.06 ? K.GRAIN : K.PANEL;
           d[o] = c[0];
           d[o + 1] = c[1];
           d[o + 2] = c[2];
@@ -245,17 +255,17 @@ export function Shelf({
           const off = lean ? Math.round((lean * fromBottom) / it.h) : 0;
           const ry = y - top;
           for (let x = 0; x < it.w; x++) {
-            let c: RGB = x === it.w - 1 ? EDGE : it.cloth;
+            let c: RGB = x === it.w - 1 ? K.EDGE : it.cloth;
             if (it.face) {
               // face-out: a cover with the plate on its upper half
               if (ry >= 1 && ry < 13 && x >= 1 && x < it.w - 1) {
                 const o = ((ry - 1) * it.skyW + (x - 1)) * 4;
                 c = [it.sky[o], it.sky[o + 1], it.sky[o + 2]];
-              } else if (ry === 13 && x >= 1 && x < it.w - 1) c = LABEL;
+              } else if (ry === 13 && x >= 1 && x < it.w - 1) c = K.LABEL;
             } else if (ry < SKY_H && x < it.skyW) {
               const o = (ry * it.skyW + x) * 4;
               c = [it.sky[o], it.sky[o + 1], it.sky[o + 2]];
-            } else if (ry === SKY_H && x < it.w - 1) c = LABEL;
+            } else if (ry === SKY_H && x < it.w - 1) c = K.LABEL;
             put(x0 + x + off, y, c);
           }
         }
@@ -264,12 +274,12 @@ export function Shelf({
         const nx = x0 + Math.floor((it.w - 1 - (mins.length * 4 - 1)) / 2);
         [...mins].forEach((ch, k) =>
           DIGITS[ch]?.forEach((row, ry) => {
-            for (let rx = 0; rx < 3; rx++) if (row[rx] === "#") put(nx + k * 4 + rx, base - lift - 6 + ry, INK);
+            for (let rx = 0; rx < 3; rx++) if (row[rx] === "#") put(nx + k * 4 + rx, base - lift - 6 + ry, K.INK);
           })
         );
         // the selected book's headband; a ribbon for posts already opened
-        if (it.slug === selected) for (let x = 0; x < it.w - 1; x++) put(x0 + x, top, LIME);
-        if (opened.has(it.slug) && it.slug !== selected) for (let y = top - 2; y < top + 3; y++) put(x0 + it.w - 3, y, LIME);
+        if (it.slug === selected) for (let x = 0; x < it.w - 1; x++) put(x0 + x, top, K.LIME);
+        if (opened.has(it.slug) && it.slug !== selected) for (let y = top - 2; y < top + 3; y++) put(x0 + it.w - 3, y, K.LIME);
       });
       ctx.putImageData(img, 0, 0);
       // titles ride their books (DOM text, crisp)
@@ -336,7 +346,7 @@ export function Shelf({
       S.raf = requestAnimationFrame(step);
     };
     return () => cancelAnimationFrame(S.raf);
-  }, [dims, items, targets, selected, opened]);
+  }, [dims, items, targets, selected, opened, K]);
 
   // keep the pulled-out book in view
   useEffect(() => {

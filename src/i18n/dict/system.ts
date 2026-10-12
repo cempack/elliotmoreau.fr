@@ -64,7 +64,7 @@ const en = {
         sky: "pin the sky: live, dawn, day, dusk, night",
         lang: "switch language: en, fr",
         sound: "sound on or off",
-        theme: "the Moss palette",
+        theme: "the live Dos Moos palette",
         date: "date and time in Toulouse",
         echo: "print some text",
         history: "previous commands",
@@ -178,7 +178,6 @@ const en = {
       usage: "usage: sound <on|off>",
     },
     theme: {
-      title: "Moss",
       ink: "backgrounds",
       paper: "text",
       signal: "the accent",
@@ -288,7 +287,7 @@ const fr: typeof en = {
         sky: "fixer le ciel : live, dawn, day, dusk, night",
         lang: "changer de langue : en, fr",
         sound: "son activé ou coupé",
-        theme: "la palette Moss",
+        theme: "la palette Dos Moos, en direct",
         date: "date et heure à Toulouse",
         echo: "afficher du texte",
         history: "commandes précédentes",
@@ -401,7 +400,6 @@ const fr: typeof en = {
       usage: "usage : sound <on|off>",
     },
     theme: {
-      title: "Moss",
       ink: "les fonds",
       paper: "le texte",
       signal: "l’accent",

@@ -6,15 +6,16 @@ import type { RepoInfo } from "@/lib/github";
 import { loc } from "@/lib/content";
 import { useNowContent } from "@/components/os/SiteData";
 
+/** the live theme's roles, as fastfetch's colour blocks */
 const PALETTE = [
-  ["ink", "#161a17"],
-  ["flare", "#e2786b"],
-  ["signal", "#b0cc86"],
-  ["ember", "#e0bd6e"],
-  ["ion", "#89b4a8"],
-  ["lilac", "#aea3c8"],
-  ["label-3", "#8f988f"],
-  ["paper", "#ebe9e1"],
+  ["ink", "var(--color-ink-900)"],
+  ["flare", "var(--color-flare)"],
+  ["signal", "var(--color-signal)"],
+  ["ember", "var(--color-ember)"],
+  ["ion", "var(--color-ion)"],
+  ["lilac", "var(--color-lilac)"],
+  ["label-3", "var(--color-label-3)"],
+  ["paper", "var(--color-label)"],
 ] as const;
 
 export function SetupMeta() {

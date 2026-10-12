@@ -1,6 +1,7 @@
 "use client";
 
 import type { Dict, Locale } from "@/i18n";
+import type { ThemeTokens } from "@/lib/theme";
 import type { SiteData } from "@/lib/data";
 import type { TrackInfo } from "@/lib/spotify";
 import type { SoundKind } from "@/lib/sound";
@@ -180,17 +181,16 @@ const HELP: { cmd: string; label: string; key: keyof Dict["system"]["term"]["hel
   { cmd: "sudo hire elliot", label: "sudo hire elliot", key: "hire" },
 ];
 
-const PALETTE: { name: string; hex: string; key: keyof Dict["system"]["term"]["theme"] }[] = [
-  { name: "ink", hex: "#0a0c0b", key: "ink" },
-  { name: "paper", hex: "#ebe9e1", key: "paper" },
-  { name: "signal", hex: "#b0cc86", key: "signal" },
-  { name: "ion", hex: "#89b4a8", key: "ion" },
-  { name: "lilac", hex: "#aea3c8", key: "lilac" },
-  { name: "ember", hex: "#e0bd6e", key: "ember" },
-  { name: "flare", hex: "#e2786b", key: "flare" },
+/** the interface's roles, read from the live Dos Moos theme */
+const PALETTE: { name: string; token: keyof ThemeTokens; key: keyof Dict["system"]["term"]["theme"] }[] = [
+  { name: "ink", token: "ink950", key: "ink" },
+  { name: "paper", token: "label", key: "paper" },
+  { name: "signal", token: "signal", key: "signal" },
+  { name: "ion", token: "ion", key: "ion" },
+  { name: "lilac", token: "lilac", key: "lilac" },
+  { name: "ember", token: "ember", key: "ember" },
+  { name: "flare", token: "flare", key: "flare" },
 ];
-
-const FETCH_SWATCHES = ["#0a0c0b", "#161a17", "#2b322d", "#8f988f", "#ebe9e1", "#b0cc86", "#89b4a8", "#aea3c8", "#e0bd6e", "#e2786b"];
 
 const SKY_WORDS: Record<string, SkyMode> = {
   live: "auto",
@@ -393,7 +393,7 @@ function neofetch(ctx: RunCtx) {
     [t.kernel, "Next.js 16.3 · React 19.2"],
     [t.shell, "zsh 5.9"],
     [t.wm, t.wmValue],
-    [t.theme, "Moss"],
+    [t.theme, ctx.data.theme.meta.sha ? `${ctx.data.theme.meta.name} (${ctx.data.theme.meta.sha.slice(0, 7)})` : ctx.data.theme.meta.name],
     [t.font, "Inter, JetBrains Mono"],
     [t.uptime, fill(t.uptimeValue, { m: Math.floor(secs / 60), s: secs % 60 })],
     [
@@ -424,9 +424,15 @@ function neofetch(ctx: RunCtx) {
             </div>
           ))}
         </dl>
+        {/* the terminal's 16 ANSI colours, as neofetch prints them: normal over bright */}
         <p className="os-term-fetch-pal" aria-hidden>
-          {FETCH_SWATCHES.map((c) => (
-            <Swatch key={c} color={c} size={14} />
+          {ctx.data.theme.tokens.ansi.slice(0, 8).map((c, i) => (
+            <Swatch key={i} color={c} size={14} />
+          ))}
+        </p>
+        <p className="os-term-fetch-pal" aria-hidden>
+          {ctx.data.theme.tokens.ansi.slice(8, 16).map((c, i) => (
+            <Swatch key={i} color={c} size={14} />
           ))}
         </p>
       </div>
@@ -733,20 +739,24 @@ const COMMANDS: Command[] = [
     aliases: ["palette", "colors", "colours"],
     run: (_a, ctx) => {
       const t = ctx.d.system.term.theme;
+      const meta = ctx.data.theme.meta;
       return (
         <div className="os-term-block">
-          <Head>{t.title}</Head>
+          <Head>{meta.sha ? `${meta.name} · ${meta.sha.slice(0, 7)}` : meta.name}</Head>
           <ul className="os-term-palette">
-            {PALETTE.map((p) => (
-              <li key={p.name}>
-                <Swatch color={p.hex} size={14} />
-                <span className="os-term-pal-name" style={{ color: p.name === "ink" ? undefined : p.hex }}>
-                  {p.name}
-                </span>
-                <span className="os-term-dim tabular">{p.hex}</span>
-                <span className="os-term-pal-desc">{t[p.key]}</span>
-              </li>
-            ))}
+            {PALETTE.map((p) => {
+              const hex = ctx.data.theme.tokens[p.token] as string;
+              return (
+                <li key={p.name}>
+                  <Swatch color={hex} size={14} />
+                  <span className="os-term-pal-name" style={{ color: p.name === "ink" ? undefined : hex }}>
+                    {p.name}
+                  </span>
+                  <span className="os-term-dim tabular">{hex}</span>
+                  <span className="os-term-pal-desc">{t[p.key]}</span>
+                </li>
+              );
+            })}
           </ul>
         </div>
       );

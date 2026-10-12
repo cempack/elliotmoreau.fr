@@ -265,9 +265,9 @@ export function PushWidget() {
                 <rect x={b.x} y={b.y} width={BW} height={BH} fill={body} />
                 <rect x={b.x} y={b.y} width={BW - 1} height={1} fill={hi} />
                 {(b.d.charCodeAt(9) + b.d.charCodeAt(6)) % 3 === 0 && <rect x={b.x + 1 + (b.d.charCodeAt(8) % 4)} y={b.y + 1} width={1} height={1} fill={body} opacity={0.6} />}
-                {on && <rect x={b.x} y={b.y} width={BW} height={BH} fill="none" stroke="#b0cc86" strokeWidth={0.34} className="app-home-wall-ring" />}
+                {on && <rect x={b.x} y={b.y} width={BW} height={BH} fill="none" style={{ stroke: "var(--color-signal)" }} strokeWidth={0.34} className="app-home-wall-ring" />}
               </g>
-              {isFresh && <rect x={b.x} y={b.y + BH} width={BW} height={0.5} fill="#b0cc86" className="app-home-wall-new" />}
+              {isFresh && <rect x={b.x} y={b.y + BH} width={BW} height={0.5} style={{ fill: "var(--color-signal)" }} className="app-home-wall-new" />}
             </g>
           );
         })}

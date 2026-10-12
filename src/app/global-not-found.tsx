@@ -12,6 +12,8 @@ import { OSShell } from "@/components/os/OSShell";
 import { SKY_SCRIPT } from "@/components/os/sky-script";
 import { InlineScript } from "@/components/InlineScript";
 import { NotFoundApp } from "@/components/apps/notfound/NotFoundApp";
+import { getTheme } from "@/lib/theme-source";
+import { SNAPSHOT_THEME, themeCss } from "@/lib/theme";
 
 /**
  * The 404, for every address no route matches (`/wrok`, `/fr/blgo`,
@@ -36,7 +38,7 @@ async function requestLang(): Promise<Locale> {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#0a0c0b",
+  themeColor: SNAPSHOT_THEME.tokens.ink950,
   colorScheme: "dark",
   viewportFit: "cover",
 };
@@ -59,11 +61,13 @@ export default async function GlobalNotFound() {
   const lang = await requestLang();
   // the shell's strings plus this page's own, as on every other page
   const dict = { ...getShellDict(lang), ...getNamespaces(lang, "notfound") };
-  const data = await getShellData();
+  const [data, theme] = await Promise.all([getShellData(), getTheme()]);
   return (
     <html lang={lang} suppressHydrationWarning className={`${inter.variable} ${mono.variable}`}>
       <head>
         <InlineScript html={SKY_SCRIPT + INTRO_SCRIPT} />
+        {/* the live Dos Moos palette, as on every other page */}
+        <style id="em-theme" dangerouslySetInnerHTML={{ __html: themeCss(theme.tokens) }} />
       </head>
       <body className="min-h-svh bg-ink-950 text-label">
         <a href="#content" className="skip-link">

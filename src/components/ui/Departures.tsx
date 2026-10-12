@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useThemeTokens } from "@/hooks/useTheme";
+import { mix, type ThemeTokens } from "@/lib/theme";
 import { PIXEL_FOLD, PIXEL_GLYPHS } from "@/components/PixelLabel";
 import { useSound } from "@/lib/sound";
 
@@ -56,16 +58,16 @@ const rowHeight = (narrow: boolean) => (narrow ? 40 : 22);
 const STEP = 30;
 const MAX_STEPS = 8;
 
-const INK = {
-  top: "#1f2420",
-  bottom: "#161a17",
-  seam: "#0a0c0b",
-  ember: "#e0bd6e",
-  label: "#ebe9e1",
-  via: "#bcc2ba",
-  lime: "#b0cc86",
-  housing: "#0d100e",
-};
+/** the board's inks, from the live theme: dark flaps, warm times, pale destinations */
+const inkFor = (t: ThemeTokens) => ({
+  top: mix(t.ink800, t.ink700, 0.45),
+  bottom: t.ink800,
+  seam: t.ink950,
+  ember: t.ember,
+  label: t.label,
+  via: t.label2,
+  lime: t.signal,
+});
 
 const fold = (s: string) =>
   [...s.toUpperCase()].map((ch) => {
@@ -131,6 +133,8 @@ export function DeparturesBoard({
 }) {
   const wrap = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
+  const tokens = useThemeTokens();
+  const INK = useMemo(() => inkFor(tokens), [tokens]);
   const [width, setWidth] = useState(0);
   const tiles = useRef<Tile[][]>([]);
   const raf = useRef(0);
@@ -217,7 +221,7 @@ export function DeparturesBoard({
     return () => cancelAnimationFrame(raf.current);
     // paint is stable for a given size; rows/clock changes re-target the drums
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layout?.n, rows, title, code, clock, reduced]);
+  }, [layout?.n, rows, title, code, clock, reduced, INK]);
 
   /** draw every tile; true while any drum is still turning */
   function paint(t: number) {

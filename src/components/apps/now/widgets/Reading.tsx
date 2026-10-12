@@ -5,8 +5,8 @@ import { loc, type Book } from "@/lib/content";
 import { useNowContent } from "@/components/os/SiteData";
 import { hashString } from "../lib";
 
-/** a book spine colour from the title: stable, from the palette */
-const SPINES = ["#aea3c8", "#e0bd6e", "#89b4a8", "#b0cc86", "#e2786b"];
+/** a book spine colour from the title: stable, from the live palette */
+const SPINES = ["var(--color-lilac)", "var(--color-ember)", "var(--color-ion)", "var(--color-signal)", "var(--color-flare)"];
 
 function Spine({ book }: { book: Book }) {
   const h = hashString(book.title);
@@ -14,13 +14,13 @@ function Spine({ book }: { book: Book }) {
   const bands = 1 + (h % 3);
   return (
     <svg className="app-now-spine" viewBox="0 0 6 16" width={15} height={40} shapeRendering="crispEdges" aria-hidden>
-      <rect x={0} y={0} width={6} height={16} fill={c} />
-      <rect x={0} y={0} width={1} height={16} fill="#0a0c0b" opacity={0.25} />
+      <rect x={0} y={0} width={6} height={16} style={{ fill: c }} />
+      <rect x={0} y={0} width={1} height={16} fill="#000" opacity={0.25} />
       <rect x={5} y={0} width={1} height={16} fill="#ffffff" opacity={0.18} />
       {Array.from({ length: bands }, (_, i) => (
-        <rect key={i} x={1} y={2 + i * 2} width={4} height={1} fill="#0a0c0b" opacity={0.45} />
+        <rect key={i} x={1} y={2 + i * 2} width={4} height={1} fill="#000" opacity={0.45} />
       ))}
-      <rect x={2} y={12} width={2} height={2} fill="#0a0c0b" opacity={0.35} />
+      <rect x={2} y={12} width={2} height={2} fill="#000" opacity={0.35} />
     </svg>
   );
 }

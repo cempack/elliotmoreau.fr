@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getDict } from "@/i18n";
+import { SNAPSHOT_THEME } from "@/lib/theme";
 
 /**
  * emOS as an installable app. The icons are generated under [lang] (the
@@ -19,8 +20,9 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     scope: "/",
     display: "standalone",
-    background_color: "#0a0c0b",
-    theme_color: "#0a0c0b",
+    // the Dos Moos snapshot's darkest ink (a manifest is fetched once and cached by the OS)
+    background_color: SNAPSHOT_THEME.tokens.ink950,
+    theme_color: SNAPSHOT_THEME.tokens.ink950,
     icons: [
       { src: "/en/icon", sizes: "32x32", type: "image/png" },
       { src: "/en/apple-icon", sizes: "180x180", type: "image/png" },
