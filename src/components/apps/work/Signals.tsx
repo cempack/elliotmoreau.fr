@@ -109,8 +109,7 @@ export function RepoBack({ detail, reduced }: { detail: RepoDetail | null | unde
           <ul className="app-work-back-legend" aria-hidden>
             {detail.languages.slice(0, 4).map((l) => (
               <li key={l.name}>
-                <span className="app-work-dot" style={{ background: langColor(l.name) }} />
-                {l.name} <small className="tabular">{Math.max(1, Math.round((l.bytes / total) * 100))}%</small>
+                <span style={{ color: langColor(l.name) }}>{l.name}</span> <small className="tabular">{Math.max(1, Math.round((l.bytes / total) * 100))}%</small>
               </li>
             ))}
           </ul>

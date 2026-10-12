@@ -144,8 +144,8 @@ function WorkContent() {
             </div>
           )}
 
-          {/* years: a year of work as mountains (the ranges follow search and folders) */}
-          {yearsView && <Years visible={visibleSet} onOpen={(name) => w.openQL(name)} />}
+          {/* years, the landing: a year of work as mountains, the projects under it (the ranges follow search and folders) */}
+          {yearsView && <Years visible={visibleSet} repos={w.repos} onOpen={(name) => w.openQL(name)} />}
 
           <AnimatePresence initial={false} mode="popLayout">
             {!lidView && !yearsView && w.showHero && w.featured && (

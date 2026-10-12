@@ -318,7 +318,6 @@ function Item({
         <Marked text={repo.description} terms={terms} />
       </m.span>
       <m.span layout="position" layoutDependency={ld} transition={{ layout: lt }} className="app-work-lang">
-        {repo.language && <span className="app-work-dot" style={{ background: langColor(repo.language) }} aria-hidden />}
         <span className="app-work-lang-name">{repo.language || t.work.item.noLanguage}</span>
       </m.span>
       <m.span layout="position" layoutDependency={ld} transition={{ layout: lt }} className="app-work-stars tabular">

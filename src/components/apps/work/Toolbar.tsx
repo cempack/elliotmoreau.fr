@@ -99,7 +99,7 @@ export function Toolbar({
 
       <LayoutGroup id={`app-work-view-${variant}`}>
         <div className="app-work-seg" role="group" aria-label={tb.view}>
-          {(["icons", "list", "years"] as const).map((v) => (
+          {(["years", "list", "icons"] as const).map((v) => (
             <button
               key={v}
               type="button"

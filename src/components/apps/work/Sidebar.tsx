@@ -8,8 +8,8 @@ import { useI18n } from "@/i18n/client";
 import { WinNav, WinNavItem } from "@/components/os/AppWindow";
 import { GLYPH_STAR, PixelGlyph } from "@/components/glyphs";
 import { SOCIALS } from "@/lib/socials";
-import { G_ALL, G_ARROW, G_HASH } from "./glyphs";
-import { type Filter, fmt, langColor, languagesOf, sameFilter, tagsOf } from "./model";
+import { G_ALL, G_ARROW, G_CODE, G_HASH } from "./glyphs";
+import { type Filter, fmt, languagesOf, sameFilter, tagsOf } from "./model";
 
 const TAGS_SHOWN = 8;
 
@@ -116,7 +116,7 @@ export function Sidebar({
                 key={lang}
                 onClick={() => onFilter({ kind: "lang", value: lang })}
                 active={is({ kind: "lang", value: lang })}
-                icon={<span className="app-work-dot" style={{ background: langColor(lang) }} />}
+                icon={<PixelGlyph cells={G_CODE} size={11} />}
                 count={n}
               >
                 {lang}

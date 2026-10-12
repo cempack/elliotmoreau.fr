@@ -34,7 +34,7 @@ type Work = {
   setQuery: (q: string) => void;
   terms: string[];
   view: ViewMode;
-  /** what is on screen; null until hydrated while CSS decides ("auto") */
+  /** what is on screen ("auto" lands on the year of work) */
   effView: "icons" | "list" | "years" | null;
   setView: (v: "icons" | "list" | "years") => void;
   stagger: boolean;
@@ -101,7 +101,8 @@ export function WorkProvider({ data, children }: { data: SiteData; children: Rea
   const afterSheetRef = useRef<(() => void) | null>(null);
 
   // CSS owns the layout until the user picks one (no SSR flash on phones)
-  const effView = view === "auto" ? (hydrated ? (phone ? "list" : "icons") : null) : view;
+  // the landing is the year of work, on every screen (so the server can render it too)
+  const effView = view === "auto" ? "years" : view;
 
   const terms = useMemo(() => searchTerms(query), [query]);
   const scoped = useMemo(() => repos.filter((r) => inFilter(r, filter)), [repos, filter]);

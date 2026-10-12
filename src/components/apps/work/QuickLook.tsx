@@ -19,7 +19,7 @@ import { G_ARROW, G_CHECK, G_CLOSE, G_COPY, G_FORK } from "./glyphs";
 import { Marked } from "./Parts";
 import { RepoBack } from "./Signals";
 import { useRepoDetail } from "./extras";
-import { compact, fmt, langColor } from "./model";
+import { compact, fmt } from "./model";
 
 type Sample = { t: number; x: number; y: number };
 type Velocity = { x: number; y: number };
@@ -691,7 +691,6 @@ function QuickLookBody({
           <div>
             <dt>{q.language}</dt>
             <dd>
-              {repo.language && <span className="app-work-dot" style={{ background: langColor(repo.language) }} aria-hidden />}
               {repo.language || t.work.item.noLanguage}
             </dd>
           </div>

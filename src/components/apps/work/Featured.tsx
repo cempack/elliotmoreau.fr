@@ -11,7 +11,7 @@ import { GLYPH_STAR, PixelGlyph } from "@/components/glyphs";
 import { PressAnchor, PressButton } from "@/components/ui/Pressable";
 import { DitherStage } from "./DitherStage";
 import { G_ARROW, G_EYE, G_FORK } from "./glyphs";
-import { compact, fmt, langColor } from "./model";
+import { compact, fmt } from "./model";
 
 const DRIFT = { stiffness: 140, damping: 22, mass: 0.6 };
 
@@ -72,7 +72,6 @@ export function Featured({
           <PixelLabel text={f.kicker} cell={2} className="app-work-hero-kicker-px" />
           {repo.language && (
             <span className="app-work-hero-lang">
-              <span className="app-work-dot" style={{ background: langColor(repo.language) }} aria-hidden />
               {repo.language}
             </span>
           )}
