@@ -43,3 +43,6 @@ next-env.d.ts
 
 # local SQLite database
 /.data
+
+# agent worktrees
+/.claude/worktrees
