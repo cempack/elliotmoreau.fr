@@ -6,13 +6,12 @@ import { useI18n } from "@/i18n/client";
 import { useSound } from "@/lib/sound";
 import { useReduced } from "@/hooks/env";
 import { project, spring } from "@/lib/motion";
-import { useArtPalette } from "@/hooks/useTheme";
 import { QUARTER, useQuarterHour } from "@/hooks/useQuarterHour";
 import { useSky } from "@/components/os/sky";
 import { pinnedMs } from "@/components/os/wallpaper/sunClock";
 import { skyLight } from "@/components/os/wallpaper/light";
 import type { PlaceRow } from "@/lib/content";
-import { bearingDeg, compassIndex, distanceKm, isoOf } from "./geo";
+import { bearingDeg, compassIndex, distanceKm } from "./geo";
 import { useAtlas } from "./useAtlas";
 import { fill, useKm } from "./fmt";
 import { angleTo, DEG_PX, HORIZON, HZ_H, HZ_W, paintHorizon, peaksFrom, type PeakAt } from "./skyline";
@@ -30,24 +29,31 @@ const mod = (v: number) => ((v % 360) + 360) % 360;
 type Pin = {
   id: string;
   name: string;
-  iso: string;
   status: PlaceRow["status"];
   bearing: number;
   km: number;
   /** art pixels: column, pole height */
   x: number;
   h: number;
-  /** its ISO code fits beside the flag */
-  label: boolean;
 };
 
 type Under = { kind: "place"; pin: Pin } | { kind: "peak"; peak: PeakAt } | { kind: "none" };
 const keyOf = (u: Under) => (u.kind === "place" ? `p:${u.pin.id}` : u.kind === "peak" ? `k:${u.peak.name}` : "none");
 
-/** nearer places stand taller (log distance), so neighbours separate */
+/** nearer places stand taller (log distance), so neighbours separate; the
+    tallest still leaves room over its flag for the selected name */
 function poleHeight(km: number) {
   const t = (Math.log10(20000) - Math.log10(Math.max(1, km))) / (Math.log10(20000) - Math.log10(400));
-  return Math.round(4 + Math.min(1, Math.max(0, t)) * 12);
+  return Math.round(8 + Math.min(1, Math.max(0, t)) * 14);
+}
+
+/** a pennant: filled for been, drawn in outline for the list */
+function Pennant({ tone }: { tone: PlaceRow["status"] }) {
+  return (
+    <svg className="app-atlas-hz-flag" width="11" height="8" viewBox="0 0 11 8" aria-hidden focusable="false">
+      {tone === "want" ? <path d="M0.6 0.9 L9.2 4 L0.6 7.1 Z" strokeWidth="1.2" strokeLinejoin="round" /> : <path d="M0 0 L11 4 L0 8 Z" />}
+    </svg>
+  );
 }
 
 /** Big tabular number that rolls from the previous value to the new one,
@@ -71,10 +77,11 @@ export function Rolling({ value }: { value: number }) {
 /**
  * The view from Toulouse: the horizon all the way round, as the
  * orientation tables at French viewpoints draw it. Every place stands as a
- * flag at its true compass heading (ember for been, an ion outline for the
- * list), nearer ones taller; the Pyrenees fill the south. Turn it by
- * dragging (it coasts, and a throw that lands near a flag snaps to it and
- * flies the globe there), or step from flag to flag with the arrow keys.
+ * pennant at its true compass heading (ember for been, an ion outline for
+ * the list), nearer ones taller, the selected one named on a plate over
+ * it; the Pyrenees fill the south. Turn it by dragging (it coasts, and a
+ * throw that lands near a flag snaps to it and flies the globe there), or
+ * step from flag to flag with the arrow keys.
  * Picking a place anywhere else turns it the short way round. The art is
  * painted once per quarter hour and sky change; turning only slides it.
  */
@@ -84,7 +91,6 @@ export function Horizon({ place, isHome, onSelect }: { place: PlaceRow; isHome: 
   const { blip } = useSound();
   const reduced = useReduced();
   const km = useKm();
-  const P = useArtPalette();
   const { phase, mode } = useSky();
   const quarter = useQuarterHour();
   const { home, ordered, been, next } = useAtlas();
@@ -96,19 +102,15 @@ export function Horizon({ place, isHome, onSelect }: { place: PlaceRow; isHome: 
       .map((p) => {
         const bearing = bearingDeg(home, p);
         const d = distanceKm(home, p);
-        return { id: p.id, name: p.name[lang], iso: isoOf(p), status: p.status, bearing, km: d, x: bearing / DEG_PX, h: poleHeight(d), label: true };
+        return { id: p.id, name: p.name[lang], status: p.status, bearing, km: d, x: bearing / DEG_PX, h: poleHeight(d) };
       })
       .sort((p, q) => p.bearing - q.bearing);
-    // a code needs ~9 art pixels to the right of its flag's rows: no taller
-    // pole may cross them, no flag sit in them
-    for (const p of list)
-      p.label = !list.some((q) => q !== p && mod(q.x - p.x) > 0 && mod(q.x - p.x) < 10 && q.h > p.h - 4);
     return list;
   }, [ordered, home, lang]);
 
   const want = isHome ? 180 : (pins.find((p) => p.id === place.id)?.bearing ?? 180);
   const heading = useMotionValue(want);
-  const scale = useMotionValue(3);
+  const scale = useMotionValue(1.75);
   const x = useTransform(() => -(mod(heading.get() - VIEW / 2) / DEG_PX) * scale.get());
 
   const bandRef = useRef<HTMLDivElement>(null);
@@ -123,18 +125,18 @@ export function Horizon({ place, isHome, onSelect }: { place: PlaceRow; isHome: 
   const last = useRef(want);
   const lastTick = useRef(0);
 
-  // paint the circle once per quarter hour, sky mode, theme or home
+  // paint the circle once per quarter hour, sky mode or home
   useEffect(() => {
     const c = canvasRef.current;
     const ctx = c?.getContext("2d");
     if (!ctx || !quarter) return;
     const ms = mode === "auto" ? quarter * QUARTER + QUARTER / 2 : pinnedMs(phase, new Date());
     const buf = new Uint32Array(HZ_W * HZ_H);
-    paintHorizon(buf, skyLight(ms), peaks, { ink950: P.ink950, ink900: P.ink900, paper: P.paper, paper3: P.paper3 });
+    paintHorizon(buf, skyLight(ms), peaks);
     const img = new ImageData(new Uint8ClampedArray(buf.buffer), HZ_W, HZ_H);
     ctx.putImageData(img, 0, 0);
     ctx.putImageData(img, HZ_W, 0);
-  }, [quarter, phase, mode, peaks, P]);
+  }, [quarter, phase, mode, peaks]);
 
   // the scale: art pixels per CSS px, so the window always spans VIEW degrees
   useEffect(() => {
@@ -371,10 +373,16 @@ export function Horizon({ place, isHome, onSelect }: { place: PlaceRow; isHome: 
       >
         <m.div ref={stripRef} className="app-atlas-hz-strip" style={{ x }} aria-hidden>
           <canvas ref={canvasRef} className="app-atlas-hz-art" width={HZ_W * 2} height={HZ_H} />
+          <span className="app-atlas-hz-tape" />
           {[0, HZ_W].map((off) => (
             <span key={off}>
               {cardinals.map((i) => (
-                <span key={i} className="app-atlas-hz-card" style={{ "--x": off + (i * 22.5) / DEG_PX } as React.CSSProperties}>
+                <span
+                  key={i}
+                  className="app-atlas-hz-card"
+                  data-major={i % 4 === 0 || undefined}
+                  style={{ "--x": off + (i * 22.5) / DEG_PX } as React.CSSProperties}
+                >
                   {a.compass[i]}
                 </span>
               ))}
@@ -387,8 +395,8 @@ export function Horizon({ place, isHome, onSelect }: { place: PlaceRow; isHome: 
                   data-on={p.id === place.id || undefined}
                   style={{ "--x": off + p.x, "--h": p.h, "--foot": HZ_H - HORIZON - 1 } as React.CSSProperties}
                 >
-                  <span className="app-atlas-hz-flag" />
-                  {(p.label || p.id === place.id) && <span className="app-atlas-hz-iso">{p.iso}</span>}
+                  <Pennant tone={p.status} />
+                  {p.id === place.id && <span className="app-atlas-hz-plate">{p.name}</span>}
                 </span>
               ))}
             </span>

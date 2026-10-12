@@ -1,20 +1,37 @@
 "use client";
 
-import { useId } from "react";
-import { Monogram } from "@/components/Monogram";
-import { GLYPH_PIN } from "@/components/glyphs";
-import { PixelLabel } from "@/components/PixelLabel";
+import { useEffect, useRef } from "react";
+import { useArtPalette } from "@/hooks/useTheme";
+import { QUARTER, useQuarterHour } from "@/hooks/useQuarterHour";
+import { useSky } from "@/components/os/sky";
+import { pinnedMs } from "@/components/os/wallpaper/sunClock";
+import { skyLight } from "@/components/os/wallpaper/light";
 import type { Locale } from "@/i18n/config";
 import type { PlaceRow } from "@/lib/content";
 import { isoOf } from "./geo";
-import { fmtAxis } from "./fmt";
+import { layoutStamp, paintStamp, pixelText, ringName, stampDate, textWidth } from "./stampArt";
+
+/** canvas pixels per art unit */
+const UP = 4;
+
+/** what a visit's date line says: as written if it fits the ring, else its year */
+function visitLine(visited: string | undefined) {
+  if (!visited) return null;
+  const t = pixelText(visited);
+  if (t && textWidth(t) <= 36) return t;
+  return t.match(/\b(1[89]|20)\d\d\b/)?.[0] ?? null;
+}
 
 /**
- * A perforated postage stamp. `lg`: the place card's stamp, a monogram
- * seeded by the place id over a value strip, with a circular postmark
- * beside it whose waves cancel the stamp. `sm`: the postcard's airmail stamp, the ISO code
- * in pixel letters. Perforations are a CSS mask on a 12px (lg) or 8px (sm)
- * grid; the drop shadow follows the cut-out.
+ * A perforated postage stamp of the place's own sky, at the instant the
+ * desktop is showing (the wallpaper's: now, or the phase pinned in
+ * Control Center), painted on a canvas once and again each quarter hour
+ * (stampArt.ts). `lg`: the place card's, its code and value printed in
+ * the margin, and once the place has been visited (home included) the
+ * postmark: a date-stamp with its name (home: today's date; a visit: its
+ * date when the database has one) and three waves. A place on the list
+ * stays mint. `sm`: the postcard's, the code alone. Perforations are a
+ * CSS mask on a 12px (lg) or 8px grid; the drop shadow follows the cut.
  */
 export function Stamp({
   place,
@@ -27,17 +44,61 @@ export function Stamp({
 }: {
   place: PlaceRow;
   size?: "lg" | "sm";
-  /** short pixel text on the value strip (lg, A–Z 0–9), e.g. "1050 KM" */
+  /** the value printed in the margin (lg, A–Z 0–9), e.g. "1 050 KM" */
   value?: string;
   /** accessible name; omit for a decorative stamp */
   label?: string;
   /** display name, for the postmark */
   name?: string;
   lang?: Locale;
+  /** cancel it if the place has been visited */
   postmark?: boolean;
 }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  const P = useArtPalette();
+  const { phase, mode } = useSky();
+  const quarter = useQuarterHour();
+  const cancelled = postmark && (place.home || place.status === "been");
+  const shown = name ?? place.name.en;
+  const code = isoOf(place);
+  const printed = size === "lg" ? (value ?? null) : null;
+
+  // paint at two CSS px a unit, whatever size the breakpoint gives it
+  useEffect(() => {
+    const c = ref.current;
+    const box = c?.parentElement;
+    if (!c || !box || !quarter) return;
+    const ms = mode === "auto" ? quarter * QUARTER + QUARTER / 2 : pinnedMs(phase, new Date(quarter * QUARTER));
+    const L = skyLight(ms, place.lat, place.lon);
+    const when = place.home ? stampDate(quarter * QUARTER, lang) : visitLine(place.visited);
+    const ring = cancelled ? [...ringName(shown), ...(when ? [when] : [])] : null;
+    let painted = "";
+    const paint = () => {
+      const W = Math.round(box.clientWidth / 2);
+      const H = Math.round(box.clientHeight / 2);
+      if (W < 8 || H < 8 || painted === `${W}x${H}`) return;
+      painted = `${W}x${H}`;
+      const lay = layoutStamp(W, H, { code, value: printed, ring, cancelled });
+      const buf = new Uint32Array(W * H);
+      paintStamp(buf, lay, { id: place.id, L, inks: { paper: P.paper, type: P.ink950 } });
+      // each unit as a 4 × 4 block, smoothed by the browser: crisp at 1x
+      // and 2x, and clean edges while the card holds it tilted
+      const big = new Uint32Array(W * UP * H * UP);
+      for (let y = 0; y < H * UP; y++) {
+        const row = ((y / UP) | 0) * W;
+        for (let x = 0; x < W * UP; x++) big[y * W * UP + x] = buf[row + ((x / UP) | 0)];
+      }
+      c.width = W * UP;
+      c.height = H * UP;
+      c.getContext("2d")?.putImageData(new ImageData(new Uint8ClampedArray(big.buffer), W * UP, H * UP), 0, 0);
+    };
+    paint();
+    const ro = new ResizeObserver(paint);
+    ro.observe(box);
+    return () => ro.disconnect();
+  }, [quarter, mode, phase, place, cancelled, shown, code, printed, lang, P]);
+
   const tone = place.home ? "home" : place.status;
-  const mark = postmark ? <Postmark place={place} name={name ?? place.name.en} lang={lang} /> : null;
   return (
     <span
       className="app-atlas-stamp"
@@ -49,108 +110,9 @@ export function Stamp({
     >
       <span className="app-atlas-stamp-sheet">
         <span className="app-atlas-stamp-paper">
-          <span className="app-atlas-stamp-art">
-            {size === "lg" ? (
-              <>
-                <Monogram text={place.id} glyph={GLYPH_PIN} className="app-atlas-stamp-planet" />
-                <span className="app-atlas-stamp-iso">
-                  <PixelLabel text={isoOf(place)} cell={2} />
-                </span>
-                <span className="app-atlas-stamp-value">
-                  <PixelLabel text={value ?? isoOf(place)} cell={2} />
-                </span>
-              </>
-            ) : (
-              <span className="app-atlas-stamp-code">
-                <PixelLabel text={isoOf(place)} cell={3} />
-              </span>
-            )}
-          </span>
+          <canvas ref={ref} className="app-atlas-stamp-art" width={1} height={1} />
         </span>
       </span>
-      {/* one strike, over everything: its ink inverts against what it
-          lands on (dark on the paper, light on the card and the art), so
-          the whole mark reads in one piece */}
-      {mark}
     </span>
-  );
-}
-
-/** Top and bottom ring text: a short name over its latitude, or a long
-    one split over both arcs at the most even word break. */
-function ringText(name: string, lat: number, lang: Locale): [string, string] {
-  const up = name.toLocaleUpperCase(lang === "fr" ? "fr-FR" : "en-GB");
-  if (up.length <= 11 || !up.includes(" ")) return [up, fmtAxis(lat, "lat", lang, 0)];
-  const words = up.split(" ");
-  let best: [string, string] = [up, ""];
-  let score = Infinity;
-  for (let i = 1; i < words.length; i++) {
-    const a = words.slice(0, i).join(" ");
-    const b = words.slice(i).join(" ");
-    const s = Math.max(a.length, b.length);
-    if (s < score) {
-      score = s;
-      best = [a, b];
-    }
-  }
-  return best;
-}
-
-/** Circular date-stamp with wavy cancellation lines. Both ring lines
-    read upright (the top one over the arc, the bottom one under it), and
-    it is drawn 1:1 so its 12px lettering stays 12px. */
-function Postmark({ place, name, lang }: { place: PlaceRow; name: string; lang: Locale }) {
-  const uid = `app-atlas-pm${useId().replace(/[^\w-]/g, "")}`;
-  const top = `${uid}-t`;
-  const bottom = `${uid}-b`;
-  const [a, b] = ringText(name, place.lat, lang);
-  // 12px mono advances ~7.2px; squeeze only what would not fit its arc
-  const fitA = a.length * 7.4 > 84 ? 84 : undefined;
-  const fitB = b.length * 7.4 > 92 ? 92 : undefined;
-  return (
-    // slice, not meet: a card may narrow the box (CSS width) to crop the
-    // waves' tail without scaling the 12px lettering
-    <svg
-      className="app-atlas-postmark"
-      width="176"
-      height="88"
-      viewBox="0 0 176 88"
-      preserveAspectRatio="xMinYMid slice"
-      aria-hidden
-      focusable="false"
-    >
-      <defs>
-        {/* baseline r=28 over the top, left to right; r=36.5 under the
-            bottom, left to right, so the letters stand inside the ring */}
-        <path id={top} d="M 16,44 A 28,28 0 0 1 72,44" />
-        <path id={bottom} d="M 7.5,44 A 36.5,36.5 0 0 0 80.5,44" />
-      </defs>
-      <g fill="none" stroke="currentColor" strokeWidth="1.5">
-        <g className="app-atlas-postmark-ring">
-          <circle cx="44" cy="44" r="41" />
-          <circle cx="44" cy="44" r="18" />
-        </g>
-        {[0, 1, 2, 3].map((i) => (
-          <path key={i} d={`M 90 ${23 + i * 14} q 10.5 -6 21 0 t 21 0 t 21 0 t 21 0`} />
-        ))}
-      </g>
-      <g className="app-atlas-postmark-text app-atlas-postmark-ring">
-        <text>
-          <textPath href={`#${top}`} startOffset="50%" textAnchor="middle" textLength={fitA} lengthAdjust="spacingAndGlyphs">
-            {a}
-          </textPath>
-        </text>
-        {b && (
-          <text>
-            <textPath href={`#${bottom}`} startOffset="50%" textAnchor="middle" textLength={fitB} lengthAdjust="spacingAndGlyphs">
-              {b}
-            </textPath>
-          </text>
-        )}
-        <text x="44" y="48.5" textAnchor="middle">
-          {isoOf(place)}
-        </text>
-      </g>
-    </svg>
   );
 }

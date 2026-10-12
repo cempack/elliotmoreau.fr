@@ -3,22 +3,22 @@ import { bearingDeg } from "./geo";
 
 /**
  * The view from a Toulouse rooftop, all the way round, as pixel art: the
- * wallpaper's sky for the instant (its five stops, the glow round the sun,
- * the stars), the sun or the moon where they really are, the Pyrenees
- * along the south from six real peaks at their true bearings and heights
- * (one uniform exaggeration, snow dithered in, rose at dusk), a row of
- * terracotta roofs underfoot and a compass tape. Painted once into a
- * 288 × 28 buffer (1.25° a pixel); the horizon band only slides it.
+ * wallpaper's sky for the instant (its five stops as a clean gradient, the
+ * glow round the sun, a few stars after dark), the sun or the moon where
+ * they really are, the Pyrenees along the south from six real peaks at
+ * their true bearings and heights (one uniform exaggeration) in front of a
+ * hazier range behind them, snow on what stands high enough, the flank
+ * facing the sun lit, and a row of terracotta roofs underfoot. Painted once
+ * into a 576 × 44 buffer (0.625° a pixel); the horizon band only slides it.
+ * The compass tape under it is CSS (hairlines stay one pixel wide).
  */
 
-export const HZ_W = 288;
-export const HZ_H = 28;
+export const HZ_W = 576;
+export const HZ_H = 44;
 /** degrees per art pixel */
 export const DEG_PX = 360 / HZ_W;
 /** the horizon row: elevation 0, the foot of the mountains (behind the roofs) */
-export const HORIZON = 20;
-/** the compass tape's first row */
-export const TAPE = 23;
+export const HORIZON = 37;
 
 type Peak = { name: string; m: number; lat: number; lon: number };
 
@@ -33,11 +33,13 @@ export const PEAKS: Peak[] = [
 ];
 
 /** heights are measured over the foothills (~900 m), on one scale: Aneto
-    stands 13 pixels over the horizon */
+    stands 26 pixels over the horizon */
 const FOOT = 900;
-const EXAGGERATION = 13 / (3404 - FOOT);
+const EXAGGERATION = 26 / (3404 - FOOT);
 /** how fast a summit's flanks fall away, pixels per degree */
-const FLANK = 1.05;
+const FLANK = 1.4;
+/** snow lies above this */
+const SNOW_M = 2400;
 /** the lesser summits between the named ones (bearing, metres): they make it a chain */
 const SHOULDERS: [number, number][] = [
   [138, 1700],
@@ -57,8 +59,6 @@ export function peaksFrom(home: { lat: number; lon: number }): PeakAt[] {
   return PEAKS.map((p) => ({ ...p, bearing: bearingDeg(home, p), h: heightOf(p.m) }));
 }
 
-const B4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => (v + 0.5) / 16);
-const bayer = (x: number, y: number) => B4[((y & 3) << 2) | (x & 3)];
 /** a fixed pseudo-random number in [0, 1) per integer */
 const hash = (n: number) => {
   let h = Math.imul(n ^ 0x9e3779b9, 0x85ebca6b);
@@ -79,44 +79,50 @@ const pack = (c: RGB) =>
 /** shortest signed angle from a to b, degrees */
 export const angleTo = (a: number, b: number) => ((((b - a) % 360) + 540) % 360) - 180;
 
-/** the skyline's height over the horizon (art pixels) at column x: `base` is
-    the clean shape (for shading), `h` the jagged crest */
-function ridge(peaks: PeakAt[], x: number) {
+/** the chain's reach, tapering out east and west */
+function chainOf(peaks: PeakAt[]) {
+  const lo = Math.min(...peaks.map((p) => p.bearing)) - 14;
+  const hi = Math.max(...peaks.map((p) => p.bearing)) + 14;
+  return (b: number) => smooth(lo - 10, lo + 6, b) * (1 - smooth(hi - 6, hi + 10, b));
+}
+
+/** the near range's height over the horizon (art pixels) at column x:
+    `base` is the clean shape (for light and snow), `h` the broken crest,
+    `top` the bearing and height of the summit (or shoulder) it falls from */
+function ridge(peaks: PeakAt[], inChain: (b: number) => number, x: number) {
   const b = (x + 0.5) * DEG_PX;
   let base = 0;
   let apex = false;
+  let at = NaN;
+  let tall = 0;
   for (const p of peaks) {
     const d = Math.abs(angleTo(p.bearing, b));
     if (d < DEG_PX * 0.75) apex = true;
-    base = Math.max(base, p.h - d * FLANK);
+    const v = p.h - d * FLANK;
+    if (v > base) [base, at, tall] = [v, p.bearing, p.h];
   }
-  for (const [bearing, m] of SHOULDERS) base = Math.max(base, heightOf(m) - Math.abs(angleTo(bearing, b)) * FLANK * 1.15);
-  // the chain between the summits, tapering out east and west
-  const lo = Math.min(...peaks.map((p) => p.bearing)) - 14;
-  const hi = Math.max(...peaks.map((p) => p.bearing)) + 14;
-  const inChain = smooth(lo - 10, lo + 6, b) * (1 - smooth(hi - 6, hi + 10, b));
-  base = Math.max(base, inChain * (2.6 + 1.2 * Math.sin(b * 0.31) * Math.sin(b * 0.13 + 1.7)));
-  // a jagged crest, but never on a summit: those stay where they are
-  const h = !apex && base > 0.5 ? base + (hash(x * 7 + 3) - 0.5) * 1.2 : base;
-  return { h: Math.max(0, h), base, apex };
+  for (const [bearing, m] of SHOULDERS) {
+    const v = heightOf(m) - Math.abs(angleTo(bearing, b)) * FLANK * 1.15;
+    if (v > base) [base, at, tall] = [v, bearing, heightOf(m)];
+  }
+  const chain = inChain(b) * (6.5 + 2.6 * Math.sin(b * 0.31) * Math.sin(b * 0.13 + 1.7));
+  if (chain > base) [base, at] = [chain, NaN];
+  // a broken crest, two pixels at a time, but never on a summit
+  const h = !apex && base > 1 ? base + (hash(Math.floor(x / 2) * 7 + 3) - 0.5) * 1.4 : base;
+  return { h: Math.max(0, h), base, at, tall };
 }
 
-export type Inks = { ink950: string; ink900: string; paper: string; paper3: string };
-
 const STAR: RGB = [235, 233, 225];
-const SNOW: RGB = [238, 240, 236];
-const ROOF: RGB = hex("#b06048");
-const ROOF_DEEP: RGB = hex("#8a4434");
+const SNOW: RGB = [240, 242, 238];
+const ROOF: RGB = hex("#a0604c");
+const ROOF_DEEP: RGB = hex("#8a4a3a");
 const ROOF_NIGHT: RGB = hex("#2a2230");
 const STONE: RGB = hex("#d8ccb4");
-const ROCK_NEAR: RGB = [22, 27, 28];
-const ROCK_NIGHT: RGB = [6, 8, 9];
+const ROCK_NEAR: RGB = [26, 31, 34];
+const ROCK_NIGHT: RGB = [6, 8, 10];
 
-/**
- * Paint the full circle into `out` (HZ_W × HZ_H, RGBA as little-endian
- * uint32). `night` keeps the moon in when the sun is down.
- */
-export function paintHorizon(out: Uint32Array, L: SkyLight, peaks: PeakAt[], inks: Inks) {
+/** Paint the full circle into `out` (HZ_W × HZ_H, RGBA as little-endian uint32). */
+export function paintHorizon(out: Uint32Array, L: SkyLight, peaks: PeakAt[]) {
   const W = HZ_W;
   const put = (x: number, y: number, c: RGB) => {
     if (y >= 0 && y < HZ_H) out[y * W + (((x % W) + W) % W)] = pack(c);
@@ -125,17 +131,20 @@ export function paintHorizon(out: Uint32Array, L: SkyLight, peaks: PeakAt[], ink
   const sunEl = L.sun.elevation;
   const glow = L.glow;
   const horizonC = L.sky[4];
+  const glowOn = L.glowAmt * smooth(-14, -2, sunEl);
 
-  // the sky, dithered between the wallpaper's five stops, glowing round the sun
+  // the sky: a clean gradient row by row through the wallpaper's five
+  // stops, warmed toward the glow round the sun; a few small stars
   for (let y = 0; y < HORIZON + 1; y++) {
-    const f = (y / HORIZON) * 4;
+    const f = Math.min(1, (y + 0.5) / HORIZON) * 4;
     const j = Math.min(3, Math.floor(f));
+    const row = mix(L.sky[j], L.sky[j + 1], f - j);
+    const t = (y + 0.5) / HORIZON;
     for (let x = 0; x < W; x++) {
-      let c = bayer(x, y) < f - j ? L.sky[j + 1] : L.sky[j];
       const d = angleTo(sunAz, (x + 0.5) * DEG_PX);
-      const g = L.glowAmt * Math.exp(-(d * d) / (2 * 38 * 38)) * (0.35 + 0.65 * (y / HORIZON)) * smooth(-14, -2, sunEl);
-      if (bayer(x + 2, y + 1) < g * 1.6) c = mix(c, glow, 0.55);
-      if (L.stars > 0.05 && y < HORIZON - 5 && hash(y * W + x) < 0.03 * L.stars) c = mix(c, STAR, 0.35 + 0.6 * hash(x * 31 + y));
+      const g = glowOn * Math.exp(-(d * d) / (2 * 34 * 34)) * Math.pow(t, 1.5);
+      let c = g > 0.004 ? mix(row, glow, Math.min(0.8, g * 1.2)) : row;
+      if (L.stars > 0.05 && y < HORIZON - 9 && hash(y * W + x) < 0.009 * L.stars) c = mix(c, STAR, (0.25 + 0.55 * hash(x * 31 + y)) * L.stars);
       put(x, y, c);
     }
   }
@@ -143,110 +152,133 @@ export function paintHorizon(out: Uint32Array, L: SkyLight, peaks: PeakAt[], ink
   // where a body sits on the strip: the wallpaper's easing of height
   const bodyAt = (az: number, el: number) => {
     const k = el >= 0 ? Math.pow(el / 72, 0.72) : el / 72;
-    return { x: Math.floor(az / DEG_PX), y: Math.round(HORIZON - 1 - k * (HORIZON - 2)) };
+    return { x: az / DEG_PX, y: HORIZON - 1.5 - k * (HORIZON - 5) };
+  };
+  const disc = (cx: number, cy: number, r: number, paint: (x: number, y: number, nx: number, ny: number) => void) => {
+    for (let y = Math.floor(cy - r - 1); y <= Math.ceil(cy + r + 1); y++)
+      for (let x = Math.floor(cx - r - 1); x <= Math.ceil(cx + r + 1); x++) {
+        const nx = (x + 0.5 - cx) / r;
+        const ny = (y + 0.5 - cy) / r;
+        if (nx * nx + ny * ny <= 1.08) paint(x, y, nx, ny);
+      }
   };
   if (sunEl > -1.5) {
     const s = bodyAt(sunAz, sunEl);
-    const core = mix(STAR, glow, 0.25 + 0.4 * (1 - smooth(2, 25, sunEl)));
-    const rim = mix(glow, core, 0.35);
-    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) put(s.x + dx, s.y + dy, dx && dy ? rim : core);
-  } else if (L.moon.elevation > 0) {
+    const low = 1 - smooth(2, 25, sunEl);
+    const core = mix(hex("#fff8e4"), mix(STAR, glow, 0.55), low);
+    const rim = mix(hex("#ffeab0"), glow, 0.35 + 0.4 * low);
+    disc(s.x, s.y, 2.6, (x, y, nx, ny) => put(x, y, nx * nx + ny * ny > 0.55 ? rim : core));
+  } else if (L.moon.elevation > 0 && L.moon.lit > 0.06) {
     const m = bodyAt(L.moon.azimuth, L.moon.elevation);
-    const lit = L.moon.lit;
-    const waxing = L.moon.phase < 0.5;
+    const ph = Math.min(0.88, Math.max(0.12, L.moon.phase));
+    const k = Math.cos(2 * Math.PI * ph);
+    const waxing = ph < 0.5;
     const bright = mix(horizonC, STAR, 0.9);
-    const dark = mix(L.sky[1], STAR, 0.12);
-    for (let dy = -1; dy <= 1; dy++)
-      for (let dx = -1; dx <= 1; dx++) {
-        if (dx && dy && lit < 0.85) continue; // round it off unless it's near full
-        const side = waxing ? dx : -dx;
-        const on = lit > 0.85 || (lit > 0.35 ? side >= 0 : side === 1);
-        put(m.x + dx, m.y + dy, on ? bright : dark);
-      }
+    const dark = mix(L.sky[1], STAR, 0.1);
+    disc(m.x, m.y, 2.2, (x, y, nx, ny) => {
+      const half = Math.sqrt(Math.max(0, 1 - ny * ny));
+      put(x, y, (waxing ? nx > k * half : nx < -k * half) ? bright : dark);
+    });
   }
 
-  // the Pyrenees: hazed with the horizon, lit on the side facing the sun, snow up top
+  // the Pyrenees: a hazy range behind, the named peaks in front
   const light = 0.3 + 0.7 * L.sunUp;
   // by night the range is a silhouette, darker than the sky behind it
   const rock = mix(ROCK_NIGHT, ROCK_NEAR, L.sunUp);
-  const haze = mix(horizonC, rock, 0.42 + 0.3 * (1 - L.sunUp));
-  const shade = mix(haze, rock, 0.3);
+  const farC = mix(horizonC, rock, 0.14 + 0.34 * (1 - L.sunUp));
+  const haze = mix(horizonC, rock, 0.28 + 0.46 * (1 - L.sunUp));
+  const shade = mix(haze, rock, 0.2 + 0.12 * (1 - L.sunUp));
+  const litC = mix(haze, mix(glow, STAR, 0.25), 0.2 * L.sunUp + 0.1 * L.twilight);
   const snowC = mix(mix(SNOW, glow, 0.45 * L.twilight), mix(horizonC, STAR, 0.4), 1 - light);
+  const snowShade = mix(snowC, shade, 0.38);
+  const inChain = chainOf(peaks);
   const heights = new Float32Array(W);
   const shape = new Float32Array(W);
+  const apexAt = new Float32Array(W);
+  const apexH = new Float32Array(W);
   for (let x = 0; x < W; x++) {
-    const r = ridge(peaks, x);
+    const r = ridge(peaks, inChain, x);
     heights[x] = r.h;
     shape[x] = r.base;
+    apexAt[x] = r.at;
+    apexH[x] = r.tall;
+  }
+  for (let x = 0; x < W; x++) {
+    const b = (x + 0.5) * DEG_PX;
+    const far = inChain(b) * (11 + 5 * Math.sin(b * 0.19 + 1.3) + 2.5 * Math.sin(b * 0.47 + 0.4) + 1.2 * Math.sin(b * 1.3));
+    const top = Math.round(HORIZON - far);
+    for (let y = top; y <= HORIZON; y++) put(x, y, farC);
   }
   const sunFromEast = sunAz < 180;
+  const snowLine = heightOf(SNOW_M);
   for (let x = 0; x < W; x++) {
     const h = Math.round(heights[x]);
     if (h <= 0) continue;
     const top = HORIZON - h;
-    // which flank, from the clean shape: one facing east (rising to the
-    // right) catches the morning, one facing west the afternoon
+    // which face: east faces (left on the strip, looking south) catch the
+    // morning, west faces the afternoon. Under a summit the divide runs
+    // down from its top and leans into the shaded side, so each one reads
+    // as a solid; elsewhere the clean shape's slope decides
     const facesEast = shape[(x + W - 1) % W] <= shape[(x + 1) % W];
-    const lit = facesEast === sunFromEast;
-    // snow on the high summits only, deepest on Aneto
-    const snowLine = Math.max(0, h - 8);
+    const ax = apexAt[x] / DEG_PX;
+    const peakTop = HORIZON - apexH[x];
+    const lean = (y: number) => (y - peakTop) * 0.55;
+    // the snow's lower edge, a pixel up or down column by column
+    const edge = HORIZON - snowLine + (hash(Math.floor(x / 3) * 13 + 1) < 0.4 ? 1 : 0);
     for (let y = top; y <= HORIZON; y++) {
-      const fromTop = y - top;
-      let c = lit ? haze : shade;
-      if (lit && L.sunUp > 0.2 && bayer(x, y) < 0.18) c = mix(haze, glow, 0.25);
-      if (snowLine > 0 && fromTop < snowLine && bayer(x + 1, y) > fromTop / snowLine - 0.15) c = lit ? snowC : mix(snowC, shade, 0.4);
+      let lit: boolean;
+      if (Number.isNaN(ax)) lit = facesEast === sunFromEast;
+      else {
+        const dx = angleTo(ax * DEG_PX, (x + 0.5) * DEG_PX) / DEG_PX;
+        lit = sunFromEast ? dx <= lean(y) : dx >= -lean(y);
+      }
+      let c = lit ? litC : shade;
+      if (y < edge && shape[x] > snowLine) c = lit ? snowC : snowShade;
       put(x, y, c);
     }
   }
-  // the Pic du Midi's observatory: three pixels on its summit
+  // the Pic du Midi's observatory: a tower on its summit
   const midi = peaks.find((p) => p.name === "Pic du Midi");
   if (midi) {
     const x = Math.floor(midi.bearing / DEG_PX);
     const top = HORIZON - Math.round(heights[x]);
     const c = mix(STONE, horizonC, 1 - light * 0.8);
-    put(x, top - 1, c);
-    put(x, top - 2, c);
+    for (let y = 1; y <= 3; y++) put(x, top - y, c);
     put(x + 1, top - 1, c);
   }
 
-  // terracotta roofs underfoot: houses two to five windows wide, some a
-  // storey up with hipped ends, a chimney here and there, dark joints between
-  const roofLit = mix(ROOF_NIGHT, ROOF, light);
+  // terracotta roofs underfoot: houses of every width, some a storey up
+  // with hipped ends, a chimney here and there, a dark joint between
+  // (they sit in the same air as everything else: a touch of the horizon)
+  const roofLit = mix(ROOF_NIGHT, mix(ROOF, horizonC, 0.12), light);
+  const roofCourse = mix(roofLit, mix(ROOF_NIGHT, ROOF_DEEP, light), 0.45);
   const roofDeep = mix(ROOF_NIGHT, ROOF_DEEP, light);
-  const joint = mix(roofDeep, ROCK_NEAR, 0.5);
+  const ridgeC = mix(roofLit, STONE, 0.22 * light);
+  const joint = mix(roofDeep, ROCK_NEAR, 0.6);
   let x = 0;
   let k = 0;
   while (x < W) {
-    const w = 7 + Math.floor(hash(k * 13 + 5) * 11);
-    const raised = Math.floor(hash(k * 17 + 9) * 3); // 0, 1 or 2 rows up
-    const chimney = hash(k * 23 + 1) < 0.55 ? x + 2 + Math.floor(hash(k * 29) * (w - 4)) : -1;
+    const w = 12 + Math.floor(hash(k * 13 + 5) * 20);
+    const raised = Math.floor(hash(k * 17 + 9) * 3); // 0 to 2 rows up
+    const chimney = hash(k * 23 + 1) < 0.6 ? x + 3 + Math.floor(hash(k * 29) * (w - 6)) : -1;
     for (let i = 0; i < w && x + i < W; i++) {
       const cx = x + i;
       const end = Math.min(i, w - 1 - i); // hipped: the ends step down
       const ridgeY = HORIZON + 1 - Math.min(raised, end);
-      for (let y = ridgeY; y < TAPE; y++) {
+      for (let y = ridgeY; y < HZ_H; y++) {
         const row = y - ridgeY;
-        let c = row === 0 ? mix(roofLit, STONE, 0.14 * light) : (cx + (row & 1) * 2) % 4 === 0 ? roofDeep : roofLit;
+        // courses of tiles, the joints staggered course by course
+        let c = row === 0 ? ridgeC : (cx + (row % 2) * 3) % 6 === 0 ? roofCourse : roofLit;
         if (i === 0 && y > HORIZON) c = joint;
         put(cx, y, c);
       }
       if (cx === chimney) {
         put(cx, ridgeY - 1, roofDeep);
         put(cx, ridgeY - 2, roofDeep);
+        put(cx, ridgeY - 3, mix(roofDeep, STONE, 0.25 * light));
       }
     }
     x += w;
     k++;
-  }
-
-  // the compass tape: a tick every 10°, a longer one every 30°
-  const tape = hex(inks.ink950);
-  const tick = hex(inks.paper3);
-  for (let y = TAPE; y < HZ_H; y++) for (let cx = 0; cx < W; cx++) put(cx, y, tape);
-  for (let deg = 0; deg < 360; deg += 10) {
-    const cx = Math.round(deg / DEG_PX);
-    const long = deg % 30 === 0;
-    put(cx, TAPE, tick);
-    if (long) put(cx, TAPE + 1, tick);
   }
 }

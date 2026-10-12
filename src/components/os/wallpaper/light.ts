@@ -180,11 +180,12 @@ export type { RGB };
 
 /**
  * The wallpaper's sky for an instant, for small views that echo it (the
- * Atlas horizon): the five sky stops top to horizon, the glow round the
- * sun, the light on things, and where the sun and moon are.
+ * Atlas horizon, a stamp's vignette): the five sky stops top to horizon,
+ * the glow round the sun, the light on things, and where the sun and moon
+ * are. Over Toulouse unless given somewhere else.
  */
-export function skyLight(ms: number) {
-  const sun = sunAt(ms);
+export function skyLight(ms: number, lat?: number, lon?: number) {
+  const sun = sunAt(ms, lat, lon);
   const e = sun.elevation;
   const i = interp(sun.hourAngle < 0 ? MORNING : EVENING, e);
   return {
@@ -194,7 +195,7 @@ export function skyLight(ms: number) {
     amb: i.amb,
     sunTint: i.sun,
     sun,
-    moon: moonAt(ms),
+    moon: moonAt(ms, lat, lon),
     stars: 1 - smoothstep(-13, -4, e),
     sunUp: smoothstep(-1.2, 2.5, e),
     /** the rose light after sunset (and before sunrise) */

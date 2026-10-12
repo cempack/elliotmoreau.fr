@@ -12,6 +12,7 @@ import type { PlaceRow } from "@/lib/content";
 import { distanceKm } from "./geo";
 import { useAtlas } from "./useAtlas";
 import { Stamp } from "./Stamp";
+import { groupDigits } from "./stampArt";
 import { capitalize, fill, useCoords } from "./fmt";
 import { Horizon } from "./Horizon";
 
@@ -77,7 +78,7 @@ function KineticName({ text, id }: { text: string; id: string }) {
 
 /**
  * The inspector for one place: status, region, coordinates (copyable),
- * the perforated stamp, the name in kinetic display type, the view from
+ * the perforated stamp of its sky (cancelled once visited), the name in kinetic display type, the view from
  * home (every place as a flag at its heading, with the distance, or the
  * routes out for home), its note (from the database), and previous / next.
  */
@@ -158,9 +159,9 @@ export function PlaceCard({
               <Stamp
                 place={place}
                 name={name}
-                postmark={!compact}
+                postmark
                 lang={lang}
-                value={isHome ? a.card.stampHome : `${Math.round(km)} ${a.km.toUpperCase()}`}
+                value={isHome ? a.card.stampHome : `${groupDigits(km)} ${a.km.toUpperCase()}`}
                 label={fill(a.card.stampAlt, { place: name })}
               />
             </m.div>
