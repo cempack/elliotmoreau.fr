@@ -226,7 +226,9 @@ export async function syncOnce(): Promise<boolean> {
         anyOk = true;
         if (c.stored) console.info(`[mail] ${path}: ${c.stored} new`);
       } catch (e) {
-        const message = ((e as Error)?.message ?? String(e)).slice(0, 300);
+        // imapflow puts the server's own words ("Mailbox doesn't exist") in responseText
+        const err = e as Error & { responseText?: string };
+        const message = [err?.message ?? String(e), err?.responseText].filter(Boolean).join(": ").slice(0, 300);
         console.error(`[mail] ${path}:`, message);
         saveRow(path, { error: message });
       }
