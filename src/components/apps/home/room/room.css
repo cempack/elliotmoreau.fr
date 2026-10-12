@@ -10,6 +10,7 @@
   translate: -50% -50%;
   border-radius: 6px;
   cursor: pointer;
+  touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   animation: app-home-door-in 0.5s var(--ease-out-quint) 0.6s both;
 }
@@ -76,6 +77,44 @@
   align-items: flex-start;
   translate: 0 0;
 }
+/* where the plate would cover the home screen (LitWindow measures), it
+   hangs below the window, or beside it on a level leader */
+.app-home-door[data-side="below"] .app-home-door-tag {
+  top: calc(50% + var(--wh) / 2 + 5px);
+  bottom: auto;
+  flex-direction: column-reverse;
+}
+.app-home-door[data-side="start"] .app-home-door-tag,
+.app-home-door[data-side="end"] .app-home-door-tag {
+  top: 50%;
+  bottom: auto;
+  flex-direction: row;
+  align-items: center;
+  translate: 0 -50%;
+}
+.app-home-door[data-side="start"] .app-home-door-tag {
+  right: calc(50% + var(--ww) / 2 + 5px);
+  left: auto;
+}
+.app-home-door[data-side="end"] .app-home-door-tag {
+  right: auto;
+  left: calc(50% + var(--ww) / 2 + 5px);
+  flex-direction: row-reverse;
+}
+.app-home-door[data-side="start"] .app-home-door-tag::after,
+.app-home-door[data-side="end"] .app-home-door-tag::after {
+  width: 0.875rem;
+  height: 1px;
+  margin: 0;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+}
+/* nowhere free for the plate: the brackets alone; the window under the icons: no door */
+.app-home-door[data-side="bare"] .app-home-door-tag {
+  display: none;
+}
+.app-home-door[data-side="hidden"] {
+  visibility: hidden;
+}
 .app-home-door-label {
   padding: 0.375rem 0.625rem;
   border-radius: 7px;
@@ -102,6 +141,13 @@
 }
 .app-home-door:active .app-home-door-frame {
   --gap: 2px;
+}
+@media (hover: none) {
+  .app-home-door:active .app-home-door-label {
+    color: var(--color-ink-950);
+    background: var(--color-label);
+    transition-duration: 0s;
+  }
 }
 .app-home-door:focus-visible {
   outline: none;
@@ -167,6 +213,7 @@
   inset: 0;
   border-radius: 6px;
   cursor: pointer;
+  touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   transition: box-shadow 0.2s;
 }
@@ -187,7 +234,7 @@
   flex-direction: column;
   gap: 0.1875rem;
   width: max-content;
-  max-width: min(18rem, 80vw);
+  max-width: min(18rem, calc(100vw - 2.5rem));
   padding: 0.5625rem 0.75rem 0.625rem;
   border-radius: 10px;
   translate: -50% 0;
@@ -197,6 +244,13 @@
     0 14px 32px -14px rgba(0, 0, 0, 0.85);
   animation: app-home-room-tag 0.22s var(--ease-out-quint) both;
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: scale 0.4s var(--ease-spring);
+}
+.app-home-room-tag:active {
+  scale: 0.97;
+  transition-duration: 0.15s;
 }
 .app-home-room-tag[data-side="up"] {
   top: auto;
@@ -245,8 +299,8 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  height: 2.5rem;
-  padding: 0 1rem 0 0.875rem;
+  height: 2.75rem;
+  padding: 0 1.125rem 0 1rem;
   border-radius: 999px;
   color: var(--color-label);
   font: 500 0.8125rem/1 var(--font-mono);
@@ -254,6 +308,13 @@
   box-shadow:
     inset 0 0 0 1px var(--hairline),
     0 10px 24px -12px rgba(0, 0, 0, 0.8);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: scale 0.4s var(--ease-spring);
+}
+.app-home-room-back:active {
+  scale: 0.96;
+  transition-duration: 0.15s;
 }
 .app-home-room-back:focus-visible {
   outline: 2px solid var(--color-signal);
@@ -272,14 +333,67 @@
   font-size: 0.75rem;
   background: color-mix(in srgb, var(--color-ink-950) 70%, transparent);
   pointer-events: none;
+  transition: opacity 0.4s var(--ease-out-quint);
 }
+.app-home-room-hint[data-quiet] {
+  opacity: 0;
+}
+
+/* phones: the door's plate and the tags in readable sizes, the iOS
+   gutters, a 44px back button clear of the notch, the hint just over the
+   tab bar */
 @media (max-width: 767px) {
+  .app-home-door-label {
+    padding: 0.4375rem 0.6875rem;
+    font-size: 0.8125rem;
+  }
+  .app-home-room-back {
+    top: calc(var(--menubar-bottom, 2.75rem) + 1rem);
+    left: max(1.25rem, env(safe-area-inset-left));
+    font-size: 0.875rem;
+  }
   .app-home-room-hint {
-    bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+    right: max(1.25rem, env(safe-area-inset-right));
+    bottom: calc(var(--dock-h) + 1rem);
+    left: max(1.25rem, env(safe-area-inset-left));
+    max-width: none;
+    padding: 0.625rem 0.875rem;
+    border-radius: 12px;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    text-wrap: pretty;
+  }
+  .app-home-room-tag {
+    gap: 0.25rem;
+    padding: 0.75rem 1rem 0.8125rem;
+    border-radius: 14px;
+  }
+  .app-home-room-tag-k {
+    font-size: 0.75rem;
+  }
+  /* a long title takes a second line before it gives up */
+  .app-home-room-tag-t {
+    display: -webkit-box;
+    font-size: 0.9375rem;
+    white-space: normal;
+    text-wrap: pretty;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+  .app-home-room-tag-s,
+  .app-home-room-tag-open {
+    font-size: 0.8125rem;
+  }
+  .app-home-room-tag-open {
+    margin-top: 0.375rem;
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .app-home-room-tag {
     animation: none;
+  }
+  .app-home-room-tag,
+  .app-home-room-back {
+    transition: none;
   }
 }

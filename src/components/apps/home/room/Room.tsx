@@ -15,6 +15,8 @@ import { useWeather } from "@/components/os/weather";
 import { useSiteData } from "@/components/os/SiteData";
 import { homeSpot } from "@/components/os/wallpaper/sunClock";
 import { ROOM_H, ROOM_W, paintRoom, type Rect, type RoomSpots } from "./roomArt";
+import { intersects } from "../desktop/physics";
+import { menubarPx } from "../desktop/layout";
 
 /* whether the room is open, and the point it opened from (the lit window's centre) */
 let state: { open: boolean; from: { x: number; y: number } | null } = { open: false, from: null };
@@ -41,12 +43,34 @@ const parisHM = () => {
   return { hour: Number(p.find((x) => x.type === "hour")?.value ?? 0), minute: Number(p.find((x) => x.type === "minute")?.value ?? 0) };
 };
 
+/** an element's box as laid out, transforms aside (the desk rises in under the lock screen) */
+const layoutRect = (el: HTMLElement) => {
+  let x = 0;
+  let y = 0;
+  for (let n: HTMLElement | null = el; n; n = n.offsetParent as HTMLElement | null) {
+    x += n.offsetLeft;
+    y += n.offsetTop;
+  }
+  return { left: x, top: y, right: x + el.offsetWidth, bottom: y + el.offsetHeight };
+};
+type Side = "above" | "below" | "start" | "end";
+const inflate = (q: { left: number; top: number; right: number; bottom: number }, d: number) => ({
+  left: q.left - d,
+  top: q.top - d,
+  right: q.right + d,
+  bottom: q.bottom + d,
+});
+
 /**
  * The door: on the wallpaper, one window on the quay is always lit
  * (Elliot's room). It is marked like a map marks a place: corner brackets
  * round that one window and its name on a plate above, on a leader line,
  * always there. Hover or focus tightens the brackets and lights the
- * plate; a click or a tap goes through the glass.
+ * plate; a click or a tap goes through the glass. The plate never lands
+ * on the widgets, the icons or the caption: a phone's home screen can
+ * reach down to the window, so then it hangs below it, or beside it, or
+ * (nowhere free) the brackets stand alone. A window under the icons has
+ * no door.
  */
 export function LitWindow() {
   const { t } = useI18n();
@@ -54,6 +78,45 @@ export function LitWindow() {
   const spot = useSyncExternalStore(homeSpot.subscribe, homeSpot.get, () => null);
   const { open } = useRoom();
   const { blip } = useSound();
+  const ref = useRef<HTMLButtonElement>(null);
+
+  useLayoutEffect(() => {
+    const door = ref.current;
+    const scene = door?.closest<HTMLElement>(".app-home-scene");
+    if (!door || !scene) return;
+    const place = () => {
+      const tag = door.querySelector<HTMLElement>(".app-home-door-tag");
+      if (!tag) return;
+      const boxes = Array.from(scene.querySelectorAll<HTMLElement>(".app-home-widget, .app-home-icon, .app-home-caption"))
+        .filter((el) => el.getClientRects().length)
+        .map(layoutRect);
+      const g = door.getBoundingClientRect();
+      const cx = g.left + g.width / 2;
+      const cy = g.top + g.height / 2;
+      if (boxes.some((b) => cx > b.left && cx < b.right && cy > b.top && cy < b.bottom)) {
+        door.dataset.side = "hidden";
+        return;
+      }
+      const blockers = boxes.map((b) => inflate(b, 6));
+      const top = menubarPx() + 4;
+      const bar = document.querySelector(".os-tabbar")?.getBoundingClientRect();
+      const bottom = (bar && bar.height ? bar.top : window.innerHeight) - 4;
+      const fits = (q: DOMRect) =>
+        q.top >= top && q.bottom <= bottom && q.left >= 4 && q.right <= window.innerWidth - 4 && !blockers.some((b) => intersects(q, b));
+      const order: Side[] = ["above", "below", cx > window.innerWidth / 2 ? "start" : "end"];
+      for (const side of order) {
+        door.dataset.side = side;
+        if (fits(tag.getBoundingClientRect())) return;
+      }
+      door.dataset.side = "bare";
+    };
+    place();
+    // the widgets settle as their data arrives, and the screen turns
+    const ro = new ResizeObserver(place);
+    for (const el of scene.querySelectorAll(".app-home-widgets, .app-home-icons")) ro.observe(el);
+    return () => ro.disconnect();
+  }, [spot]);
+
   if (!spot) return null;
   const cx = spot.x + spot.w / 2;
   const cy = spot.y + spot.h / 2;
@@ -62,6 +125,7 @@ export function LitWindow() {
   const align = cx > vw - 80 ? "end" : cx < 80 ? "start" : "center";
   return (
     <button
+      ref={ref}
       type="button"
       className="app-home-door"
       data-no-drag
@@ -131,6 +195,8 @@ function RoomLayer({ from, leaving, onGone }: { from: { x: number; y: number } |
   const [view, setView] = useState({ w: 0, h: 0 });
   const [spots, setSpots] = useState<RoomSpots | null>(null);
   const [named, setNamed] = useState<keyof RoomSpots | null>(null);
+  // once a first thing is named, its tag says the rest: the hint steps aside
+  const [looked, setLooked] = useState(false);
   const [clock, setClock] = useState(parisHM);
 
   // the clock on the wall keeps time
@@ -293,6 +359,15 @@ function RoomLayer({ from, leaving, onGone }: { from: { x: number; y: number } |
   list.unshift({ id: "window", k: r.window, title: r.outside, sub: "", go: leave });
 
   const at = (q: Rect) => ({ left: q.x * scale, top: q.y * scale, width: q.w * scale, height: q.h * scale });
+  /** touch: the room pans the least it takes for a named thing's tag to sit whole on screen */
+  const bringIn = (q: Rect, el: HTMLElement | null) => {
+    if (!el) return;
+    const vw = el.clientWidth;
+    const half = Math.min(288, vw - 40) / 2;
+    const mid = (q.x + q.w / 2) * scale - el.scrollLeft;
+    const need = mid - half < 20 ? mid - half - 20 : mid + half > vw - 20 ? mid + half - (vw - 20) : 0;
+    if (need) el.scrollBy({ left: need, behavior: reduced ? "auto" : "smooth" });
+  };
   const sleeve = track?.image && spots ? at(spots.sleeve) : null;
 
   return (
@@ -329,13 +404,19 @@ function RoomLayer({ from, leaving, onGone }: { from: { x: number; y: number } |
                     data-named={shown || undefined}
                     onPointerEnter={(e) => e.pointerType === "mouse" && setNamed(s.id)}
                     onPointerLeave={(e) => e.pointerType === "mouse" && setNamed((n) => (n === s.id ? null : n))}
-                    onFocus={() => setNamed(s.id)}
+                    onFocus={(e) => {
+                      // a tap focuses the button too (Chrome): only keys name a thing on focus there,
+                      // or the first tap would already count as the second
+                      if (fine || e.currentTarget.matches(":focus-visible")) setNamed(s.id);
+                    }}
                     onBlur={() => setNamed((n) => (n === s.id ? null : n))}
                     onClick={(e) => {
                       // touch: the first tap names it, the second goes in
                       const touch = (e.nativeEvent as PointerEvent).pointerType === "touch" || !fine;
                       if (touch && named !== s.id) {
                         setNamed(s.id);
+                        setLooked(true);
+                        bringIn(q, e.currentTarget.closest<HTMLElement>(".app-home-room-scroll"));
                         blip("tick");
                         return;
                       }
@@ -363,7 +444,9 @@ function RoomLayer({ from, leaving, onGone }: { from: { x: number; y: number } |
       <button ref={backRef} type="button" className="app-home-room-back" aria-label={r.backLabel} onClick={leave}>
         <span aria-hidden>←</span> {r.back}
       </button>
-      <p className="app-home-room-hint">{fine ? r.hint : r.hintTouch}</p>
+      <p className="app-home-room-hint" data-quiet={(looked && !fine) || undefined}>
+        {fine ? r.hint : r.hintTouch}
+      </p>
     </div>
   );
 }

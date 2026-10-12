@@ -730,15 +730,22 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   }
 }
 
-/* ── phones: an iOS home screen that fits above the tab bar ── */
+/* ── phones: an iOS home screen that fits above the tab bar ──
+   iOS spacing: 20px gutters (the notch's insets when held sideways), 16px
+   between widgets, a section's breath between the widgets and the icons.
+   The widgets and the icons stand above the lit window's door, so a
+   window they reach down to never pokes its plate through them. */
 @media (max-width: 767px), (pointer: coarse) and (max-height: 520px) {
   .app-home-scene {
+    --app-home-gutter: 20px;
+    --app-home-wgap: 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 14px;
+    gap: 28px;
     min-height: 0;
-    padding: calc(var(--menubar-bottom) + 12px) 16px calc(var(--dock-h) + 14px);
+    padding: calc(var(--menubar-bottom) + 16px) max(var(--app-home-gutter), env(safe-area-inset-right))
+      calc(var(--dock-h) + 16px) max(var(--app-home-gutter), env(safe-area-inset-left));
   }
   .app-home-caption,
   .app-home-widgets,
@@ -758,10 +765,12 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   /* two equal columns that never grow past the screen: a square widget's
      content would otherwise set its minimum width (and so its height) */
   .app-home-widgets {
-    position: static;
+    position: relative;
+    inset: auto;
+    z-index: 3;
     grid-auto-flow: row;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
+    gap: var(--app-home-wgap);
   }
   .app-home-widget {
     width: auto;
@@ -775,13 +784,29 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   .app-home-kiosk-head {
     font-size: 0.9375rem;
   }
+  /* secondary lines at 13px, like an iOS widget's */
+  .app-home-clock-extra,
+  .app-home-wall-meta {
+    font-size: 0.8125rem;
+  }
+  /* no double-tap delay (the poster's sheet already takes every gesture
+     itself); a press answers at once */
+  .app-home-widget-hit,
+  .app-home-wall-readout {
+    touch-action: manipulation;
+  }
+  .app-home-kiosk:not([data-peeling]):has(.app-home-kiosk-top:active),
+  .app-home-widget--push:has(.app-home-wall-readout:active) {
+    scale: 0.97;
+    transition-duration: 0.18s;
+  }
 
   /* the app grid: what the tab bar doesn't already hold */
   .app-home-icons {
-    position: static;
+    position: relative;
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    row-gap: 14px;
+    row-gap: 20px;
     pointer-events: auto;
   }
   .app-home-icon {
@@ -801,6 +826,11 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
     width: 64px;
     height: 62px;
   }
+  /* pressed, an icon dims as well as sinking, as on iOS */
+  .app-home-icon:active .app-home-icon-tile {
+    filter: brightness(0.78);
+    transition-duration: 0.12s;
+  }
   .app-home-icon[data-selected] .app-home-icon-tile {
     background: none;
     box-shadow: none;
@@ -815,12 +845,19 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   .app-home-icon:focus-visible .app-home-icon-tile {
     outline-offset: 2px;
   }
-  /* iOS labels: one line, never wrapped */
+  /* iOS labels: one line, never wrapped, readable at 13px; a long one
+     ("En ce moment") may reach into its neighbours' spare width */
+  .app-home-icon {
+    gap: 6px;
+  }
   .app-home-icon-label {
     display: block;
-    max-width: calc(100% + 10px);
-    padding: 2px 4px 3px;
-    font-size: 0.75rem;
+    max-width: calc(100% + 16px);
+    padding: 1px 3px 2px;
+    font-size: 0.8125rem;
+    font-weight: 550;
+    line-height: 1.25;
+    letter-spacing: 0;
     white-space: nowrap;
     text-overflow: ellipsis;
   }
@@ -828,10 +865,12 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
     display: none;
   }
 }
-/* shorter phones (Safari with its toolbars): smaller widgets */
+/* shorter phones (Safari with its toolbars): smaller widgets, a shorter
+   breath between the widgets and the icons, so the row stays clear of the
+   lit window on the quay */
 @media (max-width: 767px) and (max-height: 760px) {
   .app-home-scene {
-    gap: 12px;
+    gap: 20px;
   }
   .app-home-widget {
     aspect-ratio: auto;
@@ -943,6 +982,14 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   .app-home-widget:not(.app-home-widget--push) {
     align-self: stretch;
     aspect-ratio: auto;
-    min-height: calc((100cqi - 14px) / 2);
+    min-height: calc((100cqi - var(--app-home-wgap)) / 2);
+  }
+  /* room on the poster for its foot at 13px, and round the wall */
+  .app-home-kiosk-foot {
+    font-size: 0.8125rem;
+  }
+  .app-home-widget--push {
+    gap: 10px;
+    padding: 14px 12px 12px;
   }
 }
