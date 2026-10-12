@@ -41,7 +41,7 @@ const NotificationPanel = dynamic(() => import("./menubar/Notifications").then((
 
 const PANELS: Record<PanelId, { width: number; align: Align }> = {
   about: { width: 520, align: "start" },
-  music: { width: 328, align: "center" },
+  music: { width: 380, align: "center" },
   control: { width: 344, align: "end" },
   notifications: { width: 372, align: "center" },
 };
@@ -208,7 +208,7 @@ function Bar() {
           panelLabel={s.menu.music}
           title={music.track ? `${music.track.title} · ${music.track.artist}` : undefined}
           className="os-menubar-music-btn"
-          itemClassName="os-menubar-hide-sm"
+          itemClassName="os-menubar-music-item"
           {...PANELS.music}
           trigger={<MusicTrigger music={music} />}
         >

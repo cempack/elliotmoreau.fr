@@ -155,6 +155,9 @@ const en = {
     repeatLately: "On repeat lately",
     showB: "Turn the tape over: side B, on repeat lately",
     showA: "Turn the tape over: side A, the track",
+    sides: "Side of the tape",
+    sideA: "Side A: the track",
+    sideB: "Side B: on repeat lately",
   },
   spotlight: {
     placeholder: "Search apps, posts, projects, commands…",
@@ -404,6 +407,9 @@ const fr: typeof en = {
     repeatLately: "En boucle ces temps-ci",
     showB: "Retourner la cassette : face B, en boucle ces temps-ci",
     showA: "Retourner la cassette : face A, le morceau",
+    sides: "Face de la cassette",
+    sideA: "Face A : le morceau",
+    sideB: "Face B : en boucle ces temps-ci",
   },
   spotlight: {
     placeholder: "Apps, articles, projets, commandes…",
