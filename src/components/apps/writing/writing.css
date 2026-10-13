@@ -41,6 +41,31 @@
   text-wrap: pretty;
 }
 
+/* the typewriter: it types the title of the post you point at */
+.app-writing-tw {
+  position: relative;
+  aspect-ratio: 3 / 2;
+  max-height: 28rem;
+  margin: -0.5rem 0 1.25rem;
+  overflow: hidden;
+  touch-action: pan-y;
+  cursor: var(--cursor-grab, grab);
+}
+.app-writing-tw:active {
+  cursor: var(--cursor-grabbing, grabbing);
+}
+.app-writing-tw-canvas {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+@container (max-width: 559px) {
+  .app-writing-tw {
+    aspect-ratio: 1 / 1;
+    max-height: 22rem;
+  }
+}
+
 /* the newest post, as one big link */
 .app-writing-lead {
   position: relative;
