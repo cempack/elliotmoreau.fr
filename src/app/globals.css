@@ -229,10 +229,12 @@ body {
 html {
   cursor: var(--cursor-default, default);
 }
-/* the browser's own stylesheet gives buttons and the controls that aren't
-   text the system arrow, which would win over the one inherited from html */
+/* the browser's own stylesheet gives buttons, labels and the controls that
+   aren't text the system arrow, which would win over the one inherited from
+   html (a label[for] takes the hand, below) */
 :where(
     button,
+    label,
     input:is([type="button"], [type="submit"], [type="reset"], [type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="image"])
   ) {
   cursor: var(--cursor-default, default);
