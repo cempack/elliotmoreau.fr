@@ -12,17 +12,29 @@ import { PixelCava, RollText } from "./bits";
 import { fill, parisHM, useClock } from "./lib";
 import type { Listen } from "./widgets/Listening";
 
-const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s);
+/**
+ * Shorten at a word boundary when there is one past halfway ("Always
+ * Somewhere (2015, a remas…" reads as a typo), dropping what would dangle
+ * before the ellipsis: a space, a comma, an opening bracket.
+ */
+function clip(s: string, n: number) {
+  if (s.length <= n) return s;
+  const cut = s.slice(0, n - 1);
+  const sp = cut.lastIndexOf(" ");
+  return `${(sp > n / 2 ? cut.slice(0, sp) : cut).replace(/[\s,;:([{–—-]+$/, "")}…`;
+}
 
 /**
  * The headline wants the song, not the edition: "Song (Live in Toulouse) -
- * Remastered 2011" → "Song". Falls back to the full title if that leaves
+ * Remastered 2011" → "Song", and an edition left open ("Song (2015, a
+ * remaster") goes too. Falls back to the full title if that leaves
  * nothing. The widget below shows the full title.
  */
 export function shortTitle(title: string) {
   const s = title
     .replace(/\s+[-–—]\s+.*$/, "")
     .replace(/\s*[([][^)\]]*[)\]]/g, "")
+    .replace(/\s*[([].*$/, "")
     .trim();
   return clip(s || title, 32);
 }
@@ -155,8 +167,18 @@ export function NowHero({ listen, updated }: { listen: Listen; updated: string }
             className="app-now-tok app-now-tok--track"
             tabIndex={-1}
           >
-            {j === 0 && <PixelCava playing={playing} still cols={4} className="app-now-tok-cava" />}
-            {w}
+            {j === 0 ? (
+              <>
+                {/* a title too long for its line breaks inside the word, never between the meter and it */}
+                <span className="app-now-tok-lead">
+                  <PixelCava playing={playing} still cols={4} className="app-now-tok-cava" />
+                  {Array.from(w)[0]}
+                </span>
+                {Array.from(w).slice(1).join("")}
+              </>
+            ) : (
+              w
+            )}
           </a>
         );
         const pre = j === 0 ? before : [];
