@@ -4,6 +4,7 @@ import {
   type ProjectKind,
   type ProjectNote,
   type ProjectsContent,
+  type CopyContent,
   type Away,
   type Book,
   type Continent,
@@ -18,6 +19,7 @@ import {
   type WorkHours,
 } from "@/lib/content";
 import { ContentError } from "./errors";
+import { flatStrings, placeholders } from "@/i18n/base";
 
 /**
  * Every content write goes through these: they accept `unknown` (whatever a
@@ -330,4 +332,38 @@ export function validateProjects(input: unknown): ProjectsContent {
     order.push(name);
   });
   return { notes, order };
+}
+
+/**
+ * The edited words (Texts). Every path must be a string the dictionary
+ * has; an edit keeps the {placeholders} the original fills in (a missing
+ * one would drop a value, an unknown one would show as typed); an edit
+ * that's empty or the same as the original is dropped, so it reads as
+ * written again. Line breaks are kept (some strings are paragraphs).
+ */
+export function validateCopy(input: unknown): CopyContent {
+  const o = obj(input, "copy");
+  const out: CopyContent = { en: {}, fr: {} };
+  for (const lang of ["en", "fr"] as const) {
+    const edits = obj(o[lang] ?? {}, lang);
+    const keys = Object.keys(edits);
+    if (keys.length > 3000) fail(lang, "Too many edits.");
+    const base = flatStrings(lang);
+    for (const path of keys) {
+      const field = `${lang}.${path}`;
+      if (!(path in base)) fail(field, "This text no longer exists.");
+      const v = edits[path];
+      if (typeof v !== "string") fail(field, "Expected text.");
+      const value = (v as string).replace(/\r\n?/g, "\n").trim();
+      if (value.length > 4000) fail(field, "At most 4000 characters.");
+      if (!value || value === base[path]) continue;
+      const want = placeholders(base[path]).join(",");
+      const got = placeholders(value).join(",");
+      if (want !== got) {
+        fail(field, want ? `Keep exactly these placeholders: ${placeholders(base[path]).map((p) => `{${p}}`).join(" ")}.` : "This text has no placeholders: remove the {…}.");
+      }
+      out[lang][path] = value;
+    }
+  }
+  return out;
 }

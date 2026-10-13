@@ -68,12 +68,14 @@ src/
   app/api/               newsletter (Ghost Admin), spotify/status (live now playing),
                          hit (the page-view beacon), admin/ (passkeys, the panel's RPC)
   server/                SQLite (content, mail, admin auth, stats): content/ holds
-                         places, status, /now, live overrides and Projects' notes;
+                         places, status, /now, live overrides, Projects' notes and
+                         the words edited from admin (Texts, laid over i18n/dict);
                          stats/ counts visits without cookies (a daily-salted visitor
                          hash, country from the time zone), shown in the admin Overview
   proxy.ts               EN unprefixed (rewrite to /en), FR at /fr, saved choice
   i18n/                  config, server getDict + appMetadata, client I18nProvider,
-                         dict/<area>.ts (meta.ts = titles, descriptions, share cards)
+                         dict/<area>.ts (meta.ts = titles, descriptions, share cards),
+                         base.ts (the strings as written, before admin edits)
   components/os/         the shell: Wallpaper, Glass, MenuBar (+ panels), Dock,
                          AppWindow (+ view transitions), Terminal, Intro (boot
                          with the pixel name, lock screen), Spotlight commands,
@@ -113,5 +115,7 @@ motion swaps all of it for short cross-fades and instant snaps.
 - `src/content/now.ts` — what you're building / reading / your setup.
 - `src/i18n/dict/*.ts` — every visible string, EN + FR (`meta.ts` holds the
   page titles and descriptions used by search results and share cards).
+  Or change them live from the admin panel's Texts section: an edit there
+  is stored in the database and wins over the file until it's reset.
 - `src/lib/places.ts` — places for the Atlas, socials, email.
 - `public/pgp.asc` — PGP key served on the Mail app.

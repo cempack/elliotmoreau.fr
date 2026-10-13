@@ -331,3 +331,45 @@ describe("projects", () => {
     rejects(() => c.setProjects({ notes: {}, order: ["not a repo"] }), "order[0]");
   });
 });
+
+describe("texts", () => {
+  test("nothing edited at first", () => {
+    assert.deepEqual(c.getCopy(), { en: {}, fr: {} });
+  });
+
+  test("an edit round-trips and reaches the dictionary; empty or unchanged edits are dropped", async () => {
+    const base = await import("@/i18n/base");
+    const role = base.flatStrings("en")["home.role"];
+    c.setCopy({ en: { "home.role": "  Student in Toulouse  ", "home.name": "" }, fr: { "home.role": base.flatStrings("fr")["home.role"] } });
+    assert.deepEqual(c.getCopy(), { en: { "home.role": "Student in Toulouse" }, fr: {} });
+    const { getDict } = await import("@/i18n");
+    assert.equal(getDict("en").home.role, "Student in Toulouse");
+    assert.equal(getDict("fr").home.role, base.flatStrings("fr")["home.role"]);
+    // the written dictionary itself is untouched
+    assert.equal(base.baseDict("en").home.role, role);
+    c.setCopy({ en: {}, fr: {} });
+    assert.equal(getDict("en").home.role, role);
+  });
+
+  test("placeholders must stay the same; unknown paths and the panel's own words are refused", async () => {
+    const base = await import("@/i18n/base");
+    const key = Object.keys(base.flatStrings("en")).find((k) => base.placeholders(base.flatStrings("en")[k]).length === 1)!;
+    const [hole] = base.placeholders(base.flatStrings("en")[key]);
+    rejects(() => c.setCopy({ en: { [key]: "no hole here" }, fr: {} }), `en.${key}`);
+    rejects(() => c.setCopy({ en: { [key]: `{${hole}} and {other}` }, fr: {} }), `en.${key}`);
+    c.setCopy({ en: { [key]: `Now with {${hole}}` }, fr: {} });
+    assert.equal(c.getCopy().en[key], `Now with {${hole}}`);
+    rejects(() => c.setCopy({ en: { "home.nope": "x" }, fr: {} }), "en.home.nope");
+    rejects(() => c.setCopy({ en: { "admin.nav.mail": "Post" }, fr: {} }), "en.admin.nav.mail");
+    c.setCopy({ en: {}, fr: {} });
+  });
+
+  test("array items edit by index", async () => {
+    const base = await import("@/i18n/base");
+    c.setCopy({ en: { "system.term.secrets.2": "sudo make me a crêpe" }, fr: {} });
+    const { getDict } = await import("@/i18n");
+    assert.equal(getDict("en").system.term.secrets[2], "sudo make me a crêpe");
+    assert.equal(base.baseDict("en").system.term.secrets[2], "3. sudo make me a sandwich");
+    c.setCopy({ en: {}, fr: {} });
+  });
+});

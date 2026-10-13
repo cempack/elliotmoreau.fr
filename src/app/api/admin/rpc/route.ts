@@ -14,14 +14,17 @@ import {
 import {
   ContentError,
   deletePlace,
+  getCopy,
   getSiteContent,
   reorderPlaces,
   revalidateContent,
+  setCopy,
   setLive,
   setNowContent,
   setProjects,
   setStatus,
   upsertPlace,
+  type CopyContent,
   type LiveOverrides,
   type NowContent,
   type PlaceRow,
@@ -29,6 +32,7 @@ import {
   type Status,
 } from "@/server/content";
 import { getStats, type StatsRange } from "@/server/stats";
+import { flatStrings } from "@/i18n/base";
 import {
   adminReply,
   getThread,
@@ -175,6 +179,14 @@ const OPS: Record<string, Handler> = {
       if (status && Object.keys(status).length) setStatus(status);
       if (live && Object.keys(live).length) setLive(live);
     });
+  },
+
+  /* ── texts: every string on the site as written, and the edits laid over them ── */
+  "copy.options": () => ({ base: { en: flatStrings("en"), fr: flatStrings("fr") }, copy: getCopy() }),
+  "copy.save": (ctx) => {
+    const copy = ctx.body.copy as CopyContent;
+    const n = Object.keys(copy?.en ?? {}).length + Object.keys(copy?.fr ?? {}).length;
+    return write("copy.save", `${n} edits`, ctx, () => setCopy(copy));
   },
 
   /* ── stats ── */

@@ -8,6 +8,7 @@ import {
   type CurrentAway,
   type LiveOverrides,
   type NowContent,
+  type CopyContent,
   type PlaceRow,
   type ProjectsContent,
   type Status,
@@ -15,7 +16,7 @@ import {
 import { ContentError } from "./errors";
 import { PLACE_ORDER, fromDb, readKv, writeKv, writePlace, type PlaceDbRow } from "./rows";
 import { seedLive, seedNow, seedPlaces, seedProjects, seedStatus } from "./seed";
-import { validateAway, validateLive, validateNow, validatePlace, validateProjects, validateStatus, validateWorkHours } from "./validate";
+import { validateAway, validateCopy, validateLive, validateNow, validatePlace, validateProjects, validateStatus, validateWorkHours } from "./validate";
 
 /**
  * The site's editable content: places (the Atlas), status (away, working
@@ -37,6 +38,7 @@ export { ContentError } from "./errors";
 export type {
   Away,
   Book,
+  CopyContent,
   Continent,
   CurrentAway,
   Draft,
@@ -105,6 +107,28 @@ const statusFrom = (d: DB) => doc(d, "status", (v) => validateStatus({ ...seedSt
 const nowFrom = (d: DB) => doc(d, "now", validateNow, seedNow);
 const liveFrom = (d: DB) => doc(d, "live", validateLive, seedLive);
 const projectsFrom = (d: DB) => doc(d, "projects", validateProjects, seedProjects);
+const noCopy = (): CopyContent => ({ en: {}, fr: {} });
+// an edit whose original was renamed since is dropped, not the whole document
+const copyFrom = (d: DB) => doc(d, "copy", (v) => validateCopy(prune(v)), noCopy);
+
+/** keep only edits whose path still exists and still validates on its own */
+function prune(v: unknown): unknown {
+  if (!v || typeof v !== "object") return v;
+  const out: Record<string, Record<string, unknown>> = { en: {}, fr: {} };
+  for (const lang of ["en", "fr"] as const) {
+    const edits = (v as Record<string, unknown>)[lang];
+    if (!edits || typeof edits !== "object") continue;
+    for (const [k, x] of Object.entries(edits)) {
+      try {
+        validateCopy({ [lang]: { [k]: x } });
+        out[lang][k] = x;
+      } catch {
+        // gone or no longer fits its original: read as written
+      }
+    }
+  }
+  return out;
+}
 
 /* ───────────────────────────── places ───────────────────────────── */
 
@@ -244,6 +268,19 @@ export function getProjects(): ProjectsContent {
 export function setProjects(next: ProjectsContent): void {
   const projects = validateProjects(next);
   tx((d) => writeKv(d, "projects", projects, nowIso()));
+}
+
+/* ───────────────────────────── the site's words ───────────────────────────── */
+
+/** The edited words (Texts), per language; empty when nothing was edited. */
+export function getCopy(): CopyContent {
+  return read(copyFrom, noCopy);
+}
+
+/** Replace every edit (validated: an empty edit, or one equal to the original, is dropped). */
+export function setCopy(next: CopyContent): void {
+  const copy = validateCopy(next);
+  tx((d) => writeKv(d, "copy", copy, nowIso()));
 }
 
 /* ───────────────────────────── everything, for a render ───────────────────────────── */

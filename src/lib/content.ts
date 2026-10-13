@@ -199,3 +199,10 @@ export type ProjectsContent = {
   notes: Record<string, ProjectNote>;
   order: string[];
 };
+
+/**
+ * The site's words as edited from the admin panel (Texts): per language, a
+ * string's path in the dictionary ("home.role") and what it says instead.
+ * Only edited strings are stored; the rest read as written.
+ */
+export type CopyContent = { en: Record<string, string>; fr: Record<string, string> };

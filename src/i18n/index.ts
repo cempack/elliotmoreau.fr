@@ -1,36 +1,26 @@
 import "server-only";
-import meta from "./dict/meta";
-import shell from "./dict/shell";
-import home from "./dict/home";
-import work from "./dict/work";
-import writing from "./dict/writing";
-import atlas from "./dict/atlas";
-import now from "./dict/now";
-import contact from "./dict/contact";
-import notfound from "./dict/notfound";
-import dock from "./dict/dock";
-import windowing from "./dict/windowing";
-import system from "./dict/system";
-import admin from "./dict/admin";
+import { getCopy } from "@/server/content";
+import { baseDict, withEdits, type Dict } from "./base";
 import type { Locale } from "./config";
 
-const pick = (l: Locale) => ({
-  meta: meta[l],
-  shell: shell[l],
-  home: home[l],
-  work: work[l],
-  writing: writing[l],
-  atlas: atlas[l],
-  now: now[l],
-  contact: contact[l],
-  notfound: notfound[l],
-  dock: dock[l],
-  windowing: windowing[l],
-  system: system[l],
-  admin: admin[l],
-});
+export type { Dict } from "./base";
 
-export type Dict = ReturnType<typeof pick>;
+/**
+ * A locale's strings with the admin panel's edits (Texts) laid over the
+ * ones written in src/i18n/dict. Pages render from the database, so an
+ * edit shows on each page's next render (the panel marks them stale).
+ * The patched dictionary is kept until the edits change.
+ */
+const patched = new Map<Locale, { key: string; dict: Dict }>();
+function pick(lang: Locale): Dict {
+  const edits = getCopy()[lang];
+  const key = JSON.stringify(edits);
+  const hit = patched.get(lang);
+  if (hit && hit.key === key) return hit.dict;
+  const dict = withEdits(baseDict(lang), edits);
+  patched.set(lang, { key, dict });
+  return dict;
+}
 
 /** Every string for a locale (server-side; the client gets slices, below). */
 export function getDict(lang: Locale): Dict {
