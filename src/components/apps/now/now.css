@@ -400,11 +400,11 @@ a.app-now-tok:hover {
 }
 @media (hover: hover) and (pointer: fine) {
   .app-now-w {
-    cursor: grab;
+    cursor: var(--cursor-grab, grab);
   }
   .app-now-board[data-carrying] .app-now-w,
   .app-now-board[data-carrying] {
-    cursor: grabbing;
+    cursor: var(--cursor-grabbing, grabbing);
   }
 }
 .app-now-board[data-carrying] {
@@ -530,7 +530,7 @@ a.app-now-tok:hover {
   border-radius: 8px;
   color: var(--color-label-3);
   opacity: 0;
-  cursor: grab;
+  cursor: var(--cursor-grab, grab);
   touch-action: none;
   transition:
     opacity 0.2s,
@@ -656,11 +656,11 @@ a.app-now-tok:hover {
   width: calc(54 / 88 * 100%);
   height: calc(54 / 64 * 100%);
   border-radius: 50%;
-  cursor: grab;
+  cursor: var(--cursor-grab, grab);
   touch-action: none;
 }
 .app-now-deck-disc:active {
-  cursor: grabbing;
+  cursor: var(--cursor-grabbing, grabbing);
 }
 .app-now-deck-sleeve {
   position: absolute;
@@ -828,13 +828,13 @@ a.app-now-tok:hover {
   height: calc(var(--s) + 1.75rem);
   border-radius: 10px;
   outline: none;
-  cursor: grab;
+  cursor: var(--cursor-grab, grab);
   touch-action: pan-y;
   user-select: none;
   -webkit-user-select: none;
 }
 .app-now-crate-bin:active {
-  cursor: grabbing;
+  cursor: var(--cursor-grabbing, grabbing);
 }
 .app-now-crate-bin:focus-visible {
   outline: 2px solid var(--color-signal);
@@ -853,7 +853,7 @@ a.app-now-tok:hover {
 }
 @media (hover: hover) and (pointer: fine) {
   .app-now-crate-sleeve:not([data-front]) {
-    cursor: pointer;
+    cursor: var(--cursor-pointer, pointer);
   }
 }
 .app-now-crate-art {
@@ -919,7 +919,7 @@ a.app-now-tok:hover {
   border-radius: 999px;
   background: transparent;
   color: var(--color-label-2);
-  cursor: pointer;
+  cursor: var(--cursor-pointer, pointer);
   transition:
     background-color 0.15s,
     color 0.15s,
@@ -937,7 +937,7 @@ a.app-now-tok:hover {
 .app-now-crate-step:disabled {
   color: var(--color-label-3);
   opacity: 0.4;
-  cursor: default;
+  cursor: var(--cursor-default, default);
 }
 .app-now-crate-step:focus-visible {
   outline: 2px solid var(--color-signal);
@@ -1323,7 +1323,7 @@ a.app-now-tok:hover {
   border-radius: 4px;
   outline: none;
   touch-action: pan-y;
-  cursor: crosshair;
+  cursor: var(--cursor-crosshair, crosshair);
 }
 .app-now-pulse-plot:focus-visible {
   outline: 2px solid var(--color-signal);
@@ -1975,7 +1975,7 @@ a.app-now-tok:hover {
   overflow: hidden;
   border-radius: var(--radius-card);
   background: var(--color-ink-900);
-  cursor: grab;
+  cursor: var(--cursor-grab, grab);
   touch-action: pan-y;
   outline: none;
   -webkit-user-select: none;
@@ -1983,7 +1983,7 @@ a.app-now-tok:hover {
   -webkit-tap-highlight-color: transparent;
 }
 .app-now-day-sky:active {
-  cursor: grabbing;
+  cursor: var(--cursor-grabbing, grabbing);
 }
 .app-now-day-sky:focus-visible {
   box-shadow: 0 0 0 2px var(--color-signal);
@@ -2102,7 +2102,7 @@ a.app-now-tok:hover {
   outline-offset: 2px;
 }
 .app-now-day-strip {
-  cursor: grab;
+  cursor: var(--cursor-grab, grab);
   touch-action: pan-y;
   -webkit-user-select: none;
   user-select: none;

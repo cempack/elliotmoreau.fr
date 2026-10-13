@@ -55,7 +55,7 @@
   padding: 0 10px 0 9px;
   border-radius: 6px;
   white-space: nowrap;
-  cursor: default;
+  cursor: var(--cursor-default, default);
 }
 .os-ctx-check {
   display: none;

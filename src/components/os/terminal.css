@@ -79,7 +79,7 @@
   gap: 1rem;
   height: 3rem;
   padding: 0 0.625rem 0 var(--os-term-pad);
-  cursor: grab;
+  cursor: var(--cursor-grab, grab);
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
@@ -95,7 +95,7 @@
   pointer-events: none;
 }
 .os-term-win.is-dragging .os-term-titlebar {
-  cursor: grabbing;
+  cursor: var(--cursor-grabbing, grabbing);
 }
 /* the heading and the lights are the app windows' own (window.css); the
    path gives way first when the window is narrow */
@@ -326,7 +326,7 @@
   text-align: left;
   text-decoration: underline dotted color-mix(in srgb, var(--color-signal) 50%, transparent);
   text-underline-offset: 3px;
-  cursor: pointer;
+  cursor: var(--cursor-pointer, pointer);
 }
 .os-term-cmdlink:hover {
   background: color-mix(in srgb, var(--color-signal) 12%, transparent);
@@ -686,7 +686,7 @@
   border-radius: 999px;
   background: transparent;
   color: var(--color-label-2);
-  cursor: pointer;
+  cursor: var(--cursor-pointer, pointer);
 }
 /* same chip as the app window sheet's close (.os-win-x) */
 .os-term-done::before {
@@ -740,7 +740,7 @@
   color: var(--color-label);
   font: 500 13px/36px var(--font-mono);
   white-space: nowrap;
-  cursor: pointer;
+  cursor: var(--cursor-pointer, pointer);
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   transition:
@@ -906,14 +906,14 @@
   stroke-linecap: round;
 }
 .os-metro-stop {
-  cursor: pointer;
+  cursor: var(--cursor-pointer, pointer);
 }
 .os-metro-train {
-  cursor: grab;
+  cursor: var(--cursor-grab, grab);
   touch-action: none;
 }
 .os-metro-train:active {
-  cursor: grabbing;
+  cursor: var(--cursor-grabbing, grabbing);
 }
 .os-metro-labels > span {
   position: absolute;
@@ -924,7 +924,7 @@
 }
 .os-metro-label {
   translate: -50% 0;
-  cursor: pointer;
+  cursor: var(--cursor-pointer, pointer);
   /* transfers pass behind the names */
   text-shadow: 0 0 2px var(--color-ink-950), 0 0 4px var(--color-ink-950), 0 0 6px var(--color-ink-950);
 }
@@ -944,7 +944,7 @@
 .os-metro-row {
   overflow: hidden;
   text-overflow: ellipsis;
-  cursor: pointer;
+  cursor: var(--cursor-pointer, pointer);
 }
 /* no commits: the line is closed */
 .os-metro-closed {

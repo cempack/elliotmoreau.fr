@@ -12,6 +12,7 @@ import { MotionProvider } from "@/components/motion/MotionProvider";
 import { OSShell } from "@/components/os/OSShell";
 import { SKY_SCRIPT } from "@/components/os/sky-script";
 import { INTRO_SCRIPT } from "@/components/os/intro-script";
+import { CURSOR_SCRIPT } from "@/lib/cursor-script";
 import { InlineScript } from "@/components/InlineScript";
 import { getTheme } from "@/lib/theme-source";
 import { themeCss } from "@/lib/theme";
@@ -72,7 +73,7 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
         <link rel="me" href="https://mastodon.social/@cempack" />
         {/* the palette, live from the Dos Moos theme repo (lib/theme-source) */}
         <style id="em-theme" dangerouslySetInnerHTML={{ __html: themeCss(theme.tokens) }} />
-        <InlineScript html={SKY_SCRIPT + INTRO_SCRIPT} />
+        <InlineScript html={SKY_SCRIPT + INTRO_SCRIPT + CURSOR_SCRIPT} />
       </head>
       <body className="min-h-svh bg-ink-950 text-label">
         <a href="#content" className="skip-link">

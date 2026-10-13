@@ -34,7 +34,7 @@ html[data-home] {
   overscroll-behavior: none;
 }
 .app-home-scene[data-icon-drag] {
-  cursor: grabbing;
+  cursor: var(--cursor-grabbing, grabbing);
 }
 
 /* Daylight: the sky behind the desk turns pale (snow peaks, the horizon,
@@ -242,11 +242,11 @@ html[data-sky="dusk"] .app-home-caption-role {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  cursor: grab;
+  cursor: var(--cursor-grab, grab);
   touch-action: none;
 }
 .app-home-sun-handle[data-held] {
-  cursor: grabbing;
+  cursor: var(--cursor-grabbing, grabbing);
 }
 /* today's path while the sun is held: dots every quarter hour, now notched */
 .app-home-sun-track {
@@ -567,7 +567,7 @@ html[data-sky="dusk"] .app-home-caption-role {
   font: inherit;
   text-align: center;
   pointer-events: auto;
-  cursor: default;
+  cursor: var(--cursor-default, default);
   touch-action: manipulation;
   user-select: none;
   -webkit-user-select: none;
@@ -577,7 +577,7 @@ html[data-sky="dusk"] .app-home-caption-role {
 }
 .app-home-icon[data-dragging] {
   z-index: 6;
-  cursor: grabbing;
+  cursor: var(--cursor-grabbing, grabbing);
 }
 .app-home-icon-tile {
   display: grid;

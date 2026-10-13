@@ -7,8 +7,9 @@ import { useEffect, useMemo, useRef } from "react";
 import { useI18n } from "@/i18n/client";
 import { useSound } from "@/lib/sound";
 import { useTheme } from "@/hooks/useTheme";
-import { ArrowUpRight, GithubIcon, PowerIcon, RestartIcon, RssIcon } from "./glyphs";
-import { BLOG_RSS, SITE_REPO, restartOS } from "./util";
+import { ArrowUpRight, FullscreenIcon, GithubIcon, PowerIcon, RestartIcon } from "./glyphs";
+import { useFullscreen } from "@/lib/fullscreen";
+import { SITE_REPO, restartOS } from "./util";
 import { shutdownOS } from "../Intro";
 import { PhoneTicket } from "./PhoneTicket";
 import { useSiteData } from "../SiteData";
@@ -60,6 +61,7 @@ export function AboutPanel() {
   const { blip } = useSound();
   const { meta } = useTheme();
   const { activity, repos } = useSiteData();
+  const fs = useFullscreen();
 
   // last updated: the latest push to this site's repo
   const updated = useMemo(() => {
@@ -123,12 +125,21 @@ export function AboutPanel() {
           <span>{a.source}</span>
           <ArrowUpRight />
         </a>
-        <a className="os-menubar-action" href={BLOG_RSS} target="_blank" rel="noopener noreferrer" aria-label={a.rssLabel}>
-          <RssIcon />
-          <span>{a.rss}</span>
-          <ArrowUpRight />
-        </a>
         <span className="os-about-gap" aria-hidden />
+        {fs.supported && (
+          <button
+            type="button"
+            className="os-menubar-action os-menubar-action--ghost os-about-fs"
+            aria-pressed={fs.active}
+            onClick={() => {
+              blip("tap");
+              fs.toggle();
+            }}
+          >
+            <FullscreenIcon exit={fs.active} />
+            <span>{a.fullscreen}</span>
+          </button>
+        )}
         <button
           type="button"
           className="os-menubar-action os-menubar-action--ghost"

@@ -263,20 +263,23 @@ export function RestartIcon({ size = 14 }: { size?: number }) {
   );
 }
 
+/** the four corners, out: full screen; in: back to the window */
+export function FullscreenIcon({ exit = false, size = 14 }: { exit?: boolean; size?: number }) {
+  const d = exit
+    ? "M6 2.5V6H2.5M10 2.5V6h3.5M6 13.5V10H2.5M10 13.5V10h3.5"
+    : "M2.5 6V2.5H6M13.5 6V2.5H10M2.5 10v3.5H6M13.5 10v3.5H10";
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden focusable="false">
+      <path d={d} stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function PowerIcon({ size = 14 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden focusable="false">
       <path d="M8 2.25v5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
       <path d="M4.6 4.2a5.25 5.25 0 1 0 6.8 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-export function RssIcon({ size = 13 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden focusable="false">
-      <circle cx="3.5" cy="12.5" r="1.5" fill="currentColor" />
-      <path d="M2.5 7.5a6 6 0 0 1 6 6M2.5 3a10.5 10.5 0 0 1 10.5 10.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   );
 }

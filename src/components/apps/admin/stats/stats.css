@@ -401,7 +401,7 @@
 }
 .st-map-hit {
   fill: transparent;
-  cursor: pointer;
+  cursor: var(--cursor-pointer, pointer);
 }
 
 /* right now */

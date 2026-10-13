@@ -11,6 +11,8 @@
  * theme change can never make the site unreadable.
  */
 
+import { cursorCss } from "./cursors";
+
 export const THEME_REPO = "cempack/omarchy-dos-moos-theme";
 export const THEME_NAME = "Dos Moos";
 
@@ -231,7 +233,8 @@ export function themeCss(t: ThemeTokens) {
     ["--radius-window", `${t.radius}px`],
     ["--win-border", `${t.border}px`],
   ];
-  return `:root{${v.map(([k, c]) => `${k}:${c}`).join(";")}}`;
+  // the pixel cursors, drawn in this palette (./cursors)
+  return `:root{${v.map(([k, c]) => `${k}:${c}`).join(";")}}${cursorCss(t)}`;
 }
 
 /* ───────────────────────────── the snapshot ───────────────────────────── */

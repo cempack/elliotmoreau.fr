@@ -7,7 +7,6 @@ import { resetWorkspaces } from "../workspaces";
 export const PARIS_TZ = "Europe/Paris";
 export const SITE_REPO = "https://github.com/cempack/elliotmoreau.fr";
 export const BLOG_URL = "https://blog.elliotmoreau.fr";
-export const BLOG_RSS = "https://blog.elliotmoreau.fr/rss/";
 
 /** "{repo} pushed" + { repo: "x" } → "x pushed". */
 export function fill(template: string, vars: Record<string, string | number>) {

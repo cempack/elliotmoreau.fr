@@ -111,7 +111,7 @@ html[data-overview] :is(.os-wallpaper-twinkle, .os-wallpaper-meteor, .os-wallpap
   display: block;
   padding: 0;
   border-radius: 12px;
-  cursor: pointer;
+  cursor: var(--cursor-pointer, pointer);
   touch-action: none;
   -webkit-tap-highlight-color: transparent;
 }

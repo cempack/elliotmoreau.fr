@@ -19,6 +19,8 @@ import { useTerminal } from "./Terminal";
 import type { PanelId } from "./menubar/Panel";
 import { BLOG_URL, fill, replayArrival, restartOS } from "./menubar/util";
 import { shutdownOS } from "./Intro";
+import { useFullscreen } from "@/lib/fullscreen";
+import { setSystemCursor, useSystemCursor } from "@/lib/cursorPref";
 import { openOverview } from "./overview";
 import { useMedia } from "@/hooks/env";
 import { useSpotifyStatus } from "@/hooks/useSpotifyStatus";
@@ -73,6 +75,8 @@ export function useSpotlightCommands(): Command[] {
   const stops = useSyncExternalStore(trail.subscribe, trail.get, trail.server);
   const music = useSpotifyStatus(spotify);
   const phone = useMedia("(max-width: 767px)");
+  const fs = useFullscreen();
+  const systemCursor = useSystemCursor();
 
   return useMemo(() => {
     const s = t.shell;
@@ -181,6 +185,16 @@ export function useSpotlightCommands(): Command[] {
       { id: "shutdown", group: sp.actions, label: sp.shutdown, keywords: "shut down power off turn off halt éteindre arrêter extinction", perform: shutdownOS },
       { id: "restart", group: sp.actions, label: sp.restart, keywords: "restart reboot boot redémarrer", perform: restartOS },
       { id: "arrival", group: sp.actions, label: sp.arrival, keywords: "arrival intro replay animation space boot again revoir rejouer arrivée espace", perform: replayArrival },
+      ...(fs.supported
+        ? [{ id: "fullscreen", group: sp.actions, label: fs.active ? sp.exitFullscreen : sp.fullscreen, keywords: "full screen fullscreen maximize plein écran agrandir", perform: fs.toggle }]
+        : []),
+      {
+        id: "cursor",
+        group: sp.actions,
+        label: systemCursor ? sp.pixelCursor : sp.systemCursor,
+        keywords: "cursor pointer mouse arrow pixel system curseur souris flèche système",
+        perform: () => setSystemCursor(!systemCursor),
+      },
     ];
 
     const fm = fmts();
@@ -353,7 +367,7 @@ export function useSpotlightCommands(): Command[] {
       }));
 
     return [...board, ...arrivals, ...apps, ...act, ...writing, ...projects, ...atlas, ...links];
-  }, [t, other, path, router, pathname, muted, toggle, blip, notify, mode, setMode, setTerminal, posts, repos, activity, music, phone, lang, now, places, stops]);
+  }, [t, other, path, router, pathname, muted, toggle, blip, notify, mode, setMode, setTerminal, posts, repos, activity, music, phone, lang, now, places, stops, fs.supported, fs.active, fs.toggle, systemCursor]);
 }
 
 /**

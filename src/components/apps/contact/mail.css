@@ -297,7 +297,7 @@ html[data-mail-hash] .app-contact-sendtool {
   transition-duration: 0.08s;
 }
 .app-contact-btn:disabled {
-  cursor: default;
+  cursor: var(--cursor-default, default);
   opacity: 0.55;
 }
 .app-contact-btn--primary {
@@ -1560,7 +1560,7 @@ html[data-mail-hash] .app-contact-sendtool {
 .app-contact-wax--small {
   --s: 2px;
   flex: none;
-  cursor: default;
+  cursor: var(--cursor-default, default);
 }
 .app-contact-check-verdict {
   margin: 0;

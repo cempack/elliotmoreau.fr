@@ -192,6 +192,11 @@
 .os-about-gap {
   flex: 1;
 }
+/* full screen is a toggle: on, it reads as pressed (its glyph turns to the exit corners) */
+.os-about-fs[aria-pressed="true"] {
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+}
 @media (max-width: 479px) {
   .os-about-row {
     grid-template-columns: 92px minmax(0, 1fr);
@@ -267,10 +272,10 @@
   user-select: none;
 }
 .os-tape[data-flip] {
-  cursor: grab;
+  cursor: var(--cursor-grab, grab);
 }
 .os-tape[data-flip]:active {
-  cursor: grabbing;
+  cursor: var(--cursor-grabbing, grabbing);
 }
 .os-tape:focus-visible {
   border-radius: 12px;
@@ -546,7 +551,7 @@
   color: var(--color-label-2);
   font: 600 12px/1 var(--font-sans);
   white-space: nowrap;
-  cursor: pointer;
+  cursor: var(--cursor-pointer, pointer);
   -webkit-tap-highlight-color: transparent;
   transition:
     background-color 0.2s ease,
@@ -603,7 +608,7 @@
   overflow: hidden;
   border-radius: var(--radius-card) var(--radius-card) 0 0;
   background: var(--color-ink-950);
-  cursor: pointer;
+  cursor: var(--cursor-pointer, pointer);
   -webkit-tap-highlight-color: transparent;
 }
 .os-menubar-skyart-canvas,
@@ -673,11 +678,11 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  cursor: grab;
+  cursor: var(--cursor-grab, grab);
   touch-action: none;
 }
 .os-menubar-skyart[data-held] .os-menubar-skyart-hit {
-  cursor: grabbing;
+  cursor: var(--cursor-grabbing, grabbing);
 }
 .os-menubar-sky-head {
   display: flex;
@@ -1068,6 +1073,10 @@
   }
   .os-about-gap {
     display: none;
+  }
+  /* no full screen (iPhone): Source takes the top row, the two system actions pair below */
+  .os-about-actions:not(:has(.os-about-fs)) > a:first-child {
+    grid-column: 1 / -1;
   }
   .os-menubar-note-when {
     font-size: 12px;

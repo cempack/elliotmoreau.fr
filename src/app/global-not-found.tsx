@@ -10,6 +10,7 @@ import { ToastProvider } from "@/components/Toasts";
 import { MotionProvider } from "@/components/motion/MotionProvider";
 import { OSShell } from "@/components/os/OSShell";
 import { SKY_SCRIPT } from "@/components/os/sky-script";
+import { CURSOR_SCRIPT } from "@/lib/cursor-script";
 import { InlineScript } from "@/components/InlineScript";
 import { NotFoundApp } from "@/components/apps/notfound/NotFoundApp";
 import { getTheme } from "@/lib/theme-source";
@@ -65,7 +66,7 @@ export default async function GlobalNotFound() {
   return (
     <html lang={lang} suppressHydrationWarning className={`${inter.variable} ${mono.variable}`}>
       <head>
-        <InlineScript html={SKY_SCRIPT + INTRO_SCRIPT} />
+        <InlineScript html={SKY_SCRIPT + INTRO_SCRIPT + CURSOR_SCRIPT} />
         {/* the live Dos Moos palette, as on every other page */}
         <style id="em-theme" dangerouslySetInnerHTML={{ __html: themeCss(theme.tokens) }} />
       </head>

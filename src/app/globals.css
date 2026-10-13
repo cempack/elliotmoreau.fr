@@ -223,6 +223,25 @@ body {
   background: var(--color-selection-bg);
   color: var(--color-selection-fg);
 }
+/* the pointer: emOS's pixel cursors, drawn in the theme's colours (lib/cursors).
+   The arrow everywhere, the hand on links, the I-beam in fields and in a
+   post's text; components ask for the hand, grab or crosshair themselves */
+html {
+  cursor: var(--cursor-default, default);
+}
+:where(a[href], summary, label[for], select) {
+  cursor: var(--cursor-pointer, pointer);
+}
+:where(
+    input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="button"], [type="submit"], [type="reset"], [type="image"]),
+    textarea,
+    [contenteditable]:not([contenteditable="false"])
+  ) {
+  cursor: var(--cursor-text, text);
+}
+.app-writing-prose :where(p, li, blockquote, h2, h3, h4, h5, h6, figcaption, pre, td, th, dt, dd) {
+  cursor: var(--cursor-text, text);
+}
 :focus-visible {
   outline: 2px solid var(--color-signal);
   outline-offset: 3px;
@@ -355,7 +374,7 @@ p {
   border-radius: 6px;
   color: var(--color-label-2);
   font-size: 14px;
-  cursor: pointer;
+  cursor: var(--cursor-pointer, pointer);
 }
 .em-palette-option > span:not(.em-palette-hl) {
   position: relative;
@@ -398,7 +417,7 @@ p {
   display: block;
   height: auto;
   padding: 0;
-  cursor: default;
+  cursor: var(--cursor-default, default);
 }
 .em-dead {
   display: grid;
@@ -417,14 +436,14 @@ p {
   justify-items: center;
   gap: 8px;
   width: 220px;
-  cursor: grab;
+  cursor: var(--cursor-grab, grab);
   touch-action: none;
   -webkit-user-select: none;
   user-select: none;
   will-change: transform;
 }
 .em-dead-letter:active {
-  cursor: grabbing;
+  cursor: var(--cursor-grabbing, grabbing);
 }
 .em-dead-env {
   display: block;
@@ -531,7 +550,7 @@ p {
   left: 0;
   right: 0;
   border-radius: 4px;
-  cursor: pointer;
+  cursor: var(--cursor-pointer, pointer);
 }
 .em-board-row[aria-selected="true"] {
   background: color-mix(in srgb, var(--color-signal) 10%, transparent);
@@ -890,7 +909,7 @@ html[data-intro="done"] .em-intro {
   text-align: left;
   background: color-mix(in oklab, var(--color-signal) 7%, transparent);
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-signal) 18%, var(--hairline));
-  cursor: pointer;
+  cursor: var(--cursor-pointer, pointer);
 }
 .em-answer[data-active] {
   background: color-mix(in oklab, var(--color-signal) 13%, transparent);
@@ -1052,7 +1071,7 @@ html[data-intro="done"] .em-intro {
   box-shadow: inset 0 0 0 1px var(--hairline);
   color: var(--color-label);
   font: 600 0.875rem/1 var(--font-sans);
-  cursor: pointer;
+  cursor: var(--cursor-pointer, pointer);
   transition:
     background-color 0.15s,
     scale 0.3s var(--ease-out-quint);

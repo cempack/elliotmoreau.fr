@@ -527,7 +527,7 @@ html:active-view-transition .os-menubar {
   height: 30px;
   margin-top: -8px;
   touch-action: none;
-  cursor: grab;
+  cursor: var(--cursor-grab, grab);
 }
 .os-menubar-grabber span {
   width: 38px;
@@ -581,11 +581,11 @@ html:active-view-transition .os-menubar {
   touch-action: pan-y;
   user-select: none;
   -webkit-user-select: none;
-  cursor: grab;
+  cursor: var(--cursor-grab, grab);
   border-radius: var(--radius-card);
 }
 .os-toast:active {
-  cursor: grabbing;
+  cursor: var(--cursor-grabbing, grabbing);
 }
 .os-toast.glass-thick {
   background:

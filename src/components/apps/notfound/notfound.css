@@ -205,10 +205,10 @@
   }
 }
 .app-nf-alert {
-  cursor: grab;
+  cursor: var(--cursor-grab, grab);
 }
 .app-nf-alert[data-dragging] {
-  cursor: grabbing;
+  cursor: var(--cursor-grabbing, grabbing);
 }
 /* on the material itself (it declares its own thickness): a light blur
    after the refraction, so the pixel grid behind bends crisply instead
@@ -406,7 +406,7 @@ html[data-sky="day"] .app-nf-alert .os-glass {
   font: inherit;
   text-decoration: underline dotted color-mix(in srgb, var(--color-signal) 55%, transparent);
   text-underline-offset: 3px;
-  cursor: pointer;
+  cursor: var(--cursor-pointer, pointer);
   transition: background-color 0.15s var(--ease-out-quint);
 }
 /* a taller hit area than the letter itself (they're inline in a line of
@@ -422,7 +422,7 @@ html[data-sky="day"] .app-nf-alert .os-glass {
 .app-nf-zsh-key--btn[aria-disabled] {
   color: var(--color-label-3);
   text-decoration: none;
-  cursor: default;
+  cursor: var(--cursor-default, default);
 }
 .app-nf-zsh-key--btn[data-picked] {
   color: var(--color-signal);
@@ -485,7 +485,7 @@ html[data-sky="day"] .app-nf-alert .os-glass {
   font-size: var(--text-footnote);
   font-weight: 600;
   white-space: nowrap;
-  cursor: pointer;
+  cursor: var(--cursor-pointer, pointer);
   transition: background-color 0.18s var(--ease-out-quint);
 }
 .app-nf-btn:hover {

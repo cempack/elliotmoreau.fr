@@ -9,7 +9,7 @@
   height: max(2.75rem, var(--h));
   translate: -50% -50%;
   border-radius: 6px;
-  cursor: pointer;
+  cursor: var(--cursor-pointer, pointer);
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   animation: app-home-door-in 0.5s var(--ease-out-quint) 0.6s both;
@@ -212,7 +212,7 @@
   position: absolute;
   inset: 0;
   border-radius: 6px;
-  cursor: pointer;
+  cursor: var(--cursor-pointer, pointer);
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   transition: box-shadow 0.2s;
@@ -243,7 +243,7 @@
     inset 0 0 0 1px var(--hairline),
     0 14px 32px -14px rgba(0, 0, 0, 0.85);
   animation: app-home-room-tag 0.22s var(--ease-out-quint) both;
-  cursor: pointer;
+  cursor: var(--cursor-pointer, pointer);
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   transition: scale 0.4s var(--ease-spring);

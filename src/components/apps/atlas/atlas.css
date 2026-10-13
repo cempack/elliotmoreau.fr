@@ -49,11 +49,11 @@
   width: 100%;
   height: 100%;
   image-rendering: pixelated;
-  cursor: grab;
+  cursor: var(--cursor-grab, grab);
   touch-action: none;
 }
 .app-atlas-globe[data-grabbing] .app-atlas-globe-canvas {
-  cursor: grabbing;
+  cursor: var(--cursor-grabbing, grabbing);
 }
 /* the callout naming a marker (or, once, how to spin it): paper on ink,
    like the routes' casing */
@@ -431,13 +431,13 @@
   overflow: hidden;
   border-radius: 8px;
   background: var(--color-ink-950);
-  cursor: grab;
+  cursor: var(--cursor-grab, grab);
   touch-action: pan-y;
   user-select: none;
   -webkit-user-select: none;
 }
 .app-atlas-hz-band[data-grabbing] {
-  cursor: grabbing;
+  cursor: var(--cursor-grabbing, grabbing);
 }
 .app-atlas-hz-band::after {
   content: "";
@@ -886,7 +886,7 @@
 }
 .app-atlas-pcs-btn:disabled {
   opacity: 0.35;
-  cursor: default;
+  cursor: var(--cursor-default, default);
 }
 .app-atlas-pcs-view {
   /* clip, not hidden: not a scroll container, so focus cannot scroll it
@@ -902,12 +902,12 @@
   );
   padding: 1.5rem var(--app-atlas-pcs-pad) 1.25rem;
   touch-action: pan-y;
-  cursor: grab;
+  cursor: var(--cursor-grab, grab);
   user-select: none;
   -webkit-user-select: none;
 }
 .app-atlas-pcs-view[data-grabbing] {
-  cursor: grabbing;
+  cursor: var(--cursor-grabbing, grabbing);
 }
 .app-atlas-pcs-track {
   display: flex;
@@ -1215,10 +1215,10 @@
   width: 100%;
   height: 1.5rem;
   border-radius: 1.625rem 1.625rem 0 0;
-  cursor: grab;
+  cursor: var(--cursor-grab, grab);
 }
 .app-atlas-sheet[data-grabbing] .app-atlas-sheet-grab {
-  cursor: grabbing;
+  cursor: var(--cursor-grabbing, grabbing);
 }
 .app-atlas-sheet-grab::before {
   /* a 44px target over the slim grabber */

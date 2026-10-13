@@ -82,10 +82,10 @@
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
-  cursor: grab;
+  cursor: var(--cursor-grab, grab);
 }
 .os-win[data-grabbed] .os-win-bar {
-  cursor: grabbing;
+  cursor: var(--cursor-grabbing, grabbing);
 }
 /* stuck: a heavy frost. The blur does render inside the window (nothing
    up its ancestry is a backdrop root), but even a ~22px blur leaves
@@ -145,7 +145,7 @@
   height: 1.875rem;
   border-radius: 6px;
   color: var(--color-label-2);
-  cursor: pointer;
+  cursor: var(--cursor-pointer, pointer);
   transition:
     background-color 0.15s,
     color 0.15s;
@@ -502,7 +502,7 @@
     gap: 0.75rem;
     /* the close chip (30px in a 44px target) ends on the gutter too */
     padding: 0.625rem calc(var(--os-win-pad) - 0.4375rem) 0 var(--os-win-pad);
-    cursor: default;
+    cursor: var(--cursor-default, default);
   }
   .os-win-bar::after {
     inset-inline: var(--os-win-pad);
