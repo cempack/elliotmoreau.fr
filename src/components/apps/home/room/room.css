@@ -192,16 +192,11 @@
   position: relative;
   margin: 0 auto;
 }
-.app-home-room-canvas,
-.app-home-room-sleeve {
+.app-home-room-canvas {
   position: absolute;
   top: 0;
   left: 0;
   image-rendering: pixelated;
-}
-.app-home-room-sleeve {
-  object-fit: cover;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
 }
 
 /* a door on each thing in the room */
@@ -320,12 +315,17 @@
   outline: 2px solid var(--color-signal);
   outline-offset: 2px;
 }
+/* over the rug, just above the Dock: the furniture stays clear */
 .app-home-room-hint {
   position: absolute;
-  bottom: calc(var(--dock-clear, 6.5rem));
-  left: 1rem;
+  bottom: calc(var(--dock-h) + 0.75rem);
+  left: 50%;
   z-index: 3;
+  width: max-content;
   max-width: min(24rem, calc(100vw - 2rem));
+  translate: -50% 0;
+  text-align: center;
+  text-wrap: balance;
   margin: 0;
   padding: 0.375rem 0.625rem;
   border-radius: 7px;
@@ -356,7 +356,9 @@
     right: max(1.25rem, env(safe-area-inset-right));
     bottom: calc(var(--dock-h) + 1rem);
     left: max(1.25rem, env(safe-area-inset-left));
+    width: auto;
     max-width: none;
+    translate: none;
     padding: 0.625rem 0.875rem;
     border-radius: 12px;
     font-size: 0.8125rem;
