@@ -60,10 +60,10 @@ function Chevron() {
 }
 
 /**
- * The phone dock (<768px): a solid bar along the bottom edge. Four apps
- * get a tab (each icon with its name under it) and a moss bar slides to
- * the current one; More opens a flingable sheet with Mail, Now, the
- * Terminal, the open windows and Search.
+ * The phone dock (<768px): iOS's floating tab bar, a glass capsule off the
+ * screen's edges. Four apps get a tab (each icon with its name under it)
+ * and a soft pill slides to the current one; More opens a flingable sheet
+ * with Mail and Now, then the Terminal, the open windows and Search.
  */
 /** fields that bring up the on-screen keyboard */
 const KBD_FIELDS =
@@ -216,7 +216,7 @@ function MoreList({ active, afterRef }: { active: AppId; afterRef: React.RefObje
   return (
     <>
       <h2 className="os-more-title">{t.dock.moreTitle}</h2>
-      <ul className="os-more-list">
+      <ul className="os-more-list" aria-label={t.dock.moreApps}>
         {MORE_APPS.map((id) => {
           const app = APPS.find((a) => a.id === id)!;
           return (
@@ -249,6 +249,8 @@ function MoreList({ active, afterRef }: { active: AppId; afterRef: React.RefObje
             </li>
           );
         })}
+      </ul>
+      <ul className="os-more-list" aria-label={t.dock.moreTools}>
         <li>
           <button
             type="button"

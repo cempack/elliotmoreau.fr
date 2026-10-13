@@ -483,11 +483,16 @@
     /* the sheet's side gutter (iOS's 20px): the title bar and the section
        strip sit on it, and app content can align to it */
     --os-win-pad: max(1.25rem, env(safe-area-inset-left), env(safe-area-inset-right));
-    /* the window ends where the tab bar begins: nothing scrolls under it */
-    --os-win-dock-room: var(--dock-h);
+    /* the sheet runs to the screen's bottom edge and the tab bar floats
+       over it, as on iOS: its content scrolls under the bar's glass and
+       ends clear of it (--os-win-under, padded below .os-win-main and
+       anything pinned to the bottom). Full-height things still size to
+       the room above the bar (--os-win-view-h). */
+    --os-win-dock-room: 0px;
+    --os-win-under: var(--dock-h);
     --os-win-view-h: calc(100svh - var(--menubar-bottom) - var(--os-win-gap) - var(--dock-h) - var(--os-win-bar-h));
     border-radius: var(--radius-window) var(--radius-window) 0 0;
-    height: calc(100svh - var(--menubar-bottom) - var(--os-win-gap) - var(--dock-h));
+    height: calc(100svh - var(--menubar-bottom) - var(--os-win-gap));
     box-shadow: 0 -10px 40px -10px rgba(0, 0, 0, 0.6);
   }
   /* a sheet: its top edge lit, its sides a quieter line (on the rim, above
@@ -501,7 +506,8 @@
     border-right-width: 0;
   }
   .os-win-main {
-    padding-bottom: 1.5rem;
+    padding-bottom: calc(var(--os-win-under) + 1.5rem);
+    scroll-padding-bottom: var(--os-win-under);
   }
   .os-win-bar {
     gap: 0.75rem;

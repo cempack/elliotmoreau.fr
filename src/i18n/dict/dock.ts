@@ -7,7 +7,10 @@ const en = {
   /** toolbar name inside the dock */
   apps: "Apps",
   more: "More",
-  moreTitle: "More apps",
+  moreTitle: "More",
+  /** names of the More sheet's two groups (read by screen readers) */
+  moreApps: "Apps",
+  moreTools: "Tools",
   search: "Search",
   atlasHint: "Where I’ve been, and where I’m going next",
   mailHint: "Write to me, or find my other profiles",
@@ -23,7 +26,9 @@ const fr: typeof en = {
   label: "Dock",
   apps: "Applications",
   more: "Plus",
-  moreTitle: "Plus d’apps",
+  moreTitle: "Plus",
+  moreApps: "Apps",
+  moreTools: "Outils",
   search: "Rechercher",
   atlasHint: "Où je suis allé, et où je vais ensuite",
   mailHint: "M’écrire, ou trouver mes autres profils",
