@@ -9,6 +9,7 @@ import { lenisRef } from "@/lib/lenisRef";
 import { clamp, project, rubberband, spring, springFrom } from "@/lib/motion";
 import { appForPath } from "../apps";
 import { WinIcon } from "../window/WinIcon";
+import { AppIcon } from "../icons";
 import { menubarBottom } from "../window/dock";
 // the traffic lights are the app windows' own (one OS, one set of lights)
 import "../window.css";
@@ -237,16 +238,10 @@ export function DesktopWindow({
         <div className={`os-term-shake ${shaking ? "is-shaking" : ""}`}>
           <m.div
             className={`os-term os-term-win ${dragging ? "is-dragging" : ""}`}
-           
             role="dialog"
             tabIndex={-1}
             aria-label={t.system.term.dialog}
             style={{ width: w, height: h }}
-            // focus in the terminal dims the app window's lights (an attribute, not an html:has rule)
-            onFocus={() => (document.documentElement.dataset.termFocus = "")}
-            onBlur={(e) => {
-              if (!e.currentTarget.contains(e.relatedTarget as Node | null)) delete document.documentElement.dataset.termFocus;
-            }}
             onKeyDown={(e) => {
               if (e.key === "Escape") {
                 e.stopPropagation();
@@ -265,7 +260,7 @@ export function DesktopWindow({
                 if (!(e.target as HTMLElement).closest("button")) toggleZoom();
               }}
             >
-              <div className="os-win-lights os-term-lights">
+              <div className="os-win-lights">
                 <button
                   type="button"
                   className="os-win-light os-win-light--zoom"
@@ -284,10 +279,7 @@ export function DesktopWindow({
                   <WinIcon kind="close" />
                 </button>
               </div>
-              <p className="os-term-title">
-                <span className="os-term-title-glyph" aria-hidden />
-                elliot@emos<span className="os-term-title-sep">:</span>{cwd}
-              </p>
+              <TitleHeading cwd={cwd} />
             </div>
             {children}
           </m.div>
@@ -297,8 +289,24 @@ export function DesktopWindow({
   );
 }
 
+/** The app windows' heading: the Terminal's icon, its name, and who and where you are */
+function TitleHeading({ cwd }: { cwd: string }) {
+  const { t } = useI18n();
+  return (
+    <div className="os-win-heading os-term-heading">
+      <AppIcon app="terminal" size={20} live={false} />
+      <p className="os-win-title">{t.system.term.title}</p>
+      <span className="os-win-sub os-win-sub--path">
+        elliot@emos<span className="os-term-heading-sep">:</span>
+        {cwd}
+      </span>
+    </div>
+  );
+}
+
 export function MobileSheet({ shaking, children }: { shaking: boolean; children: React.ReactNode }) {
   const { t } = useI18n();
+  const cwd = cwdLabel(appForPath(usePathname()));
   const { setOpen } = useTerminal();
   const reduced = useReduced();
   const controls = useDragControls();
@@ -341,7 +349,6 @@ export function MobileSheet({ shaking, children }: { shaking: boolean; children:
         ref={sheet}
         tabIndex={-1}
         className={`os-term os-term-sheet ${shaking ? "is-shaking" : ""}`}
-       
         role="dialog"
         aria-label={t.system.term.dialog}
         initial={reduced ? { opacity: 0 } : { y: "100%" }}
@@ -366,10 +373,7 @@ export function MobileSheet({ shaking, children }: { shaking: boolean; children:
         <div className="os-term-glass" aria-hidden />
         <div className="os-term-sheethead" onPointerDown={(e) => controls.start(e)}>
           <span className="os-term-grabber" aria-hidden />
-          <p className="os-term-title">
-            <span className="os-term-title-glyph" aria-hidden />
-            {t.system.term.title}
-          </p>
+          <TitleHeading cwd={cwd} />
           <button type="button" className="os-term-done" aria-label={t.system.term.close} onClick={close}>
             <WinIcon kind="close" />
           </button>

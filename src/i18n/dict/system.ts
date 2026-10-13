@@ -42,6 +42,7 @@ const en = {
       title: "Commands",
       usage: "click one to run it",
       hidden: "…and a few that aren't on the list.",
+      groups: { explore: "Explore", system: "System", shell: "Shell" },
       cmds: {
         help: "this list",
         whoami: "who's behind emOS",
@@ -279,6 +280,7 @@ const fr: typeof en = {
       title: "Commandes",
       usage: "cliquez pour lancer",
       hidden: "…et quelques-unes qui ne sont pas listées.",
+      groups: { explore: "Explorer", system: "Système", shell: "Shell" },
       cmds: {
         help: "cette liste",
         whoami: "qui se cache derrière emOS",

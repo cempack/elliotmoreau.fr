@@ -6,7 +6,6 @@ import type { SiteData } from "@/lib/data";
 import type { TrackInfo } from "@/lib/spotify";
 import type { SoundKind } from "@/lib/sound";
 import { timeAgo } from "@/lib/format";
-import { LANG_COLORS, LANG_FALLBACK } from "@/lib/langColors";
 import { SITE_MAILTO, SOCIALS } from "@/lib/socials";
 import { fmtCoords } from "@/lib/content";
 import { APPS, type AppDef, type AppId } from "../apps";
@@ -156,29 +155,47 @@ function openAdmin(ctx: RunCtx) {
 
 /* ───────────── the commands ───────────── */
 
-const HELP: { cmd: string; label: string; key: keyof Dict["system"]["term"]["help"]["cmds"]; fill?: boolean }[] = [
-  { cmd: "help", label: "help", key: "help" },
-  { cmd: "whoami", label: "whoami", key: "whoami" },
-  { cmd: "ls", label: "ls", key: "ls" },
-  { cmd: "open", label: "open <app>", key: "open", fill: true },
-  { cmd: "projects", label: "projects", key: "projects" },
-  { cmd: "posts", label: "posts", key: "posts" },
-  { cmd: "now", label: "now", key: "now" },
-  { cmd: "neofetch", label: "neofetch", key: "neofetch" },
-  { cmd: "git log", label: "git log", key: "metro" },
-  { cmd: "git log --oneline", label: "git log --oneline", key: "git" },
-  { cmd: "contact", label: "contact", key: "contact" },
-  { cmd: "sky", label: "sky <phase>", key: "sky", fill: true },
-  { cmd: "lang", label: "lang <en|fr>", key: "lang", fill: true },
-  { cmd: "sound", label: "sound <on|off>", key: "sound", fill: true },
-  { cmd: "theme", label: "theme", key: "theme" },
-  { cmd: "date", label: "date", key: "date" },
-  { cmd: "echo", label: "echo <text>", key: "echo", fill: true },
-  { cmd: "history", label: "history", key: "history" },
-  { cmd: "shutdown", label: "shutdown", key: "shutdown" },
-  { cmd: "clear", label: "clear", key: "clear" },
-  { cmd: "exit", label: "exit", key: "exit" },
-  { cmd: "moulinette", label: "moulinette", key: "moulinette" },
+type HelpKey = keyof Dict["system"]["term"]["help"]["cmds"];
+type HelpRow = { cmd: string; label: string; key: HelpKey; fill?: boolean };
+/** `help`, in three groups: finding your way, the machine, the shell itself */
+const HELP: { group: keyof Dict["system"]["term"]["help"]["groups"]; rows: HelpRow[] }[] = [
+  {
+    group: "explore",
+    rows: [
+      { cmd: "whoami", label: "whoami", key: "whoami" },
+      { cmd: "ls", label: "ls", key: "ls" },
+      { cmd: "open", label: "open <app>", key: "open", fill: true },
+      { cmd: "projects", label: "projects", key: "projects" },
+      { cmd: "posts", label: "posts", key: "posts" },
+      { cmd: "now", label: "now", key: "now" },
+      { cmd: "contact", label: "contact", key: "contact" },
+    ],
+  },
+  {
+    group: "system",
+    rows: [
+      { cmd: "neofetch", label: "neofetch", key: "neofetch" },
+      { cmd: "git log", label: "git log", key: "metro" },
+      { cmd: "git log --oneline", label: "git log --oneline", key: "git" },
+      { cmd: "theme", label: "theme", key: "theme" },
+      { cmd: "sky", label: "sky <phase>", key: "sky", fill: true },
+      { cmd: "lang", label: "lang <en|fr>", key: "lang", fill: true },
+      { cmd: "sound", label: "sound <on|off>", key: "sound", fill: true },
+      { cmd: "date", label: "date", key: "date" },
+    ],
+  },
+  {
+    group: "shell",
+    rows: [
+      { cmd: "help", label: "help", key: "help" },
+      { cmd: "history", label: "history", key: "history" },
+      { cmd: "echo", label: "echo <text>", key: "echo", fill: true },
+      { cmd: "clear", label: "clear", key: "clear" },
+      { cmd: "exit", label: "exit", key: "exit" },
+      { cmd: "shutdown", label: "shutdown", key: "shutdown" },
+      { cmd: "moulinette", label: "moulinette", key: "moulinette" },
+    ],
+  },
 ];
 
 /** the interface's roles, read from the live Dos Moos theme */
@@ -527,24 +544,31 @@ const COMMANDS: Command[] = [
     aliases: ["?", "man", "aide"],
     run: (_a, ctx) => {
       const t = ctx.d.system.term.help;
+      // one grid for all three groups, so the descriptions line up down the whole list
       return (
         <div className="os-term-block">
-          <Head>
-            {t.title} <Dim>· {t.usage}</Dim>
-          </Head>
-          <dl className="os-term-help">
-            {HELP.map((h) => (
-              <div key={h.cmd}>
-                <dt>
-                  <Cmd value={h.cmd} fillOnly={h.fill}>
-                    {h.label}
-                  </Cmd>
-                </dt>
-                <dd>{t.cmds[h.key]}</dd>
+          <div className="os-term-cmds">
+            {HELP.map((g) => (
+              <div key={g.group} className="os-term-cmds-group">
+                <p className="os-term-head">{t.groups[g.group]}</p>
+                <dl>
+                  {g.rows.map((h) => (
+                    <div key={h.cmd}>
+                      <dt>
+                        <Cmd value={h.cmd} fillOnly={h.fill}>
+                          {h.label}
+                        </Cmd>
+                      </dt>
+                      <dd>{t.cmds[h.key]}</dd>
+                    </div>
+                  ))}
+                </dl>
               </div>
             ))}
-          </dl>
-          <Line tone="dim">{t.hidden}</Line>
+          </div>
+          <Line tone="dim">
+            {t.usage.charAt(0).toUpperCase() + t.usage.slice(1)}. {t.hidden}
+          </Line>
         </div>
       );
     },
@@ -632,10 +656,7 @@ const COMMANDS: Command[] = [
                 <Ext href={r.url} className="os-term-repo">
                   {r.name}
                 </Ext>
-                <span className="os-term-lang">
-                  {r.language && <Swatch color={LANG_COLORS[r.language] ?? LANG_FALLBACK} size={8} />}
-                  {r.language || "-"}
-                </span>
+                <span className="os-term-lang">{r.language || "-"}</span>
                 {r.description && <span className="os-term-desc">{r.description}</span>}
               </li>
             ))}

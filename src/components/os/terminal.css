@@ -1,6 +1,9 @@
 /* ─────────────────────────── emOS Terminal ───────────────────────────
-   Ink-950 thick glass, JetBrains Mono, one lime prompt. The window is a
-   stack of layers so each transform has a single owner:
+   An app window like the others (the same title bar, glass and Hyprland
+   border, which lights up while the Terminal has focus), JetBrains Mono
+   inside, and one warm thing: the prompt's chevron and the cursor, in the
+   theme's cursor yellow. The window is a stack of layers so each
+   transform has a single owner:
      .os-term-pos    drag position (x/y motion values)
      .os-term-anim   open/close (scale around the dock icon + opacity)
      .os-term-shake  the easter-egg shake (CSS `translate`)
@@ -19,12 +22,18 @@
 
 .os-term {
   --os-term-fs: 13px;
+  --os-term-pad: 1.125rem;
   color: var(--color-label-2);
   font-family: var(--font-mono);
   font-size: var(--os-term-fs);
   line-height: 1.62;
   letter-spacing: 0;
   font-variant-ligatures: none;
+}
+/* the theme's own selection colours (colors.toml), like a real terminal */
+.os-term ::selection {
+  background: var(--color-selection-bg);
+  color: var(--color-selection-fg);
 }
 
 .os-term-win {
@@ -34,24 +43,27 @@
   flex-direction: column;
   border-radius: var(--radius-window);
   box-shadow:
-    0 60px 120px -36px rgba(0, 0, 0, 0.85),
-    0 24px 48px -24px rgba(0, 0, 0, 0.55);
+    0 40px 90px -40px rgba(0, 0, 0, 0.8),
+    0 18px 36px -24px rgba(0, 0, 0, 0.6);
 }
+/* the app windows' tint, nearly opaque, with one blur (they take two):
+   it floats over an app, and its open and close (a scale) shouldn't
+   re-blur extra passes every frame. The border is Hyprland's: inactive
+   while the Terminal is in the background, the active colour while it
+   has focus, the way the window manager it borrows from marks the window
+   your keys go to. */
 .os-term-glass {
   position: absolute;
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0) 42px),
-    radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--color-signal) 3%, transparent), transparent 60%),
-    linear-gradient(180deg, color-mix(in srgb, var(--color-ink-900) 93%, transparent), color-mix(in srgb, var(--color-ink-950) 95%, transparent) 40%, color-mix(in srgb, var(--color-ink-950) 96%, transparent));
-  /* nearly opaque, one blur: the app under it never reads through, and the
-     open and close (a scale) don't re-blur three passes every frame */
-  backdrop-filter: blur(18px) saturate(1.4);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.085);
+  background: color-mix(in srgb, var(--color-ink-900) 94%, transparent);
+  backdrop-filter: blur(18px) saturate(1.3);
+  box-shadow: inset 0 0 0 var(--win-border, 1px) var(--color-border-inactive);
+  transition: box-shadow 0.25s var(--ease-out-quint);
+}
+.os-term:focus-within .os-term-glass {
+  box-shadow: inset 0 0 0 var(--win-border, 1px) color-mix(in srgb, var(--color-border-active) 42%, transparent);
 }
 .os-term-win > :not(.os-term-glass),
 .os-term-sheet > :not(.os-term-glass) {
@@ -64,62 +76,51 @@
   flex: none;
   display: flex;
   align-items: center;
-  height: 42px;
-  padding: 0 14px;
-  border-bottom: 1px solid var(--hairline);
+  gap: 1rem;
+  height: 3rem;
+  padding: 0 0.625rem 0 var(--os-term-pad);
   cursor: grab;
   touch-action: none;
   user-select: none;
+  -webkit-user-select: none;
+}
+/* the app windows' hairline: fading out before the edges */
+.os-term-titlebar::after,
+.os-term-sheethead::after {
+  content: "";
+  position: absolute;
+  inset: auto var(--os-term-pad) 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--hairline) 12%, var(--hairline) 88%, transparent);
+  pointer-events: none;
 }
 .os-term-win.is-dragging .os-term-titlebar {
   cursor: grabbing;
 }
-/* the lights are the app windows' (.os-win-light in window.css); here
-   they only sit closer to the corner, and grey out with the window */
-.os-term-lights {
-  position: relative;
-  z-index: 1;
-  margin-left: 4px;
+/* the heading and the lights are the app windows' own (window.css); the
+   path gives way first when the window is narrow */
+.os-term-heading {
+  flex: 1 1 auto;
 }
-/* key window: a faint lime rim; background window: grey lights, like
-   macOS. While the Terminal is key, the app window behind it greys too. */
-.os-term-win:focus-within .os-term-glass {
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    inset 0 0 0 1px color-mix(in srgb, var(--color-signal) 16%, transparent);
-}
-.os-term-win:not(:focus-within) .os-win-lights:not(:hover) .os-win-light,
-html[data-term-focus] .os-win .os-win-lights:not(:hover) .os-win-light {
-  --os-light: var(--color-ink-500);
-  box-shadow:
-    inset 0 0 0 0.5px rgba(0, 0, 0, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.16);
-}
-.os-term-title {
-  position: absolute;
-  left: 92px;
-  right: 92px;
-  text-align: center;
-  font-size: 12px;
-  line-height: 1;
-  color: var(--color-label-3);
-  white-space: nowrap;
+.os-term-heading .os-win-sub--path {
+  flex: 0 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  pointer-events: none;
 }
-.os-term-title-sep {
+.os-term-heading-sep {
   color: var(--color-label-3);
 }
-/* a block cursor as the window glyph, in the theme's cursor colour */
-.os-term-title-glyph {
-  display: inline-block;
-  width: 7px;
-  height: 12px;
-  margin-right: 9px;
-  vertical-align: -2px;
-  background: var(--color-cursor);
-  box-shadow: 0 0 8px color-mix(in srgb, var(--color-cursor) 45%, transparent);
+.os-term-heading .os-win-title,
+.os-term:not(:focus-within) .os-win-light {
+  transition: color 0.25s var(--ease-out-quint);
+}
+/* in the background, the title and the controls step back */
+.os-term:not(:focus-within) .os-win-title {
+  color: var(--color-label-2);
+}
+.os-term:not(:focus-within) .os-win-lights:not(:hover) .os-win-light {
+  color: var(--color-label-3);
 }
 
 /* ───────── session ───────── */
@@ -136,16 +137,20 @@ html[data-term-focus] .os-win .os-win-lights:not(:hover) .os-win-light {
   container-type: inline-size;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 14px 20px 18px;
+  padding: 0.875rem var(--os-term-pad) 1.125rem;
   scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-ink-600) transparent;
+  /* lines scrolling up fade out under the title bar instead of being cut */
+  mask-image: linear-gradient(to bottom, transparent, #000 0.875rem);
 }
 .os-term-log {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
 }
 .os-term-log:not(:empty) {
-  margin-bottom: 10px;
+  margin-bottom: 14px;
 }
 .os-term-entry {
   min-width: 0;
@@ -155,10 +160,13 @@ html[data-term-focus] .os-win .os-win-lights:not(:hover) .os-win-light {
   overflow-wrap: anywhere;
 }
 .os-term-typed {
+  font-weight: 500;
+}
+.os-term-typed {
   white-space: pre-wrap;
 }
 .os-term-out {
-  margin-top: 2px;
+  margin-top: 4px;
   overflow-wrap: anywhere;
 }
 .os-term-welcome {
@@ -167,22 +175,26 @@ html[data-term-focus] .os-win .os-win-lights:not(:hover) .os-win-light {
   gap: 2px;
 }
 
+/* where you are, in the accent, then the chevron in the cursor's yellow */
 .os-term-prompt {
   display: inline-flex;
+  align-items: center;
   gap: 1ch;
   margin-right: 1ch;
   white-space: nowrap;
   flex: none;
 }
-.os-term-prompt-user {
+.os-term-prompt-cwd {
   color: var(--color-signal);
   font-weight: 600;
 }
-.os-term-prompt-cwd {
-  color: var(--color-ion);
-}
 .os-term-prompt-sigil {
-  color: var(--color-label-3);
+  flex: none;
+  color: var(--color-cursor);
+}
+/* earlier prompts in the scrollback step back a little */
+.os-term-echo .os-term-prompt-sigil {
+  color: color-mix(in srgb, var(--color-cursor) 62%, var(--color-ink-900));
 }
 
 /* ───────── prompt line ───────── */
@@ -258,10 +270,18 @@ html[data-term-focus] .os-win .os-win-lights:not(:hover) .os-win-light {
 
 /* ───────── output ───────── */
 
+/* section heads are the apps' kickers: small capitals, spaced, quiet */
 .os-term-head {
-  color: var(--color-label);
-  font-weight: 600;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  color: var(--color-label-3);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+.os-term-head:not(:first-child) {
+  margin-top: 12px;
 }
 .os-term-dim {
   color: var(--color-label-3);
@@ -363,6 +383,34 @@ html[data-term-focus] .os-win .os-win-lights:not(:hover) .os-win-light {
   min-width: 0;
 }
 
+/* help: three groups in one grid, so the descriptions line up down the list */
+.os-term-cmds {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0 3ch;
+}
+.os-term-cmds-group,
+.os-term-cmds dl,
+.os-term-cmds dl > div {
+  display: contents;
+}
+.os-term-cmds .os-term-head {
+  grid-column: 1 / -1;
+  margin: 12px 0 4px;
+}
+.os-term-cmds .os-term-cmds-group:first-child .os-term-head {
+  margin-top: 0;
+}
+.os-term-cmds dd {
+  color: var(--color-label-3);
+}
+.os-term-cmds .os-term-cmdlink {
+  text-decoration: none;
+}
+.os-term-cmds + p {
+  margin-top: 12px;
+}
+
 .os-term-ls {
   display: flex;
   flex-wrap: wrap;
@@ -420,9 +468,6 @@ html[data-term-focus] .os-win .os-win-lights:not(:hover) .os-win-light {
   font-weight: 600;
 }
 .os-term-lang {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.8ch;
   color: var(--color-label-3);
 }
 .os-term-desc,
@@ -514,6 +559,15 @@ html[data-term-focus] .os-win .os-win-lights:not(:hover) .os-win-light {
   .os-term-kv {
     gap: 0 2ch;
   }
+  /* help and the README's apps: the command, its description under it */
+  .os-term-cmds,
+  .os-term-help {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .os-term-cmds dd,
+  .os-term-help dd {
+    margin: 0 0 6px 2ch;
+  }
   .os-term-repos {
     grid-template-columns: max-content minmax(0, 1fr) max-content;
   }
@@ -599,16 +653,14 @@ html[data-term-focus] .os-win .os-win-lights:not(:hover) .os-win-light {
   outline: none;
 }
 .os-term-sheet .os-term-glass {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--color-ink-900) 92%, transparent), color-mix(in srgb, var(--color-ink-950) 96%, transparent));
+  background: color-mix(in srgb, var(--color-ink-900) 96%, transparent);
 }
 .os-term-sheethead {
   flex: none;
   display: flex;
   align-items: center;
-  justify-content: center;
   height: 56px;
-  padding: 4px 8px 0 20px;
-  border-bottom: 1px solid var(--hairline);
+  padding: 6px 56px 0 var(--os-term-pad);
   touch-action: none;
 }
 .os-term-grabber {
@@ -620,12 +672,6 @@ html[data-term-focus] .os-win .os-win-lights:not(:hover) .os-win-light {
   margin-left: -18px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.28);
-}
-.os-term-sheethead .os-term-title {
-  position: static;
-  font-size: 14px;
-  color: var(--color-label);
-  font-weight: 600;
 }
 .os-term-done {
   position: absolute;
@@ -659,10 +705,11 @@ html[data-term-focus] .os-win .os-win-lights:not(:hover) .os-win-light {
 /* phones: 14px type, 20px gutters, like the windows' */
 .os-term-sheet.os-term {
   --os-term-fs: 14px;
+  --os-term-pad: 20px;
   line-height: 1.55;
 }
 .os-term-sheet .os-term-scroll {
-  padding: 14px 20px 14px;
+  padding: 14px var(--os-term-pad);
   scrollbar-gutter: auto;
 }
 .os-term-dockline {
@@ -672,8 +719,8 @@ html[data-term-focus] .os-win .os-win-lights:not(:hover) .os-win-light {
 .os-term-chips {
   display: flex;
   gap: 8px;
-  padding: 12px 20px 4px;
-  scroll-padding-inline: 20px;
+  padding: 12px var(--os-term-pad) 4px;
+  scroll-padding-inline: var(--os-term-pad);
   overflow-x: auto;
   scrollbar-width: none;
   overscroll-behavior-x: contain;
@@ -711,7 +758,7 @@ html[data-term-focus] .os-win .os-win-lights:not(:hover) .os-win-light {
   transition-duration: 0.06s;
 }
 .os-term-sheet .os-term-line {
-  padding: 10px 20px 14px;
+  padding: 10px var(--os-term-pad) 14px;
   font-size: 16px; /* ≥16px or iOS zooms the page on focus */
 }
 .os-term-sheet .os-term-prompt {

@@ -54,12 +54,16 @@ export function Ext({ href, children, className = "" }: { href: string; children
   );
 }
 
+/** The prompt: where you are, then a pixel chevron in the cursor's yellow
+    (drawn, not typed: the subset of JetBrains Mono the site loads has no ❯).
+    Who you are is in the title bar. */
 export function Prompt({ cwd }: { cwd: string }) {
   return (
     <span className="os-term-prompt" aria-hidden>
-      <span className="os-term-prompt-user">elliot@emos</span>
       <span className="os-term-prompt-cwd">{cwd}</span>
-      <span className="os-term-prompt-sigil">%</span>
+      <svg className="os-term-prompt-sigil" viewBox="0 0 3 5" width="6" height="10" shapeRendering="crispEdges" fill="currentColor">
+        <path d="M0 0h1v1H0zM1 1h1v1H1zM2 2h1v1H2zM1 3h1v1H1zM0 4h1v1H0z" />
+      </svg>
     </span>
   );
 }
