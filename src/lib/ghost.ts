@@ -8,6 +8,8 @@ import { createHmac } from "node:crypto";
 const API_URL = (process.env.GHOST_API_URL ?? "").replace(/\/$/, "");
 const CONTENT_KEY = process.env.GHOST_CONTENT_KEY ?? "";
 const ADMIN_KEY = process.env.GHOST_ADMIN_KEY ?? "";
+/** the blog's public address, where a post's own page lives */
+const BLOG = (process.env.NEXT_PUBLIC_BLOG_URL || API_URL).replace(/\/$/, "");
 
 export type GhostPost = {
   title: string;
@@ -52,9 +54,19 @@ export function readingMinutes(post: { reading_time?: unknown; html?: string | n
   return Math.max(1, Math.round(words / WORDS_PER_MINUTE));
 }
 
+/**
+ * A post's address on the blog. Ghost answers ".../404/" for `url` when it
+ * can't place the post (a `fields` list without `id` does that, so every
+ * request here asks for the id too); the slug under the blog is the
+ * address then.
+ */
+export function postUrl(post: { url?: string | null; slug: string }): string {
+  return post.url && !/\/404\/?$/.test(post.url) ? post.url : `${BLOG}/${post.slug}/`;
+}
+
 /** Ghost's post as the site reads it: every field the UI prints is there. */
 export function normalisePost<T extends GhostPost>(post: T): T {
-  return { ...post, reading_time: readingMinutes(post) };
+  return { ...post, reading_time: readingMinutes(post), url: postUrl(post) };
 }
 
 export async function getLatestPosts(limit = 3): Promise<GhostPost[] | null> {
@@ -63,7 +75,7 @@ export async function getLatestPosts(limit = 3): Promise<GhostPost[] | null> {
     const u =
       `${API_URL}/ghost/api/content/posts/` +
       `?key=${encodeURIComponent(CONTENT_KEY)}&limit=${limit}` +
-      `&fields=title,slug,excerpt,published_at,reading_time,feature_image,url` +
+      `&fields=id,title,slug,excerpt,published_at,reading_time,feature_image,url` +
       `&include=tags&order=${encodeURIComponent("published_at desc")}`;
     const res = await fetch(u, { next: { revalidate: 3600 }, signal: AbortSignal.timeout(8000) });
     if (!res.ok) return null;
@@ -84,7 +96,7 @@ export async function getPost(slug: string): Promise<GhostFullPost | null | unde
     const u =
       `${API_URL}/ghost/api/content/posts/slug/${slug}/` +
       `?key=${encodeURIComponent(CONTENT_KEY)}` +
-      `&fields=title,slug,excerpt,published_at,reading_time,feature_image,url,html` +
+      `&fields=id,title,slug,excerpt,published_at,reading_time,feature_image,url,html` +
       `&include=tags&formats=html`;
     const res = await fetch(u, { next: { revalidate: 3600 }, signal: AbortSignal.timeout(8000) });
     if (res.status === 404) return null;

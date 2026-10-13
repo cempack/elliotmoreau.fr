@@ -98,3 +98,12 @@ test("one post: the estimate counts its body", async () => {
   assert.equal(got.reading_time, 4);
   assert.ok(got.html.startsWith("<h2>"));
 });
+
+test("a post Ghost can't place (url .../404/) links to its slug on the blog", async () => {
+  answer = { posts: [post({ url: "https://blog.test/404/" })] };
+  const got = await g.getPost("coming-soon");
+  assert.ok(got);
+  assert.equal(got.url, "https://ghost.test/coming-soon/");
+  answer = { posts: [post({ url: "https://blog.test/coming-soon/" })] };
+  assert.equal((await g.getPost("coming-soon"))?.url, "https://blog.test/coming-soon/");
+});
