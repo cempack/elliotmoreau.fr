@@ -12,14 +12,25 @@ import { isChunkError, reloadOnce, reportCrash } from "@/lib/oops";
  * menu bar, the Dock and the wallpaper keep running (they live in the
  * layout, above this boundary) and the app can be reopened in place. A
  * piece of the app that failed to load (a new version shipped while the
- * page was open) reloads the page once instead. Either way the crash is
- * reported (lib/oops.ts), so it can be found and fixed.
+ * page was open) reloads the page once instead. Reopened and crashed again
+ * straight away, the next Reopen reloads the whole page rather than run the
+ * same code again. Either way the crash is reported (lib/oops.ts), so it
+ * can be found and fixed.
  */
+/** when (and where) Reopen last re-ran an app in place */
+let reopened = { at: 0, path: "" };
+
 export default function AppCrashed({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
   const { t, path } = useI18n();
   const router = useRouter();
-  const app = appForPath(usePathname());
+  const pathname = usePathname();
+  const app = appForPath(pathname);
   const c = t.shell.crash;
+  const reopen = () => {
+    if (reopened.path === pathname && Date.now() - reopened.at < 15_000) return window.location.reload();
+    reopened = { at: Date.now(), path: pathname };
+    retry();
+  };
 
   useEffect(() => {
     reportCrash(error, "app");
@@ -35,7 +46,7 @@ export default function AppCrashed({ error, retry }: { error: Error & { digest?:
         <button type="button" onClick={() => router.push(path("/"))}>
           {c.desktop}
         </button>
-        <button type="button" data-primary onClick={() => retry()} autoFocus>
+        <button type="button" data-primary onClick={reopen} autoFocus>
           {c.reopen}
         </button>
       </div>

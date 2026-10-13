@@ -13,8 +13,24 @@ import { NextResponse, type NextRequest } from "next/server";
  * The site has no server actions, so a request naming one (a Next-Action
  * header) is a scanner probing for them: it is turned away here, before
  * Next logs a "Server Reference ID" error for it.
+ *
+ * A browser that kept pages under the old caching (next.config.ts, headers)
+ * has its cache for the site cleared once, on its next page load, so no
+ * copy from an older deploy is ever served again. Bump CACHE_EPOCH to
+ * clear everyone's once more.
  */
 const LANG_HEADER = "x-em-lang";
+const CACHE_COOKIE = "em-cache";
+const CACHE_EPOCH = "1";
+
+/** a page load from a browser that may still hold old copies: it clears them, once */
+function clearStale(request: NextRequest, res: NextResponse) {
+  if (request.cookies.get(CACHE_COOKIE)?.value === CACHE_EPOCH) return res;
+  if (request.headers.has("rsc") || !request.headers.get("accept")?.includes("text/html")) return res;
+  res.headers.set("Clear-Site-Data", '"cache"');
+  res.cookies.set(CACHE_COOKIE, CACHE_EPOCH, { maxAge: 60 * 60 * 24 * 365, path: "/", sameSite: "lax", secure: request.nextUrl.protocol === "https:" });
+  return res;
+}
 
 export function proxy(request: NextRequest) {
   if (request.headers.has("next-action")) return new NextResponse(null, { status: 404 });
@@ -26,20 +42,20 @@ export function proxy(request: NextRequest) {
   const prefixed = pathname.match(/^\/(fr|en)(?=\/|$)/);
   if (prefixed) {
     headers.set(LANG_HEADER, prefixed[1]);
-    return NextResponse.next({ request: { headers } });
+    return clearStale(request, NextResponse.next({ request: { headers } }));
   }
 
   if (request.cookies.get("em-lang")?.value === "fr") {
     const url = request.nextUrl.clone();
     url.pathname = pathname === "/" ? "/fr" : `/fr${pathname}`;
-    return NextResponse.redirect(url, 307);
+    return clearStale(request, NextResponse.redirect(url, 307));
   }
 
   const url = request.nextUrl.clone();
   url.pathname = pathname === "/" ? "/en" : `/en${pathname}`;
   url.search = search;
   headers.set(LANG_HEADER, "en");
-  return NextResponse.rewrite(url, { request: { headers } });
+  return clearStale(request, NextResponse.rewrite(url, { request: { headers } }));
 }
 
 export const config = {

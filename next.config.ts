@@ -14,7 +14,14 @@ const nextConfig: NextConfig = {
       { key: "X-Robots-Tag", value: "noindex, nofollow" },
       { key: "Referrer-Policy", value: "no-referrer" },
     ];
+    // pages and their navigation payloads: a browser may keep them, but only to ask again before using
+    // them. Next marks them for CDNs (s-maxage, then a year of stale-while-revalidate), which Chrome reads
+    // as leave to serve its copy from an older deploy, naming app code that no longer matches the rest
+    // of the page (an app then crashes on text that has since moved)
+    const fresh = [{ key: "Cache-Control", value: "private, no-cache" }];
     return [
+      { source: "/:path*", has: [{ type: "header", key: "rsc" }], headers: fresh },
+      { source: "/:path*", has: [{ type: "header", key: "accept", value: "(.*)text/html(.*)" }], headers: fresh },
       { source: "/admin", headers: admin },
       { source: "/:lang(en|fr)/admin", headers: admin },
       { source: "/api/admin/:path*", headers: admin },
