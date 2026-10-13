@@ -208,6 +208,11 @@ function lab(r: () => number, a: string): Px[] {
 
 const SCENES: Record<ProjectKind, (r: () => number, a: string) => Px[]> = { app, game, desktop, tool, lab };
 
+/** A project's scene as runs of art pixels (fills are CSS colours), for a canvas to paint: the machine's screen. */
+export function scenePixels(kind: ProjectKind, seed: string) {
+  return { w: W, h: H, px: SCENES[kind](rng(seed), KIND_ACCENT[kind]) };
+}
+
 /** A project's scene, 48×30 art pixels (16:10). Sized by className. */
 export function KindScene({ kind, seed, className = "" }: { kind: ProjectKind; seed: string; className?: string }) {
   const px = SCENES[kind](rng(seed), KIND_ACCENT[kind]);

@@ -1,0 +1,468 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import type { RepoInfo } from "@/lib/github";
+import { useI18n } from "@/i18n/client";
+import { PIXEL_FOLD, PIXEL_GLYPHS } from "@/components/PixelLabel";
+import { scenePixels } from "../KindArt";
+import { titleOf, type ProjectKind } from "../kind";
+import { fmt } from "../model";
+import { MODELS, type Model, type Vec3 } from "./models";
+import { bayer8, marqueeTexture, paint, pick, project, screenTexture, type Tex, type View } from "./render";
+
+const CELL = 3;
+/** the resting camera: looking down a little, turned to show a side */
+const TILT = 0.3;
+const YAW = -0.42;
+const SWAY = 0.5;
+/** ambient frames (the sway, the screen's rolling band) */
+const AMBIENT_FPS = 15;
+/** the most cells painted each frame */
+const MAX_W = 340;
+const MAX_H = 300;
+
+type Fit = { unit: number; cx: number; cy: number };
+type Source = { kind: "shot"; img: HTMLImageElement } | { kind: "scene"; tex: Tex };
+
+/** how big the model can be drawn in w×h cells, whichever way the sway turns it */
+function fitRest(model: Model, w: number, h: number): Fit {
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  const pts: Vec3[] = [];
+  for (const b of model.boxes) for (let i = 0; i < 8; i++) pts.push([i & 1 ? b.b[0] : b.a[0], i & 2 ? b.b[1] : b.a[1], i & 4 ? b.b[2] : b.a[2]]);
+  for (let i = 0; i < 16; i++) pts.push([Math.cos((i / 16) * Math.PI * 2) * model.turn, model.floorY, Math.sin((i / 16) * Math.PI * 2) * model.turn]);
+  for (const yaw of [YAW - SWAY - 0.5, YAW - SWAY, YAW, YAW + SWAY, YAW + SWAY + 0.5])
+    for (const p of pts) {
+      const [x, y] = project(p, { yaw, tilt: TILT, unit: 1, look: model.center });
+      x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+    }
+  const unit = Math.max((x1 - x0) / (w * 0.94), (y1 - y0) / (h * 0.9));
+  return { unit, cx: w / 2 - (x0 + x1) / 2 / unit, cy: h / 2 - (y0 + y1) / 2 / unit };
+}
+/** close up: the screen square on, filling the stage */
+function fitClose(model: Model, w: number, h: number): Fit & { look: Vec3 } {
+  const s = model.screen;
+  const unit = Math.max((s.x1 - s.x0) / (w * 0.94), (s.y1 - s.y0) / (h * 0.94));
+  return { unit, cx: w / 2, cy: h / 2, look: [(s.x0 + s.x1) / 2, (s.y0 + s.y1) / 2, s.z] };
+}
+
+/** the shelf's drawing, as a texture: CSS colours resolved against `el` */
+function sceneTexture(kind: ProjectKind, seed: string, el: Element, tint?: Model["screen"]["tint"]): Tex | null {
+  const { w, h, px } = scenePixels(kind, seed);
+  const cv = document.createElement("canvas");
+  cv.width = w; cv.height = h;
+  const ctx = cv.getContext("2d");
+  if (!ctx) return null;
+  const css = getComputedStyle(el);
+  const resolve = (f: string) => f.replace(/var\((--[\w-]+)\)/g, (_, v: string) => css.getPropertyValue(v).trim() || "#000");
+  for (const p of px) {
+    ctx.globalAlpha = p.o ?? 1;
+    ctx.fillStyle = resolve(p.f);
+    ctx.fillRect(p.x, p.y, p.w ?? 1, p.h ?? 1);
+  }
+  return screenTexture(cv, w, h, tint);
+}
+
+/**
+ * The project, on the machine it runs on: Projects' stage on wide screens.
+ * Apps sit on an old CRT, games in an arcade cabinet with their name on
+ * the marquee, desktop add-ons on a widescreen monitor, tools on a green
+ * terminal, experiments on a handheld. The screen shows the README's
+ * screenshot (through /api/shot, so its pixels can be read), or the shelf's
+ * drawing when there is none.
+ *
+ * - drag turns it on its turntable and a throw keeps it turning; at rest it
+ *   sways slowly, and picks the sway back up a few seconds after a drag;
+ * - pressing the screen (or Enter) looks closer: the camera squares up to
+ *   the screen until it fills the stage, then the real screenshot fades in
+ *   over the pixels, sharp; pressing again (or Esc) steps back;
+ * - another project on the same machine switches channel (static, then the
+ *   picture opening out of a line); another machine dissolves into place in
+ *   Bayer order, like the Atlas globe's terminator;
+ * - painted on demand: every frame while something moves, 15 a second for
+ *   the sway, nothing while off screen or in a hidden tab;
+ * - reduced motion: no sway or throw, the camera cuts, the screen just
+ *   changes.
+ */
+export function Machine({ repo, kind }: { repo: RepoInfo; kind: ProjectKind }) {
+  const { t } = useI18n();
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [closer, setCloser] = useState(false);
+  const [shotOn, setShotOn] = useState(false);
+  const [rect, setRect] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
+  /** the loop's controls, set up once the canvas is there */
+  const api = useRef<{ show(repo: RepoInfo, kind: ProjectKind): void; toggle(): void; back(): void; turn(dir: number): void } | null>(null);
+
+  useEffect(() => {
+    const wrap = wrapRef.current, canvas = canvasRef.current, frameEl = frameRef.current;
+    if (!wrap || !canvas || !frameEl) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const buf = document.createElement("canvas");
+    const bctx = buf.getContext("2d");
+    if (!bctx) return;
+
+    const s = {
+      w: 0, h: 0, dpr: 1,
+      img: null as ImageData | null,
+      out: null as Uint32Array | null,
+      kind: null as ProjectKind | null,
+      model: null as Model | null,
+      rest: null as Fit | null,
+      close: null as (Fit & { look: Vec3 }) | null,
+      name: "",
+      title: "",
+      source: null as Source | null,
+      texRest: null as Tex | null,
+      texClose: null as Tex | null,
+      marquee: null as Tex | null,
+      since: Infinity,
+      changedAt: 0,
+      fade: null as { from: Uint32Array; at: number } | null,
+      yaw: 0, vYaw: 0, sway: reduced ? 0 : 1,
+      zoom: 0, zoomTo: 0,
+      drag: null as { id: number; x: number; y: number; at: number; moved: boolean } | null,
+      lastInput: -1e9,
+      visible: false,
+      raf: 0, timer: 0, last: 0,
+      shown: false,
+    };
+    const now = () => performance.now() / 1000;
+
+    const textures = () => {
+      const m = s.model, src = s.source;
+      if (!m || !s.rest || !s.close || !src) { s.texRest = s.texClose = null; return; }
+      const sw = m.screen.x1 - m.screen.x0;
+      const size = (unit: number) => {
+        const w = Math.max(16, Math.min(480, Math.round(sw / unit)));
+        return [w, Math.max(10, Math.round(w / 1.6))] as const;
+      };
+      if (src.kind === "scene") { s.texRest = s.texClose = src.tex; return; }
+      const [rw, rh] = size(s.rest.unit), [cw, ch] = size(s.close.unit);
+      s.texRest = screenTexture(src.img, rw, rh, m.screen.tint);
+      s.texClose = screenTexture(src.img, cw, ch, m.screen.tint);
+      if (!s.texRest) {
+        // pixels we can't read: fall back to the drawing
+        const tex = s.kind ? sceneTexture(s.kind, s.name, wrap, m.screen.tint) : null;
+        s.source = tex ? { kind: "scene", tex } : null;
+        s.texRest = s.texClose = tex;
+      }
+    };
+    const marquee = () => {
+      s.marquee = null;
+      if (s.kind !== "game" || !s.rest) return;
+      const mw = Math.max(8, Math.round((1.6 * 0.92) / s.rest.unit)), mh = Math.max(5, Math.round((0.46 * 0.72) / s.rest.unit));
+      s.marquee = marqueeTexture(s.title, mw, mh, PIXEL_GLYPHS, PIXEL_FOLD);
+    };
+
+    const layout = () => {
+      const r = wrap.getBoundingClientRect();
+      // capped, so a very large window doesn't cost more than a frame can spare
+      const w = Math.min(MAX_W, Math.floor(r.width / CELL)), h = Math.min(MAX_H, Math.floor(r.height / CELL));
+      if (w < 24 || h < 24) { s.w = s.h = 0; return; }
+      s.dpr = Math.min(window.devicePixelRatio || 1, 2);
+      if (w !== s.w || h !== s.h) {
+        s.w = w; s.h = h;
+        buf.width = w; buf.height = h;
+        s.img = bctx.createImageData(w, h);
+        s.out = new Uint32Array(s.img.data.buffer);
+        s.fade = null;
+      }
+      canvas.width = Math.round(w * CELL * s.dpr);
+      canvas.height = Math.round(h * CELL * s.dpr);
+      frameEl.style.width = `${w * CELL}px`;
+      frameEl.style.height = `${h * CELL}px`;
+      if (s.model) {
+        s.rest = fitRest(s.model, w, h);
+        s.close = fitClose(s.model, w, h);
+        textures();
+        marquee();
+        placeShot();
+      }
+    };
+    /** the real screenshot's place over the close-up screen, in CSS px */
+    const placeShot = () => {
+      const m = s.model, c = s.close;
+      if (!m || !c) return;
+      const sw = (m.screen.x1 - m.screen.x0) / c.unit, sh = (m.screen.y1 - m.screen.y0) / c.unit;
+      setRect({ left: (c.cx - sw / 2) * CELL, top: (c.cy - sh / 2) * CELL, width: sw * CELL, height: sh * CELL });
+    };
+
+    const ease = (z: number) => z * z * (3 - 2 * z);
+    const view = (t: number): View | null => {
+      const m = s.model, r = s.rest, c = s.close;
+      if (!m || !r || !c) return null;
+      const z = ease(s.zoom);
+      const restYaw = s.yaw + YAW + (reduced ? 0 : SWAY * s.sway * Math.sin(t * 0.33));
+      const lerp = (a: number, b: number) => a + (b - a) * z;
+      const unit = Math.exp(lerp(Math.log(r.unit), Math.log(c.unit)));
+      // the close-up texture once the screen is drawn well over the resting one's size
+      const useClose = (m.screen.x1 - m.screen.x0) / unit > (s.texRest?.w ?? 0) * 1.3;
+      return {
+        model: m,
+        yaw: lerp(restYaw, 0),
+        tilt: lerp(TILT, 0),
+        unit,
+        cx: lerp(r.cx, c.cx),
+        cy: lerp(r.cy, c.cy),
+        look: [lerp(m.center[0], c.look[0]), lerp(m.center[1], c.look[1]), lerp(m.center[2], c.look[2])],
+        t,
+        screen: useClose ? s.texClose : s.texRest,
+        marquee: s.marquee,
+        since: s.source ? t - s.changedAt : 0,
+      };
+    };
+
+    const draw = () => {
+      s.raf = 0;
+      const t = now();
+      const dt = Math.min(0.1, t - (s.last || t));
+      s.last = t;
+      if (!s.w || !s.out || !s.img) return;
+      // motion
+      if (!s.drag && s.vYaw) {
+        s.yaw += s.vYaw * dt;
+        s.vYaw *= Math.exp(-dt * 2.4);
+        if (Math.abs(s.vYaw) < 0.01) s.vYaw = 0;
+      }
+      if (!reduced) {
+        const idle = t - s.lastInput > 3 && s.zoomTo === 0;
+        s.sway = Math.max(0, Math.min(1, s.sway + (idle ? dt * 0.35 : -dt * 4)));
+      }
+      if (s.zoom !== s.zoomTo) {
+        if (reduced) s.zoom = s.zoomTo;
+        else {
+          s.zoom += (s.zoomTo - s.zoom) * (1 - Math.exp(-dt * 6.5));
+          if (Math.abs(s.zoom - s.zoomTo) < 0.002) s.zoom = s.zoomTo;
+        }
+      }
+      const v = view(t);
+      if (!v) return;
+      paint(s.out, s.w, s.h, v);
+      if (s.fade) {
+        const k = (t - s.fade.at) / 0.5;
+        if (k >= 1 || reduced) s.fade = null;
+        else {
+          const m = ease(k), from = s.fade.from, out = s.out;
+          for (let y = 0; y < s.h; y++) for (let x = 0; x < s.w; x++) if (bayer8(x, y) >= m) out[y * s.w + x] = from[y * s.w + x];
+        }
+      }
+      bctx.putImageData(s.img, 0, 0);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(buf, 0, 0, s.w, s.h, 0, 0, canvas.width, canvas.height);
+      // the sharp screenshot, once the camera has arrived
+      const on = s.zoomTo === 1 && s.zoom > 0.985 && s.source?.kind === "shot";
+      if (on !== s.shown) { s.shown = on; setShotOn(on); }
+      schedule(t);
+    };
+    const busy = (t: number) =>
+      !!s.drag || s.vYaw !== 0 || s.zoom !== s.zoomTo || !!s.fade || !s.source || t - s.changedAt < 0.5 || (s.sway > 0 && s.sway < 1);
+    const schedule = (t: number) => {
+      if (s.raf || s.timer || !s.visible || document.hidden) return;
+      if (busy(t)) s.raf = requestAnimationFrame(draw);
+      else if (!reduced && s.zoomTo === 0)
+        s.timer = window.setTimeout(() => {
+          s.timer = 0;
+          s.raf = requestAnimationFrame(draw);
+        }, 1000 / AMBIENT_FPS);
+    };
+    const wake = () => {
+      if (s.timer) { clearTimeout(s.timer); s.timer = 0; }
+      if (!s.raf && s.visible && !document.hidden) s.raf = requestAnimationFrame(draw);
+    };
+
+    const show = (r: RepoInfo, k: ProjectKind) => {
+      const t = now();
+      const model = MODELS[k];
+      if (s.model && model !== s.model && s.out && !reduced) s.fade = { from: s.out.slice(), at: t };
+      if (model !== s.model) {
+        s.model = model;
+        s.yaw = 0;
+        s.vYaw = 0;
+        if (s.w) {
+          s.rest = fitRest(model, s.w, s.h);
+          s.close = fitClose(model, s.w, s.h);
+          placeShot();
+        }
+      }
+      s.kind = k;
+      s.name = r.name;
+      s.title = titleOf(r);
+      s.zoomTo = 0;
+      setCloser(false);
+      marquee();
+      // the screen goes to static until the new picture is in
+      s.source = null;
+      s.texRest = s.texClose = null;
+      const done = (src: Source | null) => {
+        if (s.name !== r.name) return;
+        s.source = src;
+        textures();
+        s.changedAt = reduced ? -Infinity : now();
+        wake();
+      };
+      const scene = () => {
+        const tex = sceneTexture(k, r.name, wrap, model.screen.tint);
+        done(tex ? { kind: "scene", tex } : null);
+      };
+      if (r.preview) {
+        const img = new Image();
+        img.decoding = "async";
+        img.onload = () => done({ kind: "shot", img });
+        img.onerror = scene;
+        img.src = `/api/shot?name=${encodeURIComponent(r.name)}`;
+      } else scene();
+      wake();
+    };
+    const zoom = (to: 0 | 1) => {
+      if (!s.model) return;
+      if (to === 1) {
+        // square up from wherever it was turned: the short way round
+        const turned = s.yaw + YAW + SWAY * s.sway * Math.sin(now() * 0.33);
+        s.yaw = Math.atan2(Math.sin(turned), Math.cos(turned)) - YAW - SWAY * s.sway * Math.sin(now() * 0.33);
+        s.vYaw = 0;
+      }
+      s.zoomTo = to;
+      s.lastInput = now();
+      setCloser(to === 1);
+      wake();
+    };
+    api.current = {
+      show,
+      toggle: () => zoom(s.zoomTo ? 0 : 1),
+      back: () => zoom(0),
+      turn: (dir) => {
+        if (s.zoomTo) zoom(0);
+        s.lastInput = now();
+        if (reduced) s.yaw += dir * 0.35;
+        else s.vYaw += dir * 2.4;
+        wake();
+      },
+    };
+
+    // the pointer: drag turns, a press on the screen looks closer
+    const cellAt = (e: PointerEvent): [number, number] => {
+      const r = canvas.getBoundingClientRect();
+      return [((e.clientX - r.left) / r.width) * s.w, ((e.clientY - r.top) / r.height) * s.h];
+    };
+    const hover = (e: PointerEvent) => {
+      if (s.drag) return;
+      const v = view(now());
+      if (!v) return;
+      const [x, y] = cellAt(e);
+      const hit = pick(v, s.w, s.h, x, y);
+      wrap.dataset.over = s.zoomTo ? "closer" : hit ?? "";
+    };
+    const down = (e: PointerEvent) => {
+      if (e.button !== 0) return;
+      s.drag = { id: e.pointerId, x: e.clientX, y: e.clientY, at: performance.now(), moved: false };
+      s.vYaw = 0;
+      s.lastInput = now();
+      wake();
+    };
+    const move = (e: PointerEvent) => {
+      const d = s.drag;
+      if (!d || d.id !== e.pointerId) return hover(e);
+      const dx = e.clientX - d.x;
+      if (!d.moved && Math.abs(dx) + Math.abs(e.clientY - d.y) < 4) return;
+      if (!d.moved) {
+        d.moved = true;
+        wrap.setPointerCapture(e.pointerId);
+        if (s.zoomTo) zoom(0);
+      }
+      const at = performance.now(), k = 0.009;
+      s.yaw += dx * k;
+      s.vYaw = reduced ? 0 : (dx * k) / Math.max(0.008, (at - d.at) / 1000);
+      d.x = e.clientX; d.at = at;
+      s.lastInput = now();
+      wake();
+    };
+    const up = (e: PointerEvent) => {
+      const d = s.drag;
+      if (!d || d.id !== e.pointerId) return;
+      s.drag = null;
+      if (performance.now() - d.at > 90) s.vYaw = 0;
+      if (!d.moved) {
+        if (s.zoomTo) zoom(0);
+        else {
+          const v = view(now());
+          const [x, y] = cellAt(e);
+          if (v && pick(v, s.w, s.h, x, y) === "screen") zoom(1);
+        }
+      }
+      s.lastInput = now();
+      wake();
+    };
+    const cancel = () => { s.drag = null; };
+    wrap.addEventListener("pointerdown", down);
+    wrap.addEventListener("pointermove", move);
+    wrap.addEventListener("pointerup", up);
+    wrap.addEventListener("pointercancel", cancel);
+
+    const ro = new ResizeObserver(() => { layout(); wake(); });
+    ro.observe(wrap);
+    const io = new IntersectionObserver(([e]) => { s.visible = e.isIntersecting; wake(); });
+    io.observe(wrap);
+    const vis = () => wake();
+    document.addEventListener("visibilitychange", vis);
+    layout();
+    return () => {
+      api.current = null;
+      ro.disconnect();
+      io.disconnect();
+      document.removeEventListener("visibilitychange", vis);
+      wrap.removeEventListener("pointerdown", down);
+      wrap.removeEventListener("pointermove", move);
+      wrap.removeEventListener("pointerup", up);
+      wrap.removeEventListener("pointercancel", cancel);
+      cancelAnimationFrame(s.raf);
+      clearTimeout(s.timer);
+    };
+  }, []);
+
+  useEffect(() => {
+    api.current?.show(repo, kind);
+    // the picture and the machine follow the project; its other fields don't change what's drawn
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [repo.name, repo.preview, kind]);
+
+  const name = titleOf(repo);
+  const m = t.work.machine;
+  const label = closer ? fmt(m.closer, { name }) : fmt(m.label, { name, device: m[kind] });
+  return (
+    <div
+      ref={wrapRef}
+      className="app-work-machine"
+      role="button"
+      tabIndex={0}
+      aria-pressed={closer}
+      aria-label={label}
+      data-closer={closer ? "" : undefined}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); api.current?.toggle(); }
+        else if (e.key === "Escape" && closer) { e.stopPropagation(); api.current?.back(); }
+        else if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault(); api.current?.turn(e.key === "ArrowLeft" ? -1 : 1); }
+      }}
+    >
+      <div ref={frameRef} className="app-work-machine-frame">
+        <canvas ref={canvasRef} className="app-work-machine-canvas" aria-hidden />
+        {repo.preview && rect ? (
+          // eslint-disable-next-line @next/next/no-img-element -- any README host; placed over the close-up screen
+          <img
+            className="app-work-machine-shot"
+            src={repo.preview}
+            alt=""
+            aria-hidden
+            decoding="async"
+            data-on={shotOn ? "" : undefined}
+            style={{ left: rect.left, top: rect.top, width: rect.width, height: rect.height }}
+          />
+        ) : null}
+      </div>
+    </div>
+  );
+}
