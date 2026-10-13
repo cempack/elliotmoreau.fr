@@ -1,5 +1,5 @@
 // Strings for the Now app (/now). Hand-written content (focus, books,
-// setup…) lives in the database (seeded from src/content/now.ts, edited in
+// drafts…) lives in the database (seeded from src/content/now.ts, edited in
 // the admin panel); this file is UI copy only.
 // Templates use {placeholders}; values stay plain strings.
 const en = {

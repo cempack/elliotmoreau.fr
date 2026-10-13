@@ -10,15 +10,13 @@
  *
  *  - `updated` (YYYY-MM-DD) is shown as "Last updated".
  *  - Every user-facing string is bilingual: `{ en, fr }`.
- *  - Setup rows marked `todo: true` are guesses or blanks. They are NEVER
- *    rendered: confirm the value and drop the `todo` flag to show a row.
  *  - Lists can be any length (0 hides the block); keep them short. A /now
  *    page is a snapshot, not an archive.
  */
 
 import type { NowContent } from "@/lib/content";
 
-export type { Book, Draft, L10n, Learning, NowContent, SetupRow } from "@/lib/content";
+export type { Book, Draft, L10n, Learning, NowContent } from "@/lib/content";
 
 export const NOW: NowContent = {
   updated: "2026-10-10",
@@ -51,29 +49,4 @@ export const NOW: NowContent = {
 
   /** Posts in progress (empty hides the block). */
   drafting: [],
-
-  /**
-   * The "uses" sheet, fastfetch style. Rows with `todo: true` stay hidden.
-   * Not on the Now dashboard at the moment (the menu bar's About panel is
-   * the site's fastfetch); kept in the content and the admin panel.
-   * Known from public work: Omarchy, Hyprland, Neovim, Ghostty, Dos Moos,
-   * JetBrains Mono, Spotify, Ghost, Next.js on Railway.
-   */
-  setup: [
-    { key: { en: "OS", fr: "OS" }, value: "Omarchy · Arch Linux" },
-    { key: { en: "WM", fr: "WM" }, value: "Hyprland" },
-    { key: { en: "Editor", fr: "Éditeur" }, value: "Neovim" },
-    { key: { en: "Terminal", fr: "Terminal" }, value: "Ghostty" },
-    { key: { en: "Theme", fr: "Thème" }, value: { en: "Dos Moos (my own)", fr: "Dos Moos (le mien)" } },
-    { key: { en: "Font", fr: "Police" }, value: "JetBrainsMono Nerd Font" },
-    { key: { en: "Shell", fr: "Shell" }, value: "TODO: zsh? bash? fish?", todo: true },
-    { key: { en: "Bar", fr: "Barre" }, value: "Waybar" },
-    { key: { en: "Launcher", fr: "Lanceur" }, value: "TODO: Walker? wofi?", todo: true },
-    { key: { en: "Browser", fr: "Navigateur" }, value: "Chromium" },
-    { key: { en: "Keyboard", fr: "Clavier" }, value: "TODO: board, switches, layout", todo: true },
-    { key: { en: "Machine", fr: "Machine" }, value: "TODO: laptop / desktop model", todo: true },
-    { key: { en: "Music", fr: "Musique" }, value: "Spotify" },
-    { key: { en: "Blog", fr: "Blog" }, value: "Ghost" },
-    { key: { en: "Site", fr: "Site" }, value: { en: "Next.js on Railway", fr: "Next.js sur Railway" } },
-  ],
 };

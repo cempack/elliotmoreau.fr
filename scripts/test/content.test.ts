@@ -92,8 +92,8 @@ describe("seed", () => {
 
   test("reads return copies: mutating one doesn't touch the next", () => {
     const now = c.getNowContent();
-    now.setup.length = 0;
-    assert.ok(c.getNowContent().setup.length > 0);
+    now.intro.en = "changed";
+    assert.notEqual(c.getNowContent().intro.en, "changed");
     const s = seed.seedPlaces();
     s[0].name.en = "changed";
     assert.equal(seed.seedPlaces()[0].name.en, "France");
@@ -278,7 +278,7 @@ describe("status, now and live", () => {
       () => c.setNowContent({ ...now, reading: [{ title: "X", author: "Y", status: "skimming" as "reading" }] }),
       "reading[0].status"
     );
-    rejects(() => c.setNowContent({ ...now, setup: [{ key: { en: "OS", fr: "" }, value: "Arch" }] }), "setup[0].key.fr");
+    rejects(() => c.setNowContent({ ...now, drafting: [{ title: { en: "Post", fr: "" } }] }), "drafting[0].title.fr");
   });
 
   test("setLive merges, clears and validates", () => {

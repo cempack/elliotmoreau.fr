@@ -130,14 +130,6 @@ export type Learning = { label: L10n; note?: L10n };
 
 export type Draft = { title: L10n; note?: L10n };
 
-export type SetupRow = {
-  /** fastfetch-style key, shown as-is (short, technical) */
-  key: L10n;
-  value: string | L10n;
-  /** unconfirmed: kept as a placeholder, never shown on the page */
-  todo?: boolean;
-};
-
 export type NowContent = {
   /** YYYY-MM-DD, shown as "Last updated" */
   updated: string;
@@ -155,7 +147,6 @@ export type NowContent = {
   reading: Book[];
   learning: Learning[];
   drafting: Draft[];
-  setup: SetupRow[];
 };
 
 /* ───────────────────────────── live overrides ───────────────────────────── */

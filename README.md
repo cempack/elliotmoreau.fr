@@ -114,7 +114,7 @@ motion swaps all of it for short cross-fades and instant snaps.
 
 ## Edit me
 
-- `src/content/now.ts` — what you're building / reading / your setup.
+- `src/content/now.ts` — what you're building / reading / drafting.
 - `src/i18n/dict/*.ts` — every visible string, EN + FR (`meta.ts` holds the
   page titles and descriptions used by search results and share cards).
   Or change them live from the admin panel's Texts section: an edit there

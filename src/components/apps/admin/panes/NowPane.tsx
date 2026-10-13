@@ -2,14 +2,13 @@
 
 import { useState } from "react";
 import { useI18n } from "@/i18n/client";
-import type { Book, Draft, L10n, Learning, NowContent, SetupRow } from "@/lib/content";
+import type { Book, Draft, L10n, Learning, NowContent } from "@/lib/content";
 import type { Overview } from "../api";
 import { useSave } from "../useSave";
 import { Btn, Group, Pair, SaveBar, Section, Select, Text, Toggle } from "../ui";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const optL = (v: L10n) => (v.en || v.fr ? v : undefined);
-const asL10n = (v: string | L10n): L10n => (typeof v === "string" ? { en: v, fr: v } : v);
 
 /** a list of cards with move up / move down / remove, and an add button */
 function ListEditor<T>({
@@ -147,29 +146,6 @@ export function NowPane({ data, onSaved }: { data: Overview; onSaved: () => void
             <>
               <Pair label={n.draftTitle} value={x.title} onChange={(title) => s({ title })} error={f(`drafting[${i}].title`)} />
               <Pair label={n.note} value={x.note} onChange={(note) => s({ note: optL(note) })} error={f(`drafting[${i}].note`)} />
-            </>
-          )}
-        />
-      </Group>
-
-      <Group title={n.setup}>
-        <ListEditor<SetupRow>
-          items={draft.setup}
-          onChange={(setup) => set({ setup })}
-          make={() => ({ key: { en: "", fr: "" }, value: "" })}
-          addLabel={n.addSetup}
-          title={(x) => x.key[lang]}
-          render={(x, s, i) => (
-            <>
-              <Pair label={n.setupKey} value={x.key} onChange={(key) => s({ key })} error={f(`setup[${i}].key`)} />
-              <Pair
-                label={n.setupValue}
-                value={asL10n(x.value)}
-                // the same text in both languages is stored once
-                onChange={(v) => s({ value: v.en === v.fr ? v.en : v })}
-                error={f(`setup[${i}].value`)}
-              />
-              <Toggle label={n.todo} checked={Boolean(x.todo)} onChange={(todo) => s({ todo: todo || undefined })} />
             </>
           )}
         />

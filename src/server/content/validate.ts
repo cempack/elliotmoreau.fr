@@ -14,7 +14,6 @@ import {
   type LiveOverrides,
   type NowContent,
   type PlaceRow,
-  type SetupRow,
   type Status,
   type WorkHours,
 } from "@/lib/content";
@@ -250,16 +249,6 @@ function draft(v: unknown, f: string): Draft {
   return d;
 }
 
-function setupRow(v: unknown, f: string): SetupRow {
-  const o = obj(v, f);
-  const row: SetupRow = {
-    key: l10n(o.key, `${f}.key`, 24),
-    value: typeof o.value === "string" ? text(o.value, `${f}.value`, 80) : l10n(o.value, `${f}.value`, 80),
-  };
-  if (o.todo != null && bool(o.todo, `${f}.todo`)) row.todo = true;
-  return row;
-}
-
 export function validateNow(input: unknown): NowContent {
   const o = obj(input, "now");
   const focus = obj(o.focus, "focus");
@@ -276,7 +265,6 @@ export function validateNow(input: unknown): NowContent {
     reading: list(o.reading ?? [], "reading", 20).map((b, i) => book(b, `reading[${i}]`)),
     learning: list(o.learning ?? [], "learning", 20).map((l, i) => learning(l, `learning[${i}]`)),
     drafting: list(o.drafting ?? [], "drafting", 20).map((d, i) => draft(d, `drafting[${i}]`)),
-    setup: list(o.setup ?? [], "setup", 40).map((r, i) => setupRow(r, `setup[${i}]`)),
   };
 }
 

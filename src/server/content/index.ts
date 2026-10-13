@@ -51,7 +51,6 @@ export type {
   ProjectKind,
   ProjectNote,
   ProjectsContent,
-  SetupRow,
   Status,
   WorkHours,
 } from "@/lib/content";
