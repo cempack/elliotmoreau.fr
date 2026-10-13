@@ -467,6 +467,16 @@
     transform: translate(2px, -2px);
   }
 }
+.app-writing-member-art {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 12px;
+  color: var(--os-win-accent);
+  background: color-mix(in oklab, var(--os-win-accent) 12%, color-mix(in srgb, var(--color-ink-950) 40%, transparent));
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--os-win-accent) 28%, transparent);
+}
 .app-writing-member-title {
   margin-top: 0.25rem;
   font-size: var(--text-title-3);
@@ -1042,51 +1052,31 @@
   background: var(--os-win-accent);
 }
 
-/* write back: the one action at the end of a post, under a typewriter that starts the letter */
+/* write back: the one action at the end of a post */
 .app-writing-writeback {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 1rem 1.125rem;
   max-width: var(--app-writing-measure);
   margin-top: 3.5rem;
   padding: 1.25rem;
-  overflow: hidden;
   border-radius: var(--radius-card);
   background:
     radial-gradient(90% 140% at 0% 0%, color-mix(in oklab, var(--color-signal) 14%, transparent), transparent 70%),
     rgba(255, 255, 255, 0.025);
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-signal) 22%, var(--hairline));
 }
-/* the typewriter, edge to edge across the top of the card */
-.app-writing-tw {
-  position: relative;
-  grid-column: 1 / -1;
-  width: calc(100% + 2.5rem);
-  aspect-ratio: 16 / 10;
-  margin: -1.25rem -1.25rem -0.25rem;
-  overflow: hidden;
-  touch-action: pan-y;
-  cursor: var(--cursor-grab, grab);
-}
-.app-writing-tw:active {
-  cursor: var(--cursor-grabbing, grabbing);
-}
-.app-writing-tw-canvas {
-  display: block;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-}
-@container (max-width: 559px) {
-  .app-writing-tw {
-    aspect-ratio: 1 / 1;
-  }
+.app-writing-writeback .app-writing-member-art {
+  color: var(--color-signal);
+  background: color-mix(in oklab, var(--color-signal) 12%, color-mix(in srgb, var(--color-ink-950) 40%, transparent));
 }
 @media (max-width: 560px) {
   .app-writing-writeback {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: auto minmax(0, 1fr);
   }
   .app-writing-writeback-cta {
+    grid-column: 1 / -1;
     justify-content: center;
   }
 }

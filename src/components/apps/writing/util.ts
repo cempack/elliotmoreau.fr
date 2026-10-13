@@ -33,12 +33,6 @@ export function dateLong(t: WritingDict, iso: string) {
   return fmt(t.dateLong, { d, m: t.months[m], y });
 }
 
-/** "07.10.2026": the date as a typewriter puts it under a title */
-export function dateTyped(iso: string) {
-  const { y, m, d } = parisDate(iso);
-  return `${String(d).padStart(2, "0")}.${String(m + 1).padStart(2, "0")}.${y}`;
-}
-
 /** Ghost's stock placeholder art isn't a real cover. */
 export function realImage(p: GhostPost) {
   return p.feature_image && !p.feature_image.includes("static.ghost.org") ? p.feature_image : null;

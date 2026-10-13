@@ -3,48 +3,69 @@
 import { useEffect, useRef } from "react";
 import { CELL, pixelLoop } from "@/lib/pixel3d";
 import { useReduced } from "@/hooks/env";
-import { makeTypewriter } from "./typewriter/scene";
-import { dateTyped } from "./util";
+import { useSound } from "@/lib/sound";
+import { markAt } from "./postmark";
+import { letterLines, makeTypewriter } from "./typewriter/scene";
 
 /**
- * The typewriter in Write back: once it is well in view it feeds a sheet
- * and starts your letter, today's date and then the subject Mail will
- * open with. Drag it to turn it. Decorative: the subject is the link
- * right below it.
+ * The typewriter beside the letter: once it is in view it feeds a sheet,
+ * types today's date (the postmark's, in Toulouse), then follows the
+ * subject and the message as they are written, a soft tick a letter.
+ * Drag it to turn it. Decorative: the letter itself is the form beside it.
  */
-export function Typewriter({ subject }: { subject: string }) {
+export function Typewriter({ subject, body }: { subject: string; body: string }) {
   const reduced = useReduced();
+  const { blip } = useSound();
   const hostRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const latest = useRef({ subject, body });
+  const tick = useRef(blip);
+  /** what the running machine is handed when the letter changes */
+  const follow = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    tick.current = blip;
+  }, [blip]);
+
+  useEffect(() => {
+    latest.current = { subject, body };
+    follow.current?.();
+  }, [subject, body]);
 
   useEffect(() => {
     const host = hostRef.current;
     const canvas = canvasRef.current;
     if (!host || !canvas) return;
-    const tw = makeTypewriter(reduced);
+    const tw = makeTypewriter(reduced, () => tick.current("tick"));
     const loop = pixelLoop({
       host,
       canvas,
       size: (w, h) => [Math.ceil(w / CELL), Math.ceil(h / CELL)],
       frame: tw.frame,
     });
-    const start = () => {
-      tw.type({ title: subject, date: dateTyped(new Date().toISOString()) }, loop.clock());
+    const m = markAt(new Date());
+    const date = `${m.dd}.${m.mo}.20${m.yy}`;
+    const show = () => {
+      const { subject, body } = latest.current;
+      tw.show(letterLines(date, subject, body), loop.clock());
       loop.wake();
     };
 
-    // the sheet goes in once most of the machine is on screen (at once, without motion)
+    // the first sheet goes in once the machine is on screen (at once, without motion)
     let io: IntersectionObserver | null = null;
-    if (reduced) start();
-    else {
+    if (reduced) {
+      follow.current = show;
+      show();
+    } else {
       io = new IntersectionObserver(
         ([e]) => {
           if (!e.isIntersecting) return;
           io?.disconnect();
           io = null;
-          start();
+          follow.current = show;
+          show();
         },
-        { threshold: 0.5 }
+        { threshold: 0.4 }
       );
       io.observe(host);
     }
@@ -78,17 +99,18 @@ export function Typewriter({ subject }: { subject: string }) {
     host.addEventListener("pointercancel", up);
     return () => {
       io?.disconnect();
+      follow.current = null;
       host.removeEventListener("pointerdown", down);
       host.removeEventListener("pointermove", move);
       host.removeEventListener("pointerup", up);
       host.removeEventListener("pointercancel", up);
       loop.dispose();
     };
-  }, [reduced, subject]);
+  }, [reduced]);
 
   return (
-    <div ref={hostRef} className="app-writing-tw" aria-hidden>
-      <canvas ref={canvasRef} className="app-writing-tw-canvas" />
+    <div ref={hostRef} className="app-contact-card app-contact-tw" aria-hidden>
+      <canvas ref={canvasRef} className="app-contact-tw-canvas" />
     </div>
   );
 }

@@ -32,21 +32,20 @@ import {
 } from "@/lib/pixel3d";
 
 /**
- * The typewriter at the end of a post: a pixel machine on a turntable, in
- * the Atlas globe's inks, that starts your letter back. It feeds a fresh
- * sheet, types today's date in red, then the subject. Each key goes down
- * as its letter strikes, the carriage steps along and flies back at the
- * end of a line, the spools turn, and the bell rings near the margin. A
- * French machine: AZERTY, the full stop on the ; key and the hyphen on
- * the 6. It only paints while something moves: a still machine costs
- * nothing.
+ * Mail's typewriter: a pixel machine on a turntable, in the Atlas globe's
+ * inks, that types the letter as it is written. Today's date goes on top
+ * in red, then the subject, then the message, a key going down for each
+ * letter as it strikes. The carriage steps along and flies back at the end
+ * of a line, the bell rings near the margin, the paper rolls up as the
+ * letter grows, and a correction tape lifts the letters a backspace takes
+ * away. A French machine: AZERTY, the full stop on the ; key and the
+ * hyphen on the 6. It only paints while something moves: a still machine
+ * costs nothing.
  */
 
-export type Sheet = { title: string; date: string };
-
-/* the sheet: 60×120 texels, 13 letters a line, a letter 3 texels wide and 4 apart */
+/* the sheet: 60×200 texels, 13 letters a line, a letter 3 texels wide and 4 apart */
 const SW = 60;
-const SH = 120;
+const SH = 200;
 const MARG = 4;
 const COLS = 13;
 const LINE = 8;
@@ -57,10 +56,17 @@ const PB: V3 = [0, 1.1, -0.47];
 const PT: V3 = [0, 2.6, -0.85];
 /** how many texels of the sheet show between the platen and the paper's top */
 const VIS = len(sub(PT, PB)) / TEX;
-/** at most this many lines of subject, the last one cut short */
-const MAX_LINES = 4;
+/** the most lines a sheet takes */
+const LINES = Math.floor((SH - TOPM - 5) / LINE) + 1;
+/** the subject gets at most this many, the last one cut short */
+const SUBJECT_LINES = 3;
+/** past this many letters to take back, or to type at once (a paste), the sheet is re-inked in one go */
+const ERASE_MAX = 16;
+const TYPE_MAX = 64;
 
 const carrAt = (col: number) => PAPER_W / 2 - (MARG + col * 4 + 1.5) * TEX;
+/** the paper's travel with `line` at the typing point, just clear of the bail */
+const feedAt = (line: number) => TOPM + 10 + line * LINE;
 const deckY = (z: number) => 0.16 + ((1.2 - z) / 1.05) * 0.46;
 
 // AZERTY, front row first
@@ -79,25 +85,44 @@ keyOf.set("-", keyOf.get("6")!);
 keyOf.set("'", keyOf.get("4")!);
 keyOf.set("?", keyOf.get(",")!);
 
-/** a title in lines of 13 capitals at most, words kept whole when they fit */
-function wrap(s: string) {
+/** text in lines of 13 capitals at most: words kept whole when they fit, longer ones (an address) broken */
+function wrap(s: string, max = Infinity) {
   const words = s.split(/\s+/).filter(Boolean).map((w) => [...w].map(foldChar).join(""));
   const out: string[] = [];
   let line = "";
-  for (const w of words) {
-    if (!line) line = w.slice(0, COLS);
-    else if (line.length + 1 + w.length <= COLS) line += " " + w;
-    else {
-      out.push(line);
-      line = w.slice(0, COLS);
+  for (let w of words) {
+    if (line && line.length + 1 + w.length <= COLS) {
+      line += " " + w;
+      continue;
     }
+    if (line) out.push(line);
+    while (w.length > COLS) {
+      out.push(w.slice(0, COLS));
+      w = w.slice(COLS);
+    }
+    line = w;
   }
   if (line) out.push(line);
-  if (out.length > MAX_LINES) {
-    out.length = MAX_LINES;
-    out[MAX_LINES - 1] = out[MAX_LINES - 1].slice(0, COLS - 3).trimEnd() + "...";
+  if (out.length > max) {
+    out.length = max;
+    out[max - 1] = out[max - 1].slice(0, COLS - 3).trimEnd() + "...";
   }
   return out;
+}
+
+/**
+ * A letter as the machine sets it: the date, the subject, a blank line and
+ * the message, a paragraph at a time (a return the writer just made stays,
+ * so the carriage comes back as they hit it), as much as one sheet takes.
+ */
+export function letterLines(date: string, subject: string, body: string) {
+  const lines = [date, ...wrap(subject, SUBJECT_LINES)];
+  if (body.trim()) {
+    lines.push("");
+    for (const para of body.replace(/^\s*\n/, "").split("\n")) lines.push(...(para.trim() ? wrap(para) : [""]));
+  }
+  if (lines.length > LINES) lines.length = LINES;
+  return lines;
 }
 
 const BODY = ramp([[8, 10, 28], [16, 20, 52], [32, 38, 96], [56, 63, 148], [92, 96, 204], [140, 136, 236]]);
@@ -165,7 +190,8 @@ const flashFaces = () => {
   return F;
 };
 
-export function makeTypewriter(reduced: boolean) {
+/** `onStrike`: a letter just hit the paper (for its sound) */
+export function makeTypewriter(reduced: boolean, onStrike?: () => void) {
   const sheet = new Uint8Array(SW * SH);
   const st = {
     user: 0,
@@ -180,6 +206,8 @@ export function makeTypewriter(reduced: boolean) {
     dingUntil: 0,
     spool: 0,
     steps: [] as Step[],
+    /** when the machine is free for the next step */
+    free: 0,
     S: null as Shadow | null,
     cam: null as Cam | null,
   };
@@ -192,6 +220,7 @@ export function makeTypewriter(reduced: boolean) {
     }
     anim[k] = { from: st[k], to, t0: now, dur };
   };
+  const r = rng(0x5eed);
 
   // the geometry, built once; only the carriage is rebuilt, and only when it moves
   const still = frameFaces();
@@ -203,77 +232,134 @@ export function makeTypewriter(reduced: boolean) {
   let shadowAt = NaN;
   const F: Face[] = [];
 
-  function strike(ch: string, line: number, col: number, ink: number, now: number) {
-    if (ch === " ") st.spaceUntil = now + 0.09;
-    else {
-      const g = glyphOf(ch);
-      st.keyDown = keyOf.get(ch) ?? -1;
-      st.keyUntil = now + 0.09;
-      st.strikeUntil = now + 0.06;
-      if (g)
-        for (let i = 0; i < 15; i++)
-          if (g[i] === "1") sheet[(TOPM + line * LINE + ((i / 3) | 0)) * SW + MARG + col * 4 + (i % 3)] = ink;
+  /** the letter as it will stand once every queued step has run (null: no sheet in yet) */
+  let plan: string[] | null = null;
+
+  /** queue a step that takes `dur` once the machine is free; without motion, it happens now */
+  const queue = (now: number, dur: number, fn: (n: number) => void) => {
+    if (reduced) return fn(now);
+    const t = Math.max(now, st.free);
+    st.free = t + dur;
+    st.steps.push({ t, fn });
+  };
+  /** behind the writer, the machine hurries */
+  const pace = (now: number, calm: number) => (st.free - now > 0.45 ? 0.03 : calm);
+
+  function ink(line: number, col: number, ch: string | null, v: number) {
+    const g = ch && glyphOf(ch);
+    for (let i = 0; i < 15; i++) {
+      const k = (TOPM + line * LINE + ((i / 3) | 0)) * SW + MARG + col * 4 + (i % 3);
+      if (!g) sheet[k] = 0;
+      else if (g[i] === "1") sheet[k] = v;
+    }
+  }
+
+  function strike(ch: string, line: number, col: number, now: number) {
+    if (ch === " ") {
+      if (!reduced) st.spaceUntil = now + 0.09;
+    } else {
+      ink(line, col, ch, line === 0 ? 2 : 1);
+      if (!reduced) {
+        st.keyDown = keyOf.get(ch) ?? -1;
+        st.keyUntil = now + 0.09;
+        st.strikeUntil = now + 0.06;
+      }
+      onStrike?.();
     }
     tween("carr", carrAt(col + 1), 0.05, now);
-    if (col + 1 === COLS - 4) st.dingUntil = now + 0.6;
+    if (col + 1 === COLS - 4 && !reduced) st.dingUntil = now + 0.6;
     st.spool += 0.35;
   }
 
-  /** pull the last sheet out, feed a fresh one, type the date then the subject */
-  function type(s: Sheet, now: number) {
-    const steps: Step[] = [];
-    let t = now;
-    if (st.feed > 0.5) {
-      steps.push({ t, fn: (n) => tween("feed", SH + VIS + 4, 0.45, n) });
-      t += 0.5;
-    }
-    steps.push({
-      t,
-      fn: (n) => {
-        sheet.fill(0);
-        st.feed = 0;
-        anim.feed = null;
-        tween("carr", carrAt(0), 0.32, n);
-      },
+  /** pull the sheet out (if one is in) and feed a fresh one to the first line */
+  function fresh(now: number) {
+    if (plan) queue(now, 0.5, (n) => tween("feed", SH + VIS + 4, 0.45, n));
+    queue(now, 0.1, (n) => {
+      sheet.fill(0);
+      st.feed = 0;
+      anim.feed = null;
+      tween("carr", carrAt(0), 0.32, n);
     });
-    t += 0.1;
-    steps.push({ t, fn: (n) => tween("feed", TOPM + 6, 0.5, n) });
-    t += 0.62;
-    const lines = [s.date, ...wrap(s.title)];
-    const r = rng([...s.title].reduce((h, c) => Math.imul(h, 31) + c.charCodeAt(0), 7) >>> 0);
-    lines.forEach((ln, li) => {
-      const ink = li === 0 ? 2 : 1;
-      if (li > 0) {
-        steps.push({
-          t,
-          fn: (n) => {
-            tween("carr", carrAt(0), 0.3, n);
-            tween("feed", TOPM + 6 + li * LINE, 0.22, n);
-          },
-        });
-        t += 0.42;
+    queue(now, 0.62, (n) => tween("feed", feedAt(0), 0.5, n));
+    plan = [""];
+  }
+
+  /** the whole letter inked at once, the carriage and paper where its last letter left them */
+  function reink(lines: string[], now: number) {
+    const snap = [...lines];
+    queue(now, 0.3, (n) => {
+      sheet.fill(0);
+      snap.forEach((ln, li) => [...ln].forEach((ch, c) => ink(li, c, ch, li === 0 ? 2 : 1)));
+      tween("carr", carrAt(snap[snap.length - 1].length), 0.25, n);
+      tween("feed", feedAt(snap.length - 1), 0.25, n);
+    });
+  }
+
+  /**
+   * Bring the sheet to `target` (lines from letterLines): what the writer
+   * added is typed, what they took back is lifted letter by letter, and
+   * anything bigger (a paste, an edit far up the page) is re-inked at once.
+   * A letter cleared after it was sent gets a fresh sheet.
+   */
+  function show(target: string[], now: number) {
+    if (!plan) fresh(now);
+    const was = plan!;
+    const a = was.join("\n");
+    const b = target.join("\n");
+    if (a === b) return;
+    let p = 0;
+    while (p < a.length && p < b.length && a[p] === b[p]) p++;
+    if (a.length - p > ERASE_MAX) {
+      if (b.length <= target[0].length && was.length > 1) {
+        fresh(now);
+        return show(target, now);
       }
-      [...ln].forEach((ch, c) => {
-        t += ch === " " ? 0.15 : 0.07 + r() * 0.08;
-        steps.push({ t, fn: (n) => strike(ch, li, c, ink, n) });
-      });
-      t += 0.12;
-    });
-    // done: one more return, so the last line clears the bail
-    t += 0.25;
-    steps.push({
-      t,
-      fn: (n) => {
-        tween("carr", carrAt(0), 0.3, n);
-        tween("feed", TOPM + 6 + lines.length * LINE, 0.25, n);
-      },
-    });
-    st.steps = steps;
-    if (reduced) {
-      for (const step of steps) step.fn(now);
-      st.steps = [];
-      st.keyUntil = st.strikeUntil = st.spaceUntil = st.dingUntil = 0;
+      reink(target, now);
+      plan = target;
+      return;
     }
+    let line = was.length - 1;
+    let col = was[line].length;
+    for (let i = a.length - 1; i >= p; i--) {
+      if (a[i] === "\n") {
+        line--;
+        col = was[line].length;
+        const [l, c] = [line, col];
+        queue(now, 0.3, (n) => {
+          tween("feed", feedAt(l), 0.2, n);
+          tween("carr", carrAt(c), 0.2, n);
+        });
+      } else {
+        col--;
+        const [l, c] = [line, col];
+        queue(now, pace(now, 0.06), (n) => {
+          tween("carr", carrAt(c), 0.04, n);
+          ink(l, c, null, 0);
+          if (!reduced) st.strikeUntil = n + 0.05;
+        });
+      }
+    }
+    let budget = TYPE_MAX;
+    for (const ch of b.slice(p)) {
+      if (budget-- <= 0) {
+        reink(target, now);
+        break;
+      }
+      if (ch === "\n") {
+        line++;
+        col = 0;
+        const l = line;
+        queue(now, 0.42, (n) => {
+          tween("carr", carrAt(0), 0.3, n);
+          tween("feed", feedAt(l), 0.22, n);
+        });
+      } else {
+        const [l, c] = [line, col];
+        queue(now, pace(now, 0.05 + r() * 0.05), (n) => strike(ch, l, c, n));
+        col++;
+      }
+    }
+    plan = target;
   }
 
   function build(now: number) {
@@ -359,10 +445,10 @@ export function makeTypewriter(reduced: boolean) {
     }
     const W = R.w;
     const H = R.h;
-    // close on the sheet, big enough to read: aimed a little right of the type guide, where the
-    // sheet rests between lines; the keyboard runs off the bottom edge
-    const scale = Math.min(W / 3.3, H / 2.9);
-    const cam = makeCam(-0.42 + st.user, 0.46, scale, W / 2, H * 0.6, [0.35, 1.25, -0.1]);
+    // close on the sheet, big enough to read, the keyboard running off the bottom edge; the view
+    // drifts a third of the way with the carriage, so a whole line's travel stays on the paper
+    const scale = Math.min(W / 3.4, H / 2.9);
+    const cam = makeCam(-0.42 + st.user, 0.46, scale, W / 2, H * 0.6, [0.2 + 0.35 * st.carr, 1.25, -0.1]);
     st.cam = cam;
     const faces = build(t);
     // the shadow follows the carriage; nothing else that moves casts one worth redrawing
@@ -387,8 +473,7 @@ export function makeTypewriter(reduced: boolean) {
 
   return {
     frame,
-    /** feed a fresh sheet and type it, starting now */
-    type,
+    show,
     grab() {
       st.dragging = true;
       st.vYaw = 0;

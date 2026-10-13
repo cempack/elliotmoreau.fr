@@ -422,6 +422,56 @@ html[data-mail-hash] .app-contact-sendtool {
     margin-top: 0;
   }
 }
+/* the typewriter: it types the letter as it's written. A card like the
+   sheet; narrow, over the sheet; wide, beside it at its height, the
+   greeting over both. Only while writing: Send hands the room to the globe */
+.app-contact-tw {
+  aspect-ratio: 2 / 1;
+  overflow: hidden;
+  touch-action: pan-y;
+  cursor: var(--cursor-grab, grab);
+}
+.app-contact-tw:active {
+  cursor: var(--cursor-grabbing, grabbing);
+}
+/* out of the flow, so the panel's size is the layout's and never the canvas's */
+.app-contact-tw-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+.app-contact-compose:not([data-phase="compose"]) > .app-contact-tw {
+  display: none;
+}
+@container app-contact (max-width: 559px) {
+  .app-contact-tw {
+    aspect-ratio: 1;
+  }
+}
+@container app-contact (min-width: 1080px) {
+  .app-contact-compose[data-phase="compose"] {
+    display: grid;
+    grid-template-columns: minmax(20rem, 30rem) minmax(0, 42rem);
+    column-gap: 2rem;
+    justify-content: center;
+    max-width: none;
+  }
+  .app-contact-compose[data-phase="compose"] > .app-contact-intro {
+    grid-column: 1 / -1;
+  }
+  .app-contact-compose[data-phase="compose"] > .app-contact-tw {
+    grid-row: 2;
+    grid-column: 1;
+    aspect-ratio: auto;
+  }
+  .app-contact-compose[data-phase="compose"] > .app-contact-sheet {
+    grid-row: 2;
+    grid-column: 2;
+  }
+}
 /* the postmark, struck in the sheet's corner */
 .app-contact-postmark {
   position: absolute;
