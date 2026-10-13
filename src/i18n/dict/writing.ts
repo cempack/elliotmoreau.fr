@@ -59,6 +59,8 @@ const en = {
   /* dates */
   months: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
   dateLong: "{d} {m} {y}",
+  /* the sky over each post: the planets it names (in pixel capitals) */
+  planets: ["Venus", "Mars", "Jupiter", "Saturn"],
 };
 
 const fr: typeof en = {
@@ -111,6 +113,7 @@ const fr: typeof en = {
   visitBlog: "Ouvrir le blog",
   months: ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"],
   dateLong: "{d} {m} {y}",
+  planets: ["Vénus", "Mars", "Jupiter", "Saturne"],
 };
 
 const writing = { en, fr };

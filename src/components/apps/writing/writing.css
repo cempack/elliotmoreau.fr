@@ -72,6 +72,7 @@
 }
 .app-writing-lead-plate .app-writing-plate {
   aspect-ratio: 5 / 2;
+  margin: 0;
   border-radius: 0;
 }
 .app-writing-lead-text {
@@ -155,9 +156,10 @@
   border-top: 1px solid var(--hairline);
 }
 .app-writing-entry {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3125rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-content: start;
+  gap: 0.3125rem 1rem;
   margin: 0 -0.75rem;
   padding: 1rem 0.75rem;
   border-radius: 12px;
@@ -170,6 +172,28 @@
 }
 .app-writing-entry:active {
   background: rgba(255, 255, 255, 0.06);
+}
+/* the post's sky, small: 30×22 cells */
+.app-writing-entry-sky {
+  grid-row: 1 / span 3;
+  align-self: start;
+  width: 90px;
+  height: 66px;
+  margin-top: 0.125rem;
+  border-radius: 8px;
+  background: #05060f;
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  image-rendering: pixelated;
+}
+@media (max-width: 479px) {
+  .app-writing-entry-sky {
+    width: 60px;
+    height: 44px;
+    border-radius: 6px;
+  }
+}
+.app-writing-entry > :not(.app-writing-entry-sky) {
+  grid-column: 2;
 }
 .app-writing-entry-title {
   color: var(--color-label);
@@ -356,13 +380,22 @@
   display: none;
 }
 
-/* the plate: a pixel world per post, its foot dithered into the glass */
+/* the plate: the sky the post went out under, its foot dithered into the
+   glass. Drag it to look round (a finger turns it along the horizon and
+   leaves up and down to the page); hold it to name the stars */
 .app-writing-plate {
   position: relative;
   aspect-ratio: 2 / 1;
   overflow: hidden;
   border-radius: var(--radius-card) var(--radius-card) 0 0;
+  cursor: var(--cursor-grab, grab);
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-touch-callout: none;
   /* the frame is clipped a hair inside the canvas edge (whole cells) */
+}
+.app-writing-plate[data-drag] {
+  cursor: var(--cursor-grabbing, grabbing);
 }
 .app-writing-plate-canvas {
   position: absolute;
@@ -371,6 +404,12 @@
   max-width: none;
   translate: -50% 0;
   image-rendering: pixelated;
+  /* the first sky of a visit arrives with its catalogue */
+  opacity: 0;
+  transition: opacity 0.4s var(--ease-out-quint);
+}
+.app-writing-plate-canvas[data-on] {
+  opacity: 1;
 }
 .app-writing-plate-img {
   position: absolute;
@@ -1134,7 +1173,7 @@
   }
 }
 
-/* ───────────── a day inside the post: the reading sky ───────────── */
+/* ───────────── reading is a long exposure: the reading sky ───────────── */
 
 .app-writing-body {
   position: relative;
@@ -1186,7 +1225,7 @@
   }
 }
 /* wide windows: a small window onto it in the margin beside the text,
-   riding down with the reader, and the minutes left under it */
+   riding down with the reader, the minutes left and its clock under it */
 @container (min-width: 56rem) {
   .app-writing-skyrail {
     position: absolute;
@@ -1205,7 +1244,7 @@
   }
   .app-writing-sky-frame {
     height: auto;
-    aspect-ratio: 3 / 2;
+    aspect-ratio: 4 / 5;
     border-radius: 0.75rem;
     box-shadow:
       inset 0 0 0 1px var(--hairline),
@@ -1220,7 +1259,9 @@
     box-shadow: inset 0 0 0 1px var(--hairline);
   }
   .app-writing-sky-left {
-    display: block;
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
     min-height: 1em;
     margin: 0.75rem 0 0;
     color: var(--color-label-3);

@@ -102,7 +102,7 @@ export function Article({
           </button>
         </nav>
 
-        <Plate post={post} animate={false} />
+        <Plate post={post} />
         <span ref={edgeRef} className="app-writing-sentinel" aria-hidden />
 
         <header className="app-writing-article-head">
@@ -127,7 +127,7 @@ export function Article({
 
         {/* the post and what follows it: the reading sky rides beside (or above) all of it */}
         <div className="app-writing-body">
-          <ReadingSky slug={post.slug} minutes={Math.max(1, post.reading_time || 1)} proseRef={proseRef} />
+          <ReadingSky post={post} minutes={Math.max(1, post.reading_time || 1)} proseRef={proseRef} />
           {/* cleaned on the server (src/lib/postHtml.ts): an allowlist, no scripts or handlers */}
           <div ref={proseRef} className="app-writing-prose" dangerouslySetInnerHTML={{ __html: html }} />
 

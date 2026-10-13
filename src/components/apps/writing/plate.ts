@@ -10,6 +10,9 @@
  * `composite()` stacks them with each layer offset by whole cells in
  * proportion to its depth: the parallax moves in pixel steps, never in
  * blurry sub-cell slides.
+ *
+ * The Blog itself now shows each post's real sky (./sky); the plate lives
+ * on as the photo on the kiosk's front page.
  */
 
 import { phaseOf, sunAt } from "@/lib/sun";
@@ -117,8 +120,7 @@ function writer(d: Uint8ClampedArray, w: number, h: number) {
 /**
  * A post's plate seed: its slug (the hills, the stars, the window), and
  * the sky of the Toulouse hour it went out (the sun's real elevation then),
- * so list thumbs, the reader plate, the shelf's spines and the kiosk all
- * show when it was written.
+ * so the kiosk's front page shows when it was written.
  */
 export function plateSeed(p: { slug: string; published_at: string }) {
   const t = Date.parse(p.published_at);

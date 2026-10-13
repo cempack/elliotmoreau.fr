@@ -12,6 +12,7 @@ import { useSound } from "@/lib/sound";
 import { PixelGlyph } from "@/components/glyphs";
 import { EmptyState } from "./EmptyState";
 import { Plate } from "./Plate";
+import { PlateThumb } from "./PlateThumb";
 import { Letters } from "./Letters";
 import { G_LINK } from "./glyphs";
 import { BLOG_URL, dateLong, fmt, primaryTag } from "./util";
@@ -20,8 +21,8 @@ import { useContextMenu, useCopy } from "@/components/os/context/ContextMenu";
 /**
  * Writing: one column, read top to bottom. The newest post (or the one
  * pinned in the admin panel) leads with its sky, its title and a line
- * about it; the earlier ones follow as plain rows; the newsletter closes
- * the page. Every post opens in full at /writing/[slug].
+ * about it; the earlier ones follow as rows, each with its own small sky;
+ * the newsletter closes the page. Every post opens in full at /writing/[slug].
  */
 export function WritingApp() {
   const data = useSiteData();
@@ -101,7 +102,7 @@ export function WritingApp() {
 
         <Link href={href(lead)} onClick={() => blip("page")} className="app-writing-lead" aria-label={fmt(w.readLabel, { title: lead.title })}>
           <span className="app-writing-lead-plate">
-            <Plate post={lead} animate={false} />
+            <Plate post={lead} />
           </span>
           <span className="app-writing-lead-text">
             <span className="app-writing-when">
@@ -128,6 +129,7 @@ export function WritingApp() {
               {rest.map((p) => (
                 <li key={p.slug}>
                   <Link href={href(p)} onClick={() => blip("page")} className="app-writing-entry">
+                    <PlateThumb post={p} cols={30} rows={22} className="app-writing-entry-sky" />
                     <span className="app-writing-entry-title">{p.title}</span>
                     {p.excerpt && <span className="app-writing-entry-dek">{p.excerpt}</span>}
                     <time className="app-writing-entry-when" dateTime={p.published_at}>
