@@ -166,37 +166,31 @@
   }
 }
 
-/* the room: the whole screen (phones pan across it) */
+/* the room: the whole screen, a diorama in the globe's night (round/scene.ts) */
 .app-home-room {
   position: fixed;
   inset: 0;
   /* over the Desktop, under the menu bar and the Dock */
   z-index: 40;
   overflow: hidden;
-  background: #1a1411;
+  background: #050611;
 }
-/* the room itself pans (phones); the button and the hint stay put */
-.app-home-room-scroll {
+/* drag anywhere to turn it */
+.app-home-room-stage {
   position: absolute;
   inset: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
-  overscroll-behavior: contain;
-  scrollbar-width: none;
-  touch-action: pan-x;
+  cursor: var(--cursor-grab, grab);
+  touch-action: none;
 }
-.app-home-room-scroll::-webkit-scrollbar {
-  display: none;
-}
-.app-home-room-stage {
-  position: relative;
-  margin: 0 auto;
+.app-home-room-stage:active {
+  cursor: var(--cursor-grabbing, grabbing);
 }
 .app-home-room-canvas {
   position: absolute;
   top: 0;
   left: 0;
   image-rendering: pixelated;
+  pointer-events: none;
 }
 
 /* a door on each thing in the room */
@@ -251,10 +245,29 @@
   top: auto;
   bottom: calc(100% + 0.625rem);
 }
+/* near the screen's edge it hangs to the inside */
+.app-home-room-tag[data-align="start"] {
+  left: 0;
+  translate: 0 0;
+}
+.app-home-room-tag[data-align="end"] {
+  right: 0;
+  left: auto;
+  translate: 0 0;
+}
 @keyframes app-home-room-tag {
   from {
     opacity: 0;
     translate: -50% 4px;
+  }
+}
+.app-home-room-tag[data-align] {
+  animation-name: app-home-room-tag-side;
+}
+@keyframes app-home-room-tag-side {
+  from {
+    opacity: 0;
+    translate: 0 4px;
   }
 }
 .app-home-room-tag-k {
