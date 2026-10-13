@@ -305,7 +305,7 @@ function contact(ctx: RunCtx) {
     navigator.clipboard.writeText(email).then(
       () => {
         ctx.notify(ctx.d.shell.toast.copied);
-        ctx.sound.blip("success");
+        ctx.sound.blip("copy");
       },
       () => ctx.notify(t.failed)
     );
@@ -726,7 +726,7 @@ const COMMANDS: Command[] = [
       if (want === "toggle" || (want === "on" && muted) || (want === "off" && !muted)) {
         ctx.sound.toggle();
         muted = !muted;
-        if (!muted) ctx.sound.blip("toggle");
+        if (!muted) ctx.sound.blip("on");
       }
       return (
         <div className="os-term-block">
@@ -939,6 +939,7 @@ const COMMANDS: Command[] = [
     name: "shutdown",
     aliases: ["poweroff", "halt"],
     run: (_a, ctx) => {
+      ctx.sound.blip("shutdown");
       window.setTimeout(() => {
         ctx.close();
         window.dispatchEvent(new CustomEvent("em:shutdown"));

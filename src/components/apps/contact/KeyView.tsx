@@ -164,7 +164,7 @@ export function KeyView({ active }: { active: boolean }) {
                 data-open={open || undefined}
                 onClick={() => {
                   setOpen((o) => !o);
-                  blip("toggle");
+                  blip(open ? "close" : "open");
                 }}
               >
                 <span className="app-contact-chev" aria-hidden>

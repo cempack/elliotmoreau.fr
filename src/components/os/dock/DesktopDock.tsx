@@ -154,6 +154,7 @@ export function DesktopDock() {
                     // already here: no redundant navigation (and no page transition flash)
                     if (on) return e.preventDefault();
                     bounce(e.currentTarget.parentElement?.querySelector("[data-dock-bounce]"));
+                    blip("launch");
                   }}
                   {...pressHandlers}
                 >

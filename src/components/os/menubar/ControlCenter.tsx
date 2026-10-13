@@ -99,7 +99,7 @@ function SoundTile() {
       onClick={() => {
         toggle();
         // turning sound on confirms itself; turning it off stays silent
-        if (muted) window.setTimeout(() => blip("toggle"), 0);
+        if (muted) window.setTimeout(() => blip("on"), 0);
       }}
     >
       <span className="os-menubar-orb" data-on={!muted || undefined}>

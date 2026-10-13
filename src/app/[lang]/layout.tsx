@@ -80,7 +80,7 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
         </a>
         <I18nProvider lang={lang} dict={dict}>
           <MotionProvider>
-            <SoundProvider delegated={false}>
+            <SoundProvider>
               <ToastProvider>
                 <OSShell data={data}>
                   <main id="content" tabIndex={-1} className="flex flex-1 flex-col outline-none">

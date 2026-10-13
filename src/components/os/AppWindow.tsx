@@ -165,7 +165,7 @@ export function AppWindow({
   const toggleZoom = () => {
     const next = !zoomed;
     setZoomPref(next);
-    blip("toggle");
+    blip("snap");
     if (reduced) return setZoomed(next);
     startTransition(() => {
       addTransitionType("win-zoom");

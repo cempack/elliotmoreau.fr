@@ -1,18 +1,9 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import { ambientAudio, createGate, makeBus, play, type Bus, type SoundKind } from "./sfx";
 
-export type SoundKind =
-  | "hover"
-  | "click"
-  | "page"
-  | "select"
-  | "toggle"
-  | "success"
-  | "open"
-  | "close"
-  | "tick";
+export type { SoundKind } from "./sfx";
 
 type SoundCtx = {
   muted: boolean;
@@ -22,24 +13,27 @@ type SoundCtx = {
 
 const Ctx = createContext<SoundCtx>({ muted: false, toggle: () => {}, blip: () => {} });
 
+/** after this long without a sound the context sleeps (an idle audio stream still costs battery) */
+const IDLE_MS = 20_000;
+
 /**
- * Tiny synthesized UI sounds — no assets, no background bed.
- * `delegated` wires the legacy hover/click/page sounds on every control;
- * without it, sound plays only where a component calls `blip()` for a
- * meaningful event (toggle, copy, open/close, success).
+ * emOS's UI sounds (lib/sfx.ts): synthesized, no files, played only where
+ * a component calls `blip()` for a real event (an app opening, a copy, a
+ * save, a letter leaving), never on hover. What keeps them from getting
+ * annoying: the gate (repeats dropped, fast runs quieter, bursts cut), a
+ * bus that never gets louder than one sound, nothing while the tab is
+ * hidden, and on iPhone an ambient session, so your music keeps playing
+ * and the silent switch silences the site. On by default; the choice is
+ * remembered.
  */
-export function SoundProvider({
-  children,
-  delegated = true,
-}: {
-  children: React.ReactNode;
-  delegated?: boolean;
-}) {
+export function SoundProvider({ children }: { children: React.ReactNode }) {
   // First render must match the server; sync the saved mute after paint.
   const [muted, setMuted] = useState(false);
-
   // blip reads the ref, so a toggle → blip in the same tick sees the new state
   const mutedRef = useRef(false);
+  const audio = useRef<{ ctx: AudioContext; bus: Bus } | null>(null);
+  const gate = useRef(createGate());
+  const idle = useRef(0);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => {
@@ -51,11 +45,6 @@ export function SoundProvider({
     });
     return () => cancelAnimationFrame(id);
   }, []);
-  const ctxRef = useRef<AudioContext | null>(null);
-  const lastHover = useRef(0);
-  const lastHoverEl = useRef<Element | null>(null);
-  const pathname = usePathname();
-  const firstPath = useRef(true);
 
   const toggle = useCallback(() => {
     const next = !mutedRef.current;
@@ -66,107 +55,87 @@ export function SoundProvider({
     } catch {}
   }, []);
 
-  const ensureCtx = () => {
-    if (ctxRef.current) {
-      if (ctxRef.current.state === "suspended") void ctxRef.current.resume();
-      return ctxRef.current;
-    }
-    const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+  /** the context, made on first need (inside a gesture, as browsers ask) */
+  const ensure = useCallback(() => {
+    if (audio.current) return audio.current;
+    const AC = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!AC) return null;
-    ctxRef.current = new AC();
-    return ctxRef.current;
-  };
+    try {
+      ambientAudio();
+      const ctx = new AC({ latencyHint: "interactive" });
+      audio.current = { ctx, bus: makeBus(ctx) };
+      return audio.current;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const sleepLater = useCallback(() => {
+    window.clearTimeout(idle.current);
+    idle.current = window.setTimeout(() => {
+      const a = audio.current;
+      if (a && a.ctx.state === "running") void a.ctx.suspend().catch(() => {});
+    }, IDLE_MS);
+  }, []);
 
   const blip = useCallback(
     (kind: SoundKind) => {
-      if (mutedRef.current) return;
-      try {
-        const ctx = ensureCtx();
-        if (!ctx || ctx.state === "suspended") return;
-        const now = ctx.currentTime;
-        if (kind === "hover") {
-          if (now - lastHover.current < 0.1) return; // backstop throttle
-          lastHover.current = now;
-        }
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        const cfg = {
-          hover: { f0: 1320, f1: 1180, dur: 0.04, vol: 0.016, type: "sine" as const },
-          click: { f0: 620, f1: 920, dur: 0.07, vol: 0.05, type: "triangle" as const },
-          page: { f0: 340, f1: 660, dur: 0.16, vol: 0.05, type: "sine" as const },
-          select: { f0: 880, f1: 1320, dur: 0.12, vol: 0.05, type: "sine" as const },
-          toggle: { f0: 520, f1: 780, dur: 0.08, vol: 0.045, type: "triangle" as const },
-          success: { f0: 660, f1: 1320, dur: 0.18, vol: 0.05, type: "sine" as const },
-          open: { f0: 420, f1: 840, dur: 0.12, vol: 0.04, type: "sine" as const },
-          close: { f0: 760, f1: 380, dur: 0.1, vol: 0.035, type: "sine" as const },
-          tick: { f0: 1600, f1: 1500, dur: 0.025, vol: 0.02, type: "square" as const },
-        }[kind];
-        osc.type = cfg.type;
-        osc.frequency.setValueAtTime(cfg.f0, now);
-        osc.frequency.exponentialRampToValueAtTime(cfg.f1, now + cfg.dur);
-        gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.exponentialRampToValueAtTime(cfg.vol, now + 0.012);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + cfg.dur);
-        osc.start(now);
-        osc.stop(now + cfg.dur + 0.02);
-      } catch {}
+      if (mutedRef.current || document.visibilityState === "hidden") return;
+      // nothing before the visitor's first gesture (a board flipping on load stays quiet, and the browser has no context to refuse)
+      const act = (navigator as Navigator & { userActivation?: { hasBeenActive: boolean } }).userActivation;
+      if (!audio.current && act && !act.hasBeenActive) return;
+      const a = ensure();
+      if (!a) return;
+      const asked = performance.now();
+      const go = () => {
+        // woken too late (a slow resume): better silent than out of step with what it was for
+        if (performance.now() - asked > 160) return;
+        const gain = gate.current(kind, a.ctx.currentTime);
+        if (!gain) return;
+        try {
+          // a hair of pitch variation, so a run of the same sound never sounds like a machine
+          const pitch = kind === "tick" || kind === "tap" || kind === "select" ? 1 + (Math.random() - 0.5) * 0.024 : 1;
+          play(a.bus, kind, a.ctx.currentTime + 0.004, { gain, pitch, offset: Math.random() * 0.4 });
+        } catch {}
+        sleepLater();
+      };
+      if (a.ctx.state === "running") go();
+      else void a.ctx.resume().then(go, () => {});
     },
-    []
+    [ensure, sleepLater]
   );
 
-  // unlock the context on first gesture (autoplay policy)
+  // the first gesture unlocks the context (autoplay policy). A touch's
+  // pointerdown doesn't count as one on iOS: its release does.
   useEffect(() => {
-    const unlock = () => ensureCtx();
-    window.addEventListener("pointerdown", unlock, { once: true });
-    window.addEventListener("keydown", unlock, { once: true });
-    return () => {
-      window.removeEventListener("pointerdown", unlock);
-      window.removeEventListener("keydown", unlock);
+    const events = ["pointerup", "touchend", "click", "keydown"] as const;
+    const unlock = () => {
+      if (mutedRef.current) return;
+      const a = ensure();
+      if (!a) return;
+      const done = () => events.forEach((e) => window.removeEventListener(e, unlock, true));
+      if (a.ctx.state === "running") return done();
+      void a.ctx.resume().then(() => {
+        done();
+        sleepLater();
+      }, () => {});
     };
-  }, []);
+    events.forEach((e) => window.addEventListener(e, unlock, { capture: true, passive: true }));
+    return () => events.forEach((e) => window.removeEventListener(e, unlock, true));
+  }, [ensure, sleepLater]);
 
-  // hover + click sounds via delegation. Hover only fires when ENTERING
-  // a new control — sliding across children of the same link, or down a
-  // list item by item faster than the throttle, stays quiet.
+  // muted, or the tab put away: let the audio hardware rest at once
   useEffect(() => {
-    if (!delegated) return;
-    const onOver = (e: MouseEvent) => {
-      const el = (e.target as HTMLElement).closest?.("a,button,[data-sound]");
-      if (!el || el === lastHoverEl.current) return;
-      lastHoverEl.current = el;
-      blip("hover");
+    const rest = () => {
+      const a = audio.current;
+      if (a && a.ctx.state === "running" && (mutedRef.current || document.visibilityState === "hidden")) void a.ctx.suspend().catch(() => {});
     };
-    const onOut = (e: MouseEvent) => {
-      const el = (e.target as HTMLElement).closest?.("a,button,[data-sound]");
-      if (!el) return;
-      const to = (e.relatedTarget as HTMLElement | null)?.closest?.("a,button,[data-sound]");
-      if (to !== el) lastHoverEl.current = null;
-    };
-    const onDown = (e: MouseEvent) => {
-      const el = (e.target as HTMLElement).closest?.("a,button");
-      if (el) blip("click");
-    };
-    document.addEventListener("mouseover", onOver);
-    document.addEventListener("mouseout", onOut);
-    document.addEventListener("pointerdown", onDown);
-    return () => {
-      document.removeEventListener("mouseover", onOver);
-      document.removeEventListener("mouseout", onOut);
-      document.removeEventListener("pointerdown", onDown);
-    };
-  }, [blip, delegated]);
+    document.addEventListener("visibilitychange", rest);
+    rest();
+    return () => document.removeEventListener("visibilitychange", rest);
+  }, [muted]);
 
-  // page-change sweep
-  useEffect(() => {
-    if (!delegated) return;
-    if (firstPath.current) {
-      firstPath.current = false;
-      return;
-    }
-    blip("page");
-  }, [pathname, blip, delegated]);
+  useEffect(() => () => window.clearTimeout(idle.current), []);
 
   const value = useMemo(() => ({ muted, toggle, blip }), [muted, toggle, blip]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

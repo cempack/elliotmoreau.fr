@@ -29,6 +29,7 @@ export function SubscribeForm({ className = "" }: { className?: string }) {
     if (state === "sending" || state === "done" || state === "exists") return;
     if (!EMAIL_RE.test(email.trim())) {
       setState("invalid");
+      blip("error");
       return;
     }
     setState("sending");
@@ -44,11 +45,14 @@ export function SubscribeForm({ className = "" }: { className?: string }) {
         blip("success");
       } else if (json?.reason === "invalid") {
         setState("invalid");
+        blip("error");
       } else {
         setState("error");
+        blip("error");
       }
     } catch {
       setState("error");
+      blip("error");
     }
   };
 

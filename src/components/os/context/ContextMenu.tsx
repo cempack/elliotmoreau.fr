@@ -27,9 +27,12 @@ export function useCopy() {
   return useCallback(
     async (text: string, done: string) => {
       if (await copyText(text)) {
-        blip("success");
+        blip("copy");
         notify(done);
-      } else notify(failed);
+      } else {
+        blip("error");
+        notify(failed);
+      }
     },
     [blip, notify, failed]
   );

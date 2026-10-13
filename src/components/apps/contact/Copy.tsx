@@ -16,7 +16,7 @@ export function useCopy() {
   return useCallback(
     async (text: string, ok: string, fail: string) => {
       const done = await copyText(text);
-      if (done) blip("success");
+      blip(done ? "copy" : "error");
       notify(done ? ok : fail, t.contact.toastTitle);
       return done;
     },

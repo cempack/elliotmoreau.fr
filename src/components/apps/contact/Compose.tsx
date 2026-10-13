@@ -375,6 +375,7 @@ export function Compose({
         return opened;
       }
       setSendError(r.error);
+      blip("error");
       setMark(null);
       go("compose");
       stageRef.current?.reset();
@@ -407,6 +408,7 @@ export function Compose({
   const onRefuse = () => {
     const why = blocker ?? "body";
     setRefused(why);
+    blip("error");
     if (why !== "body" || sending) (why === "body" ? bodyRef : emailRef).current?.focus();
     window.clearTimeout(refuseTimer.current);
     refuseTimer.current = window.setTimeout(() => setRefused(null), 2400);
@@ -434,14 +436,12 @@ export function Compose({
       setSendError(null);
       outcome.current = null;
       go("sending");
-      if (!reduced) blip("close");
+      blip("send");
       stageRef.current?.send(post());
       return;
     }
-    if (!reduced) {
-      go("sending");
-      blip("close");
-    }
+    blip("send");
+    if (!reduced) go("sending");
     stageRef.current?.send();
   };
 

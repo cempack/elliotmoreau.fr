@@ -375,13 +375,13 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
       return;
     }
     if (id === "draft") {
-      blip("open");
+      blip("launch");
       router.push(path("/contact"), { transitionTypes: ["app-open"] });
       return;
     }
     const app = APPS.find((a) => a.id === id);
     if (!app) return;
-    blip("open");
+    blip("launch");
     router.push(path(app.path), { transitionTypes: ["app-open"] });
   };
 

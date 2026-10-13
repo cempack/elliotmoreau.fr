@@ -129,7 +129,7 @@ export function useSpotlightAnswers() {
         out.push(
           card("email", SOCIALS.email, a.emailDo, a.actCopy, () => {
             navigator.clipboard?.writeText(SOCIALS.email).catch(() => {});
-            blip("success");
+            blip("copy");
             notify(SOCIALS.email, t.shell.toast.copied);
           })
         );

@@ -43,7 +43,7 @@ export function Lock({ state, onUnlocked, onCodes }: { state: AuthState; onUnloc
   const say = (e: string, retryIn?: number) => {
     const msg = (l.errors as Record<string, string>)[e] ?? l.errors.failed;
     setError(fill(msg, { time: wait(retryIn ?? 0) }));
-    blip("close");
+    blip("error");
   };
 
   const unlock = async () => {

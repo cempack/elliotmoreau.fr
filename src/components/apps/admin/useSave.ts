@@ -34,6 +34,7 @@ export function useSave(onSaved: () => void) {
       return true;
     }
     const message = res.error === "offline" ? c.offline : res.error === "expired" ? c.expired : (res.message ?? res.error);
+    blip("error");
     setError({ message: fill(c.failed, { message }), field: res.field });
     return false;
   };

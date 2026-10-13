@@ -72,7 +72,7 @@ export function Article({
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(here);
-      blip("success");
+      blip("copy");
       notify(w.copied, t.shell.apps.writing);
     } catch {
       notify(w.copyFailed, t.shell.apps.writing);
@@ -152,7 +152,7 @@ export function Article({
           {(newer || older) && (
             <nav className="app-writing-article-turns" aria-label={`${w.newer} / ${w.older}`}>
               {newer ? (
-                <Link href={path(`/writing/${newer.slug}`)} className="app-writing-article-turn" data-side="newer">
+                <Link href={path(`/writing/${newer.slug}`)} onClick={() => blip("page")} className="app-writing-article-turn" data-side="newer">
                   <span className="app-writing-article-turn-k">← {w.newer}</span>
                   <span className="app-writing-article-turn-t">{newer.title}</span>
                 </Link>
@@ -160,7 +160,7 @@ export function Article({
                 <span />
               )}
               {older && (
-                <Link href={path(`/writing/${older.slug}`)} className="app-writing-article-turn" data-side="older">
+                <Link href={path(`/writing/${older.slug}`)} onClick={() => blip("page")} className="app-writing-article-turn" data-side="older">
                   <span className="app-writing-article-turn-k">{w.older} →</span>
                   <span className="app-writing-article-turn-t">{older.title}</span>
                 </Link>

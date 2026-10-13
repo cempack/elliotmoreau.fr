@@ -151,7 +151,7 @@ export function NowApp({ pushes, day }: { pushes: PushHistory | null; day: DayDa
             label: arrange ? t.shell.context.arrangeDone : t.shell.context.arrange,
             onSelect: () => {
               setArrange(!arrange);
-              blip("toggle");
+              blip(arrange ? "off" : "on");
             },
           },
           ...(board.isDefault
@@ -205,7 +205,7 @@ export function NowApp({ pushes, day }: { pushes: PushHistory | null; day: DayDa
         data-on={arrange || undefined}
         onClick={() => {
           setArrange(!arrange);
-          blip("toggle");
+          blip(arrange ? "off" : "on");
         }}
       >
         {arrange ? n.board.done : n.board.arrange}

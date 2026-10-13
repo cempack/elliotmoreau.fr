@@ -278,7 +278,7 @@ function ReplyBox({ token, onSent }: { token: string; onSent: () => void }) {
     if (r.ok) {
       setText("");
       setNote({ kind: "ok", text: c.replySent });
-      blip("success");
+      blip("send");
       onSent();
       window.clearTimeout(noteTimer.current);
       noteTimer.current = window.setTimeout(() => setNote(null), 2400);
@@ -287,6 +287,7 @@ function ReplyBox({ token, onSent }: { token: string; onSent: () => void }) {
     const msg =
       r.error === "unavailable" ? c.replyUnavailable : r.error === "rate" ? c.errRate : r.error === "invalid" ? c.errInvalid : r.error === "notfound" ? c.gone : c.errFailed;
     setNote({ kind: "error", text: msg });
+    blip("error");
   };
 
   return (

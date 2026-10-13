@@ -56,10 +56,10 @@ export function MailPane({ data, onChanged }: { data: Overview; onChanged: () =>
     const r = await rpc("mail.reply", { id: open.id, body: reply });
     setBusy(null);
     if (!r.ok) {
-      blip("close");
+      blip("error");
       return setError(fill(m.failedSend, { message: r.message ?? r.error }));
     }
-    blip("success");
+    blip("send");
     notify(m.sent, t.shell.apps.admin);
     setReply("");
     await show(open.id);
@@ -70,6 +70,7 @@ export function MailPane({ data, onChanged }: { data: Overview; onChanged: () =>
     if (!open) return;
     const r = await rpc("mail.status", { id: open.id, status });
     if (r.ok) {
+      blip(status === "spam" ? "trash" : status === "open" ? "tap" : "close");
       setOpen(null);
       load(box);
       onChanged();

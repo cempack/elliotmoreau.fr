@@ -90,7 +90,7 @@ export function PhoneTicket() {
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
-      blip("success");
+      blip("copy");
       window.setTimeout(() => setCopied(false), 1600);
     } catch {}
   };

@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/i18n/client";
+import { useSound } from "@/lib/sound";
 import { scrollToY } from "@/lib/scroller";
 import { APPS, type AppDef } from "../apps";
 
@@ -79,6 +80,7 @@ function digitOf(e: KeyboardEvent) {
 export function useAppShortcuts(activeId: AppDef["id"]) {
   const router = useRouter();
   const { path } = useI18n();
+  const { blip } = useSound();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.defaultPrevented || e.repeat || e.metaKey || e.ctrlKey || e.altKey || e.isComposing) return;
@@ -90,9 +92,10 @@ export function useAppShortcuts(activeId: AppDef["id"]) {
       e.preventDefault();
       if (app.id === activeId) return;
       bounce(visibleIcon(app.id)?.querySelector("[data-dock-bounce]"));
+      blip("launch");
       router.push(path(app.path), { transitionTypes: ["app-open"] });
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [activeId, path, router]);
+  }, [activeId, path, router, blip]);
 }

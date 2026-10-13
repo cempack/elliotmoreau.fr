@@ -5,6 +5,7 @@ import { useRef, useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { m } from "motion/react";
 import { useI18n } from "@/i18n/client";
+import { useSound } from "@/lib/sound";
 import { useMedia, useReduced } from "@/hooks/env";
 import { spring } from "@/lib/motion";
 import { usePalette } from "@/components/ui/palette";
@@ -74,6 +75,7 @@ export function MobileTabBar() {
   const router = useRouter();
   const active = appForPath(usePathname());
   const reduced = useReduced();
+  const { blip } = useSound();
   const [more, setMore] = useState(false);
   const after = useRef<(() => void) | null>(null);
 
@@ -125,10 +127,12 @@ export function MobileTabBar() {
     if (!isPlainClick(e)) return;
     if (on) {
       e.preventDefault();
+      blip("tap");
       scrollToTop();
       return;
     }
     bounce(e.currentTarget.querySelector("[data-dock-bounce]"), 7);
+    blip("launch");
   };
 
   return (

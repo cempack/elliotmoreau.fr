@@ -112,7 +112,7 @@ export function PlaceCard({
     const text = `${place.lat.toFixed(4)}, ${place.lon.toFixed(4)}`;
     try {
       await navigator.clipboard.writeText(text);
-      blip("success");
+      blip("copy");
       notify(`${name} · ${text}`, a.card.copied);
     } catch {
       notify(text, a.card.coords);

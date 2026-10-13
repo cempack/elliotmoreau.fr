@@ -133,7 +133,7 @@ export function AboutPanel() {
           type="button"
           className="os-menubar-action os-menubar-action--ghost"
           onClick={() => {
-            blip("close");
+            blip("shutdown");
             shutdownOS();
           }}
         >
@@ -144,7 +144,7 @@ export function AboutPanel() {
           type="button"
           className="os-menubar-action os-menubar-action--ghost"
           onClick={() => {
-            blip("click");
+            blip("tap");
             restartOS();
           }}
         >

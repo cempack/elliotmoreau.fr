@@ -115,7 +115,7 @@ export function useSpotlightCommands(): Command[] {
         keywords: "mail email contact clipboard copy",
         perform: () => {
           navigator.clipboard?.writeText(SOCIALS.email).catch(() => {});
-          blip("success");
+          blip("copy");
           notify(SOCIALS.email, s.toast.copied);
         },
       },
@@ -138,7 +138,7 @@ export function useSpotlightCommands(): Command[] {
         keywords: `${sp.toggleSound} sound son audio mute muet`,
         perform: () => {
           toggle();
-          if (muted) window.setTimeout(() => blip("toggle"), 0);
+          if (muted) window.setTimeout(() => blip("on"), 0);
           notify(muted ? s.toast.soundOn : s.toast.soundOff, s.toast.sound);
         },
       },

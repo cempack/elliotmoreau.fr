@@ -8,6 +8,7 @@ import type { GhostPost } from "@/lib/ghost";
 import { AppWindow } from "@/components/os/AppWindow";
 import { useSiteData } from "@/components/os/SiteData";
 import { useI18n } from "@/i18n/client";
+import { useSound } from "@/lib/sound";
 import { PixelGlyph } from "@/components/glyphs";
 import { EmptyState } from "./EmptyState";
 import { Plate } from "./Plate";
@@ -25,6 +26,7 @@ import { useContextMenu, useCopy } from "@/components/os/context/ContextMenu";
 export function WritingApp() {
   const data = useSiteData();
   const { t, path } = useI18n();
+  const { blip } = useSound();
   const w = t.writing;
   const router = useRouter();
   const posts = data.posts;
@@ -97,7 +99,7 @@ export function WritingApp() {
           <p className="app-writing-lede">{w.lede}</p>
         </header>
 
-        <Link href={href(lead)} className="app-writing-lead" aria-label={fmt(w.readLabel, { title: lead.title })}>
+        <Link href={href(lead)} onClick={() => blip("page")} className="app-writing-lead" aria-label={fmt(w.readLabel, { title: lead.title })}>
           <span className="app-writing-lead-plate">
             <Plate post={lead} animate={false} />
           </span>
@@ -125,7 +127,7 @@ export function WritingApp() {
             <ul className="app-writing-index">
               {rest.map((p) => (
                 <li key={p.slug}>
-                  <Link href={href(p)} className="app-writing-entry">
+                  <Link href={href(p)} onClick={() => blip("page")} className="app-writing-entry">
                     <span className="app-writing-entry-title">{p.title}</span>
                     {p.excerpt && <span className="app-writing-entry-dek">{p.excerpt}</span>}
                     <time className="app-writing-entry-when" dateTime={p.published_at}>
