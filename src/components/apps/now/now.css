@@ -126,6 +126,9 @@
   /* the mask reaches past the tight leading so nothing is shaved off */
   padding: 0.1em 0.06em 0.16em;
   margin: -0.1em -0.06em -0.16em;
+  /* a word wider than the line (a long one-word title on a phone) breaks
+     inside its mask instead of running out of the window */
+  max-width: calc(100% + 0.12em);
 }
 /* the entrance runs in CSS so it starts at first paint, not at hydration.
    The sentence is already laid out in its final form; each word only rises
@@ -134,6 +137,8 @@
    word, and only new words play it. */
 .app-now-word-in {
   display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
   animation: app-now-rise 0.9s var(--ease-out-quint) both;
   animation-delay: calc(80ms + var(--i, 0) * 45ms);
 }
@@ -201,6 +206,9 @@
 }
 a.app-now-tok:hover {
   color: var(--color-label);
+}
+.app-now-tok-lead {
+  white-space: nowrap;
 }
 .app-now-tok-cava {
   margin-right: 0.2em;
