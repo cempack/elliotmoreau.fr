@@ -3,6 +3,7 @@ import type { ProjectNote } from "@/lib/content";
 // Server-only GitHub helper with minute-scale in-memory cache.
 
 const API = "https://api.github.com";
+const RAW = "https://raw.githubusercontent.com";
 const USER = "cempack";
 
 /** GitHub slow to answer: give up, and the page keeps what it had (or its empty state) */
@@ -72,18 +73,30 @@ function pickPreview(md: string): string | null {
   return null;
 }
 
-async function readmePreview(name: string): Promise<string | null> {
-  try {
+/** The README and the address its relative links start from. */
+async function readmeOf(name: string): Promise<{ md: string; base: string } | null> {
+  // with a token, the API finds the README whatever it's called
+  if (process.env.GITHUB_TOKEN) {
     const res = await fetch(`${API}/repos/${USER}/${name}/readme`, { headers: headers(), signal: timeout() });
     if (!res.ok) return null;
     const j = (await res.json()) as { content?: string; download_url?: string };
     if (!j.content || !j.download_url) return null;
-    const md = Buffer.from(j.content, "base64").toString("utf8");
-    const raw = pickPreview(md);
-    if (!raw) return null;
+    return { md: Buffer.from(j.content, "base64").toString("utf8"), base: j.download_url.slice(0, j.download_url.lastIndexOf("/") + 1) };
+  }
+  // without one, a call per repo would spend the API's 60 an hour: the raw file host has no such
+  // limit, and serves README.md from the default branch
+  const base = `${RAW}/${USER}/${encodeURIComponent(name)}/HEAD/`;
+  const res = await fetch(`${base}README.md`, { signal: timeout() });
+  return res.ok ? { md: await res.text(), base } : null;
+}
+
+async function readmePreview(name: string): Promise<string | null> {
+  try {
+    const doc = await readmeOf(name);
+    const raw = doc && pickPreview(doc.md);
+    if (!doc || !raw) return null;
     if (/^https?:\/\//i.test(raw)) return raw;
-    const base = j.download_url.slice(0, j.download_url.lastIndexOf("/") + 1);
-    return new URL(raw.replace(/^\.\//, ""), base).toString();
+    return new URL(raw.replace(/^\.\//, ""), doc.base).toString();
   } catch {
     return null;
   }
@@ -114,13 +127,11 @@ export async function getRepos(): Promise<RepoInfo[] | null> {
         preview: null,
       }))
       .sort((a, b) => +new Date(b.pushedAt) - +new Date(a.pushedAt));
-    // README screenshots cost one API call per repo — only with a token.
-    if (process.env.GITHUB_TOKEN) {
-      const previews = await Promise.all(data.map((r) => readmePreview(r.name)));
-      data.forEach((r, i) => {
-        r.preview = previews[i];
-      });
-    }
+    // README screenshots: one fetch per repo (through the API with a token, else the raw file host)
+    const previews = await Promise.all(data.map((r) => readmePreview(r.name)));
+    data.forEach((r, i) => {
+      r.preview = previews[i];
+    });
     reposCache = { at: Date.now(), data };
     return data;
   } catch {
