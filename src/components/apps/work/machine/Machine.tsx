@@ -67,8 +67,9 @@ function sceneTexture(kind: ProjectKind, seed: string, el: Element, tint?: Model
  * Apps sit on an old CRT, games in an arcade cabinet with their name on
  * the marquee, desktop add-ons on a widescreen monitor, tools on a green
  * terminal, experiments on a handheld. The screen shows the README's
- * screenshot (through /api/shot, so its pixels can be read), or the shelf's
- * drawing when there is none.
+ * screenshot, read straight from GitHub (or through /api/shot when its host
+ * won't let the page read its pixels), or the shelf's drawing when there is
+ * none.
  *
  * - drag turns it on its turntable and a throw keeps it turning; at rest it
  *   sways slowly, and picks the sway back up a few seconds after a drag;
@@ -309,13 +310,18 @@ export function Machine({ repo, kind }: { repo: RepoInfo; kind: ProjectKind }) {
         const tex = sceneTexture(k, r.name, wrap, model.screen.tint);
         done(tex ? { kind: "scene", tex } : null);
       };
-      if (r.preview) {
+      const load = (src: string, cors: boolean, fail: () => void) => {
         const img = new Image();
+        if (cors) img.crossOrigin = "anonymous";
         img.decoding = "async";
         img.onload = () => done({ kind: "shot", img });
-        img.onerror = scene;
-        img.src = `/api/shot?name=${encodeURIComponent(r.name)}`;
-      } else scene();
+        img.onerror = fail;
+        img.src = src;
+      };
+      // straight from the README's host when it lets the page read the pixels (GitHub's raw
+      // files do), else through this site's own address, else the drawing
+      if (r.preview) load(r.preview, true, () => load(`/api/shot?name=${encodeURIComponent(r.name)}`, false, scene));
+      else scene();
       wake();
     };
     const zoom = (to: 0 | 1) => {

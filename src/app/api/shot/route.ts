@@ -6,8 +6,9 @@ import { getSiteContent } from "@/server/content";
  * GET /api/shot?name=<repo>: a shown repo's README screenshot, passed
  * through from this site's own address. Projects paints it onto the
  * machine's screen, which means reading its pixels, and a browser only
- * lets a page read pixels from its own origin (README pictures live on
- * GitHub's hosts, which don't all say otherwise). Only the screenshot
+ * lets a page read pixels from another host when that host says so:
+ * GitHub's raw files do, and Projects reads those directly; this is for
+ * the README hosts that don't. Only the screenshot
  * Projects already shows, for a repo the site shows: never a URL from the
  * request, so it can't be used to fetch anything else. Raster images only
  * (no SVG, which could carry script), 8 MB at most.
@@ -26,14 +27,21 @@ async function previewOf(name: string) {
 }
 
 export async function GET(req: Request) {
-  const url = await previewOf(new URL(req.url).searchParams.get("name") ?? "");
+  const name = new URL(req.url).searchParams.get("name") ?? "";
+  const url = await previewOf(name);
   if (!url) return new Response(null, { status: 404 });
+  // the machine falls back to its drawing: say why here, where Railway's logs show it
+  const fail = (status: number, why: unknown) => {
+    console.error(`[shot] ${name}:`, why);
+    return new Response(null, { status });
+  };
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(8000), cache: "no-store" });
     const type = (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
-    if (!res.ok || !TYPES.test(type) || Number(res.headers.get("content-length") ?? 0) > MAX) return new Response(null, { status: 502 });
+    if (!res.ok || !TYPES.test(type) || Number(res.headers.get("content-length") ?? 0) > MAX)
+      return fail(502, `${res.status} ${type || "no type"} from ${url}`);
     const body = await res.arrayBuffer();
-    if (body.byteLength > MAX) return new Response(null, { status: 502 });
+    if (body.byteLength > MAX) return fail(502, `${body.byteLength} bytes from ${url}`);
     return new Response(body, {
       headers: {
         "Content-Type": type,
@@ -41,7 +49,7 @@ export async function GET(req: Request) {
         "Content-Security-Policy": "default-src 'none'",
       },
     });
-  } catch {
-    return new Response(null, { status: 504 });
+  } catch (err) {
+    return fail(504, err instanceof Error ? err.message : err);
   }
 }
