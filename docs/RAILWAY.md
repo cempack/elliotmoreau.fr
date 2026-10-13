@@ -23,8 +23,9 @@ Cloudflare (DNS + proxy) ──► Railway service "web"  (npm run start, $PORT)
   never opens the database.
 - **Boot** (`src/instrumentation.ts` → `src/server/boot.ts`): opens
   `/data/emos.db` (creating, migrating and seeding it on the very first
-  boot), then marks every page stale, so each page's next visit renders from
-  the database. The deploy log says so (see step 4).
+  boot), then marks every page stale and renders them all again from the
+  database before visitors ask for them (`src/server/warm.ts`). The deploy
+  log says so (see step 4).
 - **Health** (`/api/health`): returns 200 with
   `{"ok":true,"db":true,"smtp":…,"imap":…,"admin":…}` once the database
   opens, 503 otherwise. Railway waits for it before switching traffic, so a
@@ -198,7 +199,8 @@ uses the palette it shipped with.
 
    ```
    [boot] database ready (/data/emos.db)
-   [boot] pages marked stale: they now render from the database
+   [boot] pages marked stale: they render again from the database
+   [warm] 26/26 pages rendered in 2.1s
    ```
 
    If you see `DATABASE_PATH (…) is not on a Railway volume`, the volume

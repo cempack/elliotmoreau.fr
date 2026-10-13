@@ -5,6 +5,7 @@ import "../globals.css";
 import { getDict, getShellDict, hasLocale, LOCALES, localePath, SITE_URL } from "@/i18n";
 import { I18nProvider } from "@/i18n/client";
 import { getShellData } from "@/lib/data";
+import { markContent } from "@/server/content";
 import { SoundProvider } from "@/lib/sound";
 import { ToastProvider } from "@/components/Toasts";
 import { MotionProvider } from "@/components/motion/MotionProvider";
@@ -63,7 +64,8 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
   const { lang } = await params;
   if (!hasLocale(lang)) notFound();
   const dict = getShellDict(lang);
-  const [data, theme] = await Promise.all([getShellData(), getTheme()]);
+  // markContent: this page's cache entry goes stale when the content changes (server/content)
+  const [data, theme] = await Promise.all([getShellData(), getTheme(), markContent()]);
   return (
     <html lang={lang} suppressHydrationWarning className={`${inter.variable} ${mono.variable}`}>
       <head>

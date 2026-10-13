@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { getSpotifyStatus, spotifyConfigured } from "@/lib/spotify";
-import { getLive } from "@/server/content";
+import { getLive, markContent } from "@/server/content";
 
 export const revalidate = 30;
 
 export async function GET() {
+  // switching the music off in the admin panel reaches this cached answer at once
+  await markContent();
   // tokens missing, or the music switched off in the admin panel: stay
   // quiet, the sections hide themselves
   if (!spotifyConfigured() || !getLive().showSpotify) {

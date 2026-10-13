@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { LOCALES, SITE_URL, localePath, type Locale } from "@/i18n/config";
 import { getSiteData } from "@/lib/data";
-import { getNowContent } from "@/server/content";
+import { getNowContent, markContent } from "@/server/content";
 
 /**
  * Every app in both languages, each entry carrying its hreflang
@@ -29,7 +29,8 @@ function newest(dates: (string | undefined | null)[]) {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const data = await getSiteData().catch(() => null);
+  // the /now date comes from the database: an edit there refreshes this too
+  const [data] = await Promise.all([getSiteData().catch(() => null), markContent()]);
   const writing = newest((data?.posts ?? []).map((p) => p.published_at));
   const work = newest((data?.repos ?? []).map((r) => r.pushedAt));
   const now = newest([getNowContent().updated]);

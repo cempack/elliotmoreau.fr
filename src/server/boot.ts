@@ -61,10 +61,11 @@ function openDatabase() {
 
 /**
  * The build prerenders every page from the seed (the volume isn't mounted
- * while building), so once the server is up, mark them stale: each page's
- * next visit renders from the database. revalidatePath only works inside a
- * request, hence the call to our own route. Not needed in development,
- * which renders every request.
+ * while building), so once the server is up, mark them stale and render
+ * them again from the database before visitors ask for them (the route
+ * calls revalidateContent, which warms them: ./warm.ts). revalidatePath
+ * only works inside a request, hence the call to our own route. Not needed
+ * in development, which renders every request.
  */
 function refreshPagesFromDatabase() {
   if (process.env.NODE_ENV !== "production") return;
@@ -89,7 +90,7 @@ async function kick(secret: string, attempt: number): Promise<void> {
       signal: AbortSignal.timeout(20_000),
     });
     if (res.ok) {
-      console.log("[boot] pages marked stale: they now render from the database");
+      console.log("[boot] pages marked stale: they render again from the database");
       return;
     }
     if (res.status === 401) {

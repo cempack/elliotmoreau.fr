@@ -1,5 +1,5 @@
 import "server-only";
-import { revalidatePath } from "next/cache";
+import { revalidateTag, unstable_cache } from "next/cache";
 import { db, nowIso, tx, type DB } from "../db";
 import {
   dateIn,
@@ -13,6 +13,7 @@ import {
   type ProjectsContent,
   type Status,
 } from "@/lib/content";
+import { warmPages } from "../warm";
 import { ContentError } from "./errors";
 import { PLACE_ORDER, fromDb, readKv, writeKv, writePlace, type PlaceDbRow } from "./rows";
 import { seedLive, seedNow, seedPlaces, seedProjects, seedStatus } from "./seed";
@@ -307,11 +308,25 @@ export function getSiteContent(at: Date = new Date()): SiteContent {
 
 /* ───────────────────────────── refresh ───────────────────────────── */
 
+const CONTENT_TAG = "content";
+
 /**
- * Mark every page stale so its next visit renders from the database (the
- * root layout carries the content to every page). Call from a Route
- * Handler or Server Function after a write.
+ * Ties a render to the database: awaited by the root layout (and by the
+ * few cached routes outside it that read the content), it puts the content
+ * tag on that page's cache entry, for revalidateContent() to find.
+ */
+export const markContent = unstable_cache(async () => true, ["content"], { tags: [CONTENT_TAG] });
+
+/**
+ * Mark every page stale so it renders again from the database, then render
+ * them all ahead of their visitors (../warm.ts). Only the pages: what they
+ * fetched from GitHub, Spotify, Ghost and the weather stays cached, so the
+ * new render takes milliseconds, not seconds. (revalidatePath("/",
+ * "layout") would expire all of that too: every fetch is filed under the
+ * path of the page that made it.) Call from a Route Handler or Server
+ * Function after a write.
  */
 export function revalidateContent(): void {
-  revalidatePath("/", "layout");
+  revalidateTag(CONTENT_TAG, { expire: 0 });
+  warmPages();
 }

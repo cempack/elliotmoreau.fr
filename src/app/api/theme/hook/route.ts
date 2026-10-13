@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { THEME_TAG } from "@/lib/theme-source";
+import { warmPages } from "@/server/warm";
 
 /**
  * GitHub webhook for the Dos Moos theme repo: a push re-reads the palette
@@ -22,5 +23,6 @@ export async function POST(req: Request) {
   if (event !== "push") return Response.json({ ok: true, ignored: event });
   revalidateTag(THEME_TAG, { expire: 0 });
   revalidatePath("/", "layout");
+  warmPages();
   return Response.json({ ok: true, revalidated: true });
 }
