@@ -8,9 +8,12 @@ import { announceContentChange } from "@/lib/contentSync";
 import { rpc, type Overview } from "../api";
 import { useSave } from "../useSave";
 import { WorldPicker } from "../WorldPicker";
+import { CountrySearch } from "../CountrySearch";
+import type { Country } from "../countries";
+import { fromCountry, placeFor } from "../findCountry";
 import { PixelGlyph } from "@/components/glyphs";
 import { G_CHEVRON } from "@/components/os/window/glyphs";
-import { Btn, Group, Pair, SaveBar, Section, Segmented, Select, Text, Toggle, fill } from "../ui";
+import { Btn, Field, Group, Pair, SaveBar, Section, Segmented, Select, Text, Toggle, fill } from "../ui";
 
 // the place being edited survives the remount that follows a save
 let remembered: string | null = null;
@@ -67,6 +70,15 @@ export function TravelsPane({ data, onSaved }: { data: Overview; onSaved: () => 
 
   const set = (patch: Partial<PlaceRow>) => setDraft((d) => (d ? { ...d, ...patch } : d));
   const dirty = isNew ? Boolean(draft) : Boolean(draft && original && JSON.stringify(draft) !== JSON.stringify(original));
+  // a new place on a slug already in use would save over that place
+  const taken = isNew && draft ? places.some((p) => p.id === draft.id) : false;
+
+  /** a country picked in the lookup: the one already on the Atlas opens, any other fills the new place in */
+  const fillFrom = (c: Country) => {
+    const there = placeFor(c, places, slugify);
+    if (there) return open(there);
+    set({ ...fromCountry(c), id: slugify(c[1]) });
+  };
 
   const move = async (i: number, dir: -1 | 1) => {
     const ids = places.map((p) => p.id);
@@ -81,7 +93,7 @@ export function TravelsPane({ data, onSaved }: { data: Overview; onSaved: () => 
   };
 
   const onSave = async () => {
-    if (!draft) return;
+    if (!draft || taken) return;
     const before = remembered;
     remembered = draft.id;
     if (!(await save.run("place.upsert", { place: draft }))) remembered = before;
@@ -150,6 +162,22 @@ export function TravelsPane({ data, onSaved }: { data: Overview; onSaved: () => 
                 {tr.title}
               </Btn>
               <h3 className="app-admin-h3 app-admin-editor-title">{isNew ? tr.newTitle : loc(draft.name, lang) || draft.id}</h3>
+              {isNew && (
+                <Field label={tr.lookup} hint={tr.lookupHint}>
+                  {(id, d) => (
+                    <CountrySearch
+                      id={id}
+                      describedBy={d}
+                      lang={lang}
+                      placeholder={tr.lookupPlaceholder}
+                      none={tr.lookupNone}
+                      filled={(name) => fill(tr.lookupFilled, { name })}
+                      tag={(c) => (placeFor(c, places, slugify) ? tr.onAtlas : undefined)}
+                      onPick={fillFrom}
+                    />
+                  )}
+                </Field>
+              )}
               <Pair
                 label={tr.name}
                 value={draft.name}
@@ -165,7 +193,7 @@ export function TravelsPane({ data, onSaved }: { data: Overview; onSaved: () => 
                   disabled={!isNew}
                   hint={isNew ? tr.idHint : undefined}
                   onChange={(v) => set({ id: slugify(v) })}
-                  error={save.fieldError("id")}
+                  error={taken ? tr.idTaken : save.fieldError("id")}
                 />
                 <Text
                   label={tr.iso}

@@ -473,6 +473,27 @@
   min-width: 0;
   overflow-wrap: anywhere;
 }
+/* the country lookup's suggestions (CountrySearch): the same list, a code on the right */
+.app-admin-picker-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.app-admin-picker-note,
+.app-admin-picker-code,
+.app-admin-picker-none {
+  color: var(--color-label-3);
+}
+.app-admin-picker-code {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  letter-spacing: 0.04em;
+}
+.app-admin-picker-none {
+  margin: 0;
+  padding: 6px 10px;
+}
 @keyframes app-admin-picker-in {
   from {
     opacity: 0;
