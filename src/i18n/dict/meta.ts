@@ -7,11 +7,11 @@
 const en = {
   siteName: "Elliot Moreau",
   title: "Elliot Moreau, Epitech student in Toulouse",
-  description: "Elliot Moreau, a student at Epitech in Toulouse, France. Projects, writing, travel and what I’m listening to.",
+  description: "Elliot Moreau, a student at Epitech in Toulouse, France. Projects, a blog, travel and what I’m listening to.",
   pages: {
     home: "Desktop",
     work: "Projects",
-    writing: "Writing",
+    writing: "Blog",
     atlas: "Atlas",
     now: "Now",
     contact: "Contact",

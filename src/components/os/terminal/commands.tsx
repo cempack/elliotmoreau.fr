@@ -667,7 +667,7 @@ const COMMANDS: Command[] = [
               </li>
             ))}
           </ul>
-          <Line tone="dim">{nodes(t.all, { cmd: <Cmd value="open writing" /> })}</Line>
+          <Line tone="dim">{nodes(t.all, { cmd: <Cmd value="open blog" /> })}</Line>
         </div>
       );
     },

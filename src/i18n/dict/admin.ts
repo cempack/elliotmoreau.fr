@@ -110,7 +110,7 @@ const en = {
       desktop: "Desktop",
       dock: "Dock and More",
       work: "Projects",
-      writing: "Writing",
+      writing: "Blog",
       atlas: "Atlas",
       now: "Now",
       contact: "Mail",
@@ -159,7 +159,7 @@ const en = {
   settings: {
     title: "Settings",
     lede: "Hours, replies, what the site opens on, and the keys to this window.",
-    writing: "Writing opens on",
+    writing: "The blog opens on",
     music: "Music",
   },
   common: {
@@ -327,7 +327,7 @@ const en = {
     auto: "Automatic (most recent push)",
     hidden: "Hidden projects",
     hiddenHint: "Left out of every list, the brick wall and the terminal.",
-    pinned: "Writing opens on",
+    pinned: "The blog opens on",
     latest: "The latest post",
     spotify: "Show what’s playing",
     spotifyHint: "Off hides the music everywhere.",
@@ -546,7 +546,7 @@ const fr: typeof en = {
   settings: {
     title: "Réglages",
     lede: "Les horaires, les réponses, ce que le site ouvre, et les clés de cette fenêtre.",
-    writing: "Écriture s’ouvre sur",
+    writing: "Le blog s’ouvre sur",
     music: "Musique",
   },
   common: {

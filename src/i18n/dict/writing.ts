@@ -3,7 +3,7 @@
 // arrays) only.
 const en = {
   /* the list */
-  title: "Writing",
+  title: "Blog",
   lede: "Notes on code, design, travel and music. Each one reads right here.",
   earlier: "Earlier",
   all: "All posts",

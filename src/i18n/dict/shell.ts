@@ -8,7 +8,7 @@ const en = {
   apps: {
     home: "Desktop",
     work: "Projects",
-    writing: "Writing",
+    writing: "Blog",
     atlas: "Atlas",
     now: "Now",
     contact: "Mail",
@@ -149,7 +149,7 @@ const en = {
     empty: "No results",
     apps: "Applications",
     actions: "Actions",
-    posts: "Writing",
+    posts: "Posts",
     repos: "Projects",
     links: "Elsewhere",
     app: "Application",
