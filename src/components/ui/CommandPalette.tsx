@@ -203,14 +203,25 @@ export function CommandPalette({
 
   // phones: the on-screen keyboard covers the bottom of the layout viewport
   // (iOS never resizes it), so the list is sized to what is really visible
+  // the room above an on-screen keyboard (touch screens only: elsewhere the
+  // list's CSS fallback is the viewport). Read a frame after opening, never
+  // inside it: reading the viewport mid-commit forced the whole list's
+  // style and layout at once, the main cost of opening.
   useEffect(() => {
     const vv = window.visualViewport;
     const d = dialogRef.current;
-    if (!visible || !vv || !d) return;
-    const sync = () => d.style.setProperty("--em-vvh", `${Math.round(vv.height)}px`);
-    sync();
+    if (!visible || !vv || !d || !window.matchMedia("(pointer: coarse)").matches) return;
+    let last = 0;
+    const sync = () => {
+      const h = Math.round(vv.height);
+      if (h === last) return;
+      last = h;
+      d.style.setProperty("--em-vvh", `${h}px`);
+    };
+    const id = requestAnimationFrame(sync);
     vv.addEventListener("resize", sync);
     return () => {
+      cancelAnimationFrame(id);
       vv.removeEventListener("resize", sync);
       d.style.removeProperty("--em-vvh");
     };

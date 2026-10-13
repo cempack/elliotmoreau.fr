@@ -433,29 +433,25 @@ html[data-sheet] .os-tabbar {
 /* Named only while a transition runs: an element with a
    view-transition-name is a backdrop root, so a permanent name would
    leave the glass inside it nothing to blur. While named, each bar is
-   captured on its own above the windows and updates live; the dock swaps
-   in its solid twin, the tab bar's frost moves onto its group (the
-   capsule alone is named, so the group has its exact shape; its handle
-   is the same in both pages' snapshots and holds still in the root). */
+   captured on its own above the windows and updates live. Its glass has
+   nothing to blur then (a backdrop root sees only itself, and a group's
+   own backdrop-filter isn't applied over the snapshots), so for those
+   frames each turns almost solid: the dock swaps in its solid twin, the
+   tab bar's capsule thickens its tint. Over the dark windows below, the
+   change doesn't show; see-through glass over moving text would. */
 html:active-view-transition .os-dock {
   view-transition-name: os-dock;
 }
-html:active-view-transition .os-tabbar-list {
+html:active-view-transition .os-tabbar {
   view-transition-name: os-tabbar;
+}
+html:active-view-transition .os-tabbar-list {
+  background: color-mix(in srgb, var(--color-ink-950) 93%, transparent);
 }
 ::view-transition-group(os-dock),
 ::view-transition-group(os-tabbar) {
   z-index: 50;
   animation: none;
-}
-::view-transition-group(os-tabbar) {
-  border-radius: 31px;
-  backdrop-filter: blur(20px) saturate(1.6);
-}
-@media (max-width: 767px) and (max-height: 500px) {
-  ::view-transition-group(os-tabbar) {
-    border-radius: 24px;
-  }
 }
 ::view-transition-new(os-dock),
 ::view-transition-new(os-tabbar) {
@@ -593,9 +589,6 @@ html:active-view-transition .os-tabbar-list {
   }
   .os-tabbar-list {
     background: var(--color-ink-900);
-    backdrop-filter: none;
-  }
-  ::view-transition-group(os-tabbar) {
     backdrop-filter: none;
   }
 }
