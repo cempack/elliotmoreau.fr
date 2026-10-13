@@ -14,6 +14,9 @@ import { T } from "./flight";
 const BOOT_MS = 3460;
 /** Hydrated by then, a first visit arrives from space instead of reading the boot's text. */
 const ARRIVE_BEFORE_MS = 2400;
+/** The boot holds at least this long (from first paint) before the arrival takes over: the
+    pixel name has finished scanning in and sits a beat, then space fades up over it. */
+const BOOT_HOLD_MS = 1400;
 /** The Desktop has come in by then: the gate leaves the page. */
 const OUT_MS = 1400;
 /** The name's boxes (8 px cells; CSS scales them, see intro.css). */
@@ -124,13 +127,17 @@ export default function Gate({ onDone }: { onDone: () => void }) {
 
   // a first visit that hydrates early enough arrives from space (Arrival.tsx);
   // late, after a Restart, or with reduced motion, the boot plays as it always has
+  // (a skip during the hold clears the gate: the timer goes with it)
   useEffect(() => {
-    if (!hydrated || wasRestart()) return;
+    if (!hydrated || phase !== "boot" || wasRestart()) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    if (performance.now() - sequenceStart() > ARRIVE_BEFORE_MS) return;
-    const id = requestAnimationFrame(() => setArrival((a) => (a === "off" ? "on" : a)));
-    return () => cancelAnimationFrame(id);
-  }, [hydrated]);
+    const since = performance.now() - sequenceStart();
+    if (since > ARRIVE_BEFORE_MS) return;
+    const id = window.setTimeout(() => setArrival((a) => (a === "off" ? "on" : a)), Math.max(16, BOOT_HOLD_MS - since));
+    return () => window.clearTimeout(id);
+    // decided once, at hydration; only a skip (phase) cancels it
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, phase === "boot"]);
 
   // the boot runs on the clock of its own keyframes: the Desktop comes in
   // as the boot screen starts to fade (what the visitor sees, in every

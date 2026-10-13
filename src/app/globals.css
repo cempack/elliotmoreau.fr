@@ -321,6 +321,12 @@ p {
   padding: 6px 8px 8px;
   overscroll-behavior: contain;
 }
+/* rows below the fold skip style and layout until scrolled to: opening
+   lays out the board and the first few results, not all fifty */
+.em-palette-list > li:not(.em-palette-board) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 40px;
+}
 .em-palette-group {
   padding: 12px 10px 5px;
   color: var(--color-label-3);

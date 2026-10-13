@@ -26,13 +26,13 @@ const HOLD_SLOP = 8;
 const clock = () => performance.now();
 
 /* Desks show only the README (the apps are in the Dock). Phones get one
-   home screen row of the README and what the tab bar doesn't hold: Atlas,
+   home screen row of the README and what the tab bar doesn't hold: Mail,
    Now and Terminal, which otherwise hide behind More (Search is the menu
    bar's magnifier). Desk icons are hidden on phones in CSS and the phone
    ones on desks, so the server render is the same for both. */
-type PhoneOnly = "atlas" | "now" | "terminal";
+type PhoneOnly = "contact" | "now" | "terminal";
 const DESK_ONLY = new Set<DesktopIconId>(["work", "writing", "atlas", "now", "contact", "draft"]);
-const PHONE_ROW: PhoneOnly[] = ["atlas", "now", "terminal"];
+const PHONE_ROW: PhoneOnly[] = ["contact", "now", "terminal"];
 
 /* ───────────────────────────── grid geometry ─────────────────────────────
    An invisible grid anchored to the top-right of the desktop, like Finder's
@@ -745,7 +745,7 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
               {inner}
             </a>
           );
-        // phones: Terminal and Search follow Now
+        // phones: Mail, Now and Terminal follow (PHONE_ROW)
         return [node];
       })}
       {PHONE_ROW.map(phoneIcon)}

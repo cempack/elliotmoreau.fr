@@ -134,6 +134,8 @@ export function TerminalProvider({ children }: { children: React.ReactNode }) {
   // replaces it (on desktop it is a window, and menus open over windows)
   useSurfaceYield("terminal", (id) => {
     if (id === "menu" && openRef.current && window.matchMedia("(max-width: 767px)").matches) setOpen(false);
+    // the overview shows the app windows: the Terminal never floats over them
+    if (id === "overview" && openRef.current) setOpen(false);
   });
 
   const clear = useCallback(() => setEntries([]), []);

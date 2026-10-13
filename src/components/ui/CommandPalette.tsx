@@ -289,8 +289,12 @@ export function CommandPalette({
           data-typed={typed || undefined}
           initial={false}
           animate={visible ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: -8, scale: 0.98 }}
-          // in on a spring, out quickly: a chosen command shouldn't wait
-          transition={visible ? spring.snappy : { duration: 0.14, ease: [0.4, 0, 1, 1] }}
+          // in at once (a 90ms fade, the drop on a spring), out quickly: a chosen command shouldn't wait
+          transition={
+            visible
+              ? { ...spring.snappy, opacity: { duration: 0.09, ease: "linear" } }
+              : { duration: 0.14, ease: [0.4, 0, 1, 1] }
+          }
           onAnimationComplete={() => {
             if (!visibleRef.current && dialogRef.current?.open) finish();
           }}
@@ -378,9 +382,8 @@ export function CommandPalette({
                       </>
                     ) : (
                       <>
-                        {i === active && (
-                          <m.span layoutId={`${listId}-hl`} className="em-palette-hl" transition={spring.snappy} />
-                        )}
+                        {/* no shared-layout slide: it measured the whole list on every open */}
+                        {i === active && <span className="em-palette-hl" />}
                         <span className="em-palette-icon" data-thumb={c.thumb ? "" : undefined} aria-hidden>
                           {c.thumb ?? c.icon}
                         </span>

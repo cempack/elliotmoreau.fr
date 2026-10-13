@@ -4,12 +4,13 @@ import { useEffect, useRef } from "react";
 
 /**
  * One transient surface at a time. The menu bar's panels, the Terminal,
- * Spotlight and the right-click menu announce themselves as they open; the
- * others step aside (a menu panel closes when the Terminal, Spotlight or a
- * right-click menu opens; on a phone, where the Terminal is a sheet, it
- * closes when a panel drops down).
+ * Spotlight, the right-click menu and the windows overview announce
+ * themselves as they open; the others step aside (a menu panel closes when
+ * the Terminal, Spotlight or a right-click menu opens; the Terminal and the
+ * overview never sit on top of each other; on a phone, where the Terminal
+ * is a sheet, it closes when a panel drops down).
  */
-export type Surface = "menu" | "terminal" | "palette" | "context";
+export type Surface = "menu" | "terminal" | "palette" | "context" | "overview";
 
 const EVENT = "em:surface";
 

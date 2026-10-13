@@ -15,11 +15,12 @@ import { useTerminal } from "../Terminal";
 import { openOverview } from "../overview";
 import { bounce, isPlainClick, pressHandlers, scrollToTop } from "./launch";
 
-/** Four apps and More: what a visitor comes for (the Desktop, the work, the writing, a way to write
-    to me). Four tabs and More leave each one room to breathe; the rest live behind More. */
-const PRIMARY: AppId[] = ["home", "work", "writing", "contact"];
+/** Four apps and More: what a visitor comes for (the Desktop, the work, the writing, the places).
+    Four tabs and More leave each one room to breathe; Mail and Now live behind More (and Mail on
+    the home screen too). */
+const PRIMARY: AppId[] = ["home", "work", "writing", "atlas"];
 /** the apps in More, before its tools */
-const MORE_APPS: AppId[] = ["atlas", "now"];
+const MORE_APPS: AppId[] = ["contact", "now"];
 const TAB_ICON = 32;
 
 function Lens({ reduced }: { reduced: boolean }) {
@@ -61,7 +62,7 @@ function Chevron() {
 /**
  * The phone dock (<768px): a solid bar along the bottom edge. Four apps
  * get a tab (each icon with its name under it) and a moss bar slides to
- * the current one; More opens a flingable sheet with Atlas, Now, the
+ * the current one; More opens a flingable sheet with Mail, Now, the
  * Terminal, the open windows and Search.
  */
 /** fields that bring up the on-screen keyboard */
@@ -241,7 +242,7 @@ function MoreList({ active, afterRef }: { active: AppId; afterRef: React.RefObje
                 </span>
                 <span className="os-more-text">
                   <span className="os-more-name">{t.shell.apps[app.label]}</span>
-                  <span className="os-more-hint">{id === "atlas" ? t.dock.atlasHint : t.dock.nowHint}</span>
+                  <span className="os-more-hint">{id === "atlas" ? t.dock.atlasHint : id === "contact" ? t.dock.mailHint : t.dock.nowHint}</span>
                 </span>
                 <Chevron />
               </Link>

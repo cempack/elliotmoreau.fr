@@ -15,10 +15,6 @@ function Bridge({ register, onState }: { register: (a: Api) => void; onState: (v
     register(inner);
   }, [inner, register]);
   useEffect(() => onState(inner.isOpen), [inner.isOpen, onState]);
-  useEffect(() => {
-    inner.open();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
   return null;
 }
 

@@ -19,6 +19,7 @@ import { closeWorkspace, deskOf, deskWindows, getHomeDesk, moveToDesk, setHomeDe
 import { attachShot, dropShot, getShot, type Shot } from "./windowShots";
 import { fill } from "./menubar/util";
 import { useContextMenu } from "./context/ContextMenu";
+import { useSurfaceYield } from "./surface";
 
 /** a trackpad pinch arrives as ctrl+wheel with fractional deltas (a mouse wheel's are whole) */
 const isPinch = (e: WheelEvent) => e.ctrlKey && !Number.isInteger(e.deltaY);
@@ -36,6 +37,11 @@ const isPinch = (e: WheelEvent) => e.ctrlKey && !Number.isInteger(e.deltaY);
 export function WindowsOverview() {
   const open = useOverviewOpen();
   const pathname = usePathname();
+
+  // the Terminal opening from here (its Dock icon, the ` key): the windows go back first
+  useSurfaceYield("overview", (id) => {
+    if (id === "terminal") closeOverview();
+  });
 
   // the keyboard and the trackpad, from anywhere
   useEffect(() => {

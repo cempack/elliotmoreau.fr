@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { captureCurrent } from "./windowShots";
+import { claimSurface } from "./surface";
 
 /**
  * Whether the overview (every open window, over the river) is showing.
@@ -18,6 +19,8 @@ export function setOverview(v: boolean) {
   if (v) captureCurrent();
   open = v;
   emit();
+  // the Terminal, a menu panel, a right-click menu step aside
+  if (v) claimSurface("overview");
 }
 export const openOverview = () => setOverview(true);
 export const closeOverview = () => setOverview(false);
