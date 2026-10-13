@@ -755,11 +755,28 @@ html[data-sky="dusk"] .app-home-icon:not([data-selected]) .app-home-icon-label {
   /* the caption: last on screen (first in the page), at the foot of the
      wallpaper over the tab bar */
   .app-home-caption {
-    position: static;
+    position: relative;
+    isolation: isolate;
     order: 1;
     height: auto;
     margin-top: auto;
     padding: 0 4px;
+  }
+  /* over a bright sky the light lines lose the wallpaper: a soft wash of
+     ink behind them (no edge, fading out all round, like iOS under the
+     lock screen's clock) keeps both lines readable at any hour */
+  .app-home-caption::before {
+    content: "";
+    position: absolute;
+    inset: -30px -36px -26px -32px;
+    z-index: -1;
+    background: radial-gradient(
+      farthest-side at 36% 54%,
+      color-mix(in srgb, var(--color-ink-950) 62%, transparent),
+      color-mix(in srgb, var(--color-ink-950) 44%, transparent) 52%,
+      transparent
+    );
+    pointer-events: none;
   }
 
   /* two equal columns that never grow past the screen: a square widget's
