@@ -1,12 +1,12 @@
 import { byFill, pxPath, type PxRun } from "@/lib/pxpath";
-import { PixelGlyph, type Cells } from "@/components/glyphs";
 import type { ProjectKind } from "./kind";
 
 /**
  * The pictures for projects without a screenshot: one small pixel scene per
  * shelf (a web page, a platformer, a desktop with its top bar, a terminal
  * finishing a job, a flask), varied a little by the project's name so two
- * tools never look identical. Plus a 7×7 icon of each for the list.
+ * tools never look identical. Plus each shelf's machine as an icon for the
+ * list.
  */
 
 export const KIND_ACCENT: Record<ProjectKind, string> = {
@@ -227,27 +227,154 @@ export function KindScene({ kind, seed, className = "" }: { kind: ProjectKind; s
   );
 }
 
-function cells(rows: string[]): Cells {
-  const out: Cells = [];
-  rows.forEach((row, y) => {
-    for (let x = 0; x < row.length; x++) if (row[x] === "#") out.push([x, y]);
-  });
-  return out;
-}
-
-const ICONS: Record<ProjectKind, Cells> = {
-  app: cells(["#######", "#######", "#.....#", "#.###.#", "#.....#", "#.##..#", "#######"]),
-  game: cells([".......", ".#####.", "##.##.#", "#...###", "##.#.##", "##...##", "......."]),
-  desktop: cells(["#######", "#.....#", "#...#.#", "#.###.#", "#######", "...#...", "..###.."]),
-  tool: cells(["#######", "#.....#", "#.#...#", "#..#..#", "#.#.#.#", "#.....#", "#######"]),
-  lab: cells(["..###..", "..#.#..", "..#.#..", ".#...#.", "#..#..#", "#######", ".#####."]),
+/*
+ * The list's icons: each shelf's kind of machine, like the stage's, drawn on
+ * 16×16 like the Dock's icons and shaded the same way. L is the lit top
+ * (and what a screen shows), B the body, d the side in shade, D deeper,
+ * k a screen's ink, w paper, F the flare; all in the shelf's colour (--k).
+ */
+const ICONS: Record<ProjectKind, string[]> = {
+  // apps and websites: a desktop computer with a page open
+  app: [
+    "................",
+    "...LLLLLLLLLL...",
+    "...BBBBBBBBBBd..",
+    "...BLLLLLLLLBd..",
+    "...BkkkkkkkkBd..",
+    "...BkwwwwkkkBd..",
+    "...BkkkkkkkkBd..",
+    "...BkLLkLLLkBd..",
+    "...BkkkkkkkkBd..",
+    "...BkLLLkLLkBd..",
+    "...BBBBBBBBBBd..",
+    "...BBBBBDDDDBd..",
+    "...BBBBBBBBBBd..",
+    "...dddddddddd...",
+    "................",
+    "................",
+  ],
+  // games: an arcade cabinet, its marquee lit, a chomper on the screen
+  game: [
+    "...LLLLLLLLLL...",
+    "...wwwwwwwwwwd..",
+    "...BkkkkkkkkBd..",
+    "...BkkLLLkkkBd..",
+    "...BkLLLLLkkBd..",
+    "...BkLLLkkwkBd..",
+    "...BkLLLLLkkBd..",
+    "...BkkLLLkkkBd..",
+    "...BkkkkkkkkBd..",
+    "..LLLFLLLwLwLLd.",
+    "..BBBBBBBBBBBBd.",
+    "...BBBBkkBBBBd..",
+    "...BBBBFkBBBBd..",
+    "...BBBBkkBBBBd..",
+    "...dddddddddd...",
+    "................",
+  ],
+  // desktop add-ons: a widescreen with its top bar and two tiled windows
+  desktop: [
+    "................",
+    "................",
+    ".BBBBBBBBBBBBBB.",
+    ".BLLLLLLLLLLLLB.",
+    ".BkkkkkkkkkkkkB.",
+    ".BkLLLLLkLLLLkB.",
+    ".BkDDDDDkDDDDkB.",
+    ".BkDDDDDkDDDDkB.",
+    ".BkDDDDDkDDDDkB.",
+    ".BkkkkkkkkkkkkB.",
+    ".BBBBBBBBBBBBBB.",
+    ".dddddddddddddd.",
+    "......dddd......",
+    "......dddd......",
+    "....LLLLLLLL....",
+    "................",
+  ],
+  // tools: a terminal at its prompt
+  tool: [
+    "................",
+    "..LLLLLLLLLLLL..",
+    ".BBBBBBBBBBBBBd.",
+    ".BkkkkkkkkkkkBd.",
+    ".BkLkkkkkkkkkBd.",
+    ".BkkLkkkkkkkkBd.",
+    ".BkkkLkkkkkkkBd.",
+    ".BkkLkkkkkkkkBd.",
+    ".BkLkkwwwwkkkBd.",
+    ".BkkkkkkkkkkkBd.",
+    ".BBBBBBBBBBBBBd.",
+    "..dddddddddddd..",
+    ".LLLLLLLLLLLLLL.",
+    ".BdBdBdBdBdBdBd.",
+    ".dddddddddddddd.",
+    "................",
+  ],
+  // experiments: a handheld
+  lab: [
+    "................",
+    "....LLLLLLLL....",
+    "...BBBBBBBBBBd..",
+    "...BkkkkkkkkBd..",
+    "...BkLkkkkkkBd..",
+    "...BkkkLLkkkBd..",
+    "...BkkkkkkkkBd..",
+    "...BBBBBBBBBBd..",
+    "...BBBBBBBBBBd..",
+    "...BBdBBBBFBBd..",
+    "...BdddBBFBFBd..",
+    "...BBdBBBBFBBd..",
+    "...BBBBBBBBBBd..",
+    "....dddddddd....",
+    "................",
+    "................",
+  ],
 };
 
-/** The shelf's icon on a tile in its colour, for list rows. */
+const ICON_FILL: Record<string, string> = {
+  L: "color-mix(in srgb, var(--k), var(--color-label) 55%)",
+  B: "var(--k)",
+  d: "color-mix(in srgb, var(--k), var(--color-ink-900) 35%)",
+  D: "color-mix(in srgb, var(--k), var(--color-ink-900) 60%)",
+  k: DEEP,
+  w: PAPER,
+  F: "var(--color-flare)",
+};
+
+/** an icon's cells as one path per fill, and its silhouette a cell lower for the shadow */
+function iconPaths(rows: string[]) {
+  const runs: (PxRun & { f: string })[] = [];
+  const shadow: PxRun[] = [];
+  rows.forEach((row, y) => {
+    for (let x = 0; x < row.length; ) {
+      let w = 1;
+      while (row[x + w] === row[x]) w++;
+      if (row[x] !== ".") runs.push({ x, y, w, f: row[x] });
+      x += w;
+    }
+    for (let x = 0; x < row.length; ) {
+      if (row[x] === ".") { x++; continue; }
+      let w = 1;
+      while (x + w < row.length && row[x + w] !== ".") w++;
+      shadow.push({ x, y: y + 1, w });
+      x += w;
+    }
+  });
+  return { shadow: pxPath(shadow), fills: [...byFill(runs, (r) => r.f)].map(([f, rs]) => ({ f, d: pxPath(rs) })) };
+}
+const ICON_PATHS = Object.fromEntries(Object.entries(ICONS).map(([k, rows]) => [k, iconPaths(rows)])) as Record<ProjectKind, ReturnType<typeof iconPaths>>;
+
+/** The shelf's machine on a tile lit in its colour, for list rows. */
 export function KindIcon({ kind, className = "" }: { kind: ProjectKind; className?: string }) {
+  const { shadow, fills } = ICON_PATHS[kind];
   return (
     <span className={`app-work-icon ${className}`} data-kind={kind} aria-hidden>
-      <PixelGlyph cells={ICONS[kind]} size={14} />
+      <svg viewBox="0 0 16 16" shapeRendering="crispEdges" focusable="false">
+        <path d={shadow} style={{ fill: DEEP }} opacity={0.42} />
+        {fills.map(({ f, d }) => (
+          <path key={f} d={d} style={{ fill: ICON_FILL[f] }} />
+        ))}
+      </svg>
     </span>
   );
 }
