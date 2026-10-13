@@ -1057,3 +1057,67 @@ html[data-intro="done"] .em-intro {
     transition: none;
   }
 }
+
+/* an app that broke (app/[lang]/error.tsx): macOS's "quit unexpectedly",
+   centred where the window was, the shell still running around it */
+.os-crash {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: min(380px, calc(100% - 32px));
+  margin: auto;
+  padding: 28px 22px 20px;
+  border-radius: var(--radius-window);
+  background: color-mix(in srgb, var(--color-ink-900) 94%, transparent);
+  backdrop-filter: blur(18px) saturate(1.3);
+  box-shadow:
+    inset 0 0 0 var(--win-border, 1px) color-mix(in srgb, var(--color-border-active) 20%, transparent),
+    0 40px 90px -40px rgba(0, 0, 0, 0.8);
+  color: var(--color-label);
+  text-align: center;
+}
+.os-crash h1 {
+  margin-top: 8px;
+  font: 600 1.0625rem/1.35 var(--font-sans);
+  letter-spacing: -0.012em;
+  text-wrap: balance;
+}
+.os-crash p {
+  color: var(--color-label-2);
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+.os-crash-actions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  margin-top: 14px;
+}
+.os-crash-actions button {
+  flex: 1;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  color: var(--color-label);
+  font: 600 0.875rem/1 var(--font-sans);
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    scale 0.3s var(--ease-out-quint);
+}
+.os-crash-actions button[data-primary] {
+  background: var(--color-signal);
+  box-shadow: none;
+  color: var(--color-ink-950);
+}
+.os-crash-actions button:active {
+  scale: 0.97;
+}
+@media (pointer: coarse) {
+  .os-crash-actions button {
+    height: 44px;
+  }
+}

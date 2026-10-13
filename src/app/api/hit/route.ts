@@ -1,4 +1,4 @@
-import { env } from "@/server/env";
+import { sameSite } from "@/server/sameSite";
 import { recordHit } from "@/server/stats";
 
 /**
@@ -8,16 +8,6 @@ import { recordHit } from "@/server/stats";
  */
 
 const done = () => new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
-
-function sameSite(req: Request) {
-  const origin = req.headers.get("origin");
-  if (!origin) return req.headers.get("sec-fetch-site") === "same-origin";
-  try {
-    if (origin === new URL(env.siteUrl).origin) return true;
-  } catch {}
-  const host = req.headers.get("host");
-  return !!host && (origin === `https://${host}` || (process.env.NODE_ENV !== "production" && origin === `http://${host}`));
-}
 
 export async function POST(req: Request) {
   if (!sameSite(req)) return done();
