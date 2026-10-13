@@ -64,6 +64,11 @@ const SUBJECT_LINES = 3;
 const ERASE_MAX = 16;
 const TYPE_MAX = 64;
 
+/** the pitch that looks straight at the sheet: its texels then keep their size on screen */
+const FACE_ON = Math.atan2(PB[2] - PT[2], PT[1] - PB[1]);
+/** stages narrower than this many cells (phones) get the close, square-on view */
+const NEAR_W = 150;
+
 const carrAt = (col: number) => PAPER_W / 2 - (MARG + col * 4 + 1.5) * TEX;
 /** the paper's travel with `line` at the typing point, just clear of the bail */
 const feedAt = (line: number) => TOPM + 10 + line * LINE;
@@ -438,17 +443,40 @@ export function makeTypewriter(reduced: boolean, onStrike?: () => void) {
       st[k] = a.from + (a.to - a.from) * ease(p);
       if (p >= 1) anim[k] = null;
     }
+    const W = R.w;
+    const H = R.h;
+    const near = W < NEAR_W;
     if (!st.dragging && st.vYaw) {
       st.user += st.vYaw * dt;
       st.vYaw *= Math.exp(-dt * 3);
       if (Math.abs(st.vYaw) < 0.03) st.vYaw = 0;
     }
-    const W = R.w;
-    const H = R.h;
-    // close on the sheet, big enough to read, the keyboard running off the bottom edge; the view
-    // drifts a third of the way with the carriage, so a whole line's travel stays on the paper
-    const scale = Math.min(W / 3.4, H / 2.9);
-    const cam = makeCam(-0.42 + st.user, 0.46, scale, W / 2, H * 0.6, [0.2 + 0.35 * st.carr, 1.25, -0.1]);
+    // up close, a turned machine eases back square on, where the type is crisp
+    if (near && !st.dragging && !st.vYaw && st.user) {
+      st.user *= Math.exp(-dt * 7);
+      if (Math.abs(st.user) < 0.002) st.user = 0;
+    }
+    let cam: Cam;
+    if (near) {
+      // a phone: square on to the sheet, a texel of paper exactly one cell across and down, so the
+      // type lands on whole cells in the site's own pixel capitals. The view follows the carriage
+      // only as far as it must to keep the sheet whole on a narrow screen
+      const half = (W / 2) * TEX;
+      const follow = clamp(1 - (half - 1) / 0.87, 0, 1);
+      const aim: V3 = [st.carr * follow, 1.6, -0.55];
+      cam = makeCam(st.user, FACE_ON, 1 / TEX, W / 2, H / 2, aim);
+      if (!st.user) {
+        // and nudged by under a cell so the sheet's texel edges fall on cell edges, never across one
+        const p = cam.proj([st.carr - PAPER_W / 2, PT[1], PT[2]]);
+        const q = p[1] + VIS - st.feed;
+        cam = makeCam(0, FACE_ON, 1 / TEX, W / 2 + Math.round(p[0]) - p[0], H / 2 + Math.round(q) - q, aim);
+      }
+    } else {
+      // close on the sheet, big enough to read, the keyboard running off the bottom edge; the view
+      // drifts a third of the way with the carriage, so a whole line's travel stays on the paper
+      const scale = Math.min(W / 3.4, H / 2.9);
+      cam = makeCam(-0.42 + st.user, 0.46, scale, W / 2, H * 0.6, [0.2 + 0.35 * st.carr, 1.25, -0.1]);
+    }
     st.cam = cam;
     const faces = build(t);
     // the shadow follows the carriage; nothing else that moves casts one worth redrawing
@@ -464,7 +492,7 @@ export function makeTypewriter(reduced: boolean, onStrike?: () => void) {
       const p = cam.proj([st.carr + 1.6, 1.42, -0.62]);
       drawText(R.c, W, H, "DING", Math.round(p[0]) - 2, Math.round(p[1]) - 6, P.light);
     }
-    if (anim.carr || anim.feed || st.dragging || st.vYaw) return 0;
+    if (anim.carr || anim.feed || st.dragging || st.vYaw || (near && st.user)) return 0;
     // between strikes nothing moves: sleep until the next key, or a key coming back up
     let next = st.steps.length ? st.steps[0].t : Infinity;
     for (const u of [st.keyUntil, st.spaceUntil, st.strikeUntil, st.dingUntil]) if (u > t && u < next) next = u;
