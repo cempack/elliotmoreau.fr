@@ -307,7 +307,7 @@ body:has(.os-win) .os-tabbar::before {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 3px;
   min-width: 0;
   max-width: 100%;
 }
@@ -339,8 +339,9 @@ body:has(.os-win) .os-tabbar::before {
   max-width: 100%;
   overflow: hidden;
   color: var(--color-label-2);
-  font: 500 0.75rem/0.875rem var(--font-sans);
-  letter-spacing: 0.005em;
+  /* iOS-small: 11px, with the bit of tracking small text needs */
+  font: 500 0.6875rem/0.8125rem var(--font-sans);
+  letter-spacing: 0.012em;
   text-overflow: ellipsis;
   white-space: nowrap;
   transition: color 0.2s ease-out;
