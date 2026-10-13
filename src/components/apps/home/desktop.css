@@ -481,9 +481,18 @@ html[data-sky="dusk"] .app-home-caption-role {
   outline: 2px solid var(--color-signal);
   outline-offset: 3px;
 }
-/* a brick slides out one cell toward you, its shadow left behind */
+/* a brick slides out one cell toward you, its shadow left behind (drawn
+   lifted, it starts from its place in the wall), and slides back when let go */
 .app-home-wall-lift {
   transition: transform 0.25s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.app-home-wall-brick[data-on] .app-home-wall-lift {
+  transform: translate(-1px, -1px);
+}
+@starting-style {
+  .app-home-wall-brick[data-on] .app-home-wall-lift {
+    transform: none;
+  }
 }
 .app-home-wall-ring {
   display: none;

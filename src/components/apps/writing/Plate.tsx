@@ -5,9 +5,19 @@ import type { MotionValue } from "motion/react";
 import type { GhostPost } from "@/lib/ghost";
 import { bayer, composite, layerOffsets, paintPlateLayers, plateSeed, type PlateLayers } from "./plate";
 import { realImage } from "./util";
+import { afterTransition, viewTransitionActive } from "@/hooks/useSettled";
 
 /** how long the dithered dissolve between two posts' worlds takes */
 const DISSOLVE_MS = 340;
+
+/** worlds already painted this visit, by seed and grid: reopening the Blog
+    puts its plate up at once instead of painting it again */
+const worlds = new Map<string, PlateLayers>();
+function remember(key: string, layers: PlateLayers) {
+  worlds.delete(key);
+  worlds.set(key, layers);
+  if (worlds.size > 4) worlds.delete(worlds.keys().next().value!);
+}
 
 /**
  * Keeps one canvas sized to its frame (whole cells, 2–4 CSS px each) and
@@ -34,19 +44,18 @@ class PlateRenderer {
   from: Uint8ClampedArray | null = null;
   t0 = 0;
   raf = 0;
+  /** a paint waiting for the page transition to end */
+  private later: (() => void) | null = null;
   private ctx: CanvasRenderingContext2D | null;
 
-  constructor(
-    private canvas: HTMLCanvasElement,
-    private frame: HTMLElement
-  ) {
+  constructor(private canvas: HTMLCanvasElement) {
     this.ctx = canvas.getContext("2d");
   }
 
-  /** true when the cell grid changed */
-  measure() {
-    const w = this.frame.clientWidth;
-    const h = this.frame.clientHeight;
+  /** the frame's size, as its ResizeObserver reports it (reading it here
+      would force a layout, inside a window's opening transition at that);
+      true when the cell grid changed */
+  measure(w: number, h: number) {
     if (w < 8 || h < 8) return false;
     const cell = w >= 760 ? 4 : w >= 520 ? 3 : 2;
     const W = Math.ceil(w / cell);
@@ -66,9 +75,24 @@ class PlateRenderer {
 
   private build() {
     if (!this.seed || !this.W) return false;
-    this.layers = paintPlateLayers(this.seed, this.W, this.H);
+    const key = `${this.seed}|${this.W}x${this.H}`;
+    let layers = worlds.get(key);
+    if (!layers) {
+      // a new world (a few hundred thousand pixels) is painted once the
+      // window is in, not in the frames of its opening
+      if (viewTransitionActive()) {
+        this.later ??= afterTransition(() => {
+          this.later = null;
+          this.paintNow();
+        });
+        return false;
+      }
+      layers = paintPlateLayers(this.seed, this.W, this.H);
+      remember(key, layers);
+    }
+    this.layers = layers;
     this.target = new Uint8ClampedArray(this.W * this.H * 4);
-    composite(this.layers, this.offsets, this.target);
+    composite(layers, this.offsets, this.target);
     return true;
   }
 
@@ -122,7 +146,7 @@ class PlateRenderer {
     // start from whatever is on screen (maybe a dissolve in progress)
     this.from = this.img.data.slice();
     this.t0 = performance.now();
-    this.build();
+    if (!this.build()) return;
     this.raf = requestAnimationFrame(this.draw);
   }
 
@@ -137,16 +161,14 @@ class PlateRenderer {
     if (!this.from) this.draw();
   }
 
-  /** bring the canvas up to date with the frame and a seed: a resize (or a
-      first sight after being hidden) repaints, a new seed may dissolve */
+  /** a new seed may dissolve in (before the first size, it is only kept) */
   sync(seed: string, animate: boolean) {
-    const resized = this.measure();
-    if (seed !== this.seed) this.setSeed(seed, animate && !resized);
-    else if (resized || !this.img) this.paintNow();
+    if (seed !== this.seed) this.setSeed(seed, animate);
   }
 
   destroy() {
     cancelAnimationFrame(this.raf);
+    this.later?.();
   }
 }
 
@@ -163,23 +185,24 @@ export function Plate({ post, animate, shift }: { post: GhostPost; animate: bool
     const frame = frameRef.current;
     const canvas = canvasRef.current;
     if (!frame || !canvas) return;
-    const r = new PlateRenderer(canvas, frame);
+    const r = new PlateRenderer(canvas);
     rendererRef.current = r;
     let raf = 0;
     let settle = 0;
-    const onResize = () => {
+    const onResize = ([entry]: ResizeObserverEntry[]) => {
+      const { width, height } = entry.contentRect;
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
         window.clearTimeout(settle);
         // first paint right away (also when a hidden screen is shown),
         // later ones once the size settles
         if (!r.img) {
-          r.measure();
+          r.measure(width, height);
           r.paintNow();
           return;
         }
         settle = window.setTimeout(() => {
-          if (r.measure()) r.paintNow();
+          if (r.measure(width, height)) r.paintNow();
         }, 120);
       });
     };

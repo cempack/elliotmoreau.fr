@@ -603,10 +603,8 @@
    The window is captured in isolation, so its own glass can't see the
    wallpaper: the ::view-transition-group carries a solid tint and the
    shadow instead (no backdrop blur: blurring every frame of a transition
-   is what made it heavy), and is cut to what is on screen below the menu bar
-   (geometry from window/dock.ts in --os-vt-in-* / --os-vt-out-*). The
-   group is what scales; `translate` undoes the scale's effect on its
-   positioning transform, so it scales about the Dock icon exactly. */
+   is what made it heavy), and is cut to what is on screen below the menu
+   bar. The group is what scales, about the Dock icon (window/dock.ts). */
 
 /* zoom: the window widens (or narrows) in place. The group morphs its box
    on the compositor; the snapshots keep their own size, top-centred and
@@ -628,19 +626,10 @@
   animation-duration: 0.22s;
 }
 
-::view-transition-group(.app-open),
-::view-transition-group(.app-in) {
-  top: var(--os-vt-in-t);
-  height: var(--os-vt-in-vis);
-  transform-origin: var(--os-vt-in-ox) var(--os-vt-in-oy);
-}
-::view-transition-group(.app-close),
-::view-transition-group(.app-leave),
-::view-transition-group(.app-out) {
-  top: var(--os-vt-out-t);
-  height: var(--os-vt-out-vis);
-  transform-origin: var(--os-vt-out-ox) var(--os-vt-out-oy);
-}
+/* opening and closing: the group carries the window's tint, corners and
+   shadow; where it sits, its clip and its motion are Web Animations from
+   window/dock.ts (React's onEnter / onExit), so the browser's own fades
+   stay off */
 ::view-transition-group(.app-open),
 ::view-transition-group(.app-in),
 ::view-transition-group(.app-close),
@@ -649,67 +638,14 @@
   border-radius: var(--radius-window);
   background: color-mix(in srgb, var(--color-ink-900) 86%, transparent);
   box-shadow: 0 24px 48px -28px rgba(0, 0, 0, 0.6);
-}
-::view-transition-image-pair(.app-open),
-::view-transition-image-pair(.app-in) {
-  inset: auto;
-  top: calc(-1 * var(--os-vt-in-t));
-  left: 0;
-  width: 100%;
-  height: var(--os-vt-in-h);
-}
-::view-transition-image-pair(.app-close),
-::view-transition-image-pair(.app-leave),
-::view-transition-image-pair(.app-out) {
-  inset: auto;
-  top: calc(-1 * var(--os-vt-out-t));
-  left: 0;
-  width: 100%;
-  height: var(--os-vt-out-h);
-}
-::view-transition-new(.app-open),
-::view-transition-new(.app-in) {
-  clip-path: inset(var(--os-vt-in-t) 0 var(--os-vt-in-cb) 0 round var(--radius-window));
   animation: none;
 }
+::view-transition-new(.app-open),
+::view-transition-new(.app-in),
 ::view-transition-old(.app-close),
 ::view-transition-old(.app-leave),
 ::view-transition-old(.app-out) {
-  clip-path: inset(var(--os-vt-out-t) 0 var(--os-vt-out-cb) 0 round var(--radius-window));
   animation: none;
-}
-
-/* app-open: out of the Dock icon itself, from roughly icon size, on a
-   critically damped spring curve; opaque within ~60ms so the first frames
-   read as something leaving the icon. app-close: the same path back into
-   the icon, fading as it lands. Short on purpose: the page can't be
-   clicked while a transition runs, so these stay under a third of a
-   second. (Snapshots are rasterized at full size, so the small end of the
-   path stays sharp.) */
-::view-transition-group(.app-open) {
-  animation:
-    300ms
-      linear(0, 0.014 2%, 0.051 4%, 0.103 6%, 0.163 8%, 0.228 10%, 0.327 13%, 0.422 16%, 0.537 20%, 0.636 24%, 0.717 28%, 0.796 33%, 0.855 38%, 0.905 44%, 0.939 50%, 0.964 57%, 0.98 65%, 0.991 75%, 0.996 87%, 1)
-      both os-vt-grow,
-    70ms cubic-bezier(0.2, 0, 0, 1) both os-vt-in;
-}
-::view-transition-group(.app-close) {
-  animation:
-    230ms cubic-bezier(0.3, 0, 0.8, 0.15) both os-vt-shrink,
-    110ms cubic-bezier(0.4, 0, 1, 1) 120ms both os-vt-out;
-}
-::view-transition-group(.app-leave) {
-  transform-origin: 50% 50%;
-  animation:
-    180ms cubic-bezier(0.2, 0, 0, 1) both os-vt-recede,
-    130ms cubic-bezier(0.4, 0, 1, 1) 40ms both os-vt-out;
-}
-/* plain cross-fade: the old window holds until the new one covers it */
-::view-transition-group(.app-in) {
-  animation: 130ms cubic-bezier(0.2, 0, 0, 1) both os-vt-in;
-}
-::view-transition-group(.app-out) {
-  animation: 110ms cubic-bezier(0.4, 0, 1, 1) 30ms both os-vt-out;
 }
 
 /* the root, when it takes part (a plain navigation), cross-fades fast */
@@ -723,26 +659,6 @@
 /* the menu bar and dock hold still above the windows while pages
    transition: see menubar.css and dock.css */
 
-/* scale s about the icon; translate (1 − s) × the group's own offset undoes
-   what the scale does to its positioning transform */
-@keyframes os-vt-grow {
-  from {
-    scale: 0.07;
-    translate: calc(0.93 * var(--os-vt-in-gx)) calc(0.93 * var(--os-vt-in-gy));
-  }
-}
-@keyframes os-vt-shrink {
-  to {
-    scale: 0.07;
-    translate: calc(0.93 * var(--os-vt-out-gx)) calc(0.93 * var(--os-vt-out-gy));
-  }
-}
-@keyframes os-vt-recede {
-  to {
-    scale: 0.96;
-    translate: calc(0.04 * var(--os-vt-out-gx)) calc(0.04 * var(--os-vt-out-gy));
-  }
-}
 @keyframes os-vt-in {
   from {
     opacity: 0;
@@ -765,14 +681,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  ::view-transition-group(.app-open),
-  ::view-transition-group(.app-in),
   :root::view-transition-new(root) {
     animation: 150ms linear both os-vt-in;
   }
-  ::view-transition-group(.app-close),
-  ::view-transition-group(.app-leave),
-  ::view-transition-group(.app-out),
   :root::view-transition-old(root) {
     animation: 150ms linear both os-vt-out;
   }

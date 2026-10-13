@@ -13,7 +13,7 @@ import { appDef, type AppId } from "./apps";
 import { AppIcon } from "./icons";
 import { Glass } from "./Glass";
 import { useWindowDrag } from "./window/useWindowDrag";
-import { dockIconCenter, markKeyboardClose, setEnterOrigin, setExitOrigin } from "./window/dock";
+import { animateEnter, animateExit, dockIconCenter, enterGeometry, markKeyboardClose, setExitOrigin, takeExitGeometry, type VtInstance } from "./window/dock";
 import { getZoomPref, setZoomPref } from "./window/zoomPref";
 import { WinIcon } from "./window/WinIcon";
 import { PathBar, type Crumb } from "./window/PathBar";
@@ -111,21 +111,72 @@ export function AppWindow({
     target: () => dockIconCenter(app, appHref),
   });
 
-  // where the page transition grows from / shrinks into (window.css reads these)
+  // What closing needs from the window, measured while it sits idle
+  // (after it opens, and after each scroll, resize, press or key) rather
+  // than as it unmounts, where any read forces a layout of the half-built
+  // next page: where it sits, for the shrink into the Dock, and the
+  // overview's miniature of it as it was left.
+  const dirty = useRef(true);
+  useEffect(() => {
+    const el = winRef.current;
+    if (!el) return;
+    // Safari has no requestIdleCallback: a short timeout stands in
+    const idleApi = typeof requestIdleCallback === "function";
+    let idle = 0;
+    let wait = 0;
+    const soon = () => {
+      if (idle || wait) return;
+      idle = idleApi ? requestIdleCallback(measure, { timeout: 2000 }) : window.setTimeout(measure, 600);
+    };
+    const changed = () => {
+      dirty.current = true;
+      soon();
+    };
+    const measure = () => {
+      idle = 0;
+      if (!el.isConnected) return;
+      // not in the frames of a page transition (the window's own opening),
+      // nor while it springs home after a drag: wait for it to rest
+      if (viewTransitionActive() || (el.style.transform && el.style.transform !== "none")) {
+        wait = window.setTimeout(() => ((wait = 0), soon()), 200);
+        return;
+      }
+      setExitOrigin(el, app, appHref);
+      if (app !== "admin") captureWindow(app, el);
+      dirty.current = false;
+    };
+    changed();
+    const opts = { capture: true, passive: true };
+    // a press or a key may change what the miniature shows, not where the
+    // window sits: shoot again soon, but don't count it as a change (the
+    // close button is a press too, and would re-measure on the way out)
+    const presses = ["pointerup", "keyup"];
+    for (const type of presses) el.addEventListener(type, soon, opts);
+    el.addEventListener("input", changed, opts);
+    // the page scrolls the document, not the window: listen above it
+    window.addEventListener("scroll", changed, opts);
+    window.addEventListener("resize", changed, opts);
+    const ro = new ResizeObserver(changed);
+    ro.observe(el);
+    return () => {
+      for (const type of presses) el.removeEventListener(type, soon, opts);
+      el.removeEventListener("input", changed, opts);
+      window.removeEventListener("scroll", changed, opts);
+      window.removeEventListener("resize", changed, opts);
+      ro.disconnect();
+      if (idleApi) cancelIdleCallback(idle);
+      else window.clearTimeout(idle);
+      window.clearTimeout(wait);
+    };
+  }, [app, appHref]);
+
+  // closing before the window was ever idle: measure as it leaves
   useLayoutEffect(() => {
     const el = winRef.current;
     if (!el) return;
-    // only a window mounting inside a view transition is opening (a hard
-    // load, or reduced motion, has no transition to aim)
-    let raf = 0;
-    if (viewTransitionActive()) {
-      setEnterOrigin(el, app, appHref);
-      raf = requestAnimationFrame(() => setEnterOrigin(el, app, appHref, true));
-    }
     return () => {
-      cancelAnimationFrame(raf);
+      if (!dirty.current) return;
       setExitOrigin(el, app, appHref);
-      // the overview's miniature: the window as it was left (still in the DOM here)
       if (app !== "admin") captureWindow(app, el);
     };
   }, [app, appHref]);
@@ -195,7 +246,24 @@ export function AppWindow({
   return (
     // the ViewTransition must sit above any DOM node of the page, or React
     // never runs its enter/exit (nested boundaries only animate updates)
-    <ViewTransition enter={ENTER} exit={thrown ? "none" : EXIT} update={UPDATE} share="none" default="none">
+    <ViewTransition
+      enter={ENTER}
+      exit={thrown ? "none" : EXIT}
+      update={UPDATE}
+      share="none"
+      default="none"
+      // the motion itself runs on the transition's pseudo-elements (window/dock.ts)
+      onEnter={(inst, types) => {
+        const el = winRef.current;
+        const g = el && enterGeometry(el, app, appHref);
+        if (g) animateEnter(inst as unknown as VtInstance, types.includes("app-open") ? "app-open" : "app-in", g, reduced);
+      }}
+      onExit={(inst, types) => {
+        const g = takeExitGeometry(app);
+        if (!g || thrown) return;
+        animateExit(inst as unknown as VtInstance, types.includes("app-close") ? "app-close" : types.includes("app-open") ? "app-leave" : "app-out", g, reduced);
+      }}
+    >
       <m.section
         ref={winRef}
         aria-labelledby={titleId}

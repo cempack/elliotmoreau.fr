@@ -81,7 +81,11 @@ export function PushWidget() {
   const hydrated = useHydrated();
   const { blip } = useSound();
   const [active, setActive] = useState<number | null>(null);
+  /** bricks just let go of, still sliding back into the wall */
+  const [settling, setSettling] = useState<number[]>([]);
   const [fresh, setFresh] = useState<Set<string>>(() => new Set());
+  const activeRef = useRef<number | null>(null);
+  const settleTimer = useRef(0);
   const svgRef = useRef<SVGSVGElement>(null);
   const scrub = useRef<{ pid: number; touch: boolean } | null>(null);
 
@@ -122,6 +126,24 @@ export function PushWidget() {
     );
   }, [fresh]);
 
+  // The wall at rest is one path per colour, not a few elements per brick:
+  // a page transition restyles every element on screen several times over,
+  // and ninety bricks were half the Desktop's. The brick in hand, and the
+  // few still sliding back, are drawn over it on their own.
+  const rest = useMemo(() => {
+    const body = KILN.map(() => "");
+    const hi = KILN.map(() => "");
+    for (const b of bricks) {
+      if (fresh.has(b.d)) continue;
+      const h = heat(b.n);
+      body[h] += `M${b.x} ${b.y}h${BW}v${BH}h${-BW}z`;
+      hi[h] += `M${b.x} ${b.y}h${BW - 1}v1h${1 - BW}z`;
+    }
+    return { body, hi };
+  }, [bricks, fresh]);
+  useEffect(() => () => window.clearTimeout(settleTimer.current), []);
+
+  const loose = [...new Set(active == null ? settling : [...settling, active])].sort((x, y) => x - y);
   const hasAny = bricks.some((b) => b.n > 0);
   const cur = active != null ? bricks[active] : null;
 
@@ -176,9 +198,20 @@ export function PushWidget() {
     });
     return bd <= 1 ? best : null;
   };
-  const pick = (i: number | null) => {
-    if (i === active) return;
+  /** the brick in hand (null: none); the one let go of slides back */
+  const hold = (i: number | null) => {
+    const prev = activeRef.current;
+    if (i === prev) return;
+    activeRef.current = i;
     setActive(i);
+    if (prev == null) return;
+    setSettling((s) => [...s.filter((x) => x !== prev && x !== i), prev].slice(-8));
+    window.clearTimeout(settleTimer.current);
+    settleTimer.current = window.setTimeout(() => setSettling([]), 320);
+  };
+  const pick = (i: number | null) => {
+    if (i === activeRef.current) return;
+    hold(i);
     if (i != null && scrub.current) blip("tick");
   };
 
@@ -200,7 +233,7 @@ export function PushWidget() {
     const touch = scrub.current.touch;
     scrub.current = null;
     // a finger lets go of the day it chose; a mouse keeps hovering
-    if (touch) window.setTimeout(() => setActive(null), 1600);
+    if (touch) window.setTimeout(() => hold(null), 1600);
   };
   const onKeyDown = (e: React.KeyboardEvent<SVGSVGElement>) => {
     if (!bricks.length) return;
@@ -220,7 +253,7 @@ export function PushWidget() {
     } else if (e.key === "Escape") next = null;
     else return;
     e.preventDefault();
-    setActive(next);
+    hold(next);
   };
 
   return (
@@ -242,10 +275,10 @@ export function PushWidget() {
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
         onPointerLeave={(e) => {
-          if (!scrub.current && e.pointerType === "mouse") setActive(null);
+          if (!scrub.current && e.pointerType === "mouse") hold(null);
         }}
         onKeyDown={onKeyDown}
-        onBlur={() => setActive(null)}
+        onBlur={() => hold(null)}
       >
         {/* a mouse gets the wall's name as a tooltip: the bricks are days */}
         <title>{w.wall}</title>
@@ -254,22 +287,17 @@ export function PushWidget() {
         {[1, 3, 5].map((c) => (
           <rect key={`h${c}`} x={1} y={1 + (6 - c) * (BH + 1)} width={3} height={BH} fill="#4a4640" />
         ))}
-        {bricks.map((b, i) => {
-          const [body, hi] = KILN[heat(b.n)];
-          const on = i === active;
-          const isFresh = fresh.has(b.d);
-          return (
-            <g key={b.d} className="app-home-wall-brick" data-on={on || undefined} data-fresh={isFresh || undefined}>
-              {on && <rect x={b.x} y={b.y + 1} width={BW} height={BH} fill={SHADOW} />}
-              <g className="app-home-wall-lift" style={on ? { transform: "translate(-1px, -1px)" } : undefined}>
-                <rect x={b.x} y={b.y} width={BW} height={BH} fill={body} />
-                <rect x={b.x} y={b.y} width={BW - 1} height={1} fill={hi} />
-                {(b.d.charCodeAt(9) + b.d.charCodeAt(6)) % 3 === 0 && <rect x={b.x + 1 + (b.d.charCodeAt(8) % 4)} y={b.y + 1} width={1} height={1} fill={body} opacity={0.6} />}
-                {on && <rect x={b.x} y={b.y} width={BW} height={BH} fill="none" style={{ stroke: "var(--color-signal)" }} strokeWidth={0.34} className="app-home-wall-ring" />}
-              </g>
-              {isFresh && <rect x={b.x} y={b.y + BH} width={BW} height={0.5} style={{ fill: "var(--color-signal)" }} className="app-home-wall-new" />}
-            </g>
-          );
+        {KILN.map(([body, hi], h) => (
+          <g key={h}>
+            {rest.body[h] && <path d={rest.body[h]} fill={body} />}
+            {rest.hi[h] && <path d={rest.hi[h]} fill={hi} />}
+          </g>
+        ))}
+        {bricks.map((b) => fresh.has(b.d) && <LooseBrick key={b.d} b={b} fresh />)}
+        {/* in wall order, never moved: a node moved in the DOM would jump instead of sliding back */}
+        {loose.map((i) => {
+          const b = bricks[i];
+          return b && <LooseBrick key={`h${b.d}`} b={b} fresh={fresh.has(b.d)} on={i === active} cover />;
         })}
       </svg>
       <span id="app-home-wall-hint" className="sr-only">
@@ -284,5 +312,22 @@ export function PushWidget() {
         </span>
       </Link>
     </div>
+  );
+}
+
+/** one brick on its own: newly laid (it settles in), in hand (lifted out of the wall, its shadow left behind) or sliding back */
+function LooseBrick({ b, fresh, on, cover }: { b: Brick; fresh?: boolean; on?: boolean; cover?: boolean }) {
+  const [body, hi] = KILN[heat(b.n)];
+  return (
+    <g className="app-home-wall-brick" data-on={on || undefined} data-fresh={(fresh && !cover) || undefined}>
+      {cover && <rect x={b.x} y={b.y} width={BW} height={BH} fill={MORTAR} />}
+      {on && <rect x={b.x} y={b.y + 1} width={BW} height={BH} fill={SHADOW} />}
+      <g className="app-home-wall-lift">
+        <rect x={b.x} y={b.y} width={BW} height={BH} fill={body} />
+        <rect x={b.x} y={b.y} width={BW - 1} height={1} fill={hi} />
+        {on && <rect x={b.x} y={b.y} width={BW} height={BH} fill="none" style={{ stroke: "var(--color-signal)" }} strokeWidth={0.34} className="app-home-wall-ring" />}
+      </g>
+      {fresh && <rect x={b.x} y={b.y + BH} width={BW} height={0.5} style={{ fill: "var(--color-signal)" }} className="app-home-wall-new" />}
+    </g>
   );
 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { animate, type AnimationPlaybackControls } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useI18n } from "@/i18n/client";
 import { useReduced } from "@/hooks/env";
 import { project, spring, springFrom } from "@/lib/motion";
@@ -36,44 +36,61 @@ const CELL = 2;
 type Pt = { x: number; y: number };
 
 /** the plate's sky, cropped round its sun and printed in four inks */
+function print(seed: string, w: number, h: number) {
+  const PW = 204;
+  const PH = 100;
+  const L = paintPlateLayers(seed, PW, PH);
+  const full = new Uint8ClampedArray(PW * PH * 4);
+  composite(L, [0, 0, 0, 0], full);
+  const x0 = Math.max(0, Math.min(PW - w, L.sun.x - Math.round(w * 0.6)));
+  const y0 = Math.max(0, Math.min(PH - h, L.sun.y - Math.round(h * 0.35)));
+  const inks = [
+    [42, 41, 38],
+    [104, 100, 91],
+    [163, 158, 145],
+    [214, 210, 198],
+  ];
+  const B = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+  const img = new ImageData(w, h);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const s = ((y0 + y) * PW + x0 + x) * 4;
+      const lum = full[s + 3] === 0 ? 1 : (0.2126 * full[s] + 0.7152 * full[s + 1] + 0.0722 * full[s + 2]) / 255;
+      // lift the darks so the sky reads as print, then four dithered inks
+      const v = Math.min(1, Math.pow(lum, 0.62) * 1.08);
+      const k = Math.min(3, Math.floor(v * 3 + (B[((y & 3) << 2) | (x & 3)] + 0.5) / 16));
+      const o = (y * w + x) * 4;
+      img.data[o] = inks[k][0];
+      img.data[o + 1] = inks[k][1];
+      img.data[o + 2] = inks[k][2];
+      img.data[o + 3] = 255;
+    }
+  }
+  return img;
+}
+
+/** prints already made this visit: coming back to the Desktop reuses them */
+const prints = new Map<string, ImageData>();
+
 function Newsprint({ seed, w, h }: { seed: string; w: number; h: number }) {
   const ref = useRef<HTMLCanvasElement>(null);
-  // printed once the Desktop is in, not in the frames of its transition
-  useEffect(() => afterTransition(() => {
-    const c = ref.current;
-    const ctx = c?.getContext("2d");
-    if (!c || !ctx) return;
-    const PW = 204;
-    const PH = 100;
-    const L = paintPlateLayers(seed, PW, PH);
-    const full = new Uint8ClampedArray(PW * PH * 4);
-    composite(L, [0, 0, 0, 0], full);
-    const x0 = Math.max(0, Math.min(PW - w, L.sun.x - Math.round(w * 0.6)));
-    const y0 = Math.max(0, Math.min(PH - h, L.sun.y - Math.round(h * 0.35)));
-    const inks = [
-      [42, 41, 38],
-      [104, 100, 91],
-      [163, 158, 145],
-      [214, 210, 198],
-    ];
-    const B = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
-    const img = ctx.createImageData(w, h);
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const s = ((y0 + y) * PW + x0 + x) * 4;
-        const lum = full[s + 3] === 0 ? 1 : (0.2126 * full[s] + 0.7152 * full[s + 1] + 0.0722 * full[s + 2]) / 255;
-        // lift the darks so the sky reads as print, then four dithered inks
-        const v = Math.min(1, Math.pow(lum, 0.62) * 1.08);
-        const k = Math.min(3, Math.floor(v * 3 + (B[((y & 3) << 2) | (x & 3)] + 0.5) / 16));
-        const o = (y * w + x) * 4;
-        img.data[o] = inks[k][0];
-        img.data[o + 1] = inks[k][1];
-        img.data[o + 2] = inks[k][2];
-        img.data[o + 3] = 255;
-      }
+  // a print made before goes up at once, inside the Desktop's own
+  // transition; a new one is printed once the Desktop is in, not in its frames
+  useLayoutEffect(() => {
+    const key = `${seed}|${w}|${h}`;
+    const put = (img: ImageData) => ref.current?.getContext("2d")?.putImageData(img, 0, 0);
+    const done = prints.get(key);
+    if (done) {
+      put(done);
+      return;
     }
-    ctx.putImageData(img, 0, 0);
-  }), [seed, w, h]);
+    return afterTransition(() => {
+      const img = print(seed, w, h);
+      if (prints.size > 12) prints.clear();
+      prints.set(key, img);
+      put(img);
+    });
+  }, [seed, w, h]);
   return <canvas ref={ref} width={w} height={h} className="app-home-kiosk-print" aria-hidden />;
 }
 
