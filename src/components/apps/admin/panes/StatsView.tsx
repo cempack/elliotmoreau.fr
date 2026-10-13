@@ -41,20 +41,43 @@ export function StatsView() {
   const [range, setRange] = useState<StatsRange>(30);
   const [stats, setStats] = useState<Stats | null>(null);
   const [failed, setFailed] = useState(false);
+  const [updated, setUpdated] = useState<number | null>(null);
+  const [optedOut, setOptedOut] = useState(false);
 
+  // the figures stay live while the panel is open: every 30 seconds while
+  // it's on screen, and at once when you come back to it
   useEffect(() => {
     let dead = false;
-    rpc<{ stats: Stats }>("stats", { range }).then((r) => {
-      if (dead) return;
-      if (r.ok) {
-        setStats(r.stats);
-        setFailed(false);
-      } else setFailed(true);
-    });
+    const load = () => {
+      if (document.visibilityState === "hidden") return;
+      rpc<{ stats: Stats }>("stats", { range }).then((r) => {
+        if (dead) return;
+        if (r.ok) {
+          setStats(r.stats);
+          setUpdated(Date.now());
+          setFailed(false);
+        } else setFailed(true);
+      });
+    };
+    load();
+    const id = window.setInterval(load, 30_000);
+    const back = () => document.visibilityState === "visible" && load();
+    document.addEventListener("visibilitychange", back);
+    window.addEventListener("focus", back);
     return () => {
       dead = true;
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", back);
+      window.removeEventListener("focus", back);
     };
   }, [range]);
+
+  // this browser asks not to be tracked: say so, or its owner waits for visits that never come
+  useEffect(() => {
+    const nav = navigator as Navigator & { globalPrivacyControl?: boolean };
+    const id = requestAnimationFrame(() => setOptedOut(!!nav.globalPrivacyControl || nav.doNotTrack === "1"));
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   // refetching keeps the last picture, dimmed
   const stale = !!stats && stats.range !== range;
@@ -144,11 +167,15 @@ export function StatsView() {
           <div className="app-admin-card app-admin-chart-card">
             <p className="app-admin-card-title">{chartTitle}</p>
             {empty ? <p className="app-admin-empty">{s.empty}</p> : <Columns points={points} fmt={fmt} s={s} />}
-            {stats.since && (
-              <p className="app-admin-hint">
-                {fill(s.since, { date: new Intl.DateTimeFormat(locale, { dateStyle: "long", timeZone: "UTC" }).format(new Date(`${stats.since}T12:00:00Z`)) })}
-              </p>
-            )}
+            <p className="app-admin-hint app-admin-stats-meta">
+              {stats.since && (
+                <span>{fill(s.since, { date: new Intl.DateTimeFormat(locale, { dateStyle: "long", timeZone: "UTC" }).format(new Date(`${stats.since}T12:00:00Z`)) })}</span>
+              )}
+              {updated && (
+                <span aria-live="off">{fill(s.updated, { time: new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }).format(updated) })}</span>
+              )}
+            </p>
+            <p className="app-admin-hint">{optedOut ? `${s.notCountedHere} ${s.notCounted}` : s.notCounted}</p>
           </div>
 
           {!empty && (

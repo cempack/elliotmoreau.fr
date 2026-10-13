@@ -90,6 +90,11 @@ const en = {
     unknown: "Unknown",
     empty: "No visits counted in this period yet.",
     since: "Counting since {date}.",
+    /** what is never counted, said once under the figures */
+    notCounted: "Not counted: your own visits while you’re signed in, bots, and browsers that ask not to be tracked (Do Not Track, Global Privacy Control, as Brave does) or block the count.",
+    /** this browser is one of them */
+    notCountedHere: "This browser asks not to be tracked, so your visits from it never show here, even signed out.",
+    updated: "Updated {time}",
     table: "Visitors and page views per day",
     day: "Day",
     loading: "Counting…",
@@ -440,6 +445,9 @@ const fr: typeof en = {
     unknown: "Inconnu",
     empty: "Aucune visite comptée sur cette période pour l’instant.",
     since: "Compté depuis le {date}.",
+    notCounted: "Pas comptés : vos propres visites quand vous êtes connecté, les robots, et les navigateurs qui demandent à ne pas être suivis (Do Not Track, Global Privacy Control, comme Brave) ou qui bloquent le comptage.",
+    notCountedHere: "Ce navigateur demande à ne pas être suivi : vos visites depuis celui-ci n’apparaissent jamais ici, même déconnecté.",
+    updated: "Mis à jour à {time}",
     table: "Visiteurs et pages vues par jour",
     day: "Jour",
     loading: "Comptage…",

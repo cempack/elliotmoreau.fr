@@ -3,6 +3,7 @@
 import { useId } from "react";
 import type { L10n } from "@/lib/content";
 import { useI18n } from "@/i18n/client";
+import { Picker } from "./Picker";
 
 /**
  * The admin panel's form kit: labelled fields, EN/FR pairs, toggles,
@@ -252,21 +253,7 @@ export function Select<T extends string>({
 }) {
   return (
     <Field label={label} hint={hint} error={error} wide={wide} hideLabel={hideLabel}>
-      {(id, d) => (
-        <select
-          id={id}
-          aria-describedby={d}
-          className="app-admin-input app-admin-select"
-          value={value}
-          onChange={(e) => onChange(e.target.value as T)}
-        >
-          {options.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-      )}
+      {(id, d) => <Picker id={id} describedBy={d} invalid={!!error} value={value} options={options} onChange={onChange} />}
     </Field>
   );
 }

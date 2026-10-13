@@ -387,15 +387,131 @@
   resize: vertical;
   line-height: 1.5;
 }
+/* the dropdown's button (Picker.tsx): the choice, and a chevron that turns as it opens */
 .app-admin-select {
-  appearance: none;
-  padding-right: 2rem;
-  background-image: linear-gradient(45deg, transparent 50%, var(--color-label-3) 50%), linear-gradient(135deg, var(--color-label-3) 50%, transparent 50%);
-  background-position:
-    calc(100% - 1rem) 50%,
-    calc(100% - 0.7rem) 50%;
-  background-size: 0.3rem 0.3rem;
-  background-repeat: no-repeat;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-right: 0.875rem;
+  text-align: left;
+  cursor: default;
+}
+.app-admin-select-value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app-admin-select-chev {
+  flex: none;
+  color: var(--color-label-3);
+  transition: rotate 0.22s var(--ease-out-quint);
+}
+.app-admin-select[data-open] {
+  background: var(--adm-field-hover);
+  box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--adm-accent) 60%, transparent);
+}
+.app-admin-select[data-open] .app-admin-select-chev {
+  rotate: 180deg;
+}
+
+/* its list: the right-click menu's material, under the button (above when
+   there's no room), the chosen option checked, the one under the pointer
+   or the arrows lit */
+.app-admin-picker {
+  position: fixed;
+  z-index: 90;
+  margin: 0;
+  padding: 5px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+  border: 1.5px solid color-mix(in srgb, var(--color-border-active) 30%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--color-ink-900) 95%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 2px 6px rgba(0, 0, 0, 0.22),
+    0 22px 50px -18px rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(24px) saturate(1.5);
+  color: var(--color-label);
+  font: 450 0.875rem/1.25 var(--font-sans);
+  transform-origin: 50% 0;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-label) 22%, transparent) transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  animation: app-admin-picker-in 0.16s var(--ease-out-quint);
+}
+.app-admin-picker[data-up] {
+  transform-origin: 50% 100%;
+}
+.app-admin-picker-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 6px 10px 6px 9px;
+  border-radius: 6px;
+  cursor: default;
+}
+.app-admin-picker-opt[data-active] {
+  background: color-mix(in srgb, var(--color-signal) 22%, transparent);
+}
+.app-admin-picker-opt[aria-selected="true"] {
+  font-weight: 600;
+}
+.app-admin-picker-check {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 12px;
+}
+.app-admin-picker-label {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+@keyframes app-admin-picker-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+@media (pointer: coarse) {
+  .app-admin-picker-opt {
+    min-height: 44px;
+    font-size: 1rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-admin-picker {
+    animation: none;
+  }
+  .app-admin-select-chev {
+    transition: none;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .app-admin-picker {
+    background: var(--color-ink-900);
+    backdrop-filter: none;
+  }
+}
+@media (prefers-contrast: more) {
+  .app-admin-picker {
+    border-color: var(--hairline);
+  }
+}
+@media (forced-colors: active) {
+  .app-admin-picker {
+    border: 1px solid CanvasText;
+  }
+  .app-admin-picker-opt[data-active] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
 }
 @media (pointer: coarse) {
   .app-admin-input {
@@ -1042,7 +1158,8 @@
 /* a pill that floats up at the bottom of the window while there are changes */
 .app-admin-savebar {
   position: sticky;
-  bottom: 1rem;
+  /* clear of the phone's floating tab bar, which the window runs under */
+  bottom: calc(var(--os-win-under, 0px) + 1rem);
   z-index: 5;
   display: flex;
   justify-content: center;
@@ -1203,6 +1320,17 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: 0.75rem 1.5rem;
+}
+/* "Counting since …" and when the figures last came in, on one line */
+.app-admin-stats-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  font-variant-numeric: tabular-nums;
+}
+.app-admin-stats-meta:empty {
+  display: none;
 }
 .app-admin-stats-head .app-admin-hint {
   max-width: 34rem;
