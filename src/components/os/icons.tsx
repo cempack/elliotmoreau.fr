@@ -364,6 +364,9 @@ const restOf = (id: IconId) => {
   return f;
 };
 
+/** an icon's drawing at rest: a palette role per cell of its 16×16 (null where empty) */
+export const glyphFills = (id: IconId): Fills => restOf(id);
+
 function GlyphRects({ id, live }: { id: IconId; live?: LiveGlyph | null }) {
   const P = useArtPalette();
   const g = GLYPHS[id];

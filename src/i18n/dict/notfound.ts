@@ -23,6 +23,8 @@ const en = {
   drag: "Drag me",
   going: "Taking you to {target} in {n}…",
   stay: "Stay",
+  /** under the app in pieces, while it's apart */
+  rebuild: "Drag right to put it back together",
   /** the little zsh transcript */
   console: "Terminal",
   /** the [nyae] keys, as one keyboard stop (arrows move between them) */
@@ -69,6 +71,7 @@ const fr: typeof en = {
   drag: "Déplacez-moi",
   going: "Direction {target} dans {n}…",
   stay: "Rester",
+  rebuild: "Glissez vers la droite pour le recoller",
   console: "Terminal",
   answerGroup: "Répondre à zsh",
   answers: {
