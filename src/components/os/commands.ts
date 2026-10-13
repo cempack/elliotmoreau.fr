@@ -206,9 +206,9 @@ export function useSpotlightCommands(): Command[] {
       hint: p.reading_time ? fill(sp.minRead, { n: p.reading_time }) : undefined,
       keywords: `${p.excerpt} ${p.tags.map((x) => x.name).join(" ")} blog post article`,
       icon: glyph(G_PEN),
-      thumb: createElement(PlateThumb, { seed: p.slug, cols: 34, rows: 24 }),
+      thumb: createElement(PlateThumb, { post: p, cols: 34, rows: 24 }),
       preview: {
-        art: createElement(PlateThumb, { seed: p.slug, cols: 96, rows: 60 }),
+        art: createElement(PlateThumb, { post: p, cols: 96, rows: 60 }),
         title: p.title,
         meta: [fm.dm(new Date(p.published_at)), p.reading_time ? fill(sp.minRead, { n: p.reading_time }) : "", p.tags[0]?.name ?? ""].filter(Boolean).join(" · "),
         body: p.excerpt,

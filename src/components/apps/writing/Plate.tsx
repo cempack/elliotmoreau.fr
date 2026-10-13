@@ -1,232 +1,332 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { MotionValue } from "motion/react";
 import type { GhostPost } from "@/lib/ghost";
-import { bayer, composite, layerOffsets, paintPlateLayers, plateSeed, type PlateLayers } from "./plate";
-import { realImage } from "./util";
+import { useI18n } from "@/i18n/client";
 import { afterTransition, viewTransitionActive } from "@/hooks/useSettled";
+import { loadSky, publishedMs, skyModule, type Sky } from "./sky";
+import { realImage } from "./util";
 
-/** how long the dithered dissolve between two posts' worlds takes */
-const DISSOLVE_MS = 340;
+/** CSS px per cell: the globe's grid */
+const CELL = 3;
+/** a press held this long (still) names the stars */
+const HOLD_MS = 260;
 
-/** worlds already painted this visit, by seed and grid: reopening the Blog
-    puts its plate up at once instead of painting it again */
-const worlds = new Map<string, PlateLayers>();
-function remember(key: string, layers: PlateLayers) {
-  worlds.delete(key);
-  worlds.set(key, layers);
-  if (worlds.size > 4) worlds.delete(worlds.keys().next().value!);
+/** skies already painted this visit, by post and grid: reopening the Blog
+    puts its picture up at once instead of painting it again */
+const painted = new Map<string, Uint32Array>();
+function remember(key: string, px: Uint32Array) {
+  painted.delete(key);
+  painted.set(key, px.slice());
+  if (painted.size > 6) painted.delete(painted.keys().next().value!);
 }
 
 /**
- * Keeps one canvas sized to its frame (whole cells, 2–4 CSS px each) and
- * paints plates into it. Switching seeds while visible dissolves the old
- * world into the new one in Bayer order: the pixel grid itself is the
- * transition. A shift (parallax) restacks the depth layers in whole-cell
- * steps; it only repaints when a layer actually moves a cell.
- *
- * What is on screen always lives in `img` (JS memory), so a dissolve that
- * interrupts another starts from it without reading the canvas back.
+ * Keeps one canvas sized to its frame (whole 3 px cells) and paints the
+ * post's sky into it: the real one over Toulouse at the minute it went
+ * out, with the amber date stamp and a dithered foot for the title to
+ * sit on. Dragging turns the camera along the horizon (and up, with a
+ * mouse); holding it draws the constellations in. A drag on a link
+ * doesn't follow the link.
  */
-class PlateRenderer {
+class SkyPicture {
   W = 0;
   H = 0;
-  cell = 0;
-  seed = "";
-  layers: PlateLayers | null = null;
-  /** the frame on screen */
-  img: ImageData | null = null;
-  /** the current seed at the current offsets */
-  target: Uint8ClampedArray | null = null;
-  offsets = [0, 0, 0, 0];
-  shift = 0;
-  from: Uint8ClampedArray | null = null;
-  t0 = 0;
-  raf = 0;
-  /** a paint waiting for the page transition to end */
-  private later: (() => void) | null = null;
+  sky: Sky | null = null;
+  ms = 0;
+  face = 0;
+  key = "";
+  /** the camera has left its first look */
+  turned = false;
+  private img: ImageData | null = null;
+  private out: Uint32Array | null = null;
   private ctx: CanvasRenderingContext2D | null;
+  private later: (() => void) | null = null;
+  private raf = 0;
+  /* the constellation names: where they are, where they're going */
+  private want = 0;
+  private from = 0;
+  private t0 = 0;
+  private dur = 0;
+  private nraf = 0;
+  private hideT = 0;
 
-  constructor(private canvas: HTMLCanvasElement) {
+  constructor(
+    private canvas: HTMLCanvasElement,
+    private planets: readonly string[],
+    private reduced: () => boolean,
+  ) {
     this.ctx = canvas.getContext("2d");
   }
 
-  /** the frame's size, as its ResizeObserver reports it (reading it here
-      would force a layout, inside a window's opening transition at that);
-      true when the cell grid changed */
+  /** the frame's size, as its ResizeObserver reports it; true when the cell grid changed */
   measure(w: number, h: number) {
     if (w < 8 || h < 8) return false;
-    const cell = w >= 760 ? 4 : w >= 520 ? 3 : 2;
-    const W = Math.ceil(w / cell);
-    const H = Math.ceil(h / cell);
-    if (W === this.W && H === this.H && cell === this.cell) return false;
+    const W = Math.ceil(w / CELL);
+    const H = Math.ceil(h / CELL);
+    if (W === this.W && H === this.H) return false;
     this.W = W;
     this.H = H;
-    this.cell = cell;
     this.canvas.width = W;
     this.canvas.height = H;
-    this.canvas.style.width = `${W * cell}px`;
-    this.canvas.style.height = `${H * cell}px`;
-    this.img = null;
-    this.layers = null;
+    this.canvas.style.width = `${W * CELL}px`;
+    this.canvas.style.height = `${H * CELL}px`;
+    this.img = new ImageData(W, H);
+    this.out = new Uint32Array(this.img.data.buffer);
+    this.sky = null;
+    this.turned = false;
     return true;
   }
 
-  private build() {
-    if (!this.seed || !this.W) return false;
-    const key = `${this.seed}|${this.W}x${this.H}`;
-    let layers = worlds.get(key);
-    if (!layers) {
-      // a new world (a few hundred thousand pixels) is painted once the
-      // window is in, not in the frames of its opening
-      if (viewTransitionActive()) {
-        this.later ??= afterTransition(() => {
-          this.later = null;
-          this.paintNow();
-        });
-        return false;
-      }
-      layers = paintPlateLayers(this.seed, this.W, this.H);
-      remember(key, layers);
-    }
-    this.layers = layers;
-    this.target = new Uint8ClampedArray(this.W * this.H * 4);
-    composite(layers, this.offsets, this.target);
-    return true;
+  setPost(ms: number, face: number, key: string) {
+    this.ms = ms;
+    this.face = face;
+    this.key = key;
+    this.turned = false;
+    this.sky?.set(ms, face);
   }
 
-  /** put the target (or the dissolve towards it) on the canvas */
-  private draw = (now = performance.now()) => {
-    const { ctx, target } = this;
-    if (!ctx || !target) return;
-    if (!this.img || this.img.width !== this.W || this.img.height !== this.H) this.img = new ImageData(this.W, this.H);
-    const out = this.img.data;
-    const from = this.from;
-    if (!from || from.length !== out.length) {
-      this.from = null;
-      out.set(target);
-      ctx.putImageData(this.img, 0, 0);
-      return;
-    }
-    const k = Math.min(1, (now - this.t0) / DISSOLVE_MS);
-    // ease out: most pixels flip early, the last few linger
-    const e = 1 - (1 - k) * (1 - k);
-    const { W, H } = this;
-    for (let y = 0; y < H; y++) {
-      for (let x = 0; x < W; x++) {
-        const i = (y * W + x) * 4;
-        const src = bayer(x >> 1, y >> 1) < e ? target : from;
-        out[i] = src[i];
-        out[i + 1] = src[i + 1];
-        out[i + 2] = src[i + 2];
-        out[i + 3] = src[i + 3];
-      }
-    }
-    ctx.putImageData(this.img, 0, 0);
-    if (k < 1) this.raf = requestAnimationFrame(this.draw);
-    else this.from = null;
-  };
+  private get cacheKey() {
+    return `${this.key}|${this.W}x${this.H}`;
+  }
 
+  /** paint the first look, from memory when this post was painted at this size before */
   paintNow() {
-    cancelAnimationFrame(this.raf);
-    this.from = null;
-    if (this.build()) this.draw();
-  }
-
-  setSeed(seed: string, animate: boolean) {
-    if (seed === this.seed) return;
-    this.seed = seed;
-    if (!this.W || !this.ctx) return;
-    if (!animate || !this.img) {
-      this.paintNow();
+    if (!this.W || !this.ms || !this.out) return;
+    const hit = painted.get(this.cacheKey);
+    if (hit && !this.turned && this.want === 0 && hit.length === this.out.length) {
+      this.out.set(hit);
+      this.put();
       return;
     }
+    const mod = skyModule();
+    if (!mod) {
+      loadSky().then(() => this.paintNow(), () => {});
+      return;
+    }
+    // a sky is a few tens of thousands of cells: painted once the window is in, not in its opening frames
+    if (viewTransitionActive()) {
+      this.later ??= afterTransition(() => {
+        this.later = null;
+        this.paintNow();
+      });
+      return;
+    }
+    const sky = this.ensure();
+    if (!sky) return;
+    sky.paint(this.out);
+    if (!this.turned && sky.names === 0) remember(this.cacheKey, this.out);
+    this.put();
+  }
+
+  /** the sky for this size and post (a picture put up from memory has none until it's touched) */
+  ensure() {
+    const mod = skyModule();
+    if (!mod || !this.W || !this.ms) return null;
+    if (!this.sky) {
+      const fade = Math.max(6, Math.round(this.H * 0.22));
+      this.sky = new mod.Sky({ fov: { h: 55 }, bottom: -2.5, moonR: 6, sunR: 3.5, stamp: true, offset: 14, fade, planets: this.planets });
+      this.sky.size(this.W, this.H);
+      this.sky.set(this.ms, this.face);
+    }
+    return this.sky;
+  }
+
+  private put() {
+    if (!this.ctx || !this.img) return;
+    this.ctx.putImageData(this.img, 0, 0);
+    this.canvas.dataset.on = "";
+  }
+
+  /** turn the camera by a number of cells across and up */
+  turn(dx: number, dy: number) {
+    const sky = this.sky;
+    if (!sky || !this.out) return;
+    const k = sky.degPerCell;
+    sky.look(-dx * k, dy * k);
+    this.turned = true;
     cancelAnimationFrame(this.raf);
-    // start from whatever is on screen (maybe a dissolve in progress)
-    this.from = this.img.data.slice();
-    this.t0 = performance.now();
-    if (!this.build()) return;
-    this.raf = requestAnimationFrame(this.draw);
+    this.raf = requestAnimationFrame(() => {
+      if (this.out) sky.paint(this.out);
+      this.put();
+    });
   }
 
-  setShift(shift: number) {
-    this.shift = shift;
-    const next = layerOffsets(shift);
-    if (next.every((v, i) => v === this.offsets[i])) return;
-    this.offsets = next;
-    if (!this.layers || !this.target) return;
-    composite(this.layers, next, this.target);
-    // a running dissolve picks the new target up on its next frame
-    if (!this.from) this.draw();
-  }
-
-  /** a new seed may dissolve in (before the first size, it is only kept) */
-  sync(seed: string, animate: boolean) {
-    if (seed !== this.seed) this.setSeed(seed, animate);
+  /** draw the constellations in (quickly) or out (a moment after letting go, slowly) */
+  names(on: boolean) {
+    const target = on ? 1 : 0;
+    window.clearTimeout(this.hideT);
+    if (target === this.want) return;
+    const go = () => {
+      const sky = this.sky;
+      if (!sky || !this.out) return;
+      this.want = target;
+      cancelAnimationFrame(this.nraf);
+      if (this.reduced()) {
+        sky.names = target;
+        sky.compose(this.out);
+        this.put();
+        return;
+      }
+      this.from = sky.names;
+      this.t0 = performance.now();
+      this.dur = on ? 220 : 520;
+      const step = (now: number) => {
+        const k = Math.min(1, (now - this.t0) / this.dur);
+        sky.names = this.from + (target - this.from) * k;
+        if (this.out) sky.compose(this.out);
+        this.put();
+        if (k < 1) this.nraf = requestAnimationFrame(step);
+      };
+      this.nraf = requestAnimationFrame(step);
+    };
+    if (on) go();
+    else this.hideT = window.setTimeout(go, 700);
   }
 
   destroy() {
     cancelAnimationFrame(this.raf);
+    cancelAnimationFrame(this.nraf);
+    window.clearTimeout(this.hideT);
     this.later?.();
   }
 }
 
-export function Plate({ post, animate, shift }: { post: GhostPost; animate: boolean; shift?: MotionValue<number> }) {
+export function Plate({ post }: { post: GhostPost }) {
+  const { t } = useI18n();
+  // (a key, so a dictionary rebuilt with the same words doesn't repaint)
+  const planets = t.writing.planets.join("|");
   const frameRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const rendererRef = useRef<PlateRenderer | null>(null);
+  const pictureRef = useRef<SkyPicture | null>(null);
   const src = realImage(post);
   const [loaded, setLoaded] = useState<string | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
 
-  // one renderer per mount; repaint (no dissolve) whenever the grid changes
+  // one picture per mount (and language); repaint whenever the grid changes
   useEffect(() => {
     const frame = frameRef.current;
     const canvas = canvasRef.current;
     if (!frame || !canvas) return;
-    const r = new PlateRenderer(canvas);
-    rendererRef.current = r;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const pic = new SkyPicture(canvas, planets.split("|"), () => reduced.matches);
+    pictureRef.current = pic;
     let raf = 0;
     let settle = 0;
-    const onResize = ([entry]: ResizeObserverEntry[]) => {
+    const ro = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect;
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
         window.clearTimeout(settle);
-        // first paint right away (also when a hidden screen is shown),
-        // later ones once the size settles
-        if (!r.img) {
-          r.measure(width, height);
-          r.paintNow();
+        // first paint right away (also when a hidden screen is shown), later ones once the size settles
+        if (!pic.W) {
+          pic.measure(width, height);
+          pic.paintNow();
           return;
         }
         settle = window.setTimeout(() => {
-          if (r.measure(width, height)) r.paintNow();
+          if (pic.measure(width, height)) pic.paintNow();
         }, 120);
       });
-    };
-    const ro = new ResizeObserver(onResize);
+    });
     ro.observe(frame);
+
+    /* drag to turn, hold to name the stars */
+    let drag: { id: number; x: number; y: number; x0: number; y0: number; touch: boolean; moved: boolean } | null = null;
+    let hold = 0;
+    /** the press that just ended turned the sky or named the stars: it isn't a click */
+    let swallow = false;
+    const down = (e: PointerEvent) => {
+      if (e.button !== 0 || !pic.ensure()) return;
+      drag = { id: e.pointerId, x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, touch: e.pointerType !== "mouse", moved: false };
+      swallow = false;
+      window.clearTimeout(hold);
+      hold = window.setTimeout(() => {
+        swallow = true;
+        pic.names(true);
+      }, HOLD_MS);
+    };
+    const move = (e: PointerEvent) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      if (!drag.moved) {
+        const ax = Math.abs(e.clientX - drag.x0);
+        const ay = Math.abs(e.clientY - drag.y0);
+        // a finger going up or down is scrolling the page: leave it to the browser
+        if (Math.hypot(ax, ay) < 4 || (drag.touch && ay > ax)) return;
+        drag.moved = true;
+        swallow = true;
+        window.clearTimeout(hold);
+        frame.setPointerCapture(e.pointerId);
+        frame.dataset.drag = "";
+        pic.names(true);
+      }
+      const dx = (e.clientX - drag.x) / CELL;
+      // a finger only turns along the horizon: up and down is the page's scroll
+      const dy = drag.touch ? 0 : (e.clientY - drag.y) / CELL;
+      drag.x = e.clientX;
+      drag.y = e.clientY;
+      pic.turn(dx, dy);
+    };
+    const up = (e: PointerEvent) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      drag = null;
+      window.clearTimeout(hold);
+      delete frame.dataset.drag;
+      pic.names(false);
+    };
+    const click = (e: MouseEvent) => {
+      if (!swallow) return;
+      swallow = false;
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    // a held finger names the stars rather than opening a menu
+    const menu = (e: Event) => {
+      if (drag?.touch) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    const nodrag = (e: Event) => e.preventDefault();
+    frame.addEventListener("pointerdown", down);
+    frame.addEventListener("pointermove", move);
+    frame.addEventListener("pointerup", up);
+    frame.addEventListener("pointercancel", up);
+    frame.addEventListener("click", click, true);
+    frame.addEventListener("contextmenu", menu);
+    frame.addEventListener("dragstart", nodrag);
     return () => {
       ro.disconnect();
       cancelAnimationFrame(raf);
       window.clearTimeout(settle);
-      r.destroy();
-      rendererRef.current = null;
+      window.clearTimeout(hold);
+      frame.removeEventListener("pointerdown", down);
+      frame.removeEventListener("pointermove", move);
+      frame.removeEventListener("pointerup", up);
+      frame.removeEventListener("pointercancel", up);
+      frame.removeEventListener("click", click, true);
+      frame.removeEventListener("contextmenu", menu);
+      frame.removeEventListener("dragstart", nodrag);
+      pic.destroy();
+      pictureRef.current = null;
     };
-  }, []);
+  }, [planets]);
 
-  const seed = plateSeed(post);
+  const ms = publishedMs(post);
   useEffect(() => {
-    rendererRef.current?.sync(seed, animate);
-  }, [seed, animate]);
-
-  useEffect(() => {
-    if (!shift) return;
-    rendererRef.current?.setShift(shift.get());
-    return shift.on("change", (v) => rendererRef.current?.setShift(v));
-  }, [shift]);
+    const pic = pictureRef.current;
+    if (!pic || ms == null) return;
+    const key = `${post.slug}@${ms}`;
+    if (pic.key === key) return;
+    loadSky().then(
+      (mod) => {
+        if (pictureRef.current !== pic) return;
+        pic.setPost(ms, mod.faceOf(post.slug, ms), key);
+        pic.paintNow();
+      },
+      () => {},
+    );
+  }, [post.slug, ms, planets]);
 
   const showImg = src && failed !== src;
 
@@ -234,8 +334,8 @@ export function Plate({ post, animate, shift }: { post: GhostPost; animate: bool
     <div ref={frameRef} className="app-writing-plate" aria-hidden>
       <canvas ref={canvasRef} className="app-writing-plate-canvas" width={1} height={1} />
       {showImg && (
-        // plain img: Ghost covers live on other hosts; the pixel plate under
-        // it is the placeholder while it loads (and the fallback if it fails)
+        // plain img: Ghost covers live on other hosts; the sky under it is
+        // the placeholder while it loads (and the fallback if it fails)
         // eslint-disable-next-line @next/next/no-img-element
         <img
           key={src}
