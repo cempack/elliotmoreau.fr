@@ -87,6 +87,15 @@ const en = {
     /** the last push, read aloud */
     pushLabel: "Pushed to {repo}: {message}",
     none: "No public pushes lately.",
+    /** the code city: this site's source files as buildings */
+    city: "This site’s source as a city: {files} files, a building each, lit where they changed lately. Drag to turn it.",
+    files: "{n} files",
+    changedOne: "1 changed today",
+    changedMany: "{n} changed today",
+    changedAgo: "changed {ago}",
+    kb: "{n} KB",
+    mb: "{n} MB",
+    offline: "GitHub isn’t answering, so the city is empty for now.",
   },
 
   pulse: {
@@ -214,6 +223,14 @@ const fr: typeof en = {
     pushedTo: "Push sur {repo}",
     pushLabel: "Push sur {repo} : {message}",
     none: "Aucun push public récemment.",
+    city: "Le code de ce site en ville : {files} fichiers, un immeuble chacun, éclairés là où ils ont changé récemment. Faites-la tourner en la glissant.",
+    files: "{n} fichiers",
+    changedOne: "1 modifié aujourd’hui",
+    changedMany: "{n} modifiés aujourd’hui",
+    changedAgo: "modifié {ago}",
+    kb: "{n} Ko",
+    mb: "{n} Mo",
+    offline: "GitHub ne répond pas, la ville reste vide pour l’instant.",
   },
 
   pulse: {

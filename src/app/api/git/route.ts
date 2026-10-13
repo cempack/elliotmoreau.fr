@@ -1,4 +1,4 @@
-import { getMetro, getSiteCommit, getSiteCommits } from "@/lib/github";
+import { getMetro, getSiteCity, getSiteCommit, getSiteCommits } from "@/lib/github";
 import { getSiteContent } from "@/server/content";
 
 /**
@@ -6,6 +6,7 @@ import { getSiteContent } from "@/server/content";
  * GET /api/git?show=<hash>: one commit and its files (`git show`).
  * GET /api/git?metro: the recently pushed repos' commits, a line each (`git log`'s metro map),
  * without the repos hidden from the admin panel.
+ * GET /api/git?city: this site's source files, sizes and recent changes (Now's code city).
  * Public data from GitHub, cached (5 minutes for the log, 10 for the map, an hour per commit).
  */
 export async function GET(req: Request) {
@@ -15,6 +16,10 @@ export async function GET(req: Request) {
   if (show) {
     const commit = await getSiteCommit(show);
     return commit ? Response.json({ commit }, { headers }) : Response.json({ error: "notfound" }, { status: 404 });
+  }
+  if (params.has("city")) {
+    const city = await getSiteCity();
+    return city ? Response.json({ city }, { headers }) : Response.json({ error: "unavailable" }, { status: 503 });
   }
   if (params.has("metro")) {
     const hidden = new Set(getSiteContent().live.hiddenRepos.map((n) => n.toLowerCase()));

@@ -15,7 +15,7 @@ import { fill, useNow } from "./lib";
 import { TodaySky } from "./Day";
 import type { DayData } from "@/lib/data";
 import { Listening, ListeningMeta } from "./widgets/Listening";
-import { Building, BuildingMeta } from "./widgets/Building";
+import { Building, BuildingMeta, showsCity } from "./widgets/Building";
 import { Pulse } from "./widgets/Pulse";
 import { Reading } from "./widgets/Reading";
 import { Writing } from "./widgets/Writing";
@@ -26,8 +26,10 @@ import type { PushHistory } from "@/lib/github";
 /** default arrangements: each packs the 4-column grid, and the 2-column
     one, with no holes: Listening, Building and Writing on top, Activity as a
     wide strip below (or Listening, Building and Reading on top, then
-    Writing beside Activity). A saved layout that still lists a widget that's
-    gone simply drops it. */
+    Writing beside Activity). When Building shows the code city it takes two
+    columns, and the rest follow in twos: Writing beside Activity (or
+    Reading and Writing side by side, then Activity). A saved layout that
+    still lists a widget that's gone simply drops it. */
 const ORDER_READING: readonly string[] = ["listening", "building", "reading", "writing", "pulse"];
 const ORDER: readonly string[] = ["listening", "building", "writing", "pulse"];
 
@@ -60,6 +62,7 @@ export function NowApp({ pushes, day }: { pushes: PushHistory | null; day: DayDa
   const content = data.now;
   // the reading tile only exists once there is something on the nightstand
   const hasReading = content.reading.length > 0 || content.learning.length > 0;
+  const city = showsCity(content.focus.url);
   const board = useBoard(hasReading ? ORDER_READING : ORDER);
   const { arrange, setArrange } = board;
   const arrangeRef = useRef<HTMLButtonElement>(null);
@@ -103,7 +106,7 @@ export function NowApp({ pushes, day }: { pushes: PushHistory | null; day: DayDa
     },
     {
       id: "building",
-      size: "T",
+      size: city ? "L" : "T",
       label: n.widgets.building,
       accent: "var(--color-signal)",
       glyph: G_BUILD,
@@ -124,7 +127,7 @@ export function NowApp({ pushes, day }: { pushes: PushHistory | null; day: DayDa
       : []),
     {
       id: "writing",
-      size: hasReading ? "L" : "T",
+      size: hasReading !== city ? "L" : "T",
       label: n.widgets.writing,
       accent: "var(--color-ion)",
       glyph: G_PEN,
@@ -132,7 +135,7 @@ export function NowApp({ pushes, day }: { pushes: PushHistory | null; day: DayDa
     },
     {
       id: "pulse",
-      size: hasReading ? "L" : "W",
+      size: hasReading || city ? "L" : "W",
       label: n.widgets.pulse,
       accent: "var(--color-flare)",
       glyph: G_PULSE,

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { PixelGlyph } from "@/components/glyphs";
 import { useHydrated } from "@/hooks/env";
 import { useI18n } from "@/i18n/client";
@@ -10,6 +11,10 @@ import { loc } from "@/lib/content";
 import { useNowContent } from "@/components/os/SiteData";
 import { G_ARROW } from "../bits";
 import { fill } from "../lib";
+import { City } from "./City";
+
+/** the focus is this site: the card shows its code as a city (and takes two columns) */
+export const showsCity = (url: string) => /^https:\/\/github\.com\/cempack\/elliotmoreau\.fr\/?$/i.test(url.trim());
 
 /** Header: the GitHub handle. */
 export function BuildingMeta() {
@@ -24,7 +29,8 @@ export function BuildingMeta() {
  * Two things, in order of weight: what I'm building (hand-written: its
  * name, opening its source, what it is and why), then the last public push
  * (live: its commit message when GitHub still sends one, the repo, how long
- * ago). The repos list lives in Projects.
+ * ago). The repos list lives in Projects. When the focus is this site,
+ * its code stands between the two as a city.
  */
 export function Building({ activity }: { activity: ActivityInfo | null }) {
   const { t, lang } = useI18n();
@@ -33,9 +39,11 @@ export function Building({ activity }: { activity: ActivityInfo | null }) {
   const f = useNowContent().focus;
   const title = loc(f.title, lang);
   const body = loc(f.body, lang);
+  const city = showsCity(f.url);
+  const room = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="app-now-build">
+    <div className="app-now-build" data-city={city || undefined}>
       <div className="app-now-build-focus">
         {f.url ? (
           <a
@@ -54,6 +62,12 @@ export function Building({ activity }: { activity: ActivityInfo | null }) {
         {title && <p className="app-now-build-title">{title}</p>}
         {body && <p className="app-now-build-body">{body}</p>}
       </div>
+      {city && (
+        <>
+          <div ref={room} className="app-now-city-room" aria-hidden />
+          <City room={room} />
+        </>
+      )}
 
       <div className="app-now-build-push">
         <p className="app-now-label">

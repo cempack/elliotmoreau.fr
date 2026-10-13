@@ -18,6 +18,7 @@ import { markAt, type Mark } from "./postmark";
 import { ReadEstimate } from "./ReadEstimate";
 import { MailStage, type StageHandle } from "./MailStage";
 import { Postmark } from "./Postmark";
+import { Typewriter } from "./Typewriter";
 import { G_ARROW, G_OPEN, G_SEND } from "./glyphs";
 import {
   EMAIL_RE,
@@ -97,9 +98,10 @@ function useFrom() {
 /**
  * New message: a Mail compose sheet (To, From, Subject with quick ideas,
  * the message) beside Elliot's letterbox in Toulouse, which prints his real
- * hours and when he's likely to read it. One action, Send (or ⌘↵), and
- * everything around it shows what it does: the franking meter strikes a
- * Toulouse postmark on the letter, and the globe flies it there.
+ * hours and when he's likely to read it, and a typewriter that types the
+ * letter as it's written. One action, Send (or ⌘↵), and everything around
+ * it shows what it does: the franking meter strikes a Toulouse postmark on
+ * the letter, and the globe flies it there.
  *
  * With mail set up (mode "send"), Send delivers it from the site: the
  * envelope seals while the server sends, and flies only once Elliot's
@@ -492,6 +494,8 @@ export function Compose({
           </a>
         </p>
       </div>
+
+      <Typewriter subject={draft.subject} body={draft.body} />
 
       <div className="app-contact-stagecol">
         <MailStage
