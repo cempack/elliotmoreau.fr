@@ -66,7 +66,7 @@ export async function getLatestPosts(limit = 3): Promise<GhostPost[] | null> {
       `?key=${encodeURIComponent(CONTENT_KEY)}&limit=${limit}` +
       `&fields=title,slug,excerpt,published_at,reading_time,feature_image,url` +
       `&include=tags&order=${encodeURIComponent("published_at desc")}`;
-    const res = await fetch(u, { next: { revalidate: 3600 } });
+    const res = await fetch(u, { next: { revalidate: 3600 }, signal: AbortSignal.timeout(8000) });
     if (!res.ok) return null;
     const json = (await res.json()) as { posts?: GhostPost[] };
     return (json.posts ?? []).map(normalisePost);
@@ -87,7 +87,7 @@ export async function getPost(slug: string): Promise<GhostFullPost | null | unde
       `?key=${encodeURIComponent(CONTENT_KEY)}` +
       `&fields=title,slug,excerpt,published_at,reading_time,feature_image,url,html` +
       `&include=tags&formats=html`;
-    const res = await fetch(u, { next: { revalidate: 3600 } });
+    const res = await fetch(u, { next: { revalidate: 3600 }, signal: AbortSignal.timeout(8000) });
     if (res.status === 404) return null;
     if (!res.ok) return undefined;
     const json = (await res.json()) as { posts?: GhostFullPost[] };
@@ -132,6 +132,7 @@ export async function subscribeEmail(email: string): Promise<SubscribeResult> {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ members: [{ email, subscribed: true }] }),
+      signal: AbortSignal.timeout(8000),
     });
     if (res.status === 201) return "subscribed";
     if (res.status === 422) {

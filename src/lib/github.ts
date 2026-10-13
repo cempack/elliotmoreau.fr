@@ -5,6 +5,9 @@ import type { ProjectNote } from "@/lib/content";
 const API = "https://api.github.com";
 const USER = "cempack";
 
+/** GitHub slow to answer: give up, and the page keeps what it had (or its empty state) */
+const timeout = () => AbortSignal.timeout(8000);
+
 function headers(): HeadersInit {
   const h: Record<string, string> = {
     Accept: "application/vnd.github+json",
@@ -71,7 +74,7 @@ function pickPreview(md: string): string | null {
 
 async function readmePreview(name: string): Promise<string | null> {
   try {
-    const res = await fetch(`${API}/repos/${USER}/${name}/readme`, { headers: headers() });
+    const res = await fetch(`${API}/repos/${USER}/${name}/readme`, { headers: headers(), signal: timeout() });
     if (!res.ok) return null;
     const j = (await res.json()) as { content?: string; download_url?: string };
     if (!j.content || !j.download_url) return null;
@@ -90,7 +93,7 @@ export async function getRepos(): Promise<RepoInfo[] | null> {
   if (reposCache && Date.now() - reposCache.at < REPOS_TTL) return reposCache.data;
   try {
     const res = await fetch(`${API}/users/${USER}/repos?per_page=100&type=owner&sort=pushed`, {
-      headers: headers(),
+      headers: headers(), signal: timeout(),
       next: { revalidate: 600 },
     });
     if (!res.ok) return reposCache?.data ?? null;
@@ -169,7 +172,7 @@ async function getEvents(): Promise<GhEvent[] | null> {
     const all: GhEvent[] = [];
     for (let page = 1; page <= 3; page++) {
       const res = await fetch(`${API}/users/${USER}/events/public?per_page=100&page=${page}`, {
-        headers: headers(),
+        headers: headers(), signal: timeout(),
         next: { revalidate: 300 },
       });
       if (!res.ok) {
@@ -290,7 +293,7 @@ const toInfo = (c: GhCommit): CommitInfo => ({
 export async function getSiteCommits(n = 15): Promise<CommitInfo[] | null> {
   try {
     const res = await fetch(`${API}/repos/${USER}/${SITE}/commits?per_page=${Math.min(n, 50)}&sha=${encodeURIComponent(DEPLOYED_SHA())}`, {
-      headers: headers(),
+      headers: headers(), signal: timeout(),
       next: { revalidate: 300 },
     });
     if (!res.ok) return null;
@@ -305,7 +308,7 @@ export async function getSiteCommit(name: string): Promise<CommitDetail | null> 
   if (!/^(HEAD|main|[0-9a-f]{4,40})$/i.test(name)) return null;
   const ref = /^head$/i.test(name) ? DEPLOYED_SHA() : name;
   try {
-    const res = await fetch(`${API}/repos/${USER}/${SITE}/commits/${ref}`, { headers: headers(), next: { revalidate: 3600 } });
+    const res = await fetch(`${API}/repos/${USER}/${SITE}/commits/${ref}`, { headers: headers(), signal: timeout(), next: { revalidate: 3600 } });
     if (!res.ok) return null;
     const c = (await res.json()) as GhCommit;
     const [, ...rest] = c.commit.message.split("\n");
@@ -347,7 +350,7 @@ export async function getMetro(skip?: (repo: string) => boolean): Promise<MetroL
       top.map(async (r): Promise<MetroLine | null> => {
         try {
           const res = await fetch(`${API}/repos/${USER}/${encodeURIComponent(r.name)}/commits?author=${USER}&since=${since}&per_page=20`, {
-            headers: headers(),
+            headers: headers(), signal: timeout(),
             next: { revalidate: 600 },
           });
           if (!res.ok) return null;
@@ -386,7 +389,7 @@ const NAME_RE = /^[A-Za-z0-9._-]{1,100}$/;
 
 async function gh<T>(path: string, revalidate = 300): Promise<{ ok: true; data: T } | { ok: false; status: number }> {
   try {
-    const res = await fetch(`${API}${path}`, { headers: headers(), next: { revalidate } });
+    const res = await fetch(`${API}${path}`, { headers: headers(), signal: timeout(), next: { revalidate } });
     if (!res.ok) return { ok: false, status: res.status };
     return { ok: true, data: (await res.json()) as T };
   } catch {
@@ -513,8 +516,8 @@ export async function getYears(skip?: (repo: string) => boolean): Promise<YearsI
         try {
           const name = encodeURIComponent(r.name);
           const [stats, last] = await Promise.all([
-            fetch(`${API}/repos/${USER}/${name}/stats/commit_activity`, { headers: headers(), next: { revalidate: 6 * 3600 } }),
-            fetch(`${API}/repos/${USER}/${name}/commits?per_page=1`, { headers: headers(), next: { revalidate: 1800 } }),
+            fetch(`${API}/repos/${USER}/${name}/stats/commit_activity`, { headers: headers(), signal: timeout(), next: { revalidate: 6 * 3600 } }),
+            fetch(`${API}/repos/${USER}/${name}/commits?per_page=1`, { headers: headers(), signal: timeout(), next: { revalidate: 1800 } }),
           ]);
           if (stats.status !== 200) return null;
           const weeks = (await stats.json()) as { week: number; total: number }[];

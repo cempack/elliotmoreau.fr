@@ -109,6 +109,17 @@ export const getShellData = cache(async (): Promise<SiteData> => {
   return { ...d, pushes: null };
 });
 
+/**
+ * Whether `name` is a repo the site shows: one of Elliot's own, not hidden
+ * from the admin panel. The repo routes answer for those only, so a
+ * made-up or hidden name never costs a call on the GitHub token.
+ */
+export async function isShownRepo(name: string) {
+  const k = name.toLowerCase();
+  if (getSiteContent().live.hiddenRepos.some((n) => n.toLowerCase() === k)) return false;
+  return (await getRepos())?.some((r) => r.name.toLowerCase() === k) ?? false;
+}
+
 export type DayData = { tracks: DayTrack[]; pushes: DayPush[] };
 
 /**

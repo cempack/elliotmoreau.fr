@@ -12,7 +12,8 @@ export async function GET() {
   if (!spotifyConfigured() || !getLive().showSpotify) {
     return NextResponse.json({ disabled: true });
   }
-  const status = await getSpotifyStatus();
+  // Spotify down or slow: the same quiet answer, never an error page
+  const status = await getSpotifyStatus().catch(() => null);
   if (!status) return NextResponse.json({ disabled: true });
   return NextResponse.json(status, {
     headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60" },

@@ -32,6 +32,7 @@ async function accessToken(): Promise<string | null> {
       grant_type: "refresh_token",
       refresh_token: process.env.SPOTIFY_REFRESH_TOKEN as string,
     }),
+    signal: AbortSignal.timeout(8000),
   });
   if (!res.ok) return null;
   const json = (await res.json()) as { access_token?: string; expires_in?: number };
@@ -48,6 +49,7 @@ async function sp<T>(path: string): Promise<{ status: number; json: T | null }> 
   if (!token) return { status: 401, json: null };
   const res = await fetch(`${API}${path}`, {
     headers: { Authorization: `Bearer ${token}` },
+    signal: AbortSignal.timeout(8000),
   });
   if (res.status === 204) return { status: 204, json: null };
   if (!res.ok) return { status: res.status, json: null };

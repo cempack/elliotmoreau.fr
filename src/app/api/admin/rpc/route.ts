@@ -279,6 +279,8 @@ const OPS: Record<string, Handler> = {
         status: content.status,
         now: content.now,
         live: content.live,
+        projects: content.projects,
+        copy: getCopy(),
         mail: [...threads, ...spam].filter(Boolean),
         audit: listAudit(500),
       },

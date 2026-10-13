@@ -141,7 +141,7 @@ export function MailPane({ data, onChanged }: { data: Overview; onChanged: () =>
             </span>
           </div>
           <header className="app-admin-thread-head">
-            <h3 className="app-admin-h3">{open.subject || "—"}</h3>
+            <h3 className="app-admin-h3">{open.subject || m.noSubject}</h3>
             <p className="app-admin-hint">
               {m.from} {open.name ? `${open.name} · ` : ""}
               <a href={`mailto:${open.email}`}>{open.email}</a> · {open.lang.toUpperCase()}
@@ -227,7 +227,7 @@ export function MailPane({ data, onChanged }: { data: Overview; onChanged: () =>
                         </span>
                       )}
                     </span>
-                    <span className="app-admin-list-sub">{th.subject}</span>
+                    <span className="app-admin-list-sub">{th.subject || m.noSubject}</span>
                     <span className="app-admin-list-meta">{ago(th.lastAt)}</span>
                   </button>
                 </li>

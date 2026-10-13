@@ -19,7 +19,16 @@ const nextConfig: NextConfig = {
     // as leave to serve its copy from an older deploy, naming app code that no longer matches the rest
     // of the page (an app then crashes on text that has since moved)
     const fresh = [{ key: "Cache-Control", value: "private, no-cache" }];
+    // every response: no MIME sniffing, no framing by other sites, and none of the
+    // device features the site never asks for (later rules, like the admin's, override these)
+    const base = [
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "X-Frame-Options", value: "SAMEORIGIN" },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()" },
+    ];
     return [
+      { source: "/:path*", headers: base },
       { source: "/:path*", has: [{ type: "header", key: "rsc" }], headers: fresh },
       { source: "/:path*", has: [{ type: "header", key: "accept", value: "(.*)text/html(.*)" }], headers: fresh },
       { source: "/admin", headers: admin },
