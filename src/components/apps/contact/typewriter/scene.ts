@@ -66,8 +66,10 @@ const TYPE_MAX = 64;
 
 /** the pitch that looks straight at the sheet: its texels then keep their size on screen */
 const FACE_ON = Math.atan2(PB[2] - PT[2], PT[1] - PB[1]);
-/** stages narrower than this many cells (phones) get the close, square-on view */
+/** stages narrower than this many cells get the close, square-on view (a phone's band always does) */
 const NEAR_W = 150;
+/** the middle of the line being typed, eight texels up the sheet from the platen */
+const TYPE_AT: V3 = [0, PB[1] + ((PT[1] - PB[1]) * 8) / VIS, PB[2] + ((PT[2] - PB[2]) * 8) / VIS];
 
 const carrAt = (col: number) => PAPER_W / 2 - (MARG + col * 4 + 1.5) * TEX;
 /** the paper's travel with `line` at the typing point, just clear of the bail */
@@ -445,7 +447,9 @@ export function makeTypewriter(reduced: boolean, onStrike?: () => void) {
     }
     const W = R.w;
     const H = R.h;
-    const near = W < NEAR_W;
+    // a phone's band: wide and low, over the letter as it's written
+    const band = H < W * 0.4;
+    const near = band || W < NEAR_W;
     if (!st.dragging && st.vYaw) {
       st.user += st.vYaw * dt;
       st.vYaw *= Math.exp(-dt * 3);
@@ -460,16 +464,18 @@ export function makeTypewriter(reduced: boolean, onStrike?: () => void) {
     if (near) {
       // a phone: square on to the sheet, a texel of paper exactly one cell across and down, so the
       // type lands on whole cells in the site's own pixel capitals. The view follows the carriage
-      // only as far as it must to keep the sheet whole on a narrow screen
+      // only as far as it must to keep the sheet whole on a narrow screen. A band holds the line
+      // being typed halfway down, the lines before it over it and the platen and spools under it
       const half = (W / 2) * TEX;
       const follow = clamp(1 - (half - 1) / 0.87, 0, 1);
-      const aim: V3 = [st.carr * follow, 1.6, -0.55];
-      cam = makeCam(st.user, FACE_ON, 1 / TEX, W / 2, H / 2, aim);
+      const aim: V3 = band ? [st.carr * follow, TYPE_AT[1], TYPE_AT[2]] : [st.carr * follow, 1.6, -0.55];
+      const cy = band ? H * 0.48 : H / 2;
+      cam = makeCam(st.user, FACE_ON, 1 / TEX, W / 2, cy, aim);
       if (!st.user) {
         // and nudged by under a cell so the sheet's texel edges fall on cell edges, never across one
         const p = cam.proj([st.carr - PAPER_W / 2, PT[1], PT[2]]);
         const q = p[1] + VIS - st.feed;
-        cam = makeCam(0, FACE_ON, 1 / TEX, W / 2 + Math.round(p[0]) - p[0], H / 2 + Math.round(q) - q, aim);
+        cam = makeCam(0, FACE_ON, 1 / TEX, W / 2 + Math.round(p[0]) - p[0], cy + Math.round(q) - q, aim);
       }
     } else {
       // close on the sheet, big enough to read, the keyboard running off the bottom edge; the view
@@ -485,7 +491,7 @@ export function makeTypewriter(reduced: boolean, onStrike?: () => void) {
       renderShadow(st.S, faces);
       shadowAt = st.carr;
     }
-    halo(R, W / 2, H * 0.45, H * 0.66);
+    halo(R, W / 2, H * 0.45, band ? W * 0.4 : H * 0.66);
     clearDepth(R);
     draw(R, faces, cam, shade);
     if (t < st.dingUntil) {
