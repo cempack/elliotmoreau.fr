@@ -31,7 +31,7 @@ export async function generateStaticParams() {
   return posts.map((p) => ({ slug: p.slug }));
 }
 
-export async function generateMetadata({ params }: PageProps<"/[lang]/writing/[slug]">): Promise<Metadata> {
+export async function generateMetadata({ params }: PageProps<"/[lang]/blog/[slug]">): Promise<Metadata> {
   const { lang, slug } = await params;
   if (!hasLocale(lang)) return {};
   const data = await load(slug);
@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: PageProps<"/[lang]/writing/[s
       siteName: t.siteName,
       title: post.title,
       description,
-      url: localePath(lang, `/writing/${post.slug}`),
+      url: localePath(lang, `/blog/${post.slug}`),
       publishedTime: post.published_at,
       ...(post.feature_image ? { images: [post.feature_image] } : {}),
     },
@@ -57,7 +57,7 @@ export async function generateMetadata({ params }: PageProps<"/[lang]/writing/[s
   };
 }
 
-export default async function PostPage({ params }: PageProps<"/[lang]/writing/[slug]">) {
+export default async function PostPage({ params }: PageProps<"/[lang]/blog/[slug]">) {
   const { lang, slug } = await params;
   if (!hasLocale(lang)) notFound();
   const data = await load(slug);

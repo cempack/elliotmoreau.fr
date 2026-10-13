@@ -60,7 +60,7 @@ const en = {
     building: "Building",
     pulse: "Activity",
     reading: "Reading & learning",
-    writing: "Writing",
+    writing: "Blog",
   },
 
   listening: {
@@ -117,7 +117,7 @@ const en = {
     latest: "Latest post",
     minutes: "{n} min read",
     read: "Read “{title}” on the blog",
-    all: "All writing",
+    all: "All posts",
     none: "Nothing published yet.",
     blog: "Visit the blog",
     cadence: "Last 12 months",
@@ -188,7 +188,7 @@ const fr: typeof en = {
     building: "En chantier",
     pulse: "Activité",
     reading: "Lire, apprendre",
-    writing: "Écriture",
+    writing: "Blog",
   },
 
   listening: {
@@ -242,7 +242,7 @@ const fr: typeof en = {
     latest: "Dernier article",
     minutes: "{n} min de lecture",
     read: "Lire « {title} » sur le blog",
-    all: "Tous les textes",
+    all: "Tous les articles",
     none: "Rien de publié pour l’instant.",
     blog: "Voir le blog",
     cadence: "Les 12 derniers mois",

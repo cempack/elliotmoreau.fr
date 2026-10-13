@@ -78,7 +78,7 @@ function refHost(ref: unknown, source: unknown): string {
   }
 }
 
-/** "/fr/writing/a-post?x#y" → { path: "/writing/a-post", lang: "fr" }; null for paths not worth counting */
+/** "/fr/blog/a-post?x#y" → { path: "/blog/a-post", lang: "fr" }; null for paths not worth counting */
 function pagePath(p: unknown): { path: string; lang: string } | null {
   if (typeof p !== "string" || p.length > 300) return null;
   let path = p.split(/[?#]/)[0] || "/";

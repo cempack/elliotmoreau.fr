@@ -6,12 +6,12 @@ import { getNowContent } from "@/server/content";
 /**
  * Every app in both languages, each entry carrying its hreflang
  * alternates (en, fr, x-default → en). `lastModified` is only set where
- * there's a real date behind it: the newest post (Writing), the latest
+ * there’s a real date behind it: the newest post (the Blog), the latest
  * push (Projects), the /now date (edited in the admin panel), and the newest of those for
  * the Desktop, which shows them all. Atlas and Mail carry none.
  */
 
-const ROUTES = ["/", "/work", "/writing", "/atlas", "/now", "/contact"] as const;
+const ROUTES = ["/", "/work", "/blog", "/atlas", "/now", "/contact"] as const;
 type Route = (typeof ROUTES)[number];
 
 export const revalidate = 3600;
@@ -36,7 +36,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const lastModified: Partial<Record<Route, Date>> = {
     "/": newest([writing?.toISOString(), work?.toISOString(), now?.toISOString(), data?.activity?.createdAt]),
     "/work": work,
-    "/writing": writing,
+    "/blog": writing,
     "/now": now,
   };
   return ROUTES.flatMap((route) =>

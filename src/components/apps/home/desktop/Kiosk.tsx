@@ -156,7 +156,7 @@ export function LatestPostWidget() {
     return (
       <div className="app-home-widget app-home-widget--post app-home-kiosk">
         <Glass thickness="regular" refract={false} aria-hidden className="app-home-widget-glass" />
-        <Link prefetch={false} href={path("/writing")} transitionTypes={["app-open"]} className="app-home-kiosk-frame" aria-label={w.ariaEmpty}>
+        <Link prefetch={false} href={path("/blog")} transitionTypes={["app-open"]} className="app-home-kiosk-frame" aria-label={w.ariaEmpty}>
           <span className="app-home-kiosk-sheet app-home-kiosk-blank">
             <span className="app-home-kiosk-head">{w.empty}</span>
           </span>
@@ -309,7 +309,7 @@ export function LatestPostWidget() {
   const fold = peel && box ? foldGeometry(peel, { x: box.w, y: box.h }, box.w, box.h) : null;
   const d0 = describe(post);
   const d1 = describe(next);
-  const href = path(`/writing/${encodeURIComponent(post.slug)}`);
+  const href = path(`/blog/${encodeURIComponent(post.slug)}`);
 
   return (
     <div className="app-home-widget app-home-widget--post app-home-kiosk" data-peeling={peel ? "" : undefined}>

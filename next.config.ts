@@ -20,6 +20,13 @@ const nextConfig: NextConfig = {
       { source: "/api/admin/:path*", headers: admin },
     ];
   },
+  async redirects() {
+    // the Blog used to live at /writing: old links and search results land on the same post
+    return [
+      { source: "/writing/:path*", destination: "/blog/:path*", permanent: true },
+      { source: "/:lang(en|fr)/writing/:path*", destination: "/:lang/blog/:path*", permanent: true },
+    ];
+  },
   async rewrites() {
     return {
       beforeFiles: [],

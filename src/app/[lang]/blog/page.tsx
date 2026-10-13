@@ -6,11 +6,11 @@ import { WritingApp } from "@/components/apps/writing/WritingApp";
 
 export const revalidate = 300;
 
-export function generateMetadata({ params }: PageProps<"/[lang]/writing">) {
-  return appMetadata(params, "writing", "/writing");
+export function generateMetadata({ params }: PageProps<"/[lang]/blog">) {
+  return appMetadata(params, "writing", "/blog");
 }
 
-export default async function WritingPage({ params }: PageProps<"/[lang]/writing">) {
+export default async function WritingPage({ params }: PageProps<"/[lang]/blog">) {
   const { lang } = await params;
   if (!hasLocale(lang)) notFound();
   // the app reads live data from the shell's SiteData; the page sends only its strings

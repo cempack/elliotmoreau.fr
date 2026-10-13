@@ -199,7 +199,7 @@ export function useSpotlightCommands(): Command[] {
         body: p.excerpt,
       },
       // posts read in full on the site now
-      perform: () => router.push(path(`/writing/${p.slug}`), { transitionTypes: ["app-open"] } as never),
+      perform: () => router.push(path(`/blog/${p.slug}`), { transitionTypes: ["app-open"] } as never),
     }));
 
     const projects: Command[] = repos.slice(0, 10).map((r) => ({
@@ -276,7 +276,7 @@ export function useSpotlightCommands(): Command[] {
         group: b.title,
         label: fill(b.post, { title: post.title, n }),
         board: { time: dm(new Date(post.published_at)), dest: post.title, via: post.tags[0]?.name ?? "", status: fill(b.min, { n }), key: post.slug, remember: true },
-        perform: () => router.push(path(`/writing/${encodeURIComponent(post.slug)}`), { transitionTypes: ["app-open"] } as never),
+        perform: () => router.push(path(`/blog/${encodeURIComponent(post.slug)}`), { transitionTypes: ["app-open"] } as never),
       });
     }
     if (activity) {

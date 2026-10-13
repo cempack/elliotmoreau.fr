@@ -320,9 +320,9 @@ export function NetworkMap({
         const app = APPS.find((a) => a.id === id)!;
         return { id, name: t.shell.apps[app.label], href: localize(app.path) };
       }),
-      posts: posts.slice(0, 5).map((p) => ({ id: `post:${p.slug}`, name: p.title, href: localize(`/writing/${p.slug}`) })),
+      posts: posts.slice(0, 5).map((p) => ({ id: `post:${p.slug}`, name: p.title, href: localize(`/blog/${p.slug}`) })),
       repos: repos.slice(0, 3).map((r) => ({ id: `repo:${r.name}`, name: r.name, href: r.url })),
-      blog: { name: m.blog, href: localize("/writing") },
+      blog: { name: m.blog, href: localize("/blog") },
     }),
     [posts, repos, t, localize, m.blog]
   );

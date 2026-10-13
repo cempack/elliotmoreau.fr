@@ -26,7 +26,7 @@ export type AppDef = {
 export const APPS: AppDef[] = [
   { id: "home", path: "/", label: "home", accent: "var(--color-signal)", key: "1" },
   { id: "work", path: "/work", label: "work", accent: "var(--color-ion)", key: "2" },
-  { id: "writing", path: "/writing", label: "writing", accent: "var(--color-ember)", key: "3" },
+  { id: "writing", path: "/blog", label: "writing", accent: "var(--color-ember)", key: "3" },
   { id: "atlas", path: "/atlas", label: "atlas", accent: "var(--color-lilac)", key: "4" },
   { id: "now", path: "/now", label: "now", accent: "var(--color-flare)", key: "5" },
   { id: "contact", path: "/contact", label: "contact", accent: "var(--color-signal)", key: "6" },

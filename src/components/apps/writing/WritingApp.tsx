@@ -32,7 +32,7 @@ export function WritingApp() {
   const posts = data.posts;
   const lead = posts.find((p) => p.slug === data.live.pinnedPost) ?? posts[0];
   const rest = posts.filter((p) => p !== lead);
-  const href = (p: GhostPost) => path(`/writing/${encodeURIComponent(p.slug)}`);
+  const href = (p: GhostPost) => path(`/blog/${encodeURIComponent(p.slug)}`);
   const copy = useCopy();
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -57,7 +57,7 @@ export function WritingApp() {
   useEffect(() => {
     const slug = new URLSearchParams(window.location.search).get("p");
     const hit = slug ? posts.find((p) => p.slug === slug) : undefined;
-    if (hit) router.replace(path(`/writing/${encodeURIComponent(hit.slug)}`));
+    if (hit) router.replace(path(`/blog/${encodeURIComponent(hit.slug)}`));
     // once, on arrival
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

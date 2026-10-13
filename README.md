@@ -33,7 +33,7 @@ the empty states locally.
 | --- | --- |
 | `GITHUB_TOKEN` | Projects + last push (higher rate limit, README screenshots) |
 | `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` / `SPOTIFY_REFRESH_TOKEN` | Now playing (top bar, Now app) |
-| `GHOST_API_URL` / `GHOST_CONTENT_KEY` | Latest posts (Writing app, Desktop, Spotlight) |
+| `GHOST_API_URL` / `GHOST_CONTENT_KEY` | Latest posts (the Blog app, Desktop, Spotlight) |
 | `GHOST_ADMIN_KEY` | Newsletter subscribe (server-side only) |
 | `NEXT_PUBLIC_BLOG_URL` | Links out to the blog |
 
@@ -60,7 +60,7 @@ The refresh-token flow runs entirely server-side (`src/lib/spotify.ts`).
 src/
   app/[lang]/            one static build per locale (en, fr), ISR every 5 min
     layout.tsx           <html lang>, fonts, providers, OS shell, pre-paint script, base metadata
-    page.tsx             Desktop (+ Person JSON-LD)  ·  work/ writing/ atlas/ now/ contact/
+    page.tsx             Desktop (+ Person JSON-LD)  ·  work/ blog/ atlas/ now/ contact/
     opengraph-image.tsx  localized share cards (one per app), icon / icon1 / icon2 / apple-icon
     not-found.tsx        the 404 app, for notFound() inside a locale
   app/global-not-found.tsx  the 404 for every unmatched address (own <html>, same shell)

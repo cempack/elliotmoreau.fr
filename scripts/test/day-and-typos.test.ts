@@ -14,7 +14,7 @@ import type { Status } from "../../src/lib/content";
 const posts = [{ slug: "ricing-a-laptop", title: "Ricing a laptop", url: "https://blog.elliotmoreau.fr/ricing-a-laptop/" }];
 
 test("one letter off a real path is a certain typo", () => {
-  const s = suggest("wrting", { posts, repos: [] });
+  const s = suggest("bloog", { posts, repos: [] });
   assert.equal(s?.kind, "app");
   assert.equal(s?.app, "writing");
   assert.equal(s?.certain, true);
@@ -23,19 +23,19 @@ test("one letter off a real path is a certain typo", () => {
 });
 
 test("aliases and far words still suggest, but never go by themselves", () => {
-  assert.equal(suggest("blgo")?.app, "writing");
-  assert.equal(suggest("blgo")?.certain, false);
+  assert.equal(suggest("artcles")?.app, "writing");
+  assert.equal(suggest("artcles")?.certain, false);
   assert.equal(suggest("projects")?.app, "work");
   assert.equal(suggest("projects")?.certain, false);
-  assert.equal(suggest("wrting/deeper")?.certain, false);
+  assert.equal(suggest("bloog/deeper")?.certain, false);
 });
 
 test("a post one letter off its real path goes to the post on the site", () => {
-  const s = suggest("writing/ricng-a-laptop", { posts, repos: [] });
+  const s = suggest("blog/ricng-a-laptop", { posts, repos: [] });
   assert.equal(s?.kind, "post");
-  assert.equal(s?.kind === "post" && s.href, "/writing/ricing-a-laptop");
+  assert.equal(s?.kind === "post" && s.href, "/blog/ricing-a-laptop");
   assert.equal(s?.certain, true);
-  assert.equal(suggest("blog/ricng-a-laptop", { posts, repos: [] })?.certain, false);
+  assert.equal(suggest("posts/ricng-a-laptop", { posts, repos: [] })?.certain, false);
 });
 
 test("places get their real time zone", () => {

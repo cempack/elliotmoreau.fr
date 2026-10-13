@@ -368,7 +368,7 @@ function RoomLayer({ from, leaving, onGone }: { from: { x: number; y: number } |
       k: r.writing,
       title: posts[0]?.title ?? r.writing,
       sub: posts.length === 1 ? r.postOne : fill(r.posts, { n: posts.length }),
-      go: () => go("/writing"),
+      go: () => go("/blog"),
     },
     {
       id: "board",

@@ -13,7 +13,7 @@ import type { AppId, PublicAppId } from "@/components/os/apps";
 const ALIASES: Record<PublicAppId, readonly string[]> = {
   home: ["desktop", "home", "index", "bureau", "accueil", "start", "about", "readme"],
   work: ["work", "projects", "project", "projets", "projet", "repos", "code", "portfolio", "github"],
-  writing: ["writing", "blog", "posts", "post", "notes", "ecrits", "articles", "journal", "essays", "newsletter"],
+  writing: ["blog", "posts", "post", "notes", "articles", "journal", "essays", "newsletter"],
   atlas: ["atlas", "travel", "travels", "map", "maps", "places", "voyages", "carte", "world"],
   now: ["now", "uses", "setup", "maintenant", "music", "listening", "colophon"],
   contact: ["contact", "mail", "email", "hello", "message", "pgp"],
@@ -23,7 +23,7 @@ const ALIASES: Record<PublicAppId, readonly string[]> = {
 const CANONICAL: Record<PublicAppId, string> = {
   home: "desktop",
   work: "work",
-  writing: "writing",
+  writing: "blog",
   atlas: "atlas",
   now: "now",
   contact: "contact",
@@ -33,13 +33,13 @@ const CANONICAL: Record<PublicAppId, string> = {
 export type Suggestion =
   /** one of emOS's apps: opens in place */
   | { kind: "app"; app: AppId; to: string; certain?: boolean; score?: number }
-  /** a post, read in Writing: `href` is its path on the site (unlocalized) */
+  /** a post, read in the Blog: `href` is its path on the site (unlocalized) */
   | { kind: "post"; app: "writing"; to: string; name: string; href: string; certain?: boolean; score?: number }
   /** a repository on GitHub (external) */
   | { kind: "repo"; app: "work"; to: string; name: string; href: string; certain?: undefined; score?: number };
 
 /** the site's real top-level paths: one letter off one of these is a typo, near-certainly */
-const ROUTES: Partial<Record<PublicAppId, string>> = { work: "work", writing: "writing", atlas: "atlas", now: "now", contact: "contact" };
+const ROUTES: Partial<Record<PublicAppId, string>> = { work: "work", writing: "blog", atlas: "atlas", now: "now", contact: "contact" };
 
 export type Candidates = {
   posts: readonly { slug: string; title: string; url: string }[];
@@ -151,9 +151,9 @@ export function suggest(command: string, data?: Candidates): Suggestion | null {
       if (token.length < 4) continue;
       for (const p of data.posts) {
         const s = closeness(token, p.slug);
-        // "/writing/ricng-a-laptop": one letter off a post's real path
-        const certain = segments.length === 2 && segments[0] === "writing" && token === segments[1] && distance(token, p.slug) === 1;
-        if (s != null) hits.push({ s, hit: { kind: "post", app: "writing", to: `writing/${p.slug}`, name: p.title, href: `/writing/${p.slug}`, certain } });
+        // "/blog/ricng-a-laptop": one letter off a post's real path
+        const certain = segments.length === 2 && segments[0] === "blog" && token === segments[1] && distance(token, p.slug) === 1;
+        if (s != null) hits.push({ s, hit: { kind: "post", app: "writing", to: `blog/${p.slug}`, name: p.title, href: `/blog/${p.slug}`, certain } });
       }
       for (const r of data.repos) {
         const s = closeness(token, r.name);

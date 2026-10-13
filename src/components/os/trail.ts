@@ -42,7 +42,7 @@ function read(): Stop[] {
 
 function itemOf(app: AppId, url: URL) {
   const path = stripLocale(url.pathname);
-  if (app === "writing") return path.startsWith("/writing/") ? path.slice(9) : (url.searchParams.get("p") ?? "");
+  if (app === "writing") return path.startsWith("/blog/") ? path.slice(6) : (url.searchParams.get("p") ?? "");
   if (app === "work") return url.searchParams.get("repo") ?? "";
   if (app === "atlas") return url.hash.slice(1);
   return "";

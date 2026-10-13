@@ -165,7 +165,7 @@ export type LiveOverrides = {
   featuredRepo?: string;
   /** repos left out of every list */
   hiddenRepos: string[];
-  /** the post Writing opens on (instead of the latest) */
+  /** the post the Blog opens on (instead of the latest) */
   pinnedPost?: string;
   /** false hides the music everywhere */
   showSpotify: boolean;
