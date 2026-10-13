@@ -1,7 +1,7 @@
 import { LOCALES } from "@/i18n/config";
 import { tileIcon } from "@/lib/og";
 
-// iOS rounds the corners itself: the lime field goes edge to edge
+// iOS rounds the corners itself: the ink field goes edge to edge
 export const size = { width: 180, height: 180 };
 export const contentType = "image/png";
 export const dynamic = "force-static";

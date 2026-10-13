@@ -5,8 +5,6 @@ import type { Locale } from "@/i18n/config";
 import { resetWorkspaces } from "../workspaces";
 
 export const PARIS_TZ = "Europe/Paris";
-/** The repository's first commit: emOS uptime counts from here. */
-export const FIRST_COMMIT = "2026-03-21T04:59:03+01:00";
 export const SITE_REPO = "https://github.com/cempack/elliotmoreau.fr";
 export const BLOG_URL = "https://blog.elliotmoreau.fr";
 export const BLOG_RSS = "https://blog.elliotmoreau.fr/rss/";

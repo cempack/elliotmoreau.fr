@@ -1,7 +1,7 @@
 import { LOCALES } from "@/i18n/config";
 import { tileIcon } from "@/lib/og";
 
-// splash / store size; the letter stays inside the maskable safe circle,
+// splash / store size; the mark stays inside the maskable safe circle,
 // so the manifest lists it as both `any` and `maskable`
 export const size = { width: 512, height: 512 };
 export const contentType = "image/png";

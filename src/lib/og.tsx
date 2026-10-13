@@ -5,14 +5,18 @@ import { ImageResponse } from "next/og";
 import { getDict, type Locale } from "@/i18n";
 import { SITE_URL, localePath } from "@/i18n/config";
 import { GLYPH_H, bandIndexFor, bandInk, rasterizePixelLine } from "@/lib/pixelword";
+import { SNAPSHOT_THEME, artPalette } from "@/lib/theme";
+import { getTheme } from "@/lib/theme-source";
 
 /**
  * emOS share images and app icons, drawn for ImageResponse (Satori +
- * resvg): a Moss night sky with pixel stars, a dithered horizon glow
- * and two stepped ridges; the pixel wordmark in its laser bands and voxel
- * relief (the same geometry as PixelWordmark); each app's 16×16 Dock
- * glyph on its tinted squircle; and the lime emOS mark. Everything pixel
- * is integer-sized rects with crisp edges, so nothing blurs.
+ * resvg): a night sky with pixel stars, a dithered horizon glow and two
+ * stepped ridges; the pixel wordmark in its laser bands and voxel relief
+ * (the same geometry as PixelWordmark); each app's 16×16 Dock glyph on its
+ * tinted squircle; and the emOS mark. Everything pixel is integer-sized
+ * rects with crisp edges, so nothing blurs. Every colour is the live
+ * theme's (the same tones as the site's pixel art): each card and icon
+ * reads it first (withTheme), so a theme change recolours them too.
  */
 
 export const OG_SIZE = { width: 1200, height: 630 };
@@ -21,28 +25,20 @@ export type OgApp = "work" | "writing" | "atlas" | "now" | "contact";
 const W = OG_SIZE.width;
 const H = OG_SIZE.height;
 
-const C = {
-  paper: "#ebe9e1",
-  paper2: "#bcc2ba",
-  paper3: "#8f988f",
-  ink950: "#0a0c0b",
-  ink900: "#101311",
-  ink600: "#2b322d",
-  signal: "#b0cc86",
-  signalDeep: "#86a35c",
-  ion: "#89b4a8",
-  ionLight: "#d5e6df",
-  ionDeep: "#5f8f84",
-  lilac: "#aea3c8",
-  lilacDeep: "#6f8f84",
-  ember: "#e0bd6e",
-  emberDeep: "#e8893d",
-  emberLight: "#ffe2b8",
-  flare: "#e2786b",
-  night: "#152626",
-} as const;
+/** the theme's pixel-art tones: the snapshot until withTheme() has read the live theme */
+const C = { ...artPalette(SNAPSHOT_THEME.tokens) };
 
-const SKY = "linear-gradient(180deg, #040607 0%, #0a1314 54%, #152626 100%)";
+/** read the live theme into C (every card and icon starts here) */
+async function withTheme() {
+  try {
+    Object.assign(C, artPalette((await getTheme()).tokens));
+  } catch {
+    // the snapshot stands
+  }
+}
+
+/** the night the cards are set in, from the theme's darkest inks to its night */
+const sky = () => `linear-gradient(180deg, ${mix(C.ink950, "#000000", 0.55)} 0%, ${mix(C.ink950, C.night, 0.55)} 54%, ${C.night} 100%)`;
 
 /* ───────────────────────────── fonts ───────────────────────────── */
 
@@ -147,7 +143,7 @@ function Scenery({ seed, quiet }: { seed: number; quiet: Box[] }) {
       // merge runs to keep the node count down
       let w = D;
       while (x + w < W && BAYER4[(y / D) % 4][((x + w) / D) % 4] / 16 < t * 0.66) w += D;
-      glow.push({ x, y, w, h: D, fill: "#2c2468", o: 0.85 });
+      glow.push({ x, y, w, h: D, fill: mix(C.night, C.signal, 0.32), o: 0.85 });
       x += w;
     }
   }
@@ -165,8 +161,8 @@ function Scenery({ seed, quiet }: { seed: number; quiet: Box[] }) {
     }
     return out;
   };
-  const far = ridge(H - 52, 34, 7.5, 1.3, "#1a1647");
-  const near = ridge(H - 22, 20, 11, 4.1, "#0c0b24");
+  const far = ridge(H - 52, 34, 7.5, 1.3, mix(C.ink900, C.night, 0.5));
+  const near = ridge(H - 22, 20, 11, 4.1, C.ink950);
   // a few village lights on the near ridge
   const lights: Rect[] = [];
   for (let i = 0; i < 9; i++) {
@@ -319,7 +315,7 @@ function Wordmark({
 /* ───────────────────────────── the mark ───────────────────────────── */
 
 /** The emOS mark on a 16 grid (the menu bar's 9×9 tile, with two-pixel
-    strokes): "#" lime tile, "e" the letter, "." transparent corner. */
+    strokes): "#" the accent tile, "e" the letter, "." transparent corner. */
 export const MARK16 = [
   "..############..",
   ".##############.",
@@ -370,7 +366,7 @@ type Glyph = { pal: Record<string, string>; rows: readonly string[] };
 
 /* the Dock's 16×16 app glyphs (components/os/icons.tsx), copied: that
    module is client-only */
-const GLYPHS: Record<OgApp | "home", Glyph> = {
+const glyphs = (): Record<OgApp | "home", Glyph> => ({
   home: {
     pal: { W: C.paper, n: C.night, E: C.ember, Y: C.emberLight, S: C.signal, s: C.signalDeep, F: C.flare },
     rows: [
@@ -497,16 +493,10 @@ const GLYPHS: Record<OgApp | "home", Glyph> = {
       "................",
     ],
   },
-};
+});
 
-const ACCENT: Record<OgApp | "home", string> = {
-  home: C.signal,
-  work: C.ion,
-  writing: C.ember,
-  atlas: C.lilac,
-  now: C.flare,
-  contact: C.signal,
-};
+const accentOf = (app: OgApp | "home") =>
+  ({ home: C.signal, work: C.ion, writing: C.ember, atlas: C.lilac, now: C.flare, contact: C.signal })[app];
 
 function mix(a: string, b: string, t: number) {
   const pa = parseInt(a.slice(1), 16);
@@ -547,8 +537,8 @@ function AppTile({
   y: number;
   halo?: boolean;
 }) {
-  const g = GLYPHS[app];
-  const accent = ACCENT[app];
+  const g = glyphs()[app];
+  const accent = accentOf(app);
   const cell = Math.floor((size * 0.7) / 16);
   const gp = cell * 16;
   const off = Math.round((size - gp) / 2);
@@ -625,7 +615,7 @@ function AppTile({
 }
 
 /** The Dock, in miniature: the six app tiles on a dark glass shelf, a
-    lime dot under the app the card is about. */
+    dot in the accent under the app the card is about. */
 const DOCK_APPS: (OgApp | "home")[] = ["home", "work", "writing", "atlas", "now", "contact"];
 
 function MiniDock({ active }: { active: OgApp | "home" }) {
@@ -703,13 +693,14 @@ const bind = (text: string) => text.replace(/(?<=^|[\s«(])(\p{L}{1,2}) /gu, "$1
 
 /** The home card: the wordmark is the hero, the meta description beneath. */
 export async function homeCard(lang: Locale) {
+  await withTheme();
   const t = getDict(lang).meta;
   const fonts = await loadFonts();
   const tagline = bind(curly(t.description));
   const cell = 14;
   return new ImageResponse(
     (
-      <div style={{ position: "relative", display: "flex", width: W, height: H, backgroundImage: SKY }}>
+      <div style={{ position: "relative", display: "flex", width: W, height: H, backgroundImage: sky() }}>
         <Scenery seed={7} quiet={[{ x: 60, y: 36, w: 1080, h: 56 }, { x: 60, y: 100, w: 760, h: 410 }]} />
         <Moon x={968} y={118} />
         <TopBar
@@ -756,6 +747,7 @@ const APP_PATH: Record<OgApp, string> = {
 
 /** An app's card: its Dock icon, its name in display type, its page description. */
 export async function appCard(lang: Locale, app: OgApp) {
+  await withTheme();
   const d = getDict(lang);
   const fonts = await loadFonts();
   const name = d.meta.pages[app];
@@ -765,7 +757,7 @@ export async function appCard(lang: Locale, app: OgApp) {
   const nameSize = name.length > 9 ? 96 : 116;
   return new ImageResponse(
     (
-      <div style={{ position: "relative", display: "flex", width: W, height: H, backgroundImage: SKY }}>
+      <div style={{ position: "relative", display: "flex", width: W, height: H, backgroundImage: sky() }}>
         <Scenery seed={11 + path.length} quiet={[{ x: 60, y: 36, w: 1080, h: 56 }, { x: 60, y: 150, w: 1080, h: 330 }]} />
         <TopBar
           left={<Wordmark lines={["Elliot Moreau"]} cell={4} inline />}
@@ -782,7 +774,7 @@ export async function appCard(lang: Locale, app: OgApp) {
             flexDirection: "column",
           }}
         >
-          <div style={{ display: "flex", fontFamily: MONO, fontSize: 24, color: ACCENT[app] }}>~{path}</div>
+          <div style={{ display: "flex", fontFamily: MONO, fontSize: 24, color: accentOf(app) }}>~{path}</div>
           <div
             style={{
               display: "flex",
@@ -826,9 +818,10 @@ export function cardAlt(lang: Locale, app?: OgApp) {
 
 /* ───────────────────────────── icons ───────────────────────────── */
 
-/** Browser-tab icon: the lime mark, full bleed, its letter in ink so it
+/** Browser-tab icon: the mark in the theme's accent, full bleed, its letter in ink so it
     reads on light and dark tab strips alike. */
-export function markIcon(size: number) {
+export async function markIcon(size: number) {
+  await withTheme();
   const cell = Math.max(1, Math.floor(size / 16));
   const s = cell * 16;
   const off = Math.floor((size - s) / 2);
@@ -844,20 +837,21 @@ export function markIcon(size: number) {
   );
 }
 
-/** Home-screen icon (Apple touch, manifest): the mark's lime field full
-    bleed (iOS and Android cut their own corners), the ink "e" centred at
-    `letter` of the width, over a half-cell deep-lime drop (a pixel
-    bevel). At ~52% the letter sits inside the maskable safe circle, so
-    the 512 serves as both `any` and `maskable`. */
-export function tileIcon(size: number, letter = 0.6) {
-  // the letter's cells in MARK16: rows 3–12, columns 3–12
-  const cell = Math.max(1, Math.round((size * letter) / 10));
-  const s = cell * 10;
-  const ox = Math.round((size - s) / 2) - 3 * cell;
-  // optically centred: the drop adds weight below, so lift by a quarter cell
-  const oy = Math.round((size - s) / 2 - cell / 4) - 3 * cell;
-  const glyph = markRects(cell, ox, oy).filter((r) => r.fill === C.ink950);
-  const drop = glyph.map((r) => ({ ...r, y: r.y + Math.max(1, Math.round(cell / 2)), fill: C.signalDeep, o: 0.55 }));
+/** Home-screen icon (Apple touch, manifest): the menu bar's mark as it sits
+    on the dark bar, the accent tile with its "e" cut through to the night,
+    on a full-bleed ink field (iOS and Android cut their own corners). At
+    ~52% the mark sits inside the maskable safe circle, so the 512 serves
+    as both `any` and `maskable`. */
+export async function tileIcon(size: number, letter = 0.62) {
+  await withTheme();
+  const cell = Math.max(1, Math.round((size * letter) / 16));
+  const s = cell * 16;
+  const o = Math.round((size - s) / 2);
+  const mark = markRects(cell, o, o, mix(C.ink950, C.ink900, 0.5));
+  // a one-cell bevel under the tile: the pixel art's own depth
+  const drop = mark
+    .filter((r) => r.fill === C.signal)
+    .map((r) => ({ ...r, y: r.y + Math.max(1, Math.round(cell / 2)), fill: C.signalDeep, o: 0.6 }));
   return new ImageResponse(
     (
       <div
@@ -865,12 +859,12 @@ export function tileIcon(size: number, letter = 0.6) {
           display: "flex",
           width: size,
           height: size,
-          backgroundImage: `linear-gradient(180deg, #c6dba4 0%, ${C.signal} 48%, ${C.signalDeep} 100%)`,
+          backgroundImage: `linear-gradient(180deg, ${mix(C.ink800, C.night, 0.5)} 0%, ${C.ink950} 100%)`,
         }}
       >
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} shapeRendering="crispEdges">
           {rects(drop, "d")}
-          {rects(glyph, "e")}
+          {rects(mark, "m")}
         </svg>
       </div>
     ),
