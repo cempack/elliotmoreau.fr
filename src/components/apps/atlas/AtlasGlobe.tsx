@@ -1028,7 +1028,7 @@ export function AtlasGlobe({
     const setHover = (id: string | null) => {
       if (id === hovered) return;
       hovered = id;
-      cvs.style.cursor = id ? "pointer" : "";
+      cvs.style.cursor = id ? "var(--cursor-pointer, pointer)" : "";
       wake();
     };
 

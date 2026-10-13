@@ -229,6 +229,22 @@ body {
 html {
   cursor: var(--cursor-default, default);
 }
+/* the browser's own stylesheet gives buttons and the controls that aren't
+   text the system arrow, which would win over the one inherited from html */
+:where(
+    button,
+    input:is([type="button"], [type="submit"], [type="reset"], [type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="image"])
+  ) {
+  cursor: var(--cursor-default, default);
+}
+::file-selector-button {
+  cursor: var(--cursor-default, default);
+}
+::-webkit-inner-spin-button,
+::-webkit-calendar-picker-indicator,
+::-webkit-search-cancel-button {
+  cursor: var(--cursor-default, default);
+}
 :where(a[href], summary, label[for], select) {
   cursor: var(--cursor-pointer, pointer);
 }
