@@ -32,7 +32,15 @@ export function dockIconCenter(app: AppId, href: string): Point {
   }
   if (el) {
     const r = el.getBoundingClientRect();
-    if (r.width > 0) return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    // inside an app the phone's tab bar has slid away (or is sliding):
+    // aim at where the icon rests once it's back, not at where it hides
+    let dy = 0;
+    const bar = el.closest<HTMLElement>(".os-tabbar-list");
+    if (bar) {
+      const t = getComputedStyle(bar).transform;
+      if (t && t !== "none") dy = new DOMMatrixReadOnly(t).m42;
+    }
+    if (r.width > 0) return { x: r.left + r.width / 2, y: r.top + r.height / 2 - dy };
   }
   return { x: vw / 2, y: vh - 40 };
 }

@@ -136,6 +136,11 @@
     --os-tabbar-gap: max(10px, calc(env(safe-area-inset-bottom, 0px) - 12px));
     --dock-h: calc(74px + var(--os-tabbar-gap));
   }
+  /* inside an app the bar steps away (dock.css): only the home indicator
+     at the bottom edge is left to clear */
+  :root:has(.os-win) {
+    --dock-h: calc(26px + var(--os-tabbar-gap));
+  }
 }
 /* short landscape screens (phones on their side): every pixel of height
    counts, so the dock compacts (dock.css) and says so here */
@@ -149,6 +154,9 @@
     /* on its side: an 8px handle band and a 48px capsule, icon beside name */
     --os-tabbar-gap: max(6px, calc(env(safe-area-inset-bottom, 0px) - 14px));
     --dock-h: calc(56px + var(--os-tabbar-gap));
+  }
+  :root:has(.os-win) {
+    --dock-h: calc(20px + var(--os-tabbar-gap));
   }
 }
 

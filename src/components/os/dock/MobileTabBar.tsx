@@ -95,22 +95,57 @@ export function MobileTabBar() {
     };
   }, []);
 
-  // a swipe up on the bar shows every open window (like a phone's app switcher)
-  const swipe = useRef<{ id: number; x: number; y: number; fired: boolean } | null>(null);
+  // On the Desktop, a swipe up on the bar shows every open window. Inside
+  // an app the bar has stepped away and the handle is the home indicator,
+  // as on iOS: swipe it up and let go for the Desktop, swipe up and hold
+  // for every open window (a tap shows them too).
+  const inApp = active.id !== "home";
+  const swipe = useRef<{ id: number; x: number; y: number; dy: number; fired: boolean; hold: number } | null>(null);
+  const goHome = () => {
+    blip("close");
+    router.push(path("/"), { scroll: false, transitionTypes: ["app-close"] });
+  };
+  const endSwipe = () => {
+    if (swipe.current) window.clearTimeout(swipe.current.hold);
+  };
   const swipeHandlers = {
     onPointerDown: (e: React.PointerEvent) => {
       if (e.pointerType === "mouse") return;
-      swipe.current = { id: e.pointerId, x: e.clientX, y: e.clientY, fired: false };
+      endSwipe();
+      swipe.current = { id: e.pointerId, x: e.clientX, y: e.clientY, dy: 0, fired: false, hold: 0 };
     },
     onPointerMove: (e: React.PointerEvent) => {
       const s = swipe.current;
       if (!s || s.fired || s.id !== e.pointerId) return;
-      if (s.y - e.clientY > 34 && Math.abs(e.clientX - s.x) < 44) {
+      s.dy = s.y - e.clientY;
+      const straight = Math.abs(e.clientX - s.x) < (inApp ? 64 : 44);
+      if (!inApp) {
+        if (s.dy > 34 && straight) {
+          s.fired = true;
+          openOverview();
+        }
+        return;
+      }
+      // up and holding still: the switcher comes up under the finger
+      if (s.dy > 24 && straight && !s.hold) {
+        s.hold = window.setTimeout(() => {
+          if (swipe.current !== s || s.fired) return;
+          s.fired = true;
+          openOverview();
+        }, 280);
+      }
+    },
+    onPointerUp: (e: React.PointerEvent) => {
+      const s = swipe.current;
+      endSwipe();
+      if (!inApp || !s || s.fired || s.id !== e.pointerId) return;
+      if (s.dy > 34 && Math.abs(e.clientX - s.x) < 64) {
         s.fired = true;
-        openOverview();
+        goHome();
       }
     },
     onPointerCancel: () => {
+      endSwipe();
       swipe.current = null;
     },
     // the tap under a swipe is not a launch
@@ -122,6 +157,7 @@ export function MobileTabBar() {
       swipe.current = null;
     },
   };
+  useEffect(() => endSwipe, []);
 
   const launch = (e: React.MouseEvent<HTMLElement>, on: boolean) => {
     if (!isPlainClick(e)) return;
@@ -138,7 +174,8 @@ export function MobileTabBar() {
   return (
     <>
       <nav aria-label={t.dock.label} className="os-tabbar" data-os-dock="" data-kbd={kbd || undefined} {...swipeHandlers}>
-        {/* the handle: tap it, or swipe up anywhere on the bar, for every open window */}
+        {/* the handle: tap it, or swipe up anywhere on the bar, for every open window;
+            inside an app it's the home indicator (swipe up for the Desktop) */}
         <button type="button" className="os-tabbar-handle" aria-label={t.dock.windows} onClick={() => openOverview()}>
           <span aria-hidden />
         </button>

@@ -255,6 +255,10 @@ body:has(.os-win) .os-tabbar::before {
   padding: 4px;
   list-style: none;
   border-radius: 31px;
+  transition:
+    transform 0.42s var(--ease-out-quint),
+    opacity 0.28s ease-out,
+    visibility 0s;
   background: color-mix(in srgb, var(--color-ink-950) 70%, transparent);
   backdrop-filter: blur(20px) saturate(1.6);
   /* light catches the top edge; a hairline holds the shape over light
@@ -377,6 +381,49 @@ body:has(.os-win) .os-tabbar::before {
   /* get out of the keyboard's way while typing */
   .os-tabbar[data-kbd] {
     transform: translateY(calc(100% + 24px));
+  }
+}
+
+/* ── inside an app (phones): the bar steps away, as on iOS ─────────
+   On the Desktop the tab bar is the way around. Once an app is open it
+   slides down out of sight (and out of the tab order) and only the
+   handle stays, dropped to the bottom edge like iOS's home indicator:
+   swipe it up for the Desktop, swipe up and hold (or tap it) for every
+   open window (MobileTabBar). The window takes the room back and pads
+   only for the indicator (--dock-h shrinks, globals.css); the scroll edge
+   narrows to the indicator's strip. */
+@media (max-width: 767px) {
+  :root:has(.os-win) .os-tabbar {
+    pointer-events: none;
+  }
+  :root:has(.os-win) .os-tabbar-list {
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(calc(100% + var(--os-tabbar-gap, 10px) + 16px));
+    transition:
+      transform 0.36s var(--ease-out-quint),
+      opacity 0.2s ease-out,
+      visibility 0s 0.36s;
+  }
+  :root:has(.os-win) .os-tabbar-handle {
+    pointer-events: auto;
+    /* from the band over the capsule to 10px off the bottom edge */
+    translate: -50% calc(56px + var(--os-tabbar-gap, 10px));
+  }
+  /* a thumb-sized target round the thin pill */
+  :root:has(.os-win) .os-tabbar-handle::after {
+    content: "";
+    position: absolute;
+    inset: -14px -12px -10px;
+  }
+  :root:has(.os-win) .os-tabbar::before {
+    top: auto;
+    height: calc(var(--dock-h) + 18px);
+  }
+}
+@media (max-width: 767px) and (max-height: 500px) {
+  :root:has(.os-win) .os-tabbar-handle {
+    translate: -50% calc(44px + var(--os-tabbar-gap, 6px));
   }
 }
 
@@ -581,6 +628,10 @@ html:active-view-transition .os-tabbar-list {
   .os-tabbar-link::before {
     scale: 1;
   }
+  .os-tabbar-list,
+  .os-tabbar-handle {
+    transition-duration: 0.01s !important;
+  }
 }
 
 @media (prefers-reduced-transparency: reduce) {
@@ -644,6 +695,7 @@ html:active-view-transition .os-tabbar-list {
   translate: -50% 0;
   touch-action: none;
   -webkit-tap-highlight-color: transparent;
+  transition: translate 0.42s var(--ease-out-quint);
 }
 .os-tabbar-handle > span {
   width: 2.25rem;
