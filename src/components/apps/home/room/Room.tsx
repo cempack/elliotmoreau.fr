@@ -14,7 +14,7 @@ import { useSky } from "@/components/os/sky";
 import { useWeather } from "@/components/os/weather";
 import { useSiteData } from "@/components/os/SiteData";
 import { homeSpot } from "@/components/os/wallpaper/sunClock";
-import { ROOM_H, ROOM_W, paintRoom, type Rect, type RoomSpots } from "./roomArt";
+import { ROOM_FOCUS, ROOM_H, ROOM_W, paintRoom, type Rect, type RoomSpots } from "./roomArt";
 import { intersects } from "../desktop/physics";
 import { menubarPx } from "../desktop/layout";
 
@@ -161,11 +161,12 @@ type Spot = { id: keyof RoomSpots; k: string; title: string; sub: string; go: ()
 /**
  * Elliot's room, behind the lit window (roomArt.ts paints it): everything
  * in it is live and opens its app. The laptop shows the last push, the
- * turntable what's playing (the sleeve is the real cover), the shelf the
- * posts, the board the trips, the tray a letter; the window looks back
- * over the river in today's light and goes back out. Hover or focus names
- * a thing; on touch a first tap names it and a second opens it. Phones pan
- * across the room with a finger.
+ * turntable what's playing (the sleeve in the bin is the real cover, in
+ * the room's pixels), the shelf the posts, the board the trips, the tray a
+ * letter; the window looks back over the river in today's light and goes
+ * back out. Hover or focus names a thing; on touch a first tap names it
+ * and a second opens it. A screen narrower than the room pans across it
+ * with a finger; one wider crops it top and bottom around the furniture.
  */
 export function Room() {
   const { open, from } = useRoom();
@@ -200,7 +201,7 @@ function RoomLayer({ from, leaving, onGone }: { from: { x: number; y: number } |
   const scrollRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const backRef = useRef<HTMLButtonElement>(null);
-  const [view, setView] = useState({ w: 0, h: 0 });
+  const [view, setView] = useState({ w: 0, h: 0, band: [0, 0] });
   const [spots, setSpots] = useState<RoomSpots | null>(null);
   const [named, setNamed] = useState<keyof RoomSpots | null>(null);
   // once a first thing is named, its tag says the rest: the hint steps aside
@@ -216,6 +217,27 @@ function RoomLayer({ from, leaving, onGone }: { from: { x: number; y: number } |
   const been = data.places.filter((p) => p.status === "been" && !p.home);
   const posts = data.posts;
   const track = music.track;
+  // the cover, read back so it can be painted in the room's pixels (Spotify's CDN allows it)
+  const [cover, setCover] = useState<{ src: string; img: HTMLImageElement } | null>(null);
+  const coverSrc = track?.image ?? "";
+  useEffect(() => {
+    if (!coverSrc) return;
+    let live = true;
+    const load = (cors: boolean) => {
+      const img = new Image();
+      if (cors) img.crossOrigin = "anonymous";
+      img.decoding = "async";
+      img.onload = () => live && setCover({ src: coverSrc, img });
+      // no CORS: laid on as it is
+      img.onerror = () => cors && live && load(false);
+      img.src = coverSrc;
+    };
+    load(true);
+    return () => {
+      live = false;
+    };
+  }, [coverSrc]);
+  const coverImg = cover && cover.src === coverSrc ? cover.img : null;
   const roomState = useMemo(
     () => ({
       phase: sky.phase,
@@ -232,12 +254,16 @@ function RoomLayer({ from, leaving, onGone }: { from: { x: number; y: number } |
   useEffect(() => {
     const cv = canvasRef.current;
     if (!cv) return;
-    setSpots(paintRoom(cv, roomState));
-  }, [roomState]);
+    setSpots(paintRoom(cv, roomState, coverImg));
+  }, [roomState, coverImg]);
 
   // the room covers the screen (phones pan across it)
   useLayoutEffect(() => {
-    const onResize = () => setView({ w: window.innerWidth, h: window.innerHeight });
+    const onResize = () => {
+      const dock = document.querySelector("[data-os-dock]")?.getBoundingClientRect();
+      const h = window.innerHeight;
+      setView({ w: window.innerWidth, h, band: [menubarPx(), dock && dock.height ? dock.top : h] });
+    };
     onResize();
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
@@ -245,12 +271,14 @@ function RoomLayer({ from, leaving, onGone }: { from: { x: number; y: number } |
   const scale = view.w ? Math.max(view.w / ROOM_W, view.h / ROOM_H) : 0;
   const stageW = ROOM_W * scale;
   const stageH = ROOM_H * scale;
+  // wider than the room: it is cropped top and bottom, around the furniture between the menu bar and the Dock
+  const lift = stageH > view.h ? Math.round(Math.min(stageH - view.h, Math.max(0, ROOM_FOCUS.y * scale - (view.band[0] + view.band[1]) / 2))) : 0;
 
   // start with the desk in the middle
   useLayoutEffect(() => {
     const el = scrollRef.current;
     if (!el || !scale) return;
-    el.scrollLeft = Math.max(0, 182 * scale - view.w / 2);
+    el.scrollLeft = Math.max(0, ROOM_FOCUS.x * scale - view.w / 2);
   }, [scale, view.w]);
 
   // in through the glass: the city grows toward the window as the room grows out of it
@@ -392,7 +420,6 @@ function RoomLayer({ from, leaving, onGone }: { from: { x: number; y: number } |
     const need = mid - half < 20 ? mid - half - 20 : mid + half > vw - 20 ? mid + half - (vw - 20) : 0;
     if (need) el.scrollBy({ left: need, behavior: reduced ? "auto" : "smooth" });
   };
-  const sleeve = track?.image && spots ? at(spots.sleeve) : null;
 
   return (
     <div
@@ -406,17 +433,16 @@ function RoomLayer({ from, leaving, onGone }: { from: { x: number; y: number } |
         if (!(e.target as Element).closest(".app-home-room-thing, .app-home-room-tag")) setNamed(null);
       }}
     >
+      {/* first in the tab order: the way out, then each thing in the room */}
+      <button ref={backRef} type="button" className="app-home-room-back" aria-label={r.backLabel} onClick={leave}>
+        <span aria-hidden>←</span> {r.back}
+      </button>
       <div ref={scrollRef} className="app-home-room-scroll">
-        <div ref={stageRef} className="app-home-room-stage" style={{ width: stageW, height: stageH }}>
+        <div ref={stageRef} className="app-home-room-stage" style={{ width: stageW, height: stageH, top: -lift }}>
           <canvas ref={canvasRef} className="app-home-room-canvas" style={{ width: stageW, height: stageH }} aria-hidden />
-          {sleeve && (
-            // the record's real cover, on the sleeve against the cabinet
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={track!.image} alt="" className="app-home-room-sleeve" style={sleeve} decoding="async" />
-          )}
           {spots &&
             list.map((s) => {
-              const q = s.id === "turntable" ? merge(spots.turntable, spots.sleeve) : spots[s.id];
+              const q = spots[s.id];
               const box = at(q);
               const shown = named === s.id;
               return (
@@ -448,7 +474,7 @@ function RoomLayer({ from, leaving, onGone }: { from: { x: number; y: number } |
                     }}
                   />
                   {shown && (
-                    <div className="app-home-room-tag" data-side={q.y * scale > stageH * 0.55 ? "up" : "down"} onClick={s.go}>
+                    <div className="app-home-room-tag" data-side={q.y * scale - lift > view.h * 0.55 ? "up" : "down"} onClick={s.go}>
                       <span className="app-home-room-tag-k">{s.k}</span>
                       <span className="app-home-room-tag-t">{s.title}</span>
                       {s.sub && <span className="app-home-room-tag-s">{s.sub}</span>}
@@ -465,18 +491,9 @@ function RoomLayer({ from, leaving, onGone }: { from: { x: number; y: number } |
         </div>
       </div>
 
-      <button ref={backRef} type="button" className="app-home-room-back" aria-label={r.backLabel} onClick={leave}>
-        <span aria-hidden>←</span> {r.back}
-      </button>
       <p className="app-home-room-hint" data-quiet={(looked && !fine) || undefined}>
         {fine ? r.hint : r.hintTouch}
       </p>
     </div>
   );
 }
-
-const merge = (a: Rect, b: Rect): Rect => {
-  const x = Math.min(a.x, b.x);
-  const y = Math.min(a.y, b.y);
-  return { x, y, w: Math.max(a.x + a.w, b.x + b.w) - x, h: Math.max(a.y + a.h, b.y + b.h) - y };
-};
