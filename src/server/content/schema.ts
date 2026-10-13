@@ -1,6 +1,7 @@
 import type { Migration, Seed } from "../db/types";
 import { writeKv, writePlace } from "./rows";
 import { seedLive, seedNow, seedPlaces, seedProjects, seedStatus } from "./seed";
+import { validatePlace } from "./validate";
 
 /**
  * Content tables, owned by the content module.
@@ -46,6 +47,30 @@ export const contentMigrations: Migration[] = [
         updated_at TEXT NOT NULL
       ) STRICT;
     `,
+  },
+  {
+    // Russia on the wish list, entered the way the admin panel's "Add a place"
+    // saves one: validated the same, the next sort position, no note yet (add
+    // one in the panel). Once only, so deleting it there keeps it gone. Only
+    // into a database that has its places already: a fresh one gets the seed.
+    id: "content-002",
+    up: (d) => {
+      const { n } = d.prepare(`SELECT COUNT(*) AS n FROM places`).get() as { n: number };
+      if (n === 0 || d.prepare(`SELECT 1 FROM places WHERE id = 'russia'`).get()) return;
+      const russia = validatePlace({
+        id: "russia",
+        name: { en: "Russia", fr: "Russie" },
+        region: { en: "eurasia", fr: "eurasie" },
+        lat: 61.524,
+        lon: 105.3188,
+        status: "want",
+        home: false,
+        iso: "RU",
+        continent: "europe",
+        sort: n,
+      });
+      writePlace(d, russia, new Date().toISOString());
+    },
   },
 ];
 
