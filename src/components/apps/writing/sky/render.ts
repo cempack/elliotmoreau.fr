@@ -659,20 +659,24 @@ export class Sky {
     out.set(this.base);
     const st = this.stampAt();
     if (this.names > 0) this.paintNames(out, st);
+    // the foot: the windows go out towards the bottom, then the street dithers
+    // into the glass, so the date and the title read on a quiet dark
+    const fade = this.o.fade ?? 0;
+    if (fade > 0) {
+      const foot = darkness(skyAt(this.ms).sunAlt) > 0.35 ? P.oceanNight : P.oceanLit;
+      const ramp = Math.round(fade * 0.6);
+      for (let y = Math.max(0, H - fade - ramp); y < H - fade; y++) {
+        const t = (y - (H - fade - ramp) + 1) / (ramp + 1);
+        for (let x = 0, i = y * W; x < W; x++, i++) if (this.mask[i] && b4(x, y) < t) out[i] = foot;
+      }
+      for (let y = Math.max(0, H - fade); y < H; y++) {
+        const keep = (H - y) / fade;
+        for (let x = 0, i = y * W; x < W; x++, i++) out[i] = b4(x, y) >= keep ? 0 : foot;
+      }
+    }
     if (st) {
       drawText(out, W, H, st.s, st.x + 1, st.y + 1, P.oceanNight);
       drawText(out, W, H, st.s, st.x, st.y, P.light);
-    }
-    // the foot: the street goes dark, then dithers into the glass, so a title can sit on it
-    const fade = this.o.fade ?? 0;
-    const foot = darkness(skyAt(this.ms).sunAlt) > 0.35 ? P.oceanNight : P.oceanLit;
-    for (let y = Math.max(0, H - fade); y < H; y++) {
-      const keep = (H - y) / fade;
-      for (let x = 0; x < W; x++) {
-        const b = b4(x, y);
-        if (b >= keep) out[y * W + x] = 0;
-        else if (b >= keep * keep * keep) out[y * W + x] = foot;
-      }
     }
   }
   paint(out: Uint32Array) {
