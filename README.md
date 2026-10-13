@@ -65,7 +65,12 @@ src/
     not-found.tsx        the 404 app, for notFound() inside a locale
   app/global-not-found.tsx  the 404 for every unmatched address (own <html>, same shell)
   app/sitemap.ts robots.ts manifest.ts
-  app/api/               newsletter (Ghost Admin), spotify/status (live now playing)
+  app/api/               newsletter (Ghost Admin), spotify/status (live now playing),
+                         hit (the page-view beacon), admin/ (passkeys, the panel's RPC)
+  server/                SQLite (content, mail, admin auth, stats): content/ holds
+                         places, status, /now, live overrides and Projects' notes;
+                         stats/ counts visits without cookies (a daily-salted visitor
+                         hash, country from the time zone), shown in the admin Overview
   proxy.ts               EN unprefixed (rewrite to /en), FR at /fr, saved choice
   i18n/                  config, server getDict + appMetadata, client I18nProvider,
                          dict/<area>.ts (meta.ts = titles, descriptions, share cards)

@@ -302,3 +302,32 @@ describe("status, now and live", () => {
     assert.equal(c.getStatus().replyDays, 4);
   });
 });
+
+describe("projects", () => {
+  test("seeded from the hand-written notes, with no order", () => {
+    const p = c.getProjects();
+    assert.equal(p.notes.euclide?.kind, "app");
+    assert.deepEqual(p.order, []);
+  });
+
+  test("notes and order round-trip, keys and order lowercased, duplicates dropped", () => {
+    c.setProjects({
+      notes: { Euclide: { kind: "lab", title: "  Euclide  ", plain: { en: "A desk.", fr: "Un bureau." } } },
+      order: ["CAI-Monitoring", "euclide", "cai-monitoring"],
+    });
+    const p = c.getProjects();
+    assert.deepEqual(p.notes.euclide, { kind: "lab", title: "Euclide", plain: { en: "A desk.", fr: "Un bureau." } });
+    assert.deepEqual(p.order, ["cai-monitoring", "euclide"]);
+    assert.equal(c.getSiteContent().projects.order[0], "cai-monitoring");
+  });
+
+  test("an empty title or sentence means not set", () => {
+    c.setProjects({ notes: { omapods: { kind: "desktop", title: "", plain: { en: "", fr: "" } } }, order: [] });
+    assert.deepEqual(c.getProjects().notes.omapods, { kind: "desktop" });
+  });
+
+  test("an unknown shelf or a bad repo name is refused", () => {
+    rejects(() => c.setProjects({ notes: { euclide: { kind: "boat" as never } }, order: [] }), "notes.euclide.kind");
+    rejects(() => c.setProjects({ notes: {}, order: ["not a repo"] }), "order[0]");
+  });
+});

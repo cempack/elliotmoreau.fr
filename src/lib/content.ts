@@ -174,3 +174,28 @@ export type LiveOverrides = {
 /** What pages receive: hidden repos are filtered out on the server, and
     their names never reach the browser. */
 export type PublicLive = Omit<LiveOverrides, "hiddenRepos">;
+
+/* ───────────────────────────── projects ───────────────────────────── */
+
+/** The shelves of Projects, in the order it shows them: app (opens and gets
+    used), game, desktop (an add-on or look for the Omarchy desktop), tool
+    (sets up or fixes things on a computer), lab (an experiment). */
+export const PROJECT_KINDS = ["app", "game", "desktop", "tool", "lab"] as const;
+export type ProjectKind = (typeof PROJECT_KINDS)[number];
+
+/** What a repo is, said for someone who has never opened a terminal. */
+export type ProjectNote = {
+  kind: ProjectKind;
+  /** a readable name when the repo's own is a slug */
+  title?: string;
+  /** one sentence, no jargon (without it, GitHub's description shows) */
+  plain?: L10n;
+};
+
+/** Edited in the admin panel: each repo's note (keyed by its lowercased
+    name) and the order Projects lists them in within each shelf (lowercased
+    names; repos not listed follow, most recently worked on first). */
+export type ProjectsContent = {
+  notes: Record<string, ProjectNote>;
+  order: string[];
+};

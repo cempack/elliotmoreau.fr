@@ -1,5 +1,9 @@
 import {
   CONTINENTS,
+  PROJECT_KINDS,
+  type ProjectKind,
+  type ProjectNote,
+  type ProjectsContent,
   type Away,
   type Book,
   type Continent,
@@ -297,4 +301,33 @@ export function validateLive(input: unknown): LiveOverrides {
   const pinned = optText(o.pinnedPost, "pinnedPost", 191);
   if (pinned) live.pinnedPost = SLUG.test(pinned) ? pinned : fail("pinnedPost", "Not a post slug.");
   return live;
+}
+
+/** Each repo's note (kind, a readable title, the plain sentence) and the order. */
+export function validateProjects(input: unknown): ProjectsContent {
+  const o = obj(input, "projects");
+  const rawNotes = obj(o.notes ?? {}, "notes");
+  const keys = Object.keys(rawNotes);
+  if (keys.length > 300) fail("notes", "At most 300 projects.");
+  const notes: Record<string, ProjectNote> = {};
+  for (const k of keys) {
+    const name = repo(k, `notes.${k}`).toLowerCase();
+    const n = obj(rawNotes[k], `notes.${name}`);
+    const kind = (PROJECT_KINDS as readonly string[]).includes(n.kind as string) ? (n.kind as ProjectKind) : fail(`notes.${name}.kind`, "Unknown shelf.");
+    const note: ProjectNote = { kind };
+    const title = optText(n.title, `notes.${name}.title`, 80);
+    if (title) note.title = title;
+    const plain = optL10n(n.plain, `notes.${name}.plain`, 240);
+    if (plain) note.plain = plain;
+    notes[name] = note;
+  }
+  const seen = new Set<string>();
+  const order: string[] = [];
+  list(o.order ?? [], "order", 300).forEach((r, i) => {
+    const name = repo(r, `order[${i}]`).toLowerCase();
+    if (seen.has(name)) return;
+    seen.add(name);
+    order.push(name);
+  });
+  return { notes, order };
 }

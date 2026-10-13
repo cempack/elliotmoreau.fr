@@ -1,4 +1,5 @@
 import "server-only";
+import type { ProjectNote } from "@/lib/content";
 // Server-only GitHub helper with minute-scale in-memory cache.
 
 const API = "https://api.github.com";
@@ -26,6 +27,10 @@ export type RepoInfo = {
   topics: string[];
   /** First real screenshot from the README, if the project showcases one. */
   preview: string | null;
+  /** set on the server from the admin panel's Projects: what it is, in plain words */
+  note?: ProjectNote;
+  /** its place in the hand-set order (lower first), when it has one */
+  rank?: number;
 };
 
 type GhRepo = {
@@ -91,10 +96,11 @@ export async function getRepos(): Promise<RepoInfo[] | null> {
     if (!res.ok) return reposCache?.data ?? null;
     const json = (await res.json()) as GhRepo[];
     const data = json
-      .filter((r) => r.name && !r.fork && !r.archived && r.description)
+      // forks and archives never show; one without a description shows once the admin panel gives it a sentence
+      .filter((r) => r.name && !r.fork && !r.archived)
       .map((r): RepoInfo => ({
         name: r.name as string,
-        description: (r.description as string).trim(),
+        description: (r.description ?? "").trim(),
         url: r.html_url ?? `https://github.com/${USER}/${r.name}`,
         homepage: (r.homepage ?? "").trim(),
         language: r.language ?? "",

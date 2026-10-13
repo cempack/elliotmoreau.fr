@@ -1,6 +1,7 @@
-import { orderPlaces, type LiveOverrides, type NowContent, type PlaceRow, type Status } from "@/lib/content";
+import { orderPlaces, type LiveOverrides, type NowContent, type PlaceRow, type ProjectsContent, type Status } from "@/lib/content";
 import { PLACES } from "@/lib/places";
 import { NOW } from "@/content/now";
+import { PROJECTS } from "@/content/projects";
 
 /**
  * The starting content: what an empty database is filled with, and what
@@ -27,3 +28,4 @@ export const seedPlaces = (): PlaceRow[] =>
 export const seedStatus = (): Status => structuredClone(STATUS);
 export const seedNow = (): NowContent => structuredClone(NOW);
 export const seedLive = (): LiveOverrides => structuredClone(LIVE);
+export const seedProjects = (): ProjectsContent => structuredClone({ notes: PROJECTS, order: [] });

@@ -1,12 +1,13 @@
 import type { RepoInfo } from "@/lib/github";
-import { PROJECTS, type ProjectKind } from "@/content/projects";
+import { PROJECT_KINDS, type ProjectKind } from "@/lib/content";
 
 export type { ProjectKind };
 
 /** The shelves, in the order Projects shows them. */
-export const KINDS: ProjectKind[] = ["app", "game", "desktop", "tool", "lab"];
+export const KINDS: readonly ProjectKind[] = PROJECT_KINDS;
 
-const note = (r: RepoInfo) => PROJECTS[r.name.toLowerCase()];
+/** the admin panel's note for it (attached on the server), if any */
+const note = (r: RepoInfo) => r.note;
 
 /** a store page for the Omarchy bar, not the project's own site */
 const STORE = /omarchy(plugins)?\.(com|org)|plugins\.omarchy/i;
@@ -18,6 +19,11 @@ const STORE = /omarchy(plugins)?\.(com|org)|plugins\.omarchy/i;
 export function kindOf(r: RepoInfo): ProjectKind {
   const n = note(r);
   if (n) return n.kind;
+  return guessKind(r);
+}
+
+/** The shelf GitHub's own words suggest (the admin panel shows it as the default). */
+export function guessKind(r: Pick<RepoInfo, "name" | "description" | "topics" | "homepage">): ProjectKind {
   const text = `${r.name} ${r.description} ${r.topics.join(" ")}`.toLowerCase();
   if (/\b(game|jeu|pygame|platformer|plateforme)\b/.test(text)) return "game";
   if (/omarchy|hyprland|waybar|\btheme\b|dotfiles|wallpaper/.test(text) || STORE.test(r.homepage)) return "desktop";
@@ -56,9 +62,11 @@ export function actionOf(r: RepoInfo, kind: ProjectKind): Action {
   return "open";
 }
 
-/** Repos by shelf, in shelf order; within one, most recently worked on first. */
+/** Repos by shelf, in shelf order; within one, the order set in the admin
+    panel, then the rest most recently worked on first. */
 export function shelves(repos: RepoInfo[]) {
   const time = (r: RepoInfo) => Date.parse(r.pushedAt) || 0;
+  const byRank = (a: RepoInfo, b: RepoInfo) => (a.rank ?? Infinity) - (b.rank ?? Infinity) || time(b) - time(a);
   const by = new Map<ProjectKind, RepoInfo[]>();
   for (const r of repos) {
     const k = kindOf(r);
@@ -66,5 +74,5 @@ export function shelves(repos: RepoInfo[]) {
     list.push(r);
     by.set(k, list);
   }
-  return KINDS.filter((k) => by.has(k)).map((kind) => ({ kind, repos: by.get(kind)!.sort((a, b) => time(b) - time(a)) }));
+  return KINDS.filter((k) => by.has(k)).map((kind) => ({ kind, repos: by.get(kind)!.sort(byRank) }));
 }

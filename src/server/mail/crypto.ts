@@ -84,6 +84,12 @@ export function decryptToken(enc: string): string | null {
   }
 }
 
+/** The stats' visitor-of-the-day key: a new one every calendar day, never stored, so a
+    visitor can be counted once per day and never followed from one day to the next. */
+export function dayKey(day: string) {
+  return crypto.createHmac("sha256", key("stats-day")).update(day).digest();
+}
+
 /** HMAC of an IP (or an email, for its rate limit): never stored in the clear */
 export function saltedHash(value: string) {
   return crypto.createHmac("sha256", key("ip-hash")).update(value.toLowerCase()).digest("hex").slice(0, 32);

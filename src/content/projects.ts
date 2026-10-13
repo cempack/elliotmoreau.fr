@@ -1,7 +1,12 @@
 /**
  * ─────────────────────────────── Projects, in plain words ───────────────────────────────
  *
- *  GitHub descriptions are written for developers. This file says what each
+ *  SEED ONLY. The notes live in the database and are edited (with the order
+ *  Projects lists them in) from the admin panel's Projects section; this
+ *  fills an empty database on first boot and stands in if it can't be
+ *  opened.
+ *
+ *  GitHub descriptions are written for developers. This says what each
  *  project is for someone who has never opened a terminal, and which shelf
  *  it sits on in Projects. Keyed by the repo's name (case doesn't matter).
  *
@@ -16,10 +21,9 @@
  *  description, topics and website (see apps/work/kind.ts).
  */
 
-import type { L10n } from "@/lib/content";
+import type { ProjectKind, ProjectNote } from "@/lib/content";
 
-export type ProjectKind = "app" | "game" | "desktop" | "tool" | "lab";
-export type ProjectNote = { kind: ProjectKind; title?: string; plain?: L10n };
+export type { ProjectKind, ProjectNote };
 
 export const PROJECTS: Record<string, ProjectNote> = {
   euclide: {

@@ -51,7 +51,7 @@ const fixturesAllowed = () =>
  */
 export const getSiteData = cache(async (): Promise<SiteData> => {
   const fx = fixturesAllowed();
-  const { live, ...content } = getSiteContent();
+  const { live, projects, ...content } = getSiteContent();
   const { hiddenRepos, ...publicLive } = live;
   const hidden = new Set(hiddenRepos.map((n) => n.toLowerCase()));
   const skip = hidden.size ? (repo: string) => hidden.has(repo.toLowerCase()) : undefined;
@@ -74,10 +74,20 @@ export const getSiteData = cache(async (): Promise<SiteData> => {
   const [r, rs] = pick(repos, FIXTURE_REPOS, []);
   const [a, as] = pick(activity, FIXTURE_ACTIVITY, null);
   const [h, hs] = pick(pushes, FIXTURE_PUSHES, null);
+  // the admin panel's notes and order ride on each repo (only the visible ones reach the page)
+  const rankOf = new Map(projects.order.map((n, i) => [n, i]));
+  const noted = (list: RepoInfo[]) =>
+    list.map((x) => {
+      const k = x.name.toLowerCase();
+      const note = projects.notes[k];
+      const rank = rankOf.get(k);
+      return { ...x, ...(note ? { note } : {}), ...(rank != null ? { rank } : {}) };
+    });
   return {
     posts: p,
     spotify: s,
-    repos: skip ? r.filter((x) => !skip(x.name)) : r,
+    // a repo says something on the site: GitHub's description, or the admin panel's sentence
+    repos: noted(skip ? r.filter((x) => !skip(x.name)) : r).filter((x) => x.description || x.note?.plain),
     // live activity and pushes come filtered; the samples can name a hidden repo too
     activity: a && skip?.(a.repo) ? null : a,
     pushes: h && skip ? { ...h, days: h.days.filter((d) => !skip(d.repo)) } : h,

@@ -1,4 +1,4 @@
-import type { CurrentAway, LiveOverrides, NowContent, PlaceRow, Status } from "@/lib/content";
+import type { CurrentAway, LiveOverrides, NowContent, PlaceRow, ProjectsContent, Status } from "@/lib/content";
 
 /**
  * The admin panel's calls: /api/admin/auth (passkeys, sessions) and
@@ -60,6 +60,7 @@ export type Overview = {
   status: Status;
   now: NowContent;
   live: LiveOverrides;
+  projects: ProjectsContent;
   away: CurrentAway | null;
   mail: { unread: number; health: MailHealth; addresses: { to: string; from: string } };
   system: {
@@ -77,4 +78,23 @@ export type Overview = {
       siteUrl: string;
     };
   };
+};
+
+export type StatsRow = { key: string; visitors: number; views: number };
+export type StatsRange = 1 | 7 | 30 | 90 | 365;
+export type Stats = {
+  range: StatsRange;
+  days: { day: string; visitors: number; views: number }[];
+  hours?: { hour: number; visitors: number; views: number }[];
+  totals: { visitors: number; views: number; pagesPerVisit: number };
+  previous: { visitors: number; views: number };
+  live: number;
+  pages: StatsRow[];
+  referrers: StatsRow[];
+  countries: StatsRow[];
+  devices: StatsRow[];
+  browsers: StatsRow[];
+  systems: StatsRow[];
+  languages: StatsRow[];
+  since: string | null;
 };

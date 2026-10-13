@@ -9,12 +9,13 @@ import {
   type LiveOverrides,
   type NowContent,
   type PlaceRow,
+  type ProjectsContent,
   type Status,
 } from "@/lib/content";
 import { ContentError } from "./errors";
 import { PLACE_ORDER, fromDb, readKv, writeKv, writePlace, type PlaceDbRow } from "./rows";
-import { seedLive, seedNow, seedPlaces, seedStatus } from "./seed";
-import { validateAway, validateLive, validateNow, validatePlace, validateStatus, validateWorkHours } from "./validate";
+import { seedLive, seedNow, seedPlaces, seedProjects, seedStatus } from "./seed";
+import { validateAway, validateLive, validateNow, validatePlace, validateProjects, validateStatus, validateWorkHours } from "./validate";
 
 /**
  * The site's editable content: places (the Atlas), status (away, working
@@ -44,6 +45,9 @@ export type {
   LiveOverrides,
   NowContent,
   PlaceRow,
+  ProjectKind,
+  ProjectNote,
+  ProjectsContent,
   SetupRow,
   Status,
   WorkHours,
@@ -100,6 +104,7 @@ const placesFrom = (d: DB) => (d.prepare(`SELECT * FROM places ${PLACE_ORDER}`).
 const statusFrom = (d: DB) => doc(d, "status", (v) => validateStatus({ ...seedStatus(), ...(v as object) }), seedStatus);
 const nowFrom = (d: DB) => doc(d, "now", validateNow, seedNow);
 const liveFrom = (d: DB) => doc(d, "live", validateLive, seedLive);
+const projectsFrom = (d: DB) => doc(d, "projects", validateProjects, seedProjects);
 
 /* ───────────────────────────── places ───────────────────────────── */
 
@@ -229,6 +234,18 @@ export function setLive(patch: Partial<LiveOverrides>): void {
   });
 }
 
+/* ───────────────────────────── projects ───────────────────────────── */
+
+export function getProjects(): ProjectsContent {
+  return read(projectsFrom, seedProjects);
+}
+
+/** Replace the projects document: every note, and the order (validated). */
+export function setProjects(next: ProjectsContent): void {
+  const projects = validateProjects(next);
+  tx((d) => writeKv(d, "projects", projects, nowIso()));
+}
+
 /* ───────────────────────────── everything, for a render ───────────────────────────── */
 
 export type SiteContent = {
@@ -236,6 +253,8 @@ export type SiteContent = {
   status: Status;
   now: NowContent;
   live: LiveOverrides;
+  /** each repo's note and their order (applied to the repos on the server) */
+  projects: ProjectsContent;
   /** resolved for this render (see currentAway) */
   away: CurrentAway | null;
 };
@@ -243,8 +262,8 @@ export type SiteContent = {
 /** All the content a page needs, in one read (the shell's SiteData). */
 export function getSiteContent(at: Date = new Date()): SiteContent {
   const c = read(
-    (d) => ({ places: placesFrom(d), status: statusFrom(d), now: nowFrom(d), live: liveFrom(d) }),
-    () => ({ places: seedPlaces(), status: seedStatus(), now: seedNow(), live: seedLive() })
+    (d) => ({ places: placesFrom(d), status: statusFrom(d), now: nowFrom(d), live: liveFrom(d), projects: projectsFrom(d) }),
+    () => ({ places: seedPlaces(), status: seedStatus(), now: seedNow(), live: seedLive(), projects: seedProjects() })
   );
   return { ...c, away: resolveAway(c.status, c.places, dateIn(c.status.workHours.tz, at)) };
 }

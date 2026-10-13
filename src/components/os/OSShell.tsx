@@ -12,6 +12,7 @@ import { Dock } from "./Dock";
 import { WindowsOverview } from "./WindowsOverview";
 import { Intro } from "./Intro";
 import { ContextMenu } from "./context/ContextMenu";
+import { Beacon } from "./Beacon";
 import { IdlePrefetch } from "./IdlePrefetch";
 import { Suspense } from "react";
 import { TrailRecorder } from "./trail";
@@ -30,6 +31,7 @@ export function OSShell({ data, children }: { data: SiteData; children: React.Re
           <PaletteProvider>
             <SmoothScroll />
             <IdlePrefetch />
+            <Beacon />
             <ContentSync />
             {/* useSearchParams: kept out of the static render's way */}
             <Suspense fallback={null}>

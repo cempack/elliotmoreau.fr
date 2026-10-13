@@ -8,26 +8,28 @@ import { useSound } from "@/lib/sound";
 import { auth, rpc, type AuthState, type Overview } from "./api";
 import { Codes, Lock } from "./Lock";
 import { Btn } from "./ui";
-import { StatusPane } from "./panes/StatusPane";
+import { OverviewPane } from "./panes/OverviewPane";
 import { TravelsPane } from "./panes/TravelsPane";
 import { NowPane } from "./panes/NowPane";
 import { MailPane } from "./panes/MailPane";
-import { LivePane } from "./panes/LivePane";
-import { SystemPane } from "./panes/SystemPane";
+import { ProjectsPane } from "./panes/ProjectsPane";
+import { SettingsPane } from "./panes/SettingsPane";
 
-const PANES = ["status", "travels", "now", "mail", "live", "system"] as const;
+const PANES = ["overview", "mail", "projects", "places", "now", "settings"] as const;
 export type Pane = (typeof PANES)[number];
+/** links from before the redesign still land somewhere sensible */
+const OLD: Record<string, Pane> = { status: "overview", travels: "places", live: "settings", system: "settings" };
 
 const paneFromHash = (): Pane => {
   const h = typeof window === "undefined" ? "" : window.location.hash.slice(1);
-  return (PANES as readonly string[]).includes(h) ? (h as Pane) : "status";
+  return (PANES as readonly string[]).includes(h) ? (h as Pane) : (OLD[h] ?? "overview");
 };
 
 /**
- * Elliot's admin panel. Locked until a passkey opens it; then a sidebar of
- * sections that edit what the site shows, live: status, travels, /now,
- * mail, live-data overrides and the system itself. Opened from the
- * Terminal (`sudo -i`); hidden everywhere else.
+ * Elliot's admin panel. Locked until a passkey opens it; then six
+ * sections: Overview (what visitors are told, where you are, the mail
+ * waiting, the visitors), Mail, Projects, Places, Now and Settings.
+ * Opened from the Terminal (`sudo -i`); hidden everywhere else.
  */
 export function AdminApp() {
   const { t } = useI18n();
@@ -114,7 +116,7 @@ function setPane(p: Pane) {
   history.replaceState(null, "", `#${p}`);
   listeners.forEach((l) => l());
 }
-const usePane = () => useSyncExternalStore(subscribePane, paneFromHash, () => "status" as Pane);
+const usePane = () => useSyncExternalStore(subscribePane, paneFromHash, () => "overview" as Pane);
 
 // the Mail count in the sidebar (the sidebar renders outside the panel)
 let unreadCount = 0;
@@ -179,12 +181,12 @@ function Panel() {
   const k = `${pane}-${version}`;
   return (
     <div className="app-admin-panel">
-      {pane === "status" && <StatusPane key={k} data={data} onSaved={refresh} />}
-      {pane === "travels" && <TravelsPane key={`travels-${version}`} data={data} onSaved={refresh} />}
-      {pane === "now" && <NowPane key={k} data={data} onSaved={refresh} />}
+      {pane === "overview" && <OverviewPane key={k} data={data} onSaved={refresh} onMail={() => setPane("mail")} />}
       {pane === "mail" && <MailPane data={data} onChanged={refresh} />}
-      {pane === "live" && <LivePane key={k} data={data} onSaved={refresh} />}
-      {pane === "system" && <SystemPane key={k} data={data} onChanged={refresh} />}
+      {pane === "projects" && <ProjectsPane key={k} data={data} onSaved={refresh} />}
+      {pane === "places" && <TravelsPane key={`places-${version}`} data={data} onSaved={refresh} />}
+      {pane === "now" && <NowPane key={k} data={data} onSaved={refresh} />}
+      {pane === "settings" && <SettingsPane key={k} data={data} onSaved={refresh} />}
     </div>
   );
 }

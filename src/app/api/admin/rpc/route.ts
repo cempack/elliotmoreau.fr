@@ -19,13 +19,16 @@ import {
   revalidateContent,
   setLive,
   setNowContent,
+  setProjects,
   setStatus,
   upsertPlace,
   type LiveOverrides,
   type NowContent,
   type PlaceRow,
+  type ProjectsContent,
   type Status,
 } from "@/server/content";
+import { getStats, type StatsRange } from "@/server/stats";
 import {
   adminReply,
   getThread,
@@ -135,6 +138,50 @@ const OPS: Record<string, Handler> = {
       repos: r.map((x) => ({ name: x.name, language: x.language, pushedAt: x.pushedAt })),
       posts: p.map((x) => ({ slug: x.slug, title: x.title, published: x.published_at })),
     };
+  },
+
+  /* ── projects: every repo GitHub lists (hidden ones too), and their notes, order, visibility ── */
+  "projects.options": async () => {
+    const repos = await getRepos();
+    const r = repos?.length ? repos : sample() ? FIXTURE_REPOS : [];
+    return {
+      repos: r.map((x) => ({
+        name: x.name,
+        description: x.description,
+        homepage: x.homepage,
+        topics: x.topics,
+        language: x.language,
+        pushedAt: x.pushedAt,
+        url: x.url,
+      })),
+    };
+  },
+  "projects.save": (ctx) => {
+    const projects = ctx.body.projects as ProjectsContent;
+    const hiddenRepos = ctx.body.hiddenRepos as string[] | undefined;
+    const featuredRepo = typeof ctx.body.featuredRepo === "string" ? ctx.body.featuredRepo : undefined;
+    return write("projects.save", `${Object.keys(projects?.notes ?? {}).length} notes`, ctx, () => {
+      setProjects(projects);
+      if (hiddenRepos !== undefined || featuredRepo !== undefined) setLive({ hiddenRepos, featuredRepo });
+    });
+  },
+
+  /* ── settings: hours and replies, with the post Writing opens on and the music, in one save ── */
+  "settings.save": (ctx) => {
+    const status = ctx.body.status as Partial<Status> | undefined;
+    const live = ctx.body.live as Partial<LiveOverrides> | undefined;
+    const what = [...Object.keys(status ?? {}), ...Object.keys(live ?? {})].join(", ");
+    return write("settings.save", what, ctx, () => {
+      if (status && Object.keys(status).length) setStatus(status);
+      if (live && Object.keys(live).length) setLive(live);
+    });
+  },
+
+  /* ── stats ── */
+  stats: (ctx) => {
+    const n = Number(ctx.body.range);
+    const range = ([1, 7, 30, 90, 365] as const).includes(n as StatsRange) ? (n as StatsRange) : 30;
+    return { stats: getStats(range) };
   },
 
   /* ── mail ── */

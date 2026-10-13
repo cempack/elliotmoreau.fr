@@ -1,6 +1,6 @@
 import type { Migration, Seed } from "../db/types";
 import { writeKv, writePlace } from "./rows";
-import { seedLive, seedNow, seedPlaces, seedStatus } from "./seed";
+import { seedLive, seedNow, seedPlaces, seedProjects, seedStatus } from "./seed";
 
 /**
  * Content tables, owned by the content module.
@@ -9,8 +9,9 @@ import { seedLive, seedNow, seedPlaces, seedStatus } from "./seed";
  *   index allows a single home = 1; the API keeps one set). Trip dates are
  *   inclusive calendar days and drive "Away".
  * kv: small JSON documents edited as a whole: `status` (away, working
- *   hours, reply days), `now` (the /now page) and `live` (overrides on the
- *   live data: featured and hidden repos, pinned post, Spotify).
+ *   hours, reply days), `now` (the /now page), `live` (overrides on the
+ *   live data: featured and hidden repos, pinned post, Spotify) and
+ *   `projects` (each repo's plain-words note, and their order).
  */
 export const contentMigrations: Migration[] = [
   {
@@ -60,5 +61,6 @@ export const contentSeed: Seed = (d) => {
     writeKv(d, "status", seedStatus(), at, true);
     writeKv(d, "now", seedNow(), at, true);
     writeKv(d, "live", seedLive(), at, true);
+    writeKv(d, "projects", seedProjects(), at, true);
   })();
 };
