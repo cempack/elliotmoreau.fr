@@ -29,5 +29,12 @@ export const statsMigrations: Migration[] = [
       CREATE INDEX hits_vid ON hits (vid, id);
     `,
   },
+  {
+    // the Blog used to live at /writing: its old page views count with the new pages
+    id: "stats-002",
+    up: `
+      UPDATE hits SET path = '/blog' || substr(path, 9) WHERE path = '/writing' OR path LIKE '/writing/%';
+    `,
+  },
 ];
 

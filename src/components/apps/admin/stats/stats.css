@@ -1,0 +1,749 @@
+/* ───────────── Stats: the admin's visitors dashboard (StatsPane.tsx) ─────────────
+   One accent for data, the admin's own (amber), checked against the card's
+   surface: 8.9:1. The period before is a gray at 3.5:1. Text never wears
+   the data's color; a mark beside it carries the identity. */
+
+.st,
+.st-glance {
+  --st-accent: var(--adm-accent);
+  --st-prev: #6b7a74;
+  /* the card's own tone, for the rings that keep dots apart from lines */
+  --st-ring: #1b2021;
+  --st-grid: rgba(255, 255, 255, 0.07);
+  --st-hover: rgba(255, 255, 255, 0.04);
+}
+.st {
+  container: st / inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+/* the dashboard runs wider than the forms */
+.app-admin-panel:has(.st) .app-admin-section {
+  max-width: 76rem;
+}
+/* refetching keeps the last picture, dimmed: no skeleton, no jump */
+.st .st-card {
+  transition: opacity 0.2s ease;
+}
+.st[data-stale] .st-card {
+  opacity: 0.55;
+}
+
+.st-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  min-width: 0;
+  padding: 1.125rem 1.25rem 1.25rem;
+  border-radius: var(--radius-card);
+  background: var(--adm-surface);
+  box-shadow: var(--adm-surface-shadow);
+}
+.st-title {
+  color: var(--color-label-2);
+  font-size: var(--text-footnote);
+  font-weight: 600;
+}
+.st-sub {
+  color: var(--color-label-3);
+  font-size: var(--text-caption);
+}
+.st-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.375rem 1rem;
+}
+.st-head .st-sub {
+  flex-basis: 100%;
+  margin-top: -0.125rem;
+}
+.st-empty {
+  padding: 0.5rem 0;
+  color: var(--color-label-3);
+  font-size: var(--text-footnote);
+}
+.st-loading {
+  padding: 2rem 0;
+}
+
+/* ───────────── the one row of controls ───────────── */
+
+.st-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.625rem 0.75rem;
+}
+.st-bar-live {
+  margin-left: auto;
+  color: var(--color-label-2);
+  font-size: var(--text-footnote);
+  font-variant-numeric: tabular-nums;
+}
+.st-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+}
+.st-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  max-width: 22rem;
+  height: 1.875rem;
+  padding: 0 0.5rem 0 0.75rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--st-accent) 13%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--st-accent) 34%, transparent);
+  color: var(--color-label);
+  font-size: var(--text-footnote);
+  transition: background-color 0.15s ease;
+}
+.st-chip:hover {
+  background: color-mix(in srgb, var(--st-accent) 20%, transparent);
+}
+.st-chip-dim {
+  color: var(--color-label-2);
+}
+.st-chip-val {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.st-chip svg {
+  flex: none;
+  width: 0.75rem;
+  height: 0.75rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+.st-chip-clear {
+  padding: 0 0.375rem;
+  color: var(--color-label-2);
+  font-size: var(--text-footnote);
+  text-decoration: underline;
+  text-decoration-color: var(--hairline);
+  text-underline-offset: 3px;
+}
+.st-chip-clear:hover {
+  color: var(--color-label);
+}
+
+/* ───────────── the figures, and the big chart ───────────── */
+
+.st-kpis {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.25rem;
+  margin: -0.5rem -0.625rem 0;
+}
+.st-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  padding: 0.625rem 0.75rem 0.5rem;
+  border-radius: 12px;
+  text-align: left;
+  transition: background-color 0.15s ease;
+}
+.st-kpi:hover {
+  background: var(--st-hover);
+}
+.st-kpi[aria-selected="true"] {
+  background: rgba(255, 255, 255, 0.06);
+}
+.st-kpi:focus-visible {
+  outline: 2px solid var(--st-accent);
+  outline-offset: -2px;
+}
+.st-kpi-label {
+  color: var(--color-label-2);
+  font-size: var(--text-footnote);
+  font-weight: 500;
+}
+.st-kpi-value {
+  color: var(--color-label);
+  font-size: 1.625rem;
+  font-weight: 650;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+.st-kpi-delta {
+  overflow: hidden;
+  min-height: 1.3em;
+  color: var(--color-label-3);
+  font-size: var(--text-caption);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.st-kpis-note {
+  margin-top: -0.375rem;
+  color: var(--color-label-3);
+  font-size: var(--text-caption);
+}
+.st-kpi-delta > span {
+  margin-right: 0.25rem;
+  font-weight: 700;
+}
+.st-kpi-delta[data-good="1"] > span {
+  color: var(--color-signal);
+}
+.st-kpi-delta[data-good="0"] > span {
+  color: color-mix(in srgb, var(--color-flare) 72%, var(--color-label));
+}
+.st-spark {
+  display: block;
+  margin-top: 0.25rem;
+  overflow: visible;
+}
+.st-spark path {
+  fill: none;
+  stroke: var(--st-prev);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  transition: stroke 0.2s ease;
+}
+.st-spark[data-on] path {
+  stroke: var(--st-accent);
+  stroke-width: 2;
+}
+
+.st-main-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--hairline);
+}
+.st-trend {
+  position: relative;
+}
+.st-legend {
+  position: absolute;
+  top: -1.75rem;
+  right: 0;
+  display: flex;
+  gap: 1rem;
+  color: var(--color-label-2);
+  font-size: var(--text-caption);
+  list-style: none;
+}
+.st-key {
+  display: inline-block;
+  width: 14px;
+  height: 2px;
+  margin-right: 0.375rem;
+  border-radius: 1px;
+  background: var(--st-accent);
+  vertical-align: middle;
+}
+.st-key[data-series="prev"] {
+  background: var(--st-prev);
+}
+.st-trend-plot {
+  position: relative;
+  border-radius: 8px;
+  outline: none;
+  touch-action: pan-y;
+}
+.st-trend-plot:focus-visible {
+  box-shadow: 0 0 0 2px var(--st-accent);
+}
+.st-trend-plot svg {
+  display: block;
+  overflow: visible;
+}
+.st-grid {
+  stroke: var(--st-grid);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+.st-tick {
+  fill: var(--color-label-3);
+  font: 500 11px/1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.st-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.st-line[data-series="cur"] {
+  stroke: var(--st-accent);
+}
+.st-line[data-series="prev"] {
+  stroke: var(--st-prev);
+}
+/* a wash under the line: the accent at a tenth, fading to nothing at the baseline */
+.st-wash-top {
+  stop-color: var(--st-accent);
+  stop-opacity: 0.14;
+}
+.st-wash-bottom {
+  stop-color: var(--st-accent);
+  stop-opacity: 0.02;
+}
+.st-dot {
+  stroke: var(--st-ring);
+  stroke-width: 2;
+}
+.st-dot[data-series="cur"] {
+  fill: var(--st-accent);
+}
+.st-dot[data-series="prev"] {
+  fill: var(--st-prev);
+}
+.st-cross {
+  stroke: rgba(255, 255, 255, 0.22);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+/* one readout: the value first, what it is after */
+.st-tip {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.5rem 0.625rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-ink-950) 94%, transparent);
+  box-shadow:
+    inset 0 0 0 1px var(--hairline),
+    0 10px 24px -12px rgba(0, 0, 0, 0.8);
+  color: var(--color-label-2);
+  font-size: var(--text-caption);
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translate(-50%, 0);
+}
+.st-tip[data-side="left"] {
+  transform: translate(calc(-100% - 12px), 0);
+}
+.st-tip[data-side="right"] {
+  transform: translate(12px, 0);
+}
+.st-tip[data-place="above"] {
+  transform: translate(-50%, -100%);
+}
+.st-tip[data-place="above"][data-side="left"] {
+  transform: translate(calc(-100% + 16px), -100%);
+}
+.st-tip[data-place="above"][data-side="right"] {
+  transform: translate(-16px, -100%);
+}
+.st-tip strong {
+  color: var(--color-label);
+  font-size: var(--text-footnote);
+  font-weight: 650;
+}
+.st-tip-when {
+  color: var(--color-label-3);
+}
+.st-tip-row {
+  display: flex;
+  align-items: center;
+}
+
+/* ───────────── rows of cards ───────────── */
+
+.st-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.st-row-map {
+  grid-template-columns: minmax(0, 2.1fr) minmax(15rem, 1fr);
+}
+
+/* the map: the land in pixels, a dot per country; the first countries under it */
+.st-mapranks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 1rem;
+}
+.st-map {
+  position: relative;
+  width: 100%;
+  min-height: 8rem;
+}
+.st-map-land {
+  position: absolute;
+  inset: 0;
+  color: rgba(165, 181, 171, 0.2);
+  image-rendering: pixelated;
+}
+.st-map-dots {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+.st-map-dot {
+  fill: color-mix(in srgb, var(--st-accent) 82%, transparent);
+  stroke: var(--st-ring);
+  stroke-width: 2;
+  transition: fill 0.15s ease;
+}
+.st-map-dots g[data-on] .st-map-dot {
+  fill: var(--st-accent);
+  stroke: var(--color-label);
+}
+.st-map-hit {
+  fill: transparent;
+  cursor: pointer;
+}
+
+/* right now */
+.st-live {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+.st-live-count {
+  color: var(--color-label-2);
+  font-size: var(--text-footnote);
+}
+.st-live-count strong {
+  margin-right: 0.25rem;
+  color: var(--color-label);
+  font-size: 2.25rem;
+  font-weight: 650;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.st-live-none {
+  color: var(--color-label-2);
+  font-size: var(--text-body);
+}
+.st-feed {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+}
+.st-feed li {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 1fr);
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--hairline);
+}
+.st-feed-when {
+  padding-top: 0.125rem;
+  color: var(--color-label-3);
+  font-size: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+}
+.st-feed-path {
+  display: block;
+  overflow: hidden;
+  color: var(--color-label);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.st-feed-meta {
+  display: block;
+  color: var(--color-label-3);
+  font-size: var(--text-caption);
+  line-height: 1.35;
+}
+
+/* ranked lists: a label, a wash for its share, the count; each row a button */
+.st-rank {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 3px;
+  margin: -3px 0;
+}
+.st-rank {
+  --st-wash: color-mix(in srgb, var(--st-accent) 15%, rgba(255, 255, 255, 0.045));
+}
+.st-rank tr {
+  background: linear-gradient(90deg, var(--st-wash) var(--w), transparent var(--w));
+}
+.st-rank tr[data-on] {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--st-accent) 32%, transparent) var(--w), color-mix(in srgb, var(--st-accent) 8%, transparent) var(--w));
+}
+.st-rank th {
+  width: 100%;
+  max-width: 0;
+  padding: 0;
+  border-radius: 6px 0 0 6px;
+  font-weight: inherit;
+  text-align: left;
+}
+.st-rank-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 2rem;
+  padding: 0.375rem 0.625rem;
+  border-radius: 6px 0 0 6px;
+  color: var(--color-label);
+  font-size: var(--text-footnote);
+  text-align: left;
+  transition: background-color 0.12s ease;
+}
+.st-rank-btn:hover {
+  background: var(--st-hover);
+}
+.st-rank-btn:focus-visible {
+  outline: 2px solid var(--st-accent);
+  outline-offset: -2px;
+}
+.st-rank-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.st-rank tr[data-on] .st-rank-label {
+  font-weight: 650;
+}
+.st-rank[data-kind="page"] .st-rank-label {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+.st-rank-n {
+  padding: 0.375rem 0.625rem;
+  border-radius: 0 6px 6px 0;
+  color: var(--color-label-2);
+  font-size: var(--text-footnote);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+.st-icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+}
+.st-icon-glyph {
+  fill: none;
+  stroke: var(--color-label-3);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* text tabs over a list */
+.st-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.04);
+}
+.st-tab {
+  padding: 0.25rem 0.5rem;
+  border-radius: 7px;
+  color: var(--color-label-3);
+  font-size: var(--text-caption);
+  font-weight: 550;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+.st-tab:hover {
+  color: var(--color-label-2);
+}
+.st-tab[aria-selected="true"] {
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--color-label);
+}
+.st-tab:focus-visible {
+  outline: 2px solid var(--st-accent);
+  outline-offset: 1px;
+}
+
+/* when they come: weekday × hour */
+.st-week {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.st-week-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.st-week-row {
+  display: grid;
+  grid-template-columns: 2.5rem repeat(24, minmax(0, 1fr));
+  align-items: center;
+  gap: 3px;
+}
+.st-week-day {
+  color: var(--color-label-3);
+  font-size: var(--text-caption);
+}
+.st-week-cell {
+  aspect-ratio: 1;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.045);
+}
+.st-week-cell[data-step="1"] {
+  background: color-mix(in srgb, var(--st-accent) 18%, var(--st-ring));
+}
+.st-week-cell[data-step="2"] {
+  background: color-mix(in srgb, var(--st-accent) 36%, var(--st-ring));
+}
+.st-week-cell[data-step="3"] {
+  background: color-mix(in srgb, var(--st-accent) 56%, var(--st-ring));
+}
+.st-week-cell[data-step="4"] {
+  background: color-mix(in srgb, var(--st-accent) 78%, var(--st-ring));
+}
+.st-week-cell[data-step="5"] {
+  background: var(--st-accent);
+}
+.st-week-cell[data-on] {
+  box-shadow: 0 0 0 1.5px var(--color-label);
+}
+.st-week-hour {
+  color: var(--color-label-3);
+  font: 500 10px/1 var(--font-mono);
+  white-space: nowrap;
+}
+.st-week-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  color: var(--color-label-3);
+  font-size: var(--text-caption);
+}
+.st-week-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.st-week-legend .st-week-cell {
+  width: 10px;
+}
+.st-week-legend .st-week-cell:first-of-type {
+  margin-left: 0.25rem;
+}
+.st-week-legend .st-week-cell:last-of-type {
+  margin-right: 0.25rem;
+}
+.st-week-read {
+  min-height: 1.3em;
+  color: var(--color-label-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* the Overview's glance */
+.st-glance {
+  flex-direction: row;
+  align-items: center;
+  gap: 1.5rem;
+}
+.st-glance-figures {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.st-glance-value {
+  color: var(--color-label-2);
+  font-size: var(--text-footnote);
+}
+.st-glance-value strong {
+  margin-right: 0.25rem;
+  color: var(--color-label);
+  font-size: 1.75rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.st-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  color: var(--color-label-3);
+  font-size: var(--text-caption);
+  line-height: 1.45;
+}
+.st-foot span + span::before {
+  content: " · ";
+}
+
+/* the window, not the screen, decides the layout */
+@container st (max-width: 900px) {
+  .st-kpis {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .st-row,
+  .st-row-map {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@container st (max-width: 620px) {
+  .st-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .st-mapranks {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* the periods stay on one line, scrolling sideways if they must */
+  .st-bar .app-admin-seg {
+    flex-wrap: nowrap;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .st-bar .app-admin-seg-opt {
+    flex: none;
+    min-width: 3.75rem;
+    padding-inline: 0.75rem;
+  }
+  .st-legend {
+    position: static;
+    margin-bottom: 0.5rem;
+  }
+  .st-week-hour {
+    font-size: 9px;
+  }
+}
+@container st (max-width: 420px) {
+  .st-glance {
+    flex-wrap: wrap;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .st .st-card,
+  .st-spark path,
+  .st-map-dot {
+    transition: none;
+  }
+}
+@media (forced-colors: active) {
+  .st-line[data-series="cur"],
+  .st-spark[data-on] path {
+    stroke: Highlight;
+  }
+  .st-line[data-series="prev"] {
+    stroke: GrayText;
+  }
+  .st-map-dot,
+  .st-week-cell:not([data-step="0"]) {
+    fill: Highlight;
+    background: Highlight;
+  }
+}

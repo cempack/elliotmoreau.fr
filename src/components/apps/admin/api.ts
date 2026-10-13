@@ -82,19 +82,31 @@ export type Overview = {
 
 export type StatsRow = { key: string; visitors: number; views: number };
 export type StatsRange = 1 | 7 | 30 | 90 | 365;
+export type StatsDim = "path" | "ref" | "country" | "device" | "browser" | "os" | "lang";
+export type StatsFilter = Partial<Record<StatsDim, string>>;
+/** a stretch of time's figures (src/server/stats); `duration` is the visits' combined length in ms */
+export type StatsBucket = { visitors: number; views: number; visits: number; bounces: number; duration: number };
+export type StatsRecent = { at: number; path: string; country: string; device: string; ref: string };
 export type Stats = {
   range: StatsRange;
-  days: { day: string; visitors: number; views: number }[];
-  hours?: { hour: number; visitors: number; views: number }[];
-  totals: { visitors: number; views: number; pagesPerVisit: number };
-  previous: { visitors: number; views: number };
+  filter: StatsFilter;
+  days: (StatsBucket & { day: string })[];
+  previousDays: (StatsBucket & { day: string })[];
+  hours?: (StatsBucket & { hour: number })[];
+  previousHours?: (StatsBucket & { hour: number })[];
+  totals: StatsBucket;
+  previous: StatsBucket;
   live: number;
+  recent: StatsRecent[];
   pages: StatsRow[];
+  entries: StatsRow[];
+  exits: StatsRow[];
   referrers: StatsRow[];
   countries: StatsRow[];
   devices: StatsRow[];
   browsers: StatsRow[];
   systems: StatsRow[];
   languages: StatsRow[];
+  week: number[];
   since: string | null;
 };

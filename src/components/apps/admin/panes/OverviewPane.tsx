@@ -6,7 +6,7 @@ import { loc, type Status } from "@/lib/content";
 import type { Overview } from "../api";
 import { useSave } from "../useSave";
 import { Btn, Section, Segmented, Select, Text, fill } from "../ui";
-import { StatsView } from "./StatsView";
+import { StatsGlance } from "../stats/Glance";
 import { visitorLine, zones } from "./status";
 
 const OTHER = "__other";
@@ -14,9 +14,9 @@ const OTHER = "__other";
 /**
  * Where the panel opens: what visitors are told right now, where you are
  * (home, or away somewhere until a date: one change, one save), the mail
- * waiting, then the visitors.
+ * waiting, then today's visitors at a glance (the rest is in Stats).
  */
-export function OverviewPane({ data, onSaved, onMail }: { data: Overview; onSaved: () => void; onMail: () => void }) {
+export function OverviewPane({ data, onSaved, onMail, onStats }: { data: Overview; onSaved: () => void; onMail: () => void; onStats: () => void }) {
   const { t, lang } = useI18n();
   const o = t.admin.overview;
   const s = t.admin.status;
@@ -96,7 +96,7 @@ export function OverviewPane({ data, onSaved, onMail }: { data: Overview; onSave
         </div>
       </div>
 
-      <StatsView />
+      <StatsGlance onOpen={onStats} />
     </Section>
   );
 }

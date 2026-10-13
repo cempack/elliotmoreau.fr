@@ -15,8 +15,9 @@ import { MailPane } from "./panes/MailPane";
 import { ProjectsPane } from "./panes/ProjectsPane";
 import { SettingsPane } from "./panes/SettingsPane";
 import { TextsPane } from "./panes/TextsPane";
+import { StatsPane } from "./stats/StatsPane";
 
-const PANES = ["overview", "mail", "projects", "texts", "places", "now", "settings"] as const;
+const PANES = ["overview", "stats", "mail", "projects", "texts", "places", "now", "settings"] as const;
 export type Pane = (typeof PANES)[number];
 /** links from before the redesign still land somewhere sensible */
 const OLD: Record<string, Pane> = { status: "overview", travels: "places", live: "settings", system: "settings" };
@@ -27,10 +28,10 @@ const paneFromHash = (): Pane => {
 };
 
 /**
- * Elliot's admin panel. Locked until a passkey opens it; then seven
+ * Elliot's admin panel. Locked until a passkey opens it; then eight
  * sections: Overview (what visitors are told, where you are, the mail
- * waiting, the visitors), Mail, Projects, Texts (every sentence on the
- * site), Places, Now and Settings.
+ * waiting, today's visitors), Stats (the visitors' dashboard), Mail,
+ * Projects, Texts (every sentence on the site), Places, Now and Settings.
  * Opened from the Terminal (`sudo -i`); hidden everywhere else.
  */
 export function AdminApp() {
@@ -183,7 +184,8 @@ function Panel() {
   const k = `${pane}-${version}`;
   return (
     <div className="app-admin-panel">
-      {pane === "overview" && <OverviewPane key={k} data={data} onSaved={refresh} onMail={() => setPane("mail")} />}
+      {pane === "overview" && <OverviewPane key={k} data={data} onSaved={refresh} onMail={() => setPane("mail")} onStats={() => setPane("stats")} />}
+      {pane === "stats" && <StatsPane />}
       {pane === "mail" && <MailPane data={data} onChanged={refresh} />}
       {pane === "projects" && <ProjectsPane key={k} data={data} onSaved={refresh} />}
       {pane === "texts" && <TextsPane />}

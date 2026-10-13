@@ -31,7 +31,7 @@ import {
   type ProjectsContent,
   type Status,
 } from "@/server/content";
-import { getStats, type StatsRange } from "@/server/stats";
+import { getStats, parseFilter, type StatsRange } from "@/server/stats";
 import { flatStrings } from "@/i18n/base";
 import {
   adminReply,
@@ -193,7 +193,7 @@ const OPS: Record<string, Handler> = {
   stats: (ctx) => {
     const n = Number(ctx.body.range);
     const range = ([1, 7, 30, 90, 365] as const).includes(n as StatsRange) ? (n as StatsRange) : 30;
-    return { stats: getStats(range) };
+    return { stats: getStats(range, parseFilter(ctx.body.filter)) };
   },
 
   /* ── mail ── */
