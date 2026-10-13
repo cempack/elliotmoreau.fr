@@ -2,13 +2,11 @@
 
 import "./work.css";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, m } from "motion/react";
 import { AppWindow } from "@/components/os/AppWindow";
 import { useLive, useSiteData } from "@/components/os/SiteData";
 import { Sheet } from "@/components/ui/Sheet";
 import { useI18n } from "@/i18n/client";
-import { useMedia, useReduced } from "@/hooks/env";
-import { spring } from "@/lib/motion";
+import { useMedia } from "@/hooks/env";
 import { useSound } from "@/lib/sound";
 import { SOCIALS } from "@/lib/socials";
 import { PixelGlyph } from "@/components/glyphs";
@@ -16,12 +14,15 @@ import { ART_OFFLINE, G_ARROW, PixelArt } from "./glyphs";
 import { actionOf, kindOf, shelves as toShelves, siteOf, titleOf } from "./kind";
 import { useContextMenu, useCopy, type MenuItem } from "@/components/os/context/ContextMenu";
 import { pickFeatured } from "./model";
-import { ProjectCard, ProjectPicture } from "./ProjectCard";
+import { ProjectCard } from "./ProjectCard";
 import { ProjectList } from "./ProjectList";
+import { Machine } from "./machine/Machine";
 
 /** The card beside the list from here up; a sheet over the list below.
     Must match work.css. */
 const BESIDE = "(min-width: 768px)";
+/** The stage between them from here up. Must match work.css. */
+const STAGE = "(min-width: 1200px)";
 
 /**
  * Projects, for anyone. What Elliot has made, on shelves a visitor
@@ -42,8 +43,8 @@ export function ProjectsApp() {
   const { blip } = useSound();
   const copy = useCopy();
   const rootRef = useRef<HTMLDivElement>(null);
-  const reduced = useReduced();
   const beside = useMedia(BESIDE, true);
+  const wide = useMedia(STAGE, false);
   const shelves = useMemo(() => toShelves(repos), [repos]);
   const ordered = useMemo(() => shelves.flatMap((s) => s.repos), [shelves]);
   const [picked, setPicked] = useState<string | null>(null);
@@ -159,20 +160,9 @@ export function ProjectsApp() {
           </div>
         </section>
 
-        {/* wide screens: the picture, large, between the list and the card */}
+        {/* wide screens: the project on the machine it runs on, between the list and the card */}
         <div className="app-work-stage">
-          <AnimatePresence mode="popLayout" initial={false}>
-            <m.div
-              key={current.name}
-              className="app-work-stage-pic"
-              initial={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.97 }}
-              animate={reduced ? { opacity: 1 } : { opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, transition: { duration: 0.15 } }}
-              transition={reduced ? { duration: 0.15 } : spring.gentle}
-            >
-              <ProjectPicture repo={current} kind={kind} />
-            </m.div>
-          </AnimatePresence>
+          {wide ? <Machine repo={current} kind={kind} /> : null}
         </div>
 
         <aside className="app-work-panel app-work-panel--card" aria-label={titleOf(current)}>
