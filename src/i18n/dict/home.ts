@@ -143,7 +143,7 @@ const fr: typeof en = {
   },
   room: {
     door: "Ma chambre",
-    doorLabel: "La fenêtre allumée : entrer dans la chambre d’Elliot",
+    doorLabel: "La fenêtre allumée : entrer dans la chambre d’Elliot",
     label: "La chambre d’Elliot",
     back: "Le fleuve",
     backLabel: "Ressortir, vers le fleuve",

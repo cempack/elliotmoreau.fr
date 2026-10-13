@@ -246,8 +246,8 @@ const fr: typeof en = {
     none: "Rien de publié pour l’instant.",
     blog: "Voir le blog",
     cadence: "Les 12 derniers mois",
-    month: "{month} : {n} articles",
-    monthOne: "{month} : 1 article",
+    month: "{month} : {n} articles",
+    monthOne: "{month} : 1 article",
     earlier: "Avant",
   },
 

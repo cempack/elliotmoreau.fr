@@ -41,16 +41,16 @@ const en = {
     help: {
       title: "Commands",
       usage: "click one to run it",
-      hidden: "…and a few that aren't on the list.",
+      hidden: "…and a few that aren’t on the list.",
       groups: { explore: "Explore", system: "System", shell: "Shell" },
       cmds: {
         help: "this list",
-        whoami: "who's behind emOS",
+        whoami: "who’s behind emOS",
         ls: "list apps and files",
         open: "open an app (cd works too)",
         projects: "top repositories",
         posts: "latest posts",
-        now: "what I'm up to",
+        now: "what I’m up to",
         neofetch: "system info",
         contact: "print and copy my email",
         sky: "pin the sky: live, dawn, day, dusk, night",
@@ -63,7 +63,7 @@ const en = {
         shutdown: "turn emOS off",
         clear: "clear the screen (Ctrl+L)",
         exit: "close the terminal (Esc)",
-        git: "this site's real history",
+        git: "this site’s real history",
         metro: "recent commits as a metro map",
         moulinette: "grade this site, Epitech style",
       },
@@ -75,7 +75,7 @@ const en = {
     ],
     open: {
       opening: "Opening {app}…",
-      already: "You're already in {app}.",
+      already: "You’re already in {app}.",
       unknown: "no such app: {app}",
       usage: "usage: open <app>",
     },
@@ -102,7 +102,7 @@ const en = {
     },
     secrets: [
       "1. Type reboot to see the boot again, or shutdown to turn emOS off.",
-      "2. Press ` anywhere and I'll show up.",
+      "2. Press ` anywhere and I’ll show up.",
       "3. sudo make me a sandwich",
     ],
     projects: {
@@ -206,7 +206,7 @@ const en = {
       noServiceHint: "no commits in the last 30 days. See the projects:",
       hint: "drag the train · ← → step · ↑ ↓ change at a transfer · enter opens the commit · o opens Projects",
       station: "{msg}, {repo}, {ago}",
-      site: "this site's history:",
+      site: "this site’s history:",
     },
     sudo: {
       prompt: "[sudo] password for visitor:",
@@ -230,7 +230,7 @@ const en = {
     },
     eggs: {
       rm: "rm: permission denied",
-      vim: "You're in vim now. Kidding: type :q to leave (it even works).",
+      vim: "You’re in vim now. Kidding: type :q to leave (it even works).",
       quit: "bye",
       reboot: "Rebooting…",
       shutdown: "Shutting down…",

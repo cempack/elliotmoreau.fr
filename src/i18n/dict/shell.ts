@@ -115,7 +115,7 @@ const en = {
   },
   notifications: {
     feed: "Notifications",
-    empty: "You're all caught up.",
+    empty: "You’re all caught up.",
     pushedTo: "Pushed to {repo}",
     newPost: "New post",
   },
@@ -361,7 +361,7 @@ const fr: typeof en = {
     },
     palette: "La palette du thème",
     phoneTitle: "Continuer sur votre téléphone",
-    phoneBody: "Visez-le avec l’appareil photo : la même page s’ouvre là-bas.",
+    phoneBody: "Visez-le avec l’appareil photo : la même page s’ouvre là-bas.",
     copyLink: "Copier le lien",
     copied: "Copié",
     source: "Code source",
@@ -526,7 +526,7 @@ const fr: typeof en = {
     copyCoords: "Copier les coordonnées",
     coordsCopied: "Coordonnées copiées",
     blogPost: "Ouvrir sur le blog",
-    spotify: "Ouvrir « {title} » dans Spotify",
+    spotify: "Ouvrir « {title} » dans Spotify",
   },
   crash: {
     title: "{app} a quitté de façon inattendue",
