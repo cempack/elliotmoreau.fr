@@ -3,7 +3,7 @@ import { PIXEL_FOLD, PIXEL_GLYPHS } from "@/components/PixelLabel";
 
 /**
  * A small software renderer for pixel scenes in the Atlas globe's inks
- * (Now's code city, the Blog's typewriter): flat faces, an orthographic
+ * (Now's code city, the typewriter under each post): flat faces, an orthographic
  * camera that looks down a little, a z-buffer, a shadow map from the sun's
  * side, and flat light Bayer-dithered onto colour ramps, painted into
  * whole 3px cells on the CPU. Objects stand on a turntable that carries the
@@ -269,7 +269,64 @@ export function clearDepth(R: Raster) {
   R.id.fill(-1);
 }
 
-/** rasterize faces (fans of triangles) with depth test, perspective-free uv and world interpolation */
+/**
+ * The rows a flat convex polygon covers on a grid of cells, and where each
+ * starts and ends: calls `row(y, x0, x1)` for the cells whose centres lie
+ * inside.
+ */
+function scan(PP: V3[], W: number, H: number, row: (y: number, x0: number, x1: number) => void) {
+  const n = PP.length;
+  let ymin = Infinity;
+  let ymax = -Infinity;
+  for (let i = 0; i < n; i++) {
+    const y = PP[i][1];
+    if (y < ymin) ymin = y;
+    if (y > ymax) ymax = y;
+  }
+  const y0 = Math.max(0, Math.ceil(ymin - 0.5));
+  const y1 = Math.min(H - 1, Math.floor(ymax - 0.5));
+  for (let y = y0; y <= y1; y++) {
+    const py = y + 0.5;
+    let xl = Infinity;
+    let xr = -Infinity;
+    for (let i = 0; i < n; i++) {
+      const p = PP[i];
+      const q = PP[i + 1 === n ? 0 : i + 1];
+      if ((p[1] <= py && py < q[1]) || (q[1] <= py && py < p[1])) {
+        const x = p[0] + ((py - p[1]) * (q[0] - p[0])) / (q[1] - p[1]);
+        if (x < xl) xl = x;
+        if (x > xr) xr = x;
+      }
+    }
+    const x0 = Math.max(0, Math.ceil(xl - 0.5));
+    const x1 = Math.min(W - 1, Math.floor(xr - 0.5));
+    if (x0 <= x1) row(y, x0, x1);
+  }
+}
+
+/**
+ * Three corners of a polygon that span it (not in a line), as indices,
+ * and the signed area they make on screen; null when it is edge-on.
+ */
+function spanOf(PP: V3[]): [number, number, number] | null {
+  const a = PP[0];
+  for (let t = 1; t < PP.length - 1; t++) {
+    const b = PP[t];
+    const c = PP[t + 1];
+    const area = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+    if (area > 1e-7 || area < -1e-7) return [t, t + 1, area];
+  }
+  return null;
+}
+
+/**
+ * Rasterize faces with a depth test. A face is flat and convex and the
+ * camera orthographic, so depth, uv and the world point all change by a
+ * fixed step from one cell to the next: each face is scanned row by row
+ * as a whole (no triangles), with those steps worked out once from three
+ * of its corners. (uv is exact for parallelograms; other shapes here don't
+ * read it.)
+ */
 export function draw(R: Raster, faces: Face[], cam: Cam, shade: Shade) {
   const W = R.w;
   const H = R.h;
@@ -280,56 +337,66 @@ export function draw(R: Raster, faces: Face[], cam: Cam, shade: Shade) {
     const f = faces[fi];
     if (!f.two && cam.facing(f.n) <= 1e-4) continue;
     const pts = f.p;
-    const n = pts.length;
     const PP = pts.map(cam.proj);
-    for (let t = 1; t < n - 1; t++) {
-      const a = PP[0];
-      const b = PP[t];
-      const c = PP[t + 1];
-      const area = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
-      if (area > -1e-7 && area < 1e-7) continue;
-      const inv = 1 / area;
-      const x0 = Math.max(0, Math.floor(Math.min(a[0], b[0], c[0])));
-      const x1 = Math.min(W - 1, Math.ceil(Math.max(a[0], b[0], c[0])));
-      const y0 = Math.max(0, Math.floor(Math.min(a[1], b[1], c[1])));
-      const y1 = Math.min(H - 1, Math.ceil(Math.max(a[1], b[1], c[1])));
-      if (x0 > x1 || y0 > y1) continue;
-      const ua = f.uv[0];
-      const ub = f.uv[t];
-      const uc = f.uv[t + 1];
-      const wa = pts[0];
-      const wb = pts[t];
-      const wc = pts[t + 1];
-      for (let y = y0; y <= y1; y++) {
-        const py = y + 0.5;
-        for (let x = x0; x <= x1; x++) {
-          const px = x + 0.5;
-          const l0 = ((b[0] - px) * (c[1] - py) - (b[1] - py) * (c[0] - px)) * inv;
-          if (l0 < 0) continue;
-          const l1 = ((c[0] - px) * (a[1] - py) - (c[1] - py) * (a[0] - px)) * inv;
-          if (l1 < 0) continue;
-          const l2 = 1 - l0 - l1;
-          if (l2 < 0) continue;
-          const z = l0 * a[2] + l1 * b[2] + l2 * c[2];
-          const k = y * W + x;
-          if (z <= Z[k]) continue;
-          const col = shade(
-            f,
-            l0 * ua[0] + l1 * ub[0] + l2 * uc[0],
-            l0 * ua[1] + l1 * ub[1] + l2 * uc[1],
-            l0 * wa[0] + l1 * wb[0] + l2 * wc[0],
-            l0 * wa[1] + l1 * wb[1] + l2 * wc[1],
-            l0 * wa[2] + l1 * wb[2] + l2 * wc[2],
-            x,
-            y
-          );
-          if (!col) continue;
-          Cb[k] = col;
-          Z[k] = z;
-          ID[k] = f.b;
+    const span = spanOf(PP);
+    if (!span) continue;
+    const [ib, ic, area] = span;
+    const a = PP[0];
+    const b = PP[ib];
+    const c = PP[ic];
+    const inv = 1 / area;
+    const bx = b[0] - a[0];
+    const by = b[1] - a[1];
+    const cx = c[0] - a[0];
+    const cy = c[1] - a[1];
+    // an attribute's step along x and along y, from its values at a, b, c
+    const dx = (A: number, B: number, C: number) => ((B - A) * cy - (C - A) * by) * inv;
+    const dy = (A: number, B: number, C: number) => ((C - A) * bx - (B - A) * cx) * inv;
+    const ua = f.uv[0];
+    const ub = f.uv[ib];
+    const uc = f.uv[ic];
+    const wa = pts[0];
+    const wb = pts[ib];
+    const wc = pts[ic];
+    const zx = dx(a[2], b[2], c[2]);
+    const zy = dy(a[2], b[2], c[2]);
+    const ux = dx(ua[0], ub[0], uc[0]);
+    const uy = dy(ua[0], ub[0], uc[0]);
+    const vx = dx(ua[1], ub[1], uc[1]);
+    const vy = dy(ua[1], ub[1], uc[1]);
+    const xx = dx(wa[0], wb[0], wc[0]);
+    const xy = dy(wa[0], wb[0], wc[0]);
+    const yx = dx(wa[1], wb[1], wc[1]);
+    const yy = dy(wa[1], wb[1], wc[1]);
+    const qx = dx(wa[2], wb[2], wc[2]);
+    const qy = dy(wa[2], wb[2], wc[2]);
+    const id = f.b;
+    scan(PP, W, H, (y, x0, x1) => {
+      const ox = x0 + 0.5 - a[0];
+      const oy = y + 0.5 - a[1];
+      let z = a[2] + zx * ox + zy * oy;
+      let u = ua[0] + ux * ox + uy * oy;
+      let v = ua[1] + vx * ox + vy * oy;
+      let wx = wa[0] + xx * ox + xy * oy;
+      let wy = wa[1] + yx * ox + yy * oy;
+      let wz = wa[2] + qx * ox + qy * oy;
+      for (let x = x0, k = y * W + x0; x <= x1; x++, k++) {
+        if (z > Z[k]) {
+          const col = shade(f, u, v, wx, wy, wz, x, y);
+          if (col) {
+            Cb[k] = col;
+            Z[k] = z;
+            ID[k] = id;
+          }
         }
+        z += zx;
+        u += ux;
+        v += vx;
+        wx += xx;
+        wy += yx;
+        wz += qx;
       }
-    }
+    });
   }
 }
 
@@ -361,34 +428,19 @@ export function renderShadow(S: Shadow, faces: Face[]) {
   };
   for (const f of faces) {
     if (!f.cast) continue;
-    const n = f.p.length;
     const PP = f.p.map(toMap);
-    for (let t = 1; t < n - 1; t++) {
-      const a = PP[0];
-      const b = PP[t];
-      const c = PP[t + 1];
-      const area = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
-      if (area > -1e-7 && area < 1e-7) continue;
-      const inv = 1 / area;
-      const x0 = Math.max(0, Math.floor(Math.min(a[0], b[0], c[0])));
-      const x1 = Math.min(N - 1, Math.ceil(Math.max(a[0], b[0], c[0])));
-      const y0 = Math.max(0, Math.floor(Math.min(a[1], b[1], c[1])));
-      const y1 = Math.min(N - 1, Math.ceil(Math.max(a[1], b[1], c[1])));
-      for (let y = y0; y <= y1; y++)
-        for (let x = x0; x <= x1; x++) {
-          const px = x + 0.5;
-          const py = y + 0.5;
-          const l0 = ((b[0] - px) * (c[1] - py) - (b[1] - py) * (c[0] - px)) * inv;
-          if (l0 < 0) continue;
-          const l1 = ((c[0] - px) * (a[1] - py) - (c[1] - py) * (a[0] - px)) * inv;
-          if (l1 < 0) continue;
-          const l2 = 1 - l0 - l1;
-          if (l2 < 0) continue;
-          const z = l0 * a[2] + l1 * b[2] + l2 * c[2];
-          const k = y * N + x;
-          if (z > D[k]) D[k] = z;
-        }
-    }
+    const span = spanOf(PP);
+    if (!span) continue;
+    const [ib, ic, area] = span;
+    const a = PP[0];
+    const b = PP[ib];
+    const c = PP[ic];
+    const zx = ((b[2] - a[2]) * (c[1] - a[1]) - (c[2] - a[2]) * (b[1] - a[1])) / area;
+    const zy = ((c[2] - a[2]) * (b[0] - a[0]) - (b[2] - a[2]) * (c[0] - a[0])) / area;
+    scan(PP, N, N, (y, x0, x1) => {
+      let z = a[2] + zx * (x0 + 0.5 - a[0]) + zy * (y + 0.5 - a[1]);
+      for (let k = y * N + x0, e = y * N + x1; k <= e; k++, z += zx) if (z > D[k]) D[k] = z;
+    });
   }
 }
 
@@ -435,20 +487,32 @@ export function turntableInk(wx: number, wz: number, r: number, x: number, y: nu
   return onGrid ? P.grid : P.ocean;
 }
 
-/** a dithered glow behind the scene; everything else clear */
+/** a dithered glow behind the scene, everything else clear: worked out once per size and place, copied after */
+const halos = new WeakMap<Raster, { key: string; px: Uint32Array }>();
 export function halo(R: Raster, cx: number, cy: number, r: number) {
   const { w: W, h: H, c } = R;
-  for (let y = 0; y < H; y++)
-    for (let x = 0; x < W; x++) {
-      const d = Math.hypot((x - cx) / r, (y - cy) / r);
-      c[y * W + x] = d < 1 && (1 - d) * 0.35 > b4(x, y) ? P.halo : 0;
-    }
+  const key = `${Math.round(cx)},${Math.round(cy)},${Math.round(r)}`;
+  let hit = halos.get(R);
+  if (!hit || hit.key !== key) {
+    const px = new Uint32Array(W * H);
+    const x0 = Math.round(cx);
+    const y0 = Math.round(cy);
+    const rr = Math.max(1, Math.round(r));
+    for (let y = Math.max(0, y0 - rr); y < Math.min(H, y0 + rr); y++)
+      for (let x = Math.max(0, x0 - rr); x < Math.min(W, x0 + rr); x++) {
+        const d = Math.hypot((x - x0) / rr, (y - y0) / rr);
+        if (d < 1 && (1 - d) * 0.35 > b4(x, y)) px[y * W + x] = P.halo;
+      }
+    hit = { key, px };
+    halos.set(R, hit);
+  }
+  c.set(hit.px);
 }
 
 /* ═════════════ the canvas and its loop ═════════════ */
 
 export type PixelLoop = {
-  /** ask for a frame (and more while the scene wants them) */
+  /** paint as soon as possible (something changed) */
   wake: () => void;
   /** seconds since the loop started */
   clock: () => number;
@@ -460,15 +524,17 @@ export type PixelLoop = {
 /**
  * Runs a scene in a canvas of whole cells, scaled up crisp by CSS: sized by
  * a ResizeObserver on `host`, painted only while on screen and the tab is
- * visible, at most 30 times a second, and only for as long as `frame`
- * returns true (an idle scene costs nothing). `size` turns the host's size
- * in CSS px into the raster's size in cells.
+ * visible, never more than 30 times a second, and only when the scene says
+ * the picture will have changed: `frame` paints and answers how many
+ * seconds until it next needs to (0: the next frame, Infinity: not until
+ * woken). A still scene costs nothing; a slow one wakes a few times a second.
+ * `size` turns the host's size in CSS px into the raster's size in cells.
  */
 export function pixelLoop(opts: {
   host: HTMLElement;
   canvas: HTMLCanvasElement;
   size: (wPx: number, hPx: number) => [number, number];
-  frame: (R: Raster, t: number, dt: number) => boolean;
+  frame: (R: Raster, t: number, dt: number) => number;
 }): PixelLoop {
   const { host, canvas } = opts;
   const T0 = performance.now();
@@ -479,31 +545,46 @@ export function pixelLoop(opts: {
   let out: Uint32Array | null = null;
   let visible = false;
   let raf = 0;
-  let last = 0;
+  let timer = 0;
+  let last = -1;
   let lastPaint = -1;
 
+  const live = () => visible && !document.hidden;
   const paint = () => {
-    if (!R || !ctx || !img || !out) return false;
+    if (!R || !ctx || !img || !out) return Infinity;
     const t = clock();
-    const dt = Math.min(0.1, Math.max(0, t - last));
+    const dt = last < 0 ? 0 : Math.min(1, t - last);
     last = t;
-    const more = opts.frame(R, t, dt);
+    const wait = opts.frame(R, t, dt);
     out.set(R.c);
     ctx.putImageData(img, 0, 0);
     lastPaint = t;
-    return more;
+    return wait;
   };
-  const tick = () => {
+  const schedule = (wait: number) => {
+    if (wait === Infinity || raf || timer) return;
+    if (wait <= 1 / 30) raf = requestAnimationFrame(tick);
+    else
+      timer = window.setTimeout(() => {
+        timer = 0;
+        if (!raf && live()) raf = requestAnimationFrame(tick);
+      }, wait * 1000);
+  };
+  function tick() {
     raf = 0;
-    if (!visible || document.hidden) return;
-    if (clock() - lastPaint < 1 / 30) {
+    if (!live()) return;
+    if (clock() - lastPaint < 1 / 30 - 0.004) {
       raf = requestAnimationFrame(tick);
       return;
     }
-    if (paint()) raf = requestAnimationFrame(tick);
-  };
+    schedule(paint());
+  }
   const wake = () => {
-    if (!raf && visible && !document.hidden) raf = requestAnimationFrame(tick);
+    if (timer) {
+      clearTimeout(timer);
+      timer = 0;
+    }
+    if (!raf && live()) raf = requestAnimationFrame(tick);
   };
   const layout = () => {
     const r = host.getBoundingClientRect();
@@ -520,9 +601,14 @@ export function pixelLoop(opts: {
       out = new Uint32Array(img.data.buffer);
       R = makeRaster(w, h);
     }
-    // off screen, the first frame waits until it shows (a resize repaints at once, no stretched frame)
-    if (visible) paint();
-    wake();
+    // repaint now (no stretched frame after a resize); off screen, the first frame waits until it shows
+    if (live()) {
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+      if (timer) clearTimeout(timer);
+      timer = 0;
+      schedule(paint());
+    }
   };
 
   const ro = new ResizeObserver(layout);
@@ -545,6 +631,7 @@ export function pixelLoop(opts: {
     raster: () => R,
     dispose() {
       cancelAnimationFrame(raf);
+      clearTimeout(timer);
       ro.disconnect();
       io.disconnect();
       document.removeEventListener("visibilitychange", onVis);

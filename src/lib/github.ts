@@ -327,9 +327,7 @@ export async function getSiteCommit(name: string): Promise<CommitDetail | null> 
 
 /** a source file: its path under src/, its size in bytes, and when a recent commit last changed it (epoch ms, 0 if none did) */
 export type CityFile = [path: string, bytes: number, changed: number];
-/** the latest push that touched the source: short hash, first line, when (epoch ms), the files it touched */
-export type CityPush = { h: string; m: string; t: number; f: string[] };
-export type SiteCity = { sha: string; files: CityFile[]; push: CityPush | null };
+export type SiteCity = { sha: string; files: CityFile[] };
 
 const CITY_TTL = 10 * 60_000;
 const SOURCE_RE = /^src\/.+\.(tsx|ts|css)$/;
@@ -337,8 +335,8 @@ let cityCache: { at: number; data: SiteCity } | null = null;
 
 /**
  * The running site's source files (the git tree at the deployed commit)
- * and, from its latest commits, when each one last changed and which ones
- * the latest push touched. A commit never changes, so each one's file list
+ * and, from its latest commits, when each one last changed. A commit
+ * never changes, so each one's file list
  * is cached for a day; the whole is cached 10 minutes. Without a token,
  * fewer commits are read, to stay inside the anonymous rate limit.
  */
@@ -353,20 +351,17 @@ export async function getSiteCity(): Promise<SiteCity | null> {
   const details = await Promise.all(commits.slice(0, depth).map((c) => gh<GhCommit>(`/repos/${USER}/${SITE}/commits/${c.sha}`, 86_400)));
 
   const changed = new Map<string, number>();
-  let push: CityPush | null = null;
   details.forEach((d, i) => {
     if (!d.ok) return;
     const t = Date.parse(commits[i].date) || 0;
-    const touched = (d.data.files ?? []).map((f) => f.filename).filter((p) => SOURCE_RE.test(p));
-    for (const p of touched) if ((changed.get(p) ?? 0) < t) changed.set(p, t);
-    if (!push && touched.length) push = { h: commits[i].sha.slice(0, 7), m: commits[i].message, t, f: touched.map((p) => p.slice(4)) };
+    for (const f of d.data.files ?? []) if (SOURCE_RE.test(f.filename) && (changed.get(f.filename) ?? 0) < t) changed.set(f.filename, t);
   });
 
   const files: CityFile[] = tree.data.tree
     .filter((e) => e.type === "blob" && SOURCE_RE.test(e.path))
     .map((e) => [e.path.slice(4), e.size ?? 0, changed.get(e.path) ?? 0]);
   if (!files.length) return cityCache?.data ?? null;
-  const data: SiteCity = { sha: sha.slice(0, 7), files, push };
+  const data: SiteCity = { sha: sha.slice(0, 7), files };
   cityCache = { at: Date.now(), data };
   return data;
 }

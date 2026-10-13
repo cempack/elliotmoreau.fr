@@ -2,24 +2,19 @@ import type { SiteCity } from "@/lib/github";
 import { sunAt } from "@/lib/sun";
 import {
   P,
-  add,
   box,
   clamp,
   clearDepth,
   draw,
-  drawText,
   halo,
   hash2,
   inShadow,
-  len,
   lit,
   makeCam,
   makeShadow,
-  mul,
   norm,
   ramp,
   renderShadow,
-  sub,
   turntable,
   turntableInk,
   type Cam,
@@ -34,8 +29,7 @@ import {
  * is a building, in districts by folder (a plinth per top-level folder);
  * its height is its size, its colour its kind (.tsx, .ts, .css). Windows
  * are lit by how recently a file changed, so the parts being worked on
- * glow after dark, and the latest push drops onto the files it touched
- * on dotted routes, like the Atlas flights. The sky is Toulouse's: the sun
+ * glow after dark. The sky is Toulouse's: the sun
  * where it really is by day, lamps and a low moon by night.
  */
 
@@ -205,8 +199,6 @@ export type CityStage = { cx: number; cy: number; w: number; h: number };
 export function makeCity(reduced: boolean) {
   let B: Building[] = [];
   let faces: Face[] = [];
-  let touched = new Set<number>();
-  let push: SiteCity["push"] = null;
   let lights: { lit: number; hot: number }[] = [];
   const floor: Face[] = [];
   turntable(floor, TURN_R, 0, "floor");
@@ -254,9 +246,6 @@ export function makeCity(reduced: boolean) {
     faces = [...floor];
     for (const [x0, z0, x1, z1] of city.plinths) box(faces, [x0, 0, z0], [x1, PLINTH, z1], "plinth");
     B.forEach((b, i) => box(faces, [b.x0, b.y0, b.z0], [b.x1, b.y1, b.z1], "bldg", { b: i }));
-    push = data.push;
-    const index = new Map(B.map((b, i) => [b.path, i]));
-    touched = new Set((push?.f ?? []).map((p) => index.get(p)).filter((i): i is number => i !== undefined));
     st.born = -1;
     sky(true);
   }
@@ -270,11 +259,6 @@ export function makeCity(reduced: boolean) {
     const hov = st.hover === f.b;
     const kind = DAY[b.ext] ? b.ext : "ts";
     if (f.side === "top") {
-      if (touched.has(f.b)) {
-        const eu = 1.05 / (cam.scale * f.fw);
-        const ev = 1.05 / (cam.scale * f.fh);
-        if (u < eu || u > 1 - eu || v < ev || v > 1 - ev) return P.lime;
-      }
       if (hov) return lit(ION, f, L, S, wx, wy, wz, x, y, 0.5, 0.5);
       return lit(night ? NIGHT[kind] : DAY[kind], f, L, S, wx, wy, wz, x, y, night ? 0.45 : 0.3, night ? 0.5 : 0.7, 0.015);
     }
@@ -294,15 +278,16 @@ export function makeCity(reduced: boolean) {
     return lit(hov ? ION : night ? NIGHT[kind] : DAY[kind], f, L, S, wx, wy, wz, x, y, night ? 0.22 : 0.16, night ? 0.6 : 0.84, 0.015);
   }
 
-  /** a frame; true while it wants another */
+  /** a frame; then how long until the picture changes again (seconds) */
   function frame(R: Raster, t: number, dt: number) {
     sky();
     const W = R.w;
     const H = R.h;
     if (!st.dragging) {
-      if (Math.abs(st.vYaw) > 0.001) {
+      if (st.vYaw) {
         st.yaw += st.vYaw * dt;
         st.vYaw *= Math.exp(-dt * 2.4);
+        if (Math.abs(st.vYaw) < 0.03) st.vYaw = 0;
       }
       if (!reduced && t - st.lastInput > 1.5) st.yaw += dt * 0.06;
     }
@@ -323,58 +308,11 @@ export function makeCity(reduced: boolean) {
       draw(R, grown, cam, shade);
     } else draw(R, faces.length ? faces : floor, cam, shade);
 
-    // the push: dotted routes from above down to every file it touched, a bright dot running each
-    if (touched.size && rise >= 1 && push) {
-      let gx = 0;
-      let gz = 0;
-      for (const i of touched) {
-        gx += B[i].cx;
-        gz += B[i].cz;
-      }
-      gx /= touched.size;
-      gz /= touched.size;
-      const hub: V3 = [gx * 0.45, 0.92, gz * 0.45];
-      let q = 0;
-      for (const i of touched) {
-        const b = B[i];
-        const E: V3 = [b.cx, b.y1 + 0.004, b.cz];
-        const M = add(mul(add(hub, E), 0.5), [0, 0.16 + 0.1 * len(sub(hub, E)), 0]);
-        const N = 56;
-        const head = reduced ? -9 : Math.floor(((t * 0.32 + q * 0.137) % 1) * N);
-        for (let si = 0; si <= N; si++) {
-          const near = Math.abs(si - head) <= 1;
-          if (si % 2 && !near) continue;
-          const k1 = si / N;
-          const a = (1 - k1) * (1 - k1);
-          const bb = 2 * (1 - k1) * k1;
-          const c = k1 * k1;
-          const p = cam.proj([hub[0] * a + M[0] * bb + E[0] * c, hub[1] * a + M[1] * bb + E[1] * c, hub[2] * a + M[2] * bb + E[2] * c]);
-          const X = Math.floor(p[0]);
-          const Y = Math.floor(p[1]);
-          if (X < 0 || Y < 0 || X >= W || Y >= H) continue;
-          const k = Y * W + X;
-          if (p[2] < R.z[k] - 0.012) continue;
-          R.c[k] = near ? P.lightHot : P.lime;
-        }
-        q++;
-      }
-      const hp = cam.proj(hub);
-      const hx = Math.floor(hp[0]);
-      const hy = Math.floor(hp[1]);
-      for (let oy = -3; oy <= 3; oy++)
-        for (let ox = -3; ox <= 3; ox++) {
-          if (Math.max(Math.abs(ox), Math.abs(oy)) !== 3 && !(ox === 0 && oy === 0)) continue;
-          const X = hx + ox;
-          const Y = hy + oy;
-          if (X >= 0 && Y >= 0 && X < W && Y < H) R.c[Y * W + X] = P.lime;
-        }
-      // the hash beside the hub, on whichever side has room for it
-      const label = push.h.toUpperCase();
-      const lw = label.length * 4 - 1;
-      drawText(R.c, W, H, label, hx + 6 + lw < W - 2 ? hx + 6 : hx - 6 - lw, hy - 2, P.lime);
-    }
-    // it turns on its own, so it always wants the next frame; held still, only while moving
-    return !reduced || st.dragging || Math.abs(st.vYaw) > 0.001 || rise < 1;
+    // turning on its own, the picture only changes once the rim has moved most of a cell: wake for that
+    if (st.dragging || st.vYaw || rise < 1) return 0;
+    if (reduced) return 60;
+    const hold = 1.5 - (t - st.lastInput);
+    return hold > 0 ? hold : 0.7 / (scale * TURN_R * 0.06);
   }
 
   return {

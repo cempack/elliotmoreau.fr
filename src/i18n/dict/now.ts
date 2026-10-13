@@ -88,7 +88,7 @@ const en = {
     pushLabel: "Pushed to {repo}: {message}",
     none: "No public pushes lately.",
     /** the code city: this site's source files as buildings */
-    city: "This site’s source as a city: {files} files, lit where they changed lately, the latest push landing on lime routes. Drag to turn it.",
+    city: "This site’s source as a city: {files} files, a building each, lit where they changed lately. Drag to turn it.",
     files: "{n} files",
     changedOne: "1 changed today",
     changedMany: "{n} changed today",
@@ -223,7 +223,7 @@ const fr: typeof en = {
     pushedTo: "Push sur {repo}",
     pushLabel: "Push sur {repo} : {message}",
     none: "Aucun push public récemment.",
-    city: "Le code de ce site en ville : {files} fichiers, éclairés là où ils ont changé récemment, le dernier push arrivant par des routes vert citron. Faites-la tourner en la glissant.",
+    city: "Le code de ce site en ville : {files} fichiers, un immeuble chacun, éclairés là où ils ont changé récemment. Faites-la tourner en la glissant.",
     files: "{n} fichiers",
     changedOne: "1 modifié aujourd’hui",
     changedMany: "{n} modifiés aujourd’hui",

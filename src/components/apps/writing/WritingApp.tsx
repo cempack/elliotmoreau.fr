@@ -1,7 +1,7 @@
 "use client";
 
 import "./writing.css";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { GhostPost } from "@/lib/ghost";
@@ -13,17 +13,15 @@ import { PixelGlyph } from "@/components/glyphs";
 import { EmptyState } from "./EmptyState";
 import { Plate } from "./Plate";
 import { Letters } from "./Letters";
-import { Typewriter } from "./Typewriter";
 import { G_LINK } from "./glyphs";
-import { BLOG_URL, dateLong, dateTyped, fmt, primaryTag } from "./util";
+import { BLOG_URL, dateLong, fmt, primaryTag } from "./util";
 import { useContextMenu, useCopy } from "@/components/os/context/ContextMenu";
 
 /**
- * Writing: one column, read top to bottom. A typewriter types the
- * newest post's title, then whichever post you point at; the newest post
- * (or the one pinned in the admin panel) leads with its sky, its title and
- * a line about it; the earlier ones follow as plain rows; the newsletter
- * closes the page. Every post opens in full at /writing/[slug].
+ * Writing: one column, read top to bottom. The newest post (or the one
+ * pinned in the admin panel) leads with its sky, its title and a line
+ * about it; the earlier ones follow as plain rows; the newsletter closes
+ * the page. Every post opens in full at /writing/[slug].
  */
 export function WritingApp() {
   const data = useSiteData();
@@ -34,18 +32,6 @@ export function WritingApp() {
   const posts = data.posts;
   const lead = posts.find((p) => p.slug === data.live.pinnedPost) ?? posts[0];
   const rest = posts.filter((p) => p !== lead);
-  // what the typewriter types: the lead first, then the rest in order
-  const sheets = useMemo(
-    () => (lead ? [lead, ...posts.filter((p) => p !== lead)] : []).map((p) => ({ title: p.title, date: dateTyped(p.published_at) })),
-    [posts, lead]
-  );
-  const [typing, setTyping] = useState<number | null>(null);
-  const point = (i: number) => ({
-    onPointerEnter: () => setTyping(i),
-    onPointerLeave: () => setTyping(null),
-    onFocus: () => setTyping(i),
-    onBlur: () => setTyping(null),
-  });
   const href = (p: GhostPost) => path(`/blog/${encodeURIComponent(p.slug)}`);
   const copy = useCopy();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -113,9 +99,7 @@ export function WritingApp() {
           <p className="app-writing-lede">{w.lede}</p>
         </header>
 
-        <Typewriter sheets={sheets} pick={typing} />
-
-        <Link href={href(lead)} onClick={() => blip("page")} className="app-writing-lead" aria-label={fmt(w.readLabel, { title: lead.title })} {...point(0)}>
+        <Link href={href(lead)} onClick={() => blip("page")} className="app-writing-lead" aria-label={fmt(w.readLabel, { title: lead.title })}>
           <span className="app-writing-lead-plate">
             <Plate post={lead} animate={false} />
           </span>
@@ -141,9 +125,9 @@ export function WritingApp() {
               {w.earlier}
             </h3>
             <ul className="app-writing-index">
-              {rest.map((p, i) => (
+              {rest.map((p) => (
                 <li key={p.slug}>
-                  <Link href={href(p)} onClick={() => blip("page")} className="app-writing-entry" {...point(i + 1)}>
+                  <Link href={href(p)} onClick={() => blip("page")} className="app-writing-entry">
                     <span className="app-writing-entry-title">{p.title}</span>
                     {p.excerpt && <span className="app-writing-entry-dek">{p.excerpt}</span>}
                     <time className="app-writing-entry-when" dateTime={p.published_at}>
