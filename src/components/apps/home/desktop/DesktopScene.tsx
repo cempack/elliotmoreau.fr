@@ -63,8 +63,9 @@ export function DesktopScene() {
   }, []);
 
   /* ── when the boot clears (first visit this session, or a Restart), the
-     Desktop comes in: the widgets and the caption rise into place and the
-     icons settle down onto the wallpaper, the way a home screen arrives ── */
+     Desktop comes in after the menu bar and the Dock (Gate.tsx): the
+     widgets and the caption rise into place one by one, then the icons
+     settle down onto the wallpaper, the way a home screen arrives ── */
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const intro = document.querySelector(".em-intro");
@@ -79,17 +80,17 @@ export function DesktopScene() {
         (el) => el.getClientRects().length
       );
       desk.forEach((el, i) =>
-        el.animate([{ opacity: 0, transform: "translateY(28px) scale(0.98)" }, { opacity: 1, transform: "none" }], {
-          duration: 900,
-          delay: base + 160 + i * 70,
+        el.animate([{ opacity: 0, transform: "translateY(18px) scale(0.97)" }, { opacity: 1, transform: "none" }], {
+          duration: 1000,
+          delay: base + 520 + i * 120,
           easing: ease,
           fill: "backwards",
         })
       );
       scene.querySelectorAll<HTMLElement>(".app-home-icon").forEach((el, i) =>
-        el.animate([{ opacity: 0, scale: "1.35" }, { opacity: 1, scale: "1" }], {
-          duration: 720,
-          delay: base + 260 + i * 45,
+        el.animate([{ opacity: 0, scale: "1.2" }, { opacity: 1, scale: "1" }], {
+          duration: 820,
+          delay: base + 720 + i * 60,
           easing: ease,
           fill: "backwards",
         })

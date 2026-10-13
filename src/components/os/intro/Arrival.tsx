@@ -26,13 +26,14 @@ function wallpaperMs() {
 
 /**
  * Arrive from space (a first visit, in place of the boot's text): the
- * flight in ./flight, eleven seconds from orbit to the Pont Saint-Pierre,
+ * flight in ./flight, eleven seconds from orbit to the Pont Neuf,
  * run in a worker on the canvas itself when the browser can (so the page
  * loading underneath never costs it a frame), here otherwise. Nothing is
  * written over it but how to skip it. Any key or tap skips it
  * (the Gate listens). Its last frames are the wallpaper itself, lit for
- * the same instant: `onLand` hands over to the Desktop there, and the
- * canvas fades over pixels it already matches; `onGone` once it has.
+ * the same instant: `onLand` hands over to the Desktop as the glide comes
+ * to rest, and the canvas fades over pixels it matches by the time it is
+ * gone; `onGone` once it has.
  */
 export function Arrival({ skipped, onLand, onGone }: { skipped: boolean; onLand: () => void; onGone: () => void }) {
   const { t } = useI18n();
@@ -83,7 +84,7 @@ export function Arrival({ skipped, onLand, onGone }: { skipped: boolean; onLand:
       handlers.current.onLand();
       // the canvas already shows the wallpaper: the Desktop comes in over it as it goes
       const a = root.animate([{ opacity: 1 }, { opacity: 0 }], {
-        duration: start < 0 ? 400 : Math.max(200, T.end - Math.max(T.land, elapsed())),
+        duration: start < 0 ? 400 : Math.max(200, T.end - Math.max(T.hand, elapsed())),
         easing: "cubic-bezier(0.45, 0, 0.55, 1)",
         fill: "forwards",
       });
@@ -136,7 +137,7 @@ export function Arrival({ skipped, onLand, onGone }: { skipped: boolean; onLand:
           const t = elapsed();
           flight.draw(t, px);
           ctx.putImageData(img, 0, 0);
-          if (t >= T.land) land();
+          if (t >= T.hand) land();
           if (t < T.end + 300) raf = requestAnimationFrame(tick);
         };
         raf = requestAnimationFrame(tick);

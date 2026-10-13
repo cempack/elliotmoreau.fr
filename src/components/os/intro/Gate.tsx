@@ -61,10 +61,12 @@ function wasRestart() {
 }
 
 /**
- * The shell's own entrance once the gate clears: the wallpaper settles
- * into place (the last of the descent) and the menu bar drops in. The
- * Dock (Dock.tsx) and the Desktop's widgets and icons (DesktopScene.tsx)
- * answer the same `em:intro-done`, each on its own beat after `delay`.
+ * The shell's own entrance once the gate clears, piece by piece in one
+ * order: the menu bar drops in, then the Dock rises (Dock.tsx), then the
+ * widgets and the icons (DesktopScene.tsx), each answering the same
+ * `em:intro-done` on its own beat after `delay`. After the boot's text the
+ * wallpaper settles into place; after the flight, which lands on the bare
+ * wallpaper, today's clouds drift in over it instead of appearing.
  */
 function arrive(delay: number, settle: boolean) {
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -75,10 +77,20 @@ function arrive(delay: number, settle: boolean) {
     document
       .querySelector<HTMLElement>(".os-wallpaper")
       ?.animate([{ scale: "1.07" }, { scale: "1" }], { duration: 1500, easing: SETTLE, fill: "backwards" });
+  else {
+    const sky = document.querySelector<HTMLElement>(".os-wallpaper-weather");
+    const side = Number(sky?.dataset.side) || 1;
+    sky?.animate([{ opacity: 0, translate: `${-2.5 * side}% 0` }, { opacity: 1, translate: "0 0" }], {
+      duration: 2200,
+      delay: delay + 200,
+      easing: "cubic-bezier(0.33, 0, 0.2, 1)",
+      fill: "backwards",
+    });
+  }
   for (const el of document.querySelectorAll<HTMLElement>(".os-menubar")) {
     el.animate([{ translate: "0 -100%", opacity: 0 }, { translate: "0 0", opacity: 1 }], {
-      duration: 640,
-      delay: delay + 120,
+      duration: 760,
+      delay: delay + 200,
       easing: SETTLE,
       fill: "backwards",
     });
@@ -204,7 +216,7 @@ export default function Gate({ onDone }: { onDone: () => void }) {
     >
       {!hydrated && <script dangerouslySetInnerHTML={{ __html: PREPAINT }} />}
       <BootScreen />
-      {arrival === "on" && <Arrival skipped={skipped} onLand={() => clear(420, false)} onGone={() => setArrival("done")} />}
+      {arrival === "on" && <Arrival skipped={skipped} onLand={() => clear(120, false)} onGone={() => setArrival("done")} />}
     </div>
   );
 }

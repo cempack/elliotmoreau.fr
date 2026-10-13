@@ -5,13 +5,13 @@
  * over it, layer after layer, gaps rushing past, the planet becoming the
  * city inside the thickest one; under them, Toulouse from two kilometres,
  * the descent gliding in down the Garonne, locked on the Pont Neuf. Over
- * the Pont Saint-Pierre the wallpaper's own scene takes over, far things
- * first (sky, mountains, skyline, then the bridge, the quays last), and
- * the camera glides the last stretch up the river at water level, every
- * pixel at its depth so the quays stream past while the mountains hold
- * still, coming to rest where the wallpaper is painted from. The last
- * frame is the Desktop's wallpaper, pixel for pixel: the flight doesn't
- * cut to the Desktop, it lands in it.
+ * the Pont Saint-Pierre it sinks into a last bank of low cloud lying on
+ * the river, and comes out of it into the wallpaper's own scene, gliding
+ * the last stretch up the river at water level, every pixel at its depth
+ * so the quays stream past while the mountains hold still, coming to rest
+ * where the wallpaper is painted from. The last frame is the Desktop's
+ * wallpaper, pixel for pixel: the flight doesn't cut to the Desktop, it
+ * lands in it.
  *
  * Pure and DOM-free: `createFlight(setup).draw(t, out)` paints the frame at
  * any time t (ms) into a W×H buffer of art pixels on the wallpaper's grid
@@ -38,16 +38,18 @@ export const T = {
   plunge: 3400,
   /** inside the thickest cloud: the planet becomes the city */
   city: 6000,
-  /** the wallpaper's own scene starts taking over from the map, far things first, as the glide up the river begins */
-  glide: 8000,
   /** the descent over the map levels off over the Pont Saint-Pierre */
-  reveal: 8300,
-  /** the map is gone: only the wallpaper's scene, gliding in */
-  joined: 8900,
-  /** the glide has come to rest on the wallpaper's own view: the Desktop comes in */
-  land: 10100,
+  reveal: 8000,
+  /** deep in the low cloud on the river: the map is gone, the wallpaper's scene is under it, the glide up the river begins */
+  glide: 8500,
+  /** (the city camera's last frame, under the cloud) */
+  joined: 8500,
+  /** the Desktop starts coming in, over the last of the glide */
+  hand: 9700,
+  /** the glide has come to rest on the wallpaper's own view (the canvas, fading, is a pixel off at most by then) */
+  land: 10300,
   /** the Desktop is all there is */
-  end: 10800,
+  end: 10600,
 } as const;
 
 export type FlightSetup = {
@@ -152,9 +154,10 @@ export function orbit(t: number, W: number, H: number) {
 
 /* the city, in map cells (CELL metres each). The descent comes down the river to a few
    hundred metres up, 600 m short of the Pont Neuf, looking at it (lower,
-   the map's cells would fill the screen); there the wallpaper's own scene,
-   painted from the Pont Saint-Pierre's deck 10 m over the water and 300 m
-   short of the Pont Neuf, takes over for the glide in. */
+   the map's cells would fill the screen); there it sinks into low cloud, and
+   comes out of it into the wallpaper's own scene, painted from the Pont
+   Saint-Pierre's deck 10 m over the water and 300 m short of the Pont Neuf,
+   for the glide in. */
 const Z0 = 2000 / CELL;
 const HFOV = 42 * RAD;
 /** how far the descent starts behind where it levels off; how far that is, and the wallpaper's viewpoint, short of the Pont Neuf */
@@ -197,7 +200,7 @@ const sink = (s: number) => s + s * s - s * s * s;
 function zAt(t: number, W: number, H: number) {
   const zR = revealHeight(W, H);
   if (t < T.reveal) return logLerp(Z0, zR, sink(c01((t - T.city) / (T.reveal - T.city))));
-  // a little lower still while the wallpaper's scene takes over
+  // a little lower still, sinking into the low cloud on the river
   return logLerp(zR, zR * 0.8, smooth(c01((t - T.reveal) / (T.joined - T.reveal))));
 }
 
@@ -208,14 +211,14 @@ type CityRefs = { bx: number; by: number; riverX: (y: number) => number };
  * the wallpaper's), pitch, focal length. It comes in from the north down
  * the river, looking at the Pont Neuf the whole way, levels off over the
  * Pont Saint-Pierre and turns to the wallpaper's heading, so the river runs
- * up the screen the way it does in the scene that takes over from it.
+ * up the screen the way it does in the scene it comes out into.
  */
 export function cityCam(t: number, W: number, H: number, refs: CityRefs) {
   const { f, hz, thetaF, yaw } = lens(W, H);
   const yR = refs.by - BACK;
   const s = c01((t - T.city) / (T.reveal - T.city));
   const r = c01((t - T.reveal) / (T.joined - T.reveal));
-  // still drifting on toward the bridge while the scene takes over
+  // still drifting on toward the bridge as it sinks into the cloud
   const y = lerp(yR - RUN, yR, travel(s)) + RUN * 0.12 * smooth(r);
   const x = refs.riverX(y);
   const z = zAt(t, W, H);
@@ -781,6 +784,7 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
     }
     // inside the thick one: nothing but cloud, for a moment
     if (veil > 0) {
+      const vz = 0.3 / Math.exp((t - T.city) / 700);
       for (let j = 0; j < H; j++) {
         const fy = (j - cy) / H;
         for (let i = 0; i < W; i++) {
@@ -788,7 +792,9 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
           // a little brighter toward the middle, where it thins first
           const m = veil >= 0.995 ? 1 : veil * (0.86 + 0.14 * c01(1 - (fx * fx + fy * fy) * 3));
           const p = j * W + i;
-          const k = 0.45 + 0.25 * bayer(i, j);
+          // billows rushing past (outward from the middle: we're falling through it), lit from above
+          const n = density(37 + (i - cx) * vz, 91 + (j - cy) * vz);
+          const k = c01(0.3 + (n - 0.5) * 1.6 + 0.12 * (1 - j / H) + 0.1 * (bayer(i, j) - 0.5));
           const r = mR + (lR - mR) * k;
           const g = mG + (lG - mG) * k;
           const b = mB + (lB - mB) * k;
@@ -845,7 +851,7 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
     const Py = c.y;
     const Pz = c.z;
     // haze reaches further the higher we are (from up there the city is crisp; on the river the horizon melts)
-    const fogD = 1700 / CELL + Pz * 1.6;
+    const fogD = 2600 / CELL + Pz * 2.2;
     const airHaze = Math.min(0.08, (Pz * CELL) / 32000);
     const hz = c.hz;
     // cloud shadows sweep the town by day (the clouds are above us now)
@@ -917,8 +923,9 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
           const lv = fp < 1.5 ? 0 : fp < 3 ? 1 : fp < 6 ? 2 : fp < 12 ? 3 : 4;
           const wx = Px + tt * dx;
           const wy = Py + tt * dy;
-          // an ordered dither between neighbouring texels of the level, so nothing reads as blocks, near or far
-          const sp = 1 << lv;
+          // an ordered dither between neighbouring texels of the level, about an art pixel wide, so the far
+          // ground never shimmers in blocks while up close every map pixel stays crisp
+          const sp = lv ? 1 << lv : fp < 1 ? fp : 1;
           const gx = mirror(Math.floor(wx + (bayer(i, j) - 0.5) * sp)) >> lv;
           const gy = mirror(Math.floor(wy + (bayer(i + 2, j + 1) - 0.5) * sp)) >> lv;
           let v = mips[lv][gy * (M >> lv) + gx];
@@ -1028,9 +1035,6 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
   const DEEP_ROWS = Math.max(4, Math.round(H * 0.06));
   const H1g = H - 1;
   const DOME_F = dome.f;
-  const glide = new Uint32Array(N);
-  /** the depth each pixel of the glide showed (0 sky, 1 the bridge, more nearer): the hand-over goes far to near */
-  const glideF = new Float32Array(N);
   /** a column past the frame's edge, folded back into it (continuous: pixel i spans [i, i + 1)) */
   const mirX = (x: number) => (x < 0 ? -x : x >= W ? 2 * W - x - 1e-6 : x);
 
@@ -1137,32 +1141,113 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
           best = 0;
         }
         out[o] = bv;
-        glideF[o] = best;
+      }
+    }
+  }
+
+  /* ───────────── the low cloud on the river: the map goes into it, the wallpaper's scene comes out ───────────── */
+  /** how far it has closed over the view (0–1) and how far it has opened again, from the middle out */
+  const bankAt = (t: number) => ({
+    rise: smooth(c01((t - (T.glide - 640)) / 560)),
+    // it gives way at once in the middle, then thins out toward the edges, slower
+    clear: 1 - Math.pow(1 - c01((t - T.glide) / 950), 2.2),
+  });
+  /** where it opens from, and the scale its billows rush past at: toward the bridge the glide is headed for */
+  const bankX = vx;
+  const bankY = hzW - H * 0.04;
+  const bankR = 1 / Math.hypot(W, H) / 0.55;
+  /** this frame, at half resolution (its billows are soft and large: the layers' trick): how thick it is, how far it has closed */
+  const bankN = new Float32Array(W2 * H2);
+  const bankA = new Float32Array(W2 * H2);
+  const bankT = new Float32Array(W2 * H2);
+  /** its tones, from its shaded rims to its lit tops (64 steps), and each caught by the light or turned from it */
+  const bankTone = (k: number, toward: RGB | null, m: number) => {
+    let r: number;
+    let g: number;
+    let b: number;
+    if (k < 0.5) {
+      r = sR + (mR - sR) * k * 2;
+      g = sG + (mG - sG) * k * 2;
+      b = sB + (mB - sB) * k * 2;
+    } else {
+      r = mR + (lR - mR) * (k - 0.5) * 2;
+      g = mG + (lG - mG) * (k - 0.5) * 2;
+      b = mB + (lB - mB) * (k - 0.5) * 2;
+    }
+    if (toward) {
+      r += (toward[0] - r) * m;
+      g += (toward[1] - g) * m;
+      b += (toward[2] - b) * m;
+    }
+    return pack(r, g, b);
+  };
+  const BANK_BASE = Uint32Array.from({ length: 64 }, (_, i) => bankTone(i / 63, null, 0));
+  const BANK_LIT = Uint32Array.from({ length: 64 }, (_, i) => bankTone(i / 63, deckLit, 0.55));
+  const BANK_SHADE = Uint32Array.from({ length: 64 }, (_, i) => bankTone(i / 63, deckShade, 0.25));
+
+  /**
+   * The bank: billows in the deck's light, rushing outward from where
+   * the camera is headed (it is flying into them), closing over the town
+   * as it sinks in and opening from the middle as it comes out over the
+   * river, their edges dithered like every cloud on the way down. Deep
+   * in it, nothing but its own soft relief, lighter overhead.
+   */
+  function drawBank(t: number, b: { rise: number; clear: number }, out: Uint32Array) {
+    const z = 0.42 / Math.exp((t - T.glide) / 1000);
+    for (let j = 0; j < H2; j++) {
+      // (lying on the water, it lingers longest close by, under the camera)
+      const y = j * 2 - bankY;
+      const dy = y > 0 ? y * 1.9 : y;
+      for (let i = 0; i < W2; i++) {
+        const q = j * W2 + i;
+        const dx = i * 2 - bankX;
+        // closing evenly, opening from the middle out
+        const a = b.rise * c01(1 - b.clear * 2.1 + Math.sqrt(dx * dx + dy * dy) * bankR * 0.9);
+        bankA[q] = a;
+        if (a <= 0) continue;
+        bankN[q] = density(141 + dx * z, 63 + y * z);
+        bankT[q] = 0.86 - a * Math.sqrt(a) * 0.74;
+      }
+    }
+    for (let j = 0; j < H; j++) {
+      const row = (j >> 1) * W2;
+      const upRow = j >= 2 ? row - W2 : row;
+      const sky = 0.35 + 0.12 * (1 - j / H);
+      let o = j * W;
+      for (let i = 0; i < W; i++, o++) {
+        const q = row + (i >> 1);
+        const a = bankA[q];
+        if (a <= 0) continue;
+        const n = bankN[q];
+        const thr = bankT[q] + 0.05 * (bayer(i, j) - 0.5);
+        if (n <= thr) continue;
+        // at its edges a cloud's own light (its rims lit, never a grey ring); deep in, its billows
+        const e = c01((n - thr) / 0.3);
+        const k = 0.35 + 0.65 * (e + (c01(sky + (n - 0.5) * 1.5) - e) * a);
+        const tone = (k * 63) | 0;
+        // the side toward the light (up, to the left) catches it, the far side falls into shade
+        const up = bankA[upRow + (i >= 2 ? (i >> 1) - 1 : 0)] > 0 ? bankN[upRow + (i >= 2 ? (i >> 1) - 1 : 0)] : n;
+        const lt = (n - up) * (1 - a * 0.6);
+        const th = bayer(i + 2, j + 3);
+        out[o] = lt > 0.004 && th < lt * 40 ? BANK_LIT[tone] : lt < -0.006 && th < -lt * 30 ? BANK_SHADE[tone] : BANK_BASE[tone];
       }
     }
   }
 
   function draw(t: number, out: Uint32Array) {
     cloudsAt(t);
-    if (t >= T.joined) drawGlide(t, out);
-    // deep in the thick one there is nothing else to see
-    else if (veil < 0.995) {
-      const skip = clouded ? hidden : null;
-      if (t < T.city) drawSpace(t, out, skip);
-      else drawCity(t, out, skip);
-      // the hand-over: the wallpaper's scene comes in pixel by pixel, the sky and the skyline first, the quays last
-      if (t >= T.glide) {
-        drawGlide(t, glide);
-        const u = smooth(c01((t - T.glide) / (T.joined - T.glide)));
-        for (let j = 0, o = 0; j < H; j++)
-          for (let i = 0; i < W; i++, o++) {
-            const f = glideF[o];
-            // each depth crosses over in its own fifth of the hand-over: a wave from the horizon to the viewer
-            if (bayer(i + 3, j + 1) < (u * 1.25 - 0.95 * (f / (1 + f))) * 3.5) out[o] = glide[o];
-          }
+    const b = bankAt(t);
+    // deep in the thick one, or in the low cloud on the river, there is nothing else to see
+    if (veil < 0.995 && !(b.rise >= 1 && b.clear <= 0)) {
+      if (t >= T.glide) drawGlide(t, out);
+      else {
+        const skip = clouded ? hidden : null;
+        if (t < T.city) drawSpace(t, out, skip);
+        else drawCity(t, out, skip);
       }
     }
     shadeClouds(t, out);
+    if (b.rise > 0 && b.clear < 1) drawBank(t, b, out);
     // up out of the dark
     if (t < T.fade) {
       const k = smooth(c01(t / T.fade));
@@ -1176,7 +1261,7 @@ export function createFlight({ W, H, now, near }: FlightSetup) {
   // each phase drawn once now, so the engine has compiled it before the flight needs it (no hitch at a hand-over)
   {
     const scratch = new Uint32Array(N);
-    for (const t of [T.plunge + 900, T.city - 300, T.city + 400, T.city + 1500, T.glide + 300, T.joined + 200, T.end]) draw(t, scratch);
+    for (const t of [T.plunge + 900, T.city - 300, T.city + 400, T.city + 1500, T.glide - 300, T.glide + 400, T.hand, T.end]) draw(t, scratch);
   }
 
   return { draw, refs };

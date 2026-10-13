@@ -81,9 +81,9 @@ function useRiseAfterIntro() {
       for (const el of document.querySelectorAll<HTMLElement>("[data-os-dock]")) {
         if (!el.getClientRects().length) continue;
         el.animate([{ transform: "translateY(calc(100% + 24px))" }, { transform: "translateY(0)" }], {
-          duration: 760,
-          // the gate says when its cover lifts (Gate.tsx)
-          delay: ((e as CustomEvent<{ delay?: number }>).detail?.delay ?? 0) + 200,
+          duration: 900,
+          // the gate says when its cover lifts (Gate.tsx); after the menu bar
+          delay: ((e as CustomEvent<{ delay?: number }>).detail?.delay ?? 0) + 380,
           easing: "cubic-bezier(0.22, 1, 0.36, 1)",
           fill: "backwards",
         });

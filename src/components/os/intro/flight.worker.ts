@@ -45,7 +45,7 @@ scope.onmessage = (e) => {
     const t = clock() - start;
     flight.draw(t, px);
     ctx.putImageData(img, 0, 0);
-    if (!landed && t >= T.land) {
+    if (!landed && t >= T.hand) {
       landed = true;
       scope.postMessage({ type: "land" });
     }

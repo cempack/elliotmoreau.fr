@@ -415,5 +415,13 @@ export function WeatherLayer({ city, cell, phase, kind, weather }: { city: City;
   }, [city, phase, kind, weather]);
 
   if (kind === "clear") return null;
-  return <canvas ref={ref} className="os-wallpaper-weather" data-kind={kind} style={{ width: city.W * cell, height: city.H * cell }} />;
+  return (
+    <canvas
+      ref={ref}
+      className="os-wallpaper-weather"
+      data-kind={kind}
+      data-side={windSide(weather)}
+      style={{ width: city.W * cell, height: city.H * cell }}
+    />
+  );
 }
