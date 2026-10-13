@@ -19,8 +19,10 @@ export type Relief = {
   /** cells across and down */
   W: number;
   H: number;
-  /** the highest cell, in metres */
+  /** the highest cell, in metres (a cell's average) */
   max: number;
+  /** the highest ground the tiles show, in metres (a peak, as near as the tiles' resolution gets) */
+  top: number;
   /** west, east, south, north edges, in degrees */
   b: [number, number, number, number];
   /** a cell's width in km */
@@ -183,6 +185,9 @@ async function tile(z: number, x: number, y: number) {
 
 const RAD = Math.PI / 180;
 
+/** summits looked at closely for the readout's highest ground */
+const PEAKS = 6;
+
 async function bake(polys: Poly[]): Promise<Relief> {
   let x0 = Infinity;
   let x1 = -Infinity;
@@ -267,9 +272,52 @@ async function bake(polys: Poly[]): Promise<Relief> {
   }
   let max = 1;
   for (let c = 0; c < W * H; c++) if (cnt[c]) max = Math.max(max, sum[c] / cnt[c]);
+  // the readout's highest ground: the land's highest tile pixels, then a closer look round each
+  // (a few km a pixel flattens a summit by hundreds of metres)
+  const peaks: { h: number; fx: number; fy: number }[] = [];
+  for (const [k, hm] of got) {
+    const [X, Y] = k.split(",").map(Number);
+    for (let py = 0; py < 256; py++) {
+      const fy = Y + (py + 0.5) / 256;
+      const lat = Math.atan(Math.sinh(Math.PI * (1 - (2 * fy) / n))) / RAD;
+      const j = Math.floor(((y1 - lat) / (y1 - y0)) * H);
+      if (j < 0 || j >= H) continue;
+      for (let px = 0; px < 256; px++) {
+        const fx = X + (px + 0.5) / 256;
+        const i = Math.floor((((fx / n) * 360 - 180 - x0) / (x1 - x0)) * W);
+        const h = hm[py * 256 + px];
+        if (i < 0 || i >= W || !cnt[j * W + i] || (peaks.length >= PEAKS && h <= peaks[PEAKS - 1].h)) continue;
+        // a few summits at least a few pixels apart
+        const near = peaks.findIndex((q) => Math.abs(q.fx - fx) * 256 < 4 && Math.abs(q.fy - fy) * 256 < 4);
+        if (near >= 0) {
+          if (h > peaks[near].h) peaks[near] = { h, fx, fy };
+        } else peaks.push({ h, fx, fy });
+        peaks.sort((a, b) => b.h - a.h);
+        peaks.length = Math.min(peaks.length, PEAKS);
+      }
+    }
+  }
+  let top = Math.max(max, peaks[0]?.h ?? 0);
+  const zr = Math.min(14, z + 5);
+  const f = 2 ** (zr - z);
+  await Promise.all(
+    peaks.map(async (q) => {
+      const gx = q.fx * f;
+      const gy = q.fy * f;
+      const X = Math.floor(gx);
+      const Y = Math.floor(gy);
+      const hm = await tile(zr, X, Y).catch(() => null);
+      if (!hm) return;
+      const cx = Math.floor((gx - X) * 256);
+      const cy = Math.floor((gy - Y) * 256);
+      const r = f;
+      for (let py = Math.max(0, cy - r); py < Math.min(256, cy + r); py++)
+        for (let px = Math.max(0, cx - r); px < Math.min(256, cx + r); px++) top = Math.max(top, hm[py * 256 + px]);
+    })
+  );
   const q = new Uint8Array(W * H);
   for (let c = 0; c < W * H; c++) if (cnt[c]) q[c] = 1 + Math.round(Math.sqrt(sum[c] / cnt[c] / max) * 254);
-  return { W, H, max: Math.round(max), b: [x0, x1, y0, y1], km: (cellDeg * kx * 111.32), d: Buffer.from(q).toString("base64") };
+  return { W, H, max: Math.round(max), top: Math.round(top), b: [x0, x1, y0, y1], km: (cellDeg * kx * 111.32), d: Buffer.from(q).toString("base64") };
 }
 
 /** baked reliefs, by country and landmass; a failed bake is tried again next time */

@@ -141,7 +141,7 @@ export function Relief({ place }: { place: PlaceRow }) {
         className="app-atlas-relief-stage"
         data-no-drag
         role="img"
-        aria-label={relief ? fill(r.label, { place: name, m: nf.format(relief.max) }) : undefined}
+        aria-label={relief ? fill(r.label, { place: name, m: nf.format(relief.top) }) : undefined}
         aria-hidden={relief ? undefined : true}
       >
         <canvas ref={canvasRef} className="app-atlas-relief-canvas" />
@@ -149,7 +149,7 @@ export function Relief({ place }: { place: PlaceRow }) {
       <figcaption className="app-atlas-relief-readout tabular">
         <b>{fill(r.time, { time: mode === "auto" ? clockIn(tzForPlace(place)) : clockIn(tzForPlace(place), new Date(ms)) })}</b>
         <span data-tone={sun.elevation > 4 ? "day" : "night"}>{light}</span>
-        {relief && <span className="app-atlas-relief-high">{fill(r.high, { m: nf.format(relief.max) })}</span>}
+        {relief && <span className="app-atlas-relief-high">{fill(r.high, { m: nf.format(relief.top) })}</span>}
         {relief === null && <span>{r.offline}</span>}
       </figcaption>
     </figure>

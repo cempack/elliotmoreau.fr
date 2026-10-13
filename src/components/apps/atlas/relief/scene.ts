@@ -41,6 +41,7 @@ export type ReliefData = {
   W: number;
   H: number;
   max: number;
+  top: number;
   b: [number, number, number, number];
   km: number;
   d: string;
