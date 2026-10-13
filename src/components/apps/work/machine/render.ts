@@ -10,7 +10,10 @@ import type { Box, Face, Model, Paint, Ramp, Vec3 } from "./models";
  *
  * The screen is unlit: it samples the project's picture, with scanlines,
  * a soft edge, a band of brightness rolling down it, and a power-on (static,
- * then the picture opening out of a bright line) when it changes.
+ * then the picture opening out of a bright line) when it changes. A
+ * screenshot can also go sharp under those cells, which then only shade it
+ * (see `paint`'s `under`): at 3px a cell, a busy screenshot would only be a
+ * smear.
  */
 
 export type Tex = { w: number; h: number; px: Uint32Array };
@@ -170,9 +173,14 @@ export function pick(view: View, w: number, h: number, x: number, y: number): "s
 
 /**
  * Paint one frame into `out` (w×h cells). Cells with nothing on them are
- * left transparent, so the window's own background shows through.
+ * left transparent, so the window's own background shows through. With
+ * `under`, a sharp screenshot goes beneath the frame: the cells that show
+ * the picture are left see-through, only darkened or lightened as much as
+ * they were (scanlines, the edge, the rolling band, the bezel's shadow),
+ * and what they would have shown is kept in `under` (0 elsewhere). Returns
+ * how many cells show the screen's picture.
  */
-export function paint(out: Uint32Array, w: number, h: number, view: View) {
+export function paint(out: Uint32Array, w: number, h: number, view: View, under?: Uint32Array) {
   const { model, yaw, tilt, unit, look, t } = view;
   const boxes = model.boxes, scr = model.screen;
   const d = inv([0, 0, -1], yaw, tilt), U = inv([unit, 0, 0], yaw, tilt), V = inv([0, unit, 0], yaw, tilt), O = inv([0, 0, 40], yaw, tilt);
@@ -198,6 +206,8 @@ export function paint(out: Uint32Array, w: number, h: number, view: View) {
     }
     rects.set([x0 - 1, x1 + 1, y0 - 1, y1 + 1], n * 4);
   });
+  if (under) under.fill(0);
+  let pictured = 0;
   /** a ray from p towards the sun meets a box (most miss the bounding sphere and skip the boxes) */
   const shadowed = (px: number, py: number, pz: number) => {
     const qx = px - look[0], qy = py - look[1], qz = pz - look[2];
@@ -245,6 +255,12 @@ export function paint(out: Uint32Array, w: number, h: number, view: View) {
             // the bezel's shadow in the recess
             if (shadowed(px, py, pz + 1e-3)) kk *= 0.8;
             if (kk !== 1) c = scale(c, kk);
+            if (under) {
+              under[k] = c;
+              // black to darken it, white to lighten it, as much as the cell changed
+              c = kk < 1 ? (Math.round((1 - kk) * 255) << 24) >>> 0 : kk > 1 ? ((Math.round(Math.min(1, kk - 1) * 200) << 24) | 0xffffff) >>> 0 : 0;
+            }
+            pictured++;
           }
           out[k] = c;
           continue;
@@ -302,52 +318,93 @@ export function paint(out: Uint32Array, w: number, h: number, view: View) {
       out[k] = g2 < 1 && (1 - Math.sqrt(g2)) * 0.32 > bx ? INK.halo : 0;
     }
   }
+  return pictured;
 }
 
 /* ───────────────────────── textures ───────────────────────── */
 
-/**
- * A picture for the screen at `w`×`h` cells: drawn to cover (centred, like
- * object-fit), halved step by step so a big screenshot keeps its detail on
- * the way down, then quantised with the Bayer map: 12 levels a channel for a
- * colour screen (its whites held down a little, as a tube's are), the four greens of a phosphor terminal, or a handheld's
- * four yellows.
- */
-export function screenTexture(src: CanvasImageSource & { width: number; height: number }, w: number, h: number, tint?: "phosphor" | "pocket"): Tex | null {
-  if (!src.width || !src.height) return null;
-  let cur: CanvasImageSource = src;
-  let cw = src.width, ch = src.height;
-  // crop to 16:10 first
+type Picture = CanvasImageSource & { width: number; height: number };
+
+/** the part of a `W`×`H` picture that covers a `w`×`h` frame (centred, like object-fit) */
+export function cover(W: number, H: number, w: number, h: number) {
   const want = w / h;
-  let sx = 0, sy = 0, sw = cw, sh = ch;
-  if (cw / ch > want) { sw = ch * want; sx = (cw - sw) / 2; } else { sh = cw / want; sy = (ch - sh) / 2; }
-  const step = document.createElement("canvas");
-  step.width = Math.max(w, Math.round(sw));
-  step.height = Math.max(h, Math.round(sh));
-  let ctx = step.getContext("2d");
+  return W / H > want ? { sx: (W - H * want) / 2, sy: 0, sw: H * want, sh: H } : { sx: 0, sy: (H - W / want) / 2, sw: W, sh: W / want };
+}
+
+/** covered and halved step by step on canvases, so a big screenshot keeps its detail on the way down */
+function halve(src: Picture, w: number, h: number): HTMLCanvasElement | null {
+  const { sx, sy, sw, sh } = cover(src.width, src.height, w, h);
+  let cur = document.createElement("canvas");
+  cur.width = Math.max(w, Math.round(sw));
+  cur.height = Math.max(h, Math.round(sh));
+  const ctx = cur.getContext("2d");
   if (!ctx) return null;
-  ctx.drawImage(cur, sx, sy, sw, sh, 0, 0, step.width, step.height);
-  cur = step; cw = step.width; ch = step.height;
-  while (cw / 2 >= w && ch / 2 >= h) {
+  ctx.drawImage(src, sx, sy, sw, sh, 0, 0, cur.width, cur.height);
+  while (cur.width / 2 >= w && cur.height / 2 >= h) {
     const half = document.createElement("canvas");
-    half.width = Math.round(cw / 2); half.height = Math.round(ch / 2);
+    half.width = Math.round(cur.width / 2);
+    half.height = Math.round(cur.height / 2);
     const hc = half.getContext("2d");
     if (!hc) break;
     hc.imageSmoothingQuality = "high";
     hc.drawImage(cur, 0, 0, half.width, half.height);
-    cur = half; cw = half.width; ch = half.height;
+    cur = half;
   }
   const out = document.createElement("canvas");
-  out.width = w; out.height = h;
-  ctx = out.getContext("2d");
-  if (!ctx) return null;
+  out.width = w;
+  out.height = h;
+  const oc = out.getContext("2d");
+  if (!oc) return null;
+  oc.imageSmoothingQuality = "high";
+  oc.drawImage(cur, 0, 0, w, h);
+  return out;
+}
+
+/**
+ * The picture at `w`×`h`, covering. The browser decodes and scales it off
+ * the main thread where it can (createImageBitmap); else canvases do it.
+ * Null when it can't be drawn at all.
+ */
+export async function scaled(src: HTMLImageElement, w: number, h: number): Promise<Picture | null> {
+  if (!src.naturalWidth || !src.naturalHeight) return null;
+  const { sx, sy, sw, sh } = cover(src.naturalWidth, src.naturalHeight, w, h);
+  try {
+    const bmp = await createImageBitmap(src, sx, sy, sw, sh, { resizeWidth: w, resizeHeight: h, resizeQuality: "high" });
+    if (bmp.width === w && bmp.height === h) return bmp;
+    bmp.close();
+  } catch {
+    // no createImageBitmap, or not with these options
+  }
+  try {
+    await src.decode();
+  } catch {
+    // drawn as it is
+  }
+  return halve(src, w, h);
+}
+
+/**
+ * The screen's cells at `w`×`h`, from a picture already that size (see
+ * `scaled`), quantised with the Bayer map: 12 levels a channel for a colour
+ * screen (its whites held down a little, as a tube's are), the four greens
+ * of a phosphor terminal, or a handheld's four yellows. A picture whose
+ * pixels the browser won't share is a plain screen: its sharp copy covers
+ * it anyway.
+ */
+export function screenTexture(src: Picture, w: number, h: number, tint?: "phosphor" | "pocket"): Tex {
+  const plain = { w: 1, h: 1, px: Uint32Array.of(tint === "phosphor" ? pack(36, 70, 24) : tint === "pocket" ? pack(96, 70, 20) : pack(40, 46, 108)) };
+  const cv = document.createElement("canvas");
+  cv.width = w;
+  cv.height = h;
+  const ctx = cv.getContext("2d");
+  if (!ctx) return plain;
   ctx.imageSmoothingQuality = "high";
-  ctx.drawImage(cur, 0, 0, w, h);
+  ctx.drawImage(src, 0, 0, w, h);
   let data: ImageData;
   try {
     data = ctx.getImageData(0, 0, w, h);
   } catch {
-    return null; // a picture from elsewhere that the browser won't let us read
+    return plain;
   }
   const d = data.data, px = new Uint32Array(w * h);
   const PHOSPHOR = [pack(6, 12, 6), pack(36, 70, 24), pack(110, 170, 52), pack(198, 255, 94)];
@@ -369,6 +426,31 @@ export function screenTexture(src: CanvasImageSource & { width: number; height: 
       px[y * w + x] = pack(q(d[i], 40), q(d[i + 1], 46), q(d[i + 2], 108));
     }
   return { w, h, px };
+}
+
+/**
+ * The screenshot itself, sharp, at `w`×`h` pixels (from `scaled`), for
+ * drawing over the screen's cells: a colour screen's whites held down
+ * toward the inks' indigo, a terminal's picture in its green and a
+ * handheld's in its yellow (their colour, its light and dark). Canvas
+ * blending only, so it works on a picture whose pixels can't be read.
+ */
+export function sharpTexture(src: Picture, w: number, h: number, tint?: "phosphor" | "pocket"): HTMLCanvasElement | null {
+  const cv = document.createElement("canvas");
+  cv.width = w;
+  cv.height = h;
+  const ctx = cv.getContext("2d");
+  if (!ctx) return null;
+  ctx.drawImage(src, 0, 0, w, h);
+  if (tint) {
+    ctx.globalCompositeOperation = "color";
+    ctx.fillStyle = tint === "phosphor" ? "rgb(110, 210, 60)" : "rgb(230, 170, 60)";
+    ctx.fillRect(0, 0, w, h);
+  }
+  ctx.globalCompositeOperation = "source-over";
+  ctx.fillStyle = "rgba(40, 46, 108, 0.12)";
+  ctx.fillRect(0, 0, w, h);
+  return cv;
 }
 
 /**
