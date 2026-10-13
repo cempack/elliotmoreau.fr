@@ -10,6 +10,7 @@ import { PixelGlyph } from "@/components/glyphs";
 import { G_CHEVRON } from "@/components/os/window/glyphs";
 import type { PlaceRow } from "@/lib/content";
 import { distanceKm } from "./geo";
+import { Relief } from "./relief/Relief";
 import { useAtlas } from "./useAtlas";
 import { Stamp } from "./Stamp";
 import { groupDigits } from "./stampArt";
@@ -171,6 +172,11 @@ export function PlaceCard({
       <h2 id={titleId} className="app-atlas-name">
         <KineticName text={name} id={place.id} />
       </h2>
+
+      {/* the place's land in relief, lit by its own sun */}
+      <div className="app-atlas-card-relief">
+        <Relief place={place} />
+      </div>
 
       {/* the view from home: it turns to each place rather than swapping;
           the sheet's half detent can end under it on a short screen */}
