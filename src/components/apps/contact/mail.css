@@ -157,9 +157,11 @@ html[data-mail-hash="pgp"] .app-contact-tab[href$="#pgp"] {
 
 /* ── views ── */
 .app-contact-views {
+  /* the side gutter, which the typewriter's band runs out over on narrow windows */
+  --app-contact-pad: clamp(1.25rem, 3.6vw, 3.25rem);
   position: relative;
   container: app-contact / inline-size;
-  padding: 2rem clamp(1.25rem, 3.6vw, 3.25rem) 3.5rem;
+  padding: 2rem var(--app-contact-pad) 3.5rem;
 }
 /* the #elsewhere / #pgp targets: at the very top, and a fragment load never scrolls to them */
 .app-contact-anchor {
@@ -199,7 +201,8 @@ html[data-mail-hash] .app-contact-sendtool {
 }
 @media (max-width: 767px) {
   .app-contact-views {
-    padding: 1.375rem 1rem 2rem;
+    --app-contact-pad: 1rem;
+    padding: 1.375rem var(--app-contact-pad) 2rem;
   }
 }
 
@@ -423,8 +426,10 @@ html[data-mail-hash] .app-contact-sendtool {
   }
 }
 /* the typewriter: it types the letter as it's written. A card like the
-   sheet; narrow, over the sheet; wide, beside it at its height, the
-   greeting over both. Only while writing: Send hands the room to the globe */
+   sheet; mid-width, over the sheet; wide, beside it at its height, the
+   greeting over both; narrow (phones), a band across the window that stays
+   under the title bar while the letter is written. Only while writing:
+   Send hands the room to the globe */
 .app-contact-tw {
   aspect-ratio: 2 / 1;
   overflow: hidden;
@@ -446,9 +451,40 @@ html[data-mail-hash] .app-contact-sendtool {
 .app-contact-compose:not([data-phase="compose"]) > .app-contact-tw {
   display: none;
 }
+/* narrow: a low band the width of the window, the line being typed in it,
+   stuck under the title bar so the letter and the machine typing it share
+   the screen, the keyboard up or not */
 @container app-contact (max-width: 559px) {
+  .app-contact-compose {
+    --app-contact-tw-h: 7.5rem;
+  }
   .app-contact-tw {
-    aspect-ratio: 1;
+    position: sticky;
+    top: var(--os-win-sticky-top, 0px);
+    z-index: 3;
+    height: var(--app-contact-tw-h);
+    aspect-ratio: auto;
+    margin-top: 1.5rem;
+    margin-inline: calc(-1 * var(--app-contact-pad));
+    border-radius: 0;
+    background: var(--color-ink-950);
+    box-shadow:
+      0 -1px 0 var(--hairline),
+      0 1px 0 var(--hairline),
+      0 18px 28px -22px rgba(0, 0, 0, 0.9);
+  }
+  .app-contact-tw + .app-contact-stagecol + .app-contact-sheet {
+    margin-top: 1.25rem;
+  }
+  /* the window keeps a field it scrolls to, and the caret as it types, below the band (next) */
+  .app-contact-compose[data-phase="compose"] > .app-contact-sheet :is(input, textarea, button, a) {
+    scroll-margin-top: 0.5rem;
+  }
+}
+@media (max-width: 767px) {
+  .os-win-main:has(.app-contact-view:not([data-off]) > .app-contact-compose[data-phase="compose"] > .app-contact-tw) {
+    /* the band's 7.5rem, and a little air */
+    scroll-padding-top: 8rem;
   }
 }
 @container app-contact (min-width: 1080px) {
