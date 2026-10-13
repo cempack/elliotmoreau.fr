@@ -179,29 +179,6 @@ function nullable(v: number | null, f: (v: number) => number) {
   return v == null ? null : f(v);
 }
 
-/** The phase at a Toulouse wall-clock hour of the day containing `ref`. */
-export function phaseAtHour(hour: number, ref: Date = new Date()) {
-  return phaseOf(sunAt(atLocalHour(hour, ref)));
-}
-
-/** When the current phase ends: the next phase and its Toulouse hour. */
-export function nextPhase(now: Date = new Date()): { phase: SkyPhase; at: number } {
-  const cur = phaseOf(sunAt(now));
-  const day = sunDay(now);
-  // the band edges: -6° rising, +6° rising, +6° setting, -6° setting
-  const sixUp = crossLocal(BAND, -1, now);
-  const sixDown = crossLocal(BAND, 1, now);
-  const h = localHour(now);
-  if (cur === "night") {
-    if (day.dawn != null && h < day.dawn) return { phase: "dawn", at: day.dawn };
-    const tomorrow = sunDay(new Date(now.getTime() + 86400000));
-    return { phase: "dawn", at: tomorrow.dawn ?? 6 };
-  }
-  if (cur === "dawn") return { phase: "day", at: sixUp ?? day.noon };
-  if (cur === "day") return { phase: "dusk", at: sixDown ?? day.noon };
-  return { phase: "night", at: day.dusk ?? 22 };
-}
-
 /** UTC minute (from `base`, a UTC midnight) the sun crosses an elevation:
     side -1 before solar noon, +1 after. Null if it never does that day. */
 function crossUtc(base: number, elev: number, side: -1 | 1, lat: number, lon: number) {

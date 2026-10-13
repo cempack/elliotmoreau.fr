@@ -114,11 +114,17 @@ function SheetBody({
     };
   }, [blip, y]);
 
+  // the latest onClose, for every way out (Escape's listener is added once)
+  const closeRef = useRef(onClose);
+  useEffect(() => {
+    closeRef.current = onClose;
+  });
+
   const dismiss = (velocity = 0) => {
     if (closing.current) return;
     closing.current = true;
     blip("close");
-    animate(y, height.current + 40, { ...spring.default, velocity }).then(onClose);
+    animate(y, height.current + 40, { ...spring.default, velocity }).then(() => closeRef.current());
   };
 
   useEffect(() => {
@@ -127,6 +133,7 @@ function SheetBody({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+    // dismiss reads refs only
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

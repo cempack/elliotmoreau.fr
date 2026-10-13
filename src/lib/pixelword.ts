@@ -151,7 +151,6 @@ export function rasterizePixelLine(text: string): PixelLine {
   return { grid, cols, rows };
 }
 
-export const WORDMARK_LINES = ["Elliot", "Moreau"] as const;
 /** The OS's own name, as the boot screen and the emOS menu draw it. */
 export const EMOS_LINES = ["emos"] as const;
 

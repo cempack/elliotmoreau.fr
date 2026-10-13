@@ -46,13 +46,3 @@ export function scrollToY(y: number, smooth = false) {
   else window.scrollTo(opts);
 }
 
-export function scrollByY(dy: number, smooth = false) {
-  scrollToY(scrollTop() + dy, smooth);
-}
-
-/** Listen to the live scroller; returns the cleanup. */
-export function onScroll(cb: () => void): () => void {
-  const target: HTMLElement | Window = scroller() ?? window;
-  target.addEventListener("scroll", cb, { passive: true });
-  return () => target.removeEventListener("scroll", cb);
-}

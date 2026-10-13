@@ -19,7 +19,6 @@
 import type { NowContent } from "@/lib/content";
 
 export type { Book, Draft, L10n, Learning, NowContent, SetupRow } from "@/lib/content";
-export { loc } from "@/lib/content";
 
 export const NOW: NowContent = {
   updated: "2026-10-10",

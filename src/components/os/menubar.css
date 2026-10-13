@@ -228,12 +228,6 @@
   grid-area: 1 / 1;
   display: block;
 }
-.os-menubar-text {
-  color: var(--color-label-2);
-}
-.os-menubar-text:hover {
-  color: var(--color-label);
-}
 
 .os-menubar-icon {
   width: 42px;
@@ -392,11 +386,6 @@
 }
 .os-menubar-eq[data-playing] {
   color: var(--color-ion);
-}
-.os-menubar-eq--lg {
-  --b: 4px;
-  --g: 2px;
-  align-self: center;
 }
 .os-menubar-eq i {
   position: relative;
@@ -718,7 +707,6 @@ html:active-view-transition .os-menubar {
   .os-menubar-langseg {
     box-shadow: inset 0 0 0 1px var(--hairline);
   }
-  .os-menubar-text,
   .os-menubar-date,
   .os-menubar-music-title {
     color: var(--color-label);

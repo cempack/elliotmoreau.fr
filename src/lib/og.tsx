@@ -12,7 +12,7 @@ import { getTheme } from "@/lib/theme-source";
  * emOS share images and app icons, drawn for ImageResponse (Satori +
  * resvg): a night sky with pixel stars, a dithered horizon glow and two
  * stepped ridges; the pixel wordmark in its laser bands and voxel relief
- * (the same geometry as PixelWordmark); each app's 16×16 Dock glyph on its
+ * (the same geometry as the site's pixel wordmark, lib/pixelword); each app's 16×16 Dock glyph on its
  * tinted squircle; and the emOS mark. Everything pixel is integer-sized
  * rects with crisp edges, so nothing blurs. Every colour is the live
  * theme's (the same tones as the site's pixel art): each card and icon
@@ -222,7 +222,7 @@ const SOLID_NEAR = "#1D2B27";
 const TOP_FACE = "#FBF9F4";
 
 /** The pixel wordmark as rects: band inks, voxel relief and lit lips,
-    exactly as PixelWordmark draws it (one or two lines). */
+    exactly as the site's pixel wordmark draws it (one or two lines). */
 function Wordmark({
   lines,
   cell,

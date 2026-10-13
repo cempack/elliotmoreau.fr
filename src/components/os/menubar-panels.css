@@ -1,14 +1,10 @@
 /* shared panel pieces */
-.os-menubar-kicker,
-.os-menubar-section {
+.os-menubar-kicker {
   margin: 0;
   font: 500 12px/1.3 var(--font-mono);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--color-label-3);
-}
-.os-menubar-section {
-  padding: 4px 6px 8px;
 }
 .os-menubar-dim {
   color: var(--color-label-3);
@@ -93,11 +89,6 @@
 .os-menubar-action--ghost {
   background: transparent;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-}
-.os-menubar-action--wide {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
 }
 @media (pointer: coarse) {
   .os-menubar-action {

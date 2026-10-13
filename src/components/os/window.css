@@ -52,9 +52,6 @@
   border-radius: inherit;
   pointer-events: none;
 }
-.os-win-glow {
-  display: none;
-}
 /* the border: Hyprland's active border, its colour and width from the
    theme (hyprland.conf border_size, colors.toml hyprland_active_border),
    kept faint: the glass and the shadow carry the edge */
@@ -70,14 +67,6 @@
 }
 .os-win[data-grabbed] .os-win-rim {
   border-color: color-mix(in oklab, var(--color-signal) 70%, transparent);
-}
-.os-win-sentinel {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 1px;
-  height: 1px;
-  pointer-events: none;
 }
 
 /* ── title bar ── */

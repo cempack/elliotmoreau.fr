@@ -9,7 +9,6 @@ import { MobileTabBar } from "./dock/MobileTabBar";
 import { useAppShortcuts, visibleIcon } from "./dock/launch";
 import { takeKeyboardClose } from "./window/dock";
 
-export { DOCK_ICON, DOCK_MAX } from "./dock/useMagnification";
 
 /**
  * CONTRACT (owner: dock agent)

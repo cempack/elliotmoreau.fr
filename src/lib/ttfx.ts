@@ -62,17 +62,6 @@ export const GRID_EFFECTS: GridEffect[] = [
 
 export type Bitmap = { cols: number; rows: number; lit: Uint8Array; chars: string[] };
 
-/** Single-row bitmap straight from a mono label — no sampling needed. */
-export function textBitmap(text: string): Bitmap {
-  const chars = [...text];
-  return {
-    cols: Math.max(chars.length, 1),
-    rows: 1,
-    lit: Uint8Array.from(chars.map((c) => (c === " " || c === " " ? 0 : 1))),
-    chars,
-  };
-}
-
 /* ------------------------------------------------------------------ */
 /* Hero field: omarchy-landing-style composite loop.                    */
 /* One canvas, three layers every frame:                                */

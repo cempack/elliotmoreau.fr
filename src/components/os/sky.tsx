@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { localHour, phaseAtHour, phaseOf, sunAt, type SkyPhase } from "@/lib/sun";
+import { localHour, phaseOf, sunAt, type SkyPhase } from "@/lib/sun";
 
 /**
  * The sky follows the real sun over Toulouse: dawn, day, dusk, night, set
@@ -14,12 +14,6 @@ export type { SkyPhase };
 export type SkyMode = "auto" | SkyPhase;
 
 export const SKY_PHASES: SkyPhase[] = ["dawn", "day", "dusk", "night"];
-
-/** The phase at a Toulouse hour (0–24, fractional) today. */
-export const phaseForHour = (h: number) => phaseAtHour(h);
-
-/** The current Toulouse hour, fractional. */
-export const toulouseHour = (d = new Date()) => localHour(d);
 
 // the pre-paint SKY_SCRIPT lives in ./sky-script (plain module: a server
 // layout can't read string constants out of a "use client" file)

@@ -144,16 +144,6 @@ html[data-sky="dusk"] .app-home-caption-role {
   outline-offset: 3px;
   border-radius: var(--radius-window);
 }
-.app-home-widget-head {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  color: var(--app-home-l3);
-  font-size: 0.75rem;
-  font-weight: 500;
-  line-height: 1;
-  letter-spacing: 0.01em;
-}
 
 /* the clock: the city and its weather, Toulouse time in pixel numerals,
    the next sunrise or sunset under them. The numerals take the biggest

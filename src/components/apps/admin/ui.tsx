@@ -142,38 +142,6 @@ export function Text({
   );
 }
 
-export function Area({
-  label,
-  value,
-  onChange,
-  hint,
-  error,
-  rows = 3,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  hint?: string;
-  error?: string;
-  rows?: number;
-}) {
-  return (
-    <Field label={label} hint={hint} error={error} wide>
-      {(id, d) => (
-        <textarea
-          id={id}
-          aria-describedby={d}
-          aria-invalid={error ? true : undefined}
-          className="app-admin-input app-admin-textarea"
-          rows={rows}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-        />
-      )}
-    </Field>
-  );
-}
-
 /** an English / French pair, side by side (stacked on phones) */
 export function Pair({
   label,

@@ -1,19 +1,11 @@
 "use client";
 
-import { Fragment, createElement, useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import type { TrackInfo } from "@/lib/spotify";
 
 /** "{a} and {b}" → string, for plain-text templates (aria labels). */
 export function fill(template: string, vars: Record<string, string | number>) {
   return template.replace(/\{(\w+)\}/g, (_, k: string) => (k in vars ? String(vars[k]) : `{${k}}`));
-}
-
-/** "{a} and {b}" → React nodes, for templates with live tokens in them. */
-export function fillNodes(template: string, nodes: Record<string, React.ReactNode>): React.ReactNode[] {
-  return template.split(/(\{\w+\})/g).map((part, i) => {
-    const m = part.match(/^\{(\w+)\}$/);
-    return createElement(Fragment, { key: i }, m && m[1] in nodes ? nodes[m[1]] : part);
-  });
 }
 
 const subscribeVisibility = (cb: () => void) => {
@@ -133,22 +125,6 @@ export function useTrackProgress(track: TrackInfo | null, playing: boolean, acti
   if (!track || !anchor || anchor.key !== key) return null;
   const elapsed = track.progressMs + (playing ? Math.max(0, now - anchor.at) : 0);
   return Math.min(track.durationMs || elapsed, Math.max(0, elapsed));
-}
-
-/** UTC offset (minutes) of an IANA zone at a given instant. */
-export function tzOffset(tz: string, d: Date) {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: tz,
-    hourCycle: "h23",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).formatToParts(d);
-  const get = (t: string) => Number(parts.find((p) => p.type === t)?.value ?? 0);
-  const asUTC = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour") % 24, get("minute"));
-  return Math.round((asUTC - Math.floor(d.getTime() / 60000) * 60000) / 60000);
 }
 
 /** Tiny deterministic PRNG (mulberry32) for pixel art: no Math.random in render. */

@@ -316,8 +316,7 @@ p {
   color: var(--color-label-3);
 }
 .em-palette-field kbd,
-.em-palette-foot kbd,
-.em-kbd {
+.em-palette-foot kbd {
   display: inline-grid;
   place-items: center;
   min-width: 18px;
@@ -673,55 +672,6 @@ p {
   padding: 8px 24px calc(28px + env(safe-area-inset-bottom));
 }
 
-/* split text */
-.em-split-word {
-  display: inline-block;
-  white-space: nowrap;
-  overflow: clip;
-  vertical-align: top;
-  /* the mask extends past tight display leading so ascenders/descenders
-     aren't cut, without letting hidden pieces show */
-  padding: 0.12em 0.04em 0.14em;
-  margin: -0.12em -0.04em -0.14em;
-}
-.em-split-piece {
-  display: inline-block;
-  will-change: transform;
-}
-
-/* marquee */
-.em-marquee {
-  overflow: hidden;
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
-}
-.em-marquee-track {
-  display: flex;
-  width: max-content;
-}
-.em-marquee-copy {
-  display: flex;
-  flex: none;
-  align-items: center;
-}
-@media (prefers-reduced-motion: reduce) {
-  .em-marquee {
-    -webkit-mask-image: none;
-    mask-image: none;
-  }
-  .em-marquee-track {
-    transform: none !important;
-    width: auto;
-  }
-  .em-marquee-copy {
-    flex-wrap: wrap;
-    flex: 1;
-  }
-  .em-marquee-copy + .em-marquee-copy {
-    display: none;
-  }
-}
-
 /* intro overlay */
 .em-intro {
   position: fixed;
@@ -749,7 +699,6 @@ html[data-intro="done"] .em-intro {
     animation-delay: 0s !important;
   }
 }
-
 
 /* page transitions (shell owns the specifics; these are safe defaults) */
 ::view-transition-old(root) {

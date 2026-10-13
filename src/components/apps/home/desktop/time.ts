@@ -78,5 +78,3 @@ export function fmtOffset(mins: number) {
   return `${sign}${Math.floor(a / 60)} h${m ? ` ${String(m).padStart(2, "0")}` : ""}`;
 }
 
-/** "America/New_York" → "New York". */
-export const zoneCity = (tz: string) => (tz.split("/").pop() ?? tz).replace(/_/g, " ");

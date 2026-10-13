@@ -273,12 +273,10 @@ export function AppWindow({
         style={{ ...drag.style, "--os-win-accent": def.accent } as MotionStyle}
       >
         <Glass thickness="thick" className="os-win-glass" aria-hidden />
-        <span className="os-win-glow" aria-hidden />
 
         <div
           ref={barRef}
           className="os-win-bar"
-         
           {...drag.handlers}
           onDoubleClick={(e) => {
             if ((e.target as Element).closest("a,button,input")) return;

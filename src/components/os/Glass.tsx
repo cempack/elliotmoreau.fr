@@ -177,16 +177,6 @@ function glassDefs(): SVGDefsElement {
   return defs;
 }
 
-/** Optional: mount once to create the shared filter host ahead of the first
-    refracting surface. Glass creates it lazily on its own, so nothing has
-    to render this. */
-export function GlassDefs() {
-  useEffect(() => {
-    glassDefs();
-  }, []);
-  return null;
-}
-
 const ONLY = {
   r: "1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0",
   g: "0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0",

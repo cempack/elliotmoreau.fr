@@ -259,7 +259,12 @@ export const Crate = memo(function Crate({
       w.t = setTimeout(() => go(Math.round(pos.current), 0, "drag"), 110);
     };
     el.addEventListener("wheel", onWheel, { passive: false });
-    return () => el.removeEventListener("wheel", onWheel);
+    const w = wheel.current;
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+      if (w.t) clearTimeout(w.t);
+    };
+    // show, go and pass read refs only; re-bound when the set or the motion setting changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [n, reduced]);
 

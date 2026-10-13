@@ -1,6 +1,5 @@
 import type { PlaceRow } from "./content";
 
-export { fmtCoords } from "./content";
 export { SOCIALS } from "./socials";
 
 export type PlaceStatus = PlaceRow["status"];

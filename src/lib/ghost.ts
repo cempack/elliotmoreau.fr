@@ -8,7 +8,6 @@ import { createHmac } from "node:crypto";
 const API_URL = (process.env.GHOST_API_URL ?? "").replace(/\/$/, "");
 const CONTENT_KEY = process.env.GHOST_CONTENT_KEY ?? "";
 const ADMIN_KEY = process.env.GHOST_ADMIN_KEY ?? "";
-export const BLOG_URL = (process.env.NEXT_PUBLIC_BLOG_URL ?? API_URL).replace(/\/$/, "");
 
 export type GhostPost = {
   title: string;

@@ -111,6 +111,3 @@ export function threadsByEmail(email: string) {
   return db().prepare(`SELECT * FROM threads WHERE email = ? COLLATE NOCASE ORDER BY last_at DESC`).all(email) as ThreadDb[];
 }
 
-export function hasThreadFor(email: string) {
-  return Boolean(db().prepare(`SELECT 1 FROM threads WHERE email = ? COLLATE NOCASE LIMIT 1`).get(email));
-}

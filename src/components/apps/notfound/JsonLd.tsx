@@ -3,8 +3,7 @@ import { SITE_URL, localePath } from "@/i18n/config";
 import { SOCIALS } from "@/lib/socials";
 import { homeOf } from "@/lib/content";
 import { getPlaces } from "@/server/content";
-
-const BLOG_URL = process.env.NEXT_PUBLIC_BLOG_URL || "https://blog.elliotmoreau.fr";
+import { BLOG_URL } from "@/components/apps/writing/util";
 
 /**
  * Structured data for the home page (server component: render it from a

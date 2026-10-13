@@ -67,5 +67,3 @@ export function useIsMac() {
   return useSyncExternalStore(noopSubscribe, detectMac, () => true);
 }
 
-export const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-export const clamp01 = (v: number) => Math.min(1, Math.max(0, v));

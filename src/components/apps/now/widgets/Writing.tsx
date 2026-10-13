@@ -10,10 +10,9 @@ import { loc } from "@/lib/content";
 import { useNowContent } from "@/components/os/SiteData";
 import { PlateThumb } from "@/components/apps/writing/PlateThumb";
 import { plateSeed } from "@/components/apps/writing/plate";
+import { BLOG_URL } from "@/components/apps/writing/util";
 import { G_ARROW, G_NEXT } from "../bits";
 import { fill, useNow } from "../lib";
-
-const BLOG_URL = process.env.NEXT_PUBLIC_BLOG_URL || "https://blog.elliotmoreau.fr";
 
 /** posts per month for the 12 months ending at `end` (UTC months, oldest first) */
 function cadence(posts: GhostPost[], end: Date) {

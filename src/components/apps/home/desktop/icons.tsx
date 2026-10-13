@@ -24,17 +24,6 @@ export const G_COMMIT: Cells = [
   [3, 0], [3, 1], [2, 2], [3, 2], [4, 2], [1, 3], [2, 3], [4, 3], [5, 3], [2, 4], [3, 4], [4, 4], [3, 5], [3, 6],
 ];
 
-/** 7×7 plane heading right (top view), for the places chip. */
-export const G_PLANE: Cells = [
-  [3, 0],
-  [3, 1], [4, 1],
-  [0, 2], [3, 2], [4, 2], [5, 2],
-  [0, 3], [1, 3], [2, 3], [3, 3], [4, 3], [5, 3], [6, 3],
-  [0, 4], [3, 4], [4, 4], [5, 4],
-  [3, 5], [4, 5],
-  [3, 6],
-];
-
 /** What can sit on the desktop. The apps live in the Dock, so only the
     README (the terminal opens on it) is out on the desk, and a Mail draft
     while one is waiting to be sent. */
