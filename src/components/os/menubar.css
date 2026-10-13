@@ -280,6 +280,8 @@
   line-height: 1.6;
   text-overflow: ellipsis;
   color: var(--color-label-2);
+  /* playing and paused trade colours slowly, never in a blink */
+  transition: color 0.6s var(--ease-out-quint);
 }
 .os-menubar-music-title[data-playing] {
   color: var(--color-label);
@@ -386,6 +388,7 @@
   flex: none;
   height: calc(var(--b) * 4 + var(--g) * 3);
   color: var(--color-label-3);
+  transition: color 0.6s var(--ease-out-quint);
 }
 .os-menubar-eq[data-playing] {
   color: var(--color-ion);

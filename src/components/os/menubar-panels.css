@@ -525,14 +525,18 @@
   }
 }
 
+/* the switch and the way out share a row when they fit; when they don't
+   (French, a narrow phone) the way out wraps whole to a row of its own and
+   both stretch, rather than running off the panel's edge */
 .os-tape-foot {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
 }
 .os-tape-sides {
-  display: inline-flex;
-  flex: none;
+  display: flex;
+  flex: 1 1 auto;
   gap: 2px;
   padding: 3px;
   border-radius: 10px;
@@ -541,6 +545,7 @@
 }
 .os-tape-sides button {
   display: grid;
+  flex: 1 1 0;
   place-items: center;
   height: 26px;
   padding: 0 10px;
@@ -568,7 +573,6 @@
 .os-tape-open {
   flex: 1 1 auto;
   justify-content: space-between;
-  min-width: 0;
 }
 @media (pointer: coarse) {
   .os-tape-sides button {

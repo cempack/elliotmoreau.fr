@@ -1034,3 +1034,26 @@ html[data-intro="done"] .em-intro {
 .em-stamp[data-tone="home"] .em-stamp-art {
   background: var(--color-signal);
 }
+
+/* app glyphs (os/icons.tsx): a recolour eases (a new cover tinting Now's
+   headphones, the sky relighting the theme) and what only a live state
+   adds, Now's note while music plays, fades in */
+.os-glyph-px {
+  transition: fill 0.8s var(--ease-out-quint);
+}
+.os-glyph-px--added {
+  transition:
+    fill 0.8s var(--ease-out-quint),
+    opacity 0.5s var(--ease-out-quint);
+}
+@starting-style {
+  .os-glyph-px--added {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .os-glyph-px,
+  .os-glyph-px--added {
+    transition: none;
+  }
+}

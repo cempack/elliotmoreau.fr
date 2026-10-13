@@ -356,20 +356,39 @@ export function glyphCell(size: number) {
   return Math.max(0.5, c);
 }
 
+/** each drawing's roles by cell, at rest (what a live glyph recolours) */
+const rest = new Map<IconId, Fills>();
+const restOf = (id: IconId) => {
+  let f = rest.get(id);
+  if (!f) rest.set(id, (f = baseFills(GLYPHS[id])));
+  return f;
+};
+
 function GlyphRects({ id, live }: { id: IconId; live?: LiveGlyph | null }) {
   const P = useArtPalette();
   const g = GLYPHS[id];
   const { runs, shadow } = live ? prepare(live.key, () => live.fills) : prepare(`@${id}`, () => baseFills(g));
   // a fill is a palette role, or a colour sampled from live data
   const color = (f: string) => (f.startsWith("#") ? f : (P[f as Role] ?? P.paper));
+  // Each colour's path is keyed by what its cells are in the drawing at
+  // rest, not by the colour itself: when the colours change (a new cover
+  // tints the headphones, the sky relights the theme) it is the same path
+  // changing fill, which eases (globals.css), instead of a new one popping
+  // in. What only a live state adds (the note while music plays) fades in.
+  const at = restOf(id);
+  const used = new Set<string>();
   return (
     <>
       <g fill={P.ink950} opacity={0.42}>
         <path d={pxPath(shadow)} />
       </g>
-      {[...byFill(runs, (r) => color(r.fill))].map(([fill, rs]) => (
-        <path key={fill} d={pxPath(rs)} fill={fill} />
-      ))}
+      {[...byFill(runs, (r) => color(r.fill))].map(([fill, rs]) => {
+        const role = at[rs[0].y * 16 + rs[0].x] ?? "+";
+        let key = role;
+        for (let i = 1; used.has(key); i++) key = `${role}${i}`;
+        used.add(key);
+        return <path key={key} d={pxPath(rs)} fill={fill} className={role === "+" ? "os-glyph-px os-glyph-px--added" : "os-glyph-px"} />;
+      })}
     </>
   );
 }
@@ -387,8 +406,11 @@ const LIVE: Partial<Record<IconId, () => React.ReactElement>> = {
   contact: MailRects,
 };
 
-/** Just the pixels, no tile: for tiny OS labels. `size` = glyph box in px. */
-export function AppGlyph({ app, size = 16, className = "" }: { app: IconId; size?: number; className?: string }) {
+/** Just the pixels, no tile: for tiny OS labels. `size` = glyph box in px.
+    Live like the tiles, so an app looks the same in the menu bar, Spotlight
+    and the Dock. */
+export function AppGlyph({ app, size = 16, className = "", live = true }: { app: IconId; size?: number; className?: string; live?: boolean }) {
+  const Live = live ? LIVE[app] : undefined;
   return (
     <svg
       aria-hidden
@@ -400,7 +422,7 @@ export function AppGlyph({ app, size = 16, className = "" }: { app: IconId; size
       className={className}
       style={{ display: "block", flex: "none" }}
     >
-      <GlyphRects id={app} />
+      {Live ? <Live /> : <GlyphRects id={app} />}
     </svg>
   );
 }
