@@ -101,7 +101,7 @@ const EXTERNAL: Record<string, string> = {
   spotify: SOCIALS.spotifyUser,
 };
 
-/** "~/work/", "./Writing", "/home/elliot/atlas", "écrits" → an app id. */
+/** "~/work/", "./Writing", "/home/elliot/atlas", "blog" → an app id. */
 function resolveApp(arg: string): AppId | null {
   const a = arg
     .trim()

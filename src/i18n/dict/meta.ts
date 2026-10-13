@@ -29,11 +29,11 @@ const en = {
 const fr: typeof en = {
   siteName: "Elliot Moreau",
   title: "Elliot Moreau, étudiant à Epitech à Toulouse",
-  description: "Elliot Moreau, étudiant à Epitech à Toulouse. Projets, écrits, voyages et ce que j’écoute.",
+  description: "Elliot Moreau, étudiant à Epitech à Toulouse. Projets, blog, voyages et ce que j’écoute.",
   pages: {
     home: "Bureau",
     work: "Projets",
-    writing: "Écrits",
+    writing: "Blog",
     atlas: "Atlas",
     now: "En ce moment",
     contact: "Contact",

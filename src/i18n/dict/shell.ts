@@ -276,7 +276,7 @@ const fr: typeof en = {
   apps: {
     home: "Bureau",
     work: "Projets",
-    writing: "Écrits",
+    writing: "Blog",
     atlas: "Atlas",
     now: "En ce moment",
     contact: "Mail",
@@ -417,7 +417,7 @@ const fr: typeof en = {
     empty: "Aucun résultat",
     apps: "Applications",
     actions: "Actions",
-    posts: "Écrits",
+    posts: "Articles",
     repos: "Projets",
     links: "Ailleurs",
     app: "Application",

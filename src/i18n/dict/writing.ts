@@ -62,7 +62,7 @@ const en = {
 };
 
 const fr: typeof en = {
-  title: "Écrits",
+  title: "Blog",
   lede: "Des notes sur le code, le design, les voyages et la musique. Chacune se lit ici.",
   earlier: "Plus anciens",
   all: "Tous les articles",
