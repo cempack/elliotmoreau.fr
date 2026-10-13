@@ -335,7 +335,7 @@ export const MARK16 = [
   "..############..",
 ];
 
-function markRects(cell: number, ox = 0, oy = 0, letter: string = C.ink950): Rect[] {
+function markRects(cell: number, ox = 0, oy = 0, letter: string = C.ink950, tile: string = C.signal): Rect[] {
   const out: Rect[] = [];
   MARK16.forEach((row, y) => {
     let x = 0;
@@ -343,7 +343,7 @@ function markRects(cell: number, ox = 0, oy = 0, letter: string = C.ink950): Rec
       const ch = row[x];
       let w = 1;
       while (x + w < 16 && row[x + w] === ch) w++;
-      if (ch !== ".") out.push({ x: ox + x * cell, y: oy + y * cell, w: w * cell, h: cell, fill: ch === "#" ? C.signal : letter });
+      if (ch !== ".") out.push({ x: ox + x * cell, y: oy + y * cell, w: w * cell, h: cell, fill: ch === "#" ? tile : letter });
       x += w;
     }
   });
@@ -739,7 +739,7 @@ export async function homeCard(lang: Locale) {
 
 const APP_PATH: Record<OgApp, string> = {
   work: "/work",
-  writing: "/writing",
+  writing: "/blog",
   atlas: "/atlas",
   now: "/now",
   contact: "/contact",
@@ -820,6 +820,10 @@ export function cardAlt(lang: Locale, app?: OgApp) {
 
 /** Browser-tab icon: the mark in the theme's accent, full bleed, its letter in ink so it
     reads on light and dark tab strips alike. */
+/** The browser tab's icon (and favicon.ico, cut from it): the home-screen
+    icon's colours at tab size, the tile in night ink with its "e" in the
+    accent. The bare accent tile read as the old icon, and the home-screen
+    icon's tile-in-a-field is too small to read at 16px. */
 export async function markIcon(size: number) {
   await withTheme();
   const cell = Math.max(1, Math.floor(size / 16));
@@ -829,7 +833,7 @@ export async function markIcon(size: number) {
     (
       <div style={{ display: "flex", width: size, height: size }}>
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} shapeRendering="crispEdges">
-          {rects(markRects(cell, off, off), "m")}
+          {rects(markRects(cell, off, off, C.signal, mix(C.ink800, C.night, 0.5)), "m")}
         </svg>
       </div>
     ),
