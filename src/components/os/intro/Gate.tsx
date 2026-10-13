@@ -9,6 +9,7 @@ import { Wordmark } from "./Wordmark";
 import { playStartupChord } from "./chime";
 import { Arrival } from "./Arrival";
 import { T } from "./flight";
+import { rememberArrival } from "../intro-script";
 
 /** The boot screen starts fading here (ms from first paint): see intro.css. */
 const BOOT_MS = 3460;
@@ -30,10 +31,10 @@ const SETTLE = "cubic-bezier(0.22, 1, 0.36, 1)";
 
 /**
  * Parsed (and run) as the gate's first child, before any of its pixels:
- * marks returning visitors so CSS hides the boot pre-paint. Mirrors the
- * layout's head script, in case that one fails.
+ * marks returning visitors so CSS hides the boot pre-paint, only if the
+ * layout's head script (intro-script.ts) didn't run.
  */
-const PREPAINT = `try{if(sessionStorage.getItem("em-intro"))document.documentElement.dataset.intro="done"}catch(e){}`;
+const PREPAINT = `try{var d=document.documentElement;if(!d.dataset.intro&&!d.dataset.introUp&&sessionStorage.getItem("em-intro"))d.dataset.intro="done"}catch(e){}`;
 
 /** When the CSS sequence started (performance.now() clock), read off the
     boot screen's own keyframes; cached once known. */
@@ -113,9 +114,7 @@ export default function Gate({ onDone }: { onDone: () => void }) {
     } catch {}
     if (wasRestart() && !off) playStartupChord({ onlyIfAllowed: true });
     window.setTimeout(() => {
-      try {
-        sessionStorage.setItem("em-intro", "1");
-      } catch {}
+      rememberArrival();
       document.documentElement.dataset.intro = "done";
       onDone();
     }, OUT_MS);

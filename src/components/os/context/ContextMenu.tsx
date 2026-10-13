@@ -14,6 +14,8 @@ import { claimSurface, useSurfaceYield } from "../surface";
 import { openOverview } from "../overview";
 import { useTerminal } from "../Terminal";
 import { SKY_PHASES, useSky, type SkyMode } from "../sky";
+import { replayArrival } from "../menubar/util";
+import { stripLocale } from "@/i18n/config";
 import { collect, shortcut, type MenuContext, type MenuItem, type MenuSection } from "./menu";
 
 export { useContextMenu, shortcut, type MenuItem, type MenuSection, type MenuContext } from "./menu";
@@ -143,6 +145,8 @@ export function ContextMenu() {
         },
       ],
     },
+    // on the Desktop itself: the way down from space, again
+    ...(stripLocale(pathname) === "/" ? [{ items: [{ label: c.arrival, onSelect: replayArrival }] }] : []),
   ];
 
   const build = (ctx: MenuContext): MenuSection[] => {

@@ -78,6 +78,16 @@ export function fmtLongDate(d: Date, lang: Locale) {
  * to ink like a display powering down, and load the Desktop, where the
  * boot plays (its text, the old way: the note tells the gate it's a restart).
  */
+/** Watch the arrival again: back to the Desktop, down from space. Unlike
+    Restart, nothing closes: the open windows wait in their workspaces. */
+export function replayArrival() {
+  try {
+    sessionStorage.removeItem("em-intro");
+    sessionStorage.setItem("em-boot", "arrival");
+  } catch {}
+  window.location.assign(/^\/fr(\/|$)/.test(window.location.pathname) ? "/fr" : "/");
+}
+
 export function restartOS() {
   try {
     sessionStorage.removeItem("em-intro");

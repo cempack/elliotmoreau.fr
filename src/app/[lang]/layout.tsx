@@ -10,6 +10,7 @@ import { ToastProvider } from "@/components/Toasts";
 import { MotionProvider } from "@/components/motion/MotionProvider";
 import { OSShell } from "@/components/os/OSShell";
 import { SKY_SCRIPT } from "@/components/os/sky-script";
+import { INTRO_SCRIPT } from "@/components/os/intro-script";
 import { InlineScript } from "@/components/InlineScript";
 import { getTheme } from "@/lib/theme-source";
 import { themeCss } from "@/lib/theme";
@@ -54,12 +55,9 @@ export async function generateMetadata({ params }: LayoutProps<"/[lang]">): Prom
   };
 }
 
-// before first paint: sky phase from Toulouse time, and skip the intro for
-// returning visitors this session
-/* returning this session: no boot. Arriving on the Desktop for the first
-   time: the boot is about to show, so the menu bar and dock step away
-   before the first paint (intro.css), not only once it hydrates */
-const INTRO_SCRIPT = `try{var d=document.documentElement,p=location.pathname;if(sessionStorage.getItem("em-intro"))d.dataset.intro="done";else if(p==="/"||p==="/fr"||p==="/fr/")d.dataset.introUp="first"}catch(e){}`;
+// before first paint: the sky from Toulouse time, then whether the arrival
+// plays (intro-script.ts). When it does, on the Desktop, the menu bar and
+// dock step away before the first paint (intro.css), not once it hydrates.
 
 export default async function RootLayout({ children, params }: LayoutProps<"/[lang]">) {
   const { lang } = await params;

@@ -17,7 +17,7 @@ import { useSiteData } from "./SiteData";
 import { useSky, type SkyMode } from "./sky";
 import { useTerminal } from "./Terminal";
 import type { PanelId } from "./menubar/Panel";
-import { BLOG_URL, fill, restartOS } from "./menubar/util";
+import { BLOG_URL, fill, replayArrival, restartOS } from "./menubar/util";
 import { shutdownOS } from "./Intro";
 import { openOverview } from "./overview";
 import { useMedia } from "@/hooks/env";
@@ -180,6 +180,7 @@ export function useSpotlightCommands(): Command[] {
       },
       { id: "shutdown", group: sp.actions, label: sp.shutdown, keywords: "shut down power off turn off halt éteindre arrêter extinction", perform: shutdownOS },
       { id: "restart", group: sp.actions, label: sp.restart, keywords: "restart reboot boot redémarrer", perform: restartOS },
+      { id: "arrival", group: sp.actions, label: sp.arrival, keywords: "arrival intro replay animation space boot again revoir rejouer arrivée espace", perform: replayArrival },
     ];
 
     const fm = fmts();
