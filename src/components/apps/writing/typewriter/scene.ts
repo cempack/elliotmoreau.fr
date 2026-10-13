@@ -32,12 +32,14 @@ import {
 } from "@/lib/pixel3d";
 
 /**
- * The Blog's typewriter: a pixel machine on a turntable, in the Atlas
- * globe's inks, that types a post's title onto a fresh sheet, then its
- * date in red. Each key goes down as its letter strikes, the carriage
- * steps along and flies back at the end of a line, the spools turn, and
- * the bell rings near the margin. A French machine: AZERTY, the full
- * stop on the ; key and the hyphen on the 6.
+ * The typewriter at the end of a post: a pixel machine on a turntable, in
+ * the Atlas globe's inks, that starts your letter back. It feeds a fresh
+ * sheet, types today's date in red, then the subject. Each key goes down
+ * as its letter strikes, the carriage steps along and flies back at the
+ * end of a line, the spools turn, and the bell rings near the margin. A
+ * French machine: AZERTY, the full stop on the ; key and the hyphen on
+ * the 6. It only paints while something moves: a still machine costs
+ * nothing.
  */
 
 export type Sheet = { title: string; date: string };
@@ -55,8 +57,8 @@ const PB: V3 = [0, 1.1, -0.47];
 const PT: V3 = [0, 2.6, -0.85];
 /** how many texels of the sheet show between the platen and the paper's top */
 const VIS = len(sub(PT, PB)) / TEX;
-/** at most this many lines of title, the last one cut short */
-const MAX_LINES = 6;
+/** at most this many lines of subject, the last one cut short */
+const MAX_LINES = 4;
 
 const carrAt = (col: number) => PAPER_W / 2 - (MARG + col * 4 + 1.5) * TEX;
 const deckY = (z: number) => 0.16 + ((1.2 - z) / 1.05) * 0.46;
@@ -111,14 +113,64 @@ const FLOOR_R = 2.45;
 type Step = { t: number; fn: (now: number) => void };
 type Tween = { from: number; to: number; t0: number; dur: number };
 
+/** the parts that never move: body, deck, hood, spools, type guide, turntable */
+function frameFaces() {
+  const F: Face[] = [];
+  box(F, [-1.5, 0, -0.95], [1.5, 0.62, 0.15], "body");
+  face(F, [[-1.5, 0.62, 0.15], [1.5, 0.62, 0.15], [1.5, 0.16, 1.2], [-1.5, 0.16, 1.2]], "body");
+  face(F, [[-1.5, 0.16, 1.2], [1.5, 0.16, 1.2], [1.5, 0, 1.2], [-1.5, 0, 1.2]], "body");
+  face(F, [[1.5, 0.16, 1.2], [1.5, 0.62, 0.15], [1.5, 0, 0.15], [1.5, 0, 1.2]], "body");
+  face(F, [[-1.5, 0.62, 0.15], [-1.5, 0.16, 1.2], [-1.5, 0, 1.2], [-1.5, 0, 0.15]], "body");
+  box(F, [-1.25, 0.62, -0.22], [1.25, 0.84, 0.16], "hood");
+  for (const sx of [-0.82, 0.82]) prism(F, "y", [sx, 0.87, -0.03], 0.25, 0.03, 14, "chrome", "spool");
+  box(F, [-0.06, 1.0, -0.44], [0.06, 1.1, -0.38], "chrome");
+  turntable(F, FLOOR_R, 0, "floor");
+  return F;
+}
+
+/** a key (a stem and a round cap) up and down */
+const keyFaces = (k: (typeof KEYS)[number]) =>
+  [0, 0.05].map((down) => {
+    const F: Face[] = [];
+    box(F, [k.x - 0.018, k.deck, k.z - 0.018], [k.x + 0.018, k.y - 0.02 - down, k.z + 0.018], "dark");
+    prism(F, "y", [k.x, k.y - down, k.z], 0.088, 0.02, 8, "chrome", "cap", { on: down > 0 });
+    return F;
+  });
+
+const spaceFaces = () =>
+  [0, 0.04].map((down) => {
+    const F: Face[] = [];
+    box(F, [-0.8, 0.19 - down, 1.16], [0.8, 0.24 - down, 1.27], "chrome");
+    return F;
+  });
+
+/** the carriage at cx: rail, platen and its knobs, paper bail, return lever, paper table, the sheet */
+function carriageFaces(cx: number) {
+  const F: Face[] = [];
+  box(F, [-1.45 + cx, 0.62, -0.95], [1.45 + cx, 0.72, -0.3], "dark");
+  prism(F, "x", [cx, 0.95, -0.62], 0.2, 1.3, 14, "dark", "dark");
+  for (const s of [-1, 1]) prism(F, "x", [cx + s * 1.41, 0.95, -0.62], 0.25, 0.09, 14, "knob", "knobcap");
+  box(F, [-1.2 + cx, 1.18, -0.465], [1.2 + cx, 1.215, -0.43], "chrome");
+  box(F, [-1.92 + cx, 1.14, -0.36], [-1.32 + cx, 1.19, -0.3], "chrome");
+  box(F, [-2.0 + cx, 1.1, -0.38], [-1.88 + cx, 1.24, -0.27], "dark");
+  face(F, [[-1.15 + cx, 2.05, -1.12], [1.15 + cx, 2.05, -1.12], [1.15 + cx, 1.05, -0.86], [-1.15 + cx, 1.05, -0.86]], "body", { two: true });
+  face(F, [[-0.95 + cx, PT[1], PT[2]], [0.95 + cx, PT[1], PT[2]], [0.95 + cx, PB[1], PB[2]], [-0.95 + cx, PB[1], PB[2]]], "paper", { two: true, cast: false });
+  return F;
+}
+
+/** the typebar's flash as a letter strikes */
+const flashFaces = () => {
+  const F: Face[] = [];
+  face(F, [[-0.025, 1.08, -0.42], [0.025, 1.08, -0.42], [0.025, 0.84, -0.1], [-0.025, 0.84, -0.1]], "chrome", { two: true, cast: false });
+  return F;
+};
+
 export function makeTypewriter(reduced: boolean) {
   const sheet = new Uint8Array(SW * SH);
   const st = {
     user: 0,
     vYaw: 0,
-    auto: 1,
     dragging: false,
-    lastInput: -1e9,
     carr: carrAt(0),
     feed: 0,
     keyDown: -1,
@@ -128,7 +180,6 @@ export function makeTypewriter(reduced: boolean) {
     dingUntil: 0,
     spool: 0,
     steps: [] as Step[],
-    doneAt: -Infinity,
     S: null as Shadow | null,
     cam: null as Cam | null,
   };
@@ -141,6 +192,16 @@ export function makeTypewriter(reduced: boolean) {
     }
     anim[k] = { from: st[k], to, t0: now, dur };
   };
+
+  // the geometry, built once; only the carriage is rebuilt, and only when it moves
+  const still = frameFaces();
+  const keys = KEYS.map(keyFaces);
+  const space = spaceFaces();
+  const flash = flashFaces();
+  let carriage: Face[] = [];
+  let carriageAt = NaN;
+  let shadowAt = NaN;
+  const F: Face[] = [];
 
   function strike(ch: string, line: number, col: number, ink: number, now: number) {
     if (ch === " ") st.spaceUntil = now + 0.09;
@@ -158,8 +219,8 @@ export function makeTypewriter(reduced: boolean) {
     st.spool += 0.35;
   }
 
-  /** pull the last sheet out, feed a fresh one, type the title and the date */
-  function type(s: Sheet, now: number, seed: number) {
+  /** pull the last sheet out, feed a fresh one, type the date then the subject */
+  function type(s: Sheet, now: number) {
     const steps: Step[] = [];
     let t = now;
     if (st.feed > 0.5) {
@@ -178,10 +239,10 @@ export function makeTypewriter(reduced: boolean) {
     t += 0.1;
     steps.push({ t, fn: (n) => tween("feed", TOPM + 6, 0.5, n) });
     t += 0.62;
-    const lines = [...wrap(s.title), s.date];
-    const r = rng(seed * 7919 + 13);
+    const lines = [s.date, ...wrap(s.title)];
+    const r = rng([...s.title].reduce((h, c) => Math.imul(h, 31) + c.charCodeAt(0), 7) >>> 0);
     lines.forEach((ln, li) => {
-      const ink = li === lines.length - 1 ? 2 : 1;
+      const ink = li === 0 ? 2 : 1;
       if (li > 0) {
         steps.push({
           t,
@@ -198,7 +259,7 @@ export function makeTypewriter(reduced: boolean) {
       });
       t += 0.12;
     });
-    // done: one more return, so the date clears the bail
+    // done: one more return, so the last line clears the bail
     t += 0.25;
     steps.push({
       t,
@@ -207,9 +268,7 @@ export function makeTypewriter(reduced: boolean) {
         tween("feed", TOPM + 6 + lines.length * LINE, 0.25, n);
       },
     });
-    t += 0.35;
     st.steps = steps;
-    st.doneAt = t;
     if (reduced) {
       for (const step of steps) step.fn(now);
       st.steps = [];
@@ -218,38 +277,17 @@ export function makeTypewriter(reduced: boolean) {
   }
 
   function build(now: number) {
-    const F: Face[] = [];
-    const cx = st.carr;
-    // the body, its sloped deck and the hood with its nameplate
-    box(F, [-1.5, 0, -0.95], [1.5, 0.62, 0.15], "body");
-    face(F, [[-1.5, 0.62, 0.15], [1.5, 0.62, 0.15], [1.5, 0.16, 1.2], [-1.5, 0.16, 1.2]], "body");
-    face(F, [[-1.5, 0.16, 1.2], [1.5, 0.16, 1.2], [1.5, 0, 1.2], [-1.5, 0, 1.2]], "body");
-    face(F, [[1.5, 0.16, 1.2], [1.5, 0.62, 0.15], [1.5, 0, 0.15], [1.5, 0, 1.2]], "body");
-    face(F, [[-1.5, 0.62, 0.15], [-1.5, 0.16, 1.2], [-1.5, 0, 1.2], [-1.5, 0, 0.15]], "body");
-    box(F, [-1.25, 0.62, -0.22], [1.25, 0.84, 0.16], "hood");
-    // the ribbon spools and the type guide
-    for (const sx of [-0.82, 0.82]) prism(F, "y", [sx, 0.87, -0.03], 0.25, 0.03, 14, "chrome", "spool");
-    box(F, [-0.06, 1.0, -0.44], [0.06, 1.1, -0.38], "chrome");
-    // the keys: a stem and a round cap each, the one being struck down
-    KEYS.forEach((k, i) => {
-      const down = st.keyDown === i && now < st.keyUntil ? 0.05 : 0;
-      box(F, [k.x - 0.018, k.deck, k.z - 0.018], [k.x + 0.018, k.y - 0.02 - down, k.z + 0.018], "dark");
-      prism(F, "y", [k.x, k.y - down, k.z], 0.088, 0.02, 8, "chrome", "cap", { on: down > 0 });
-    });
-    const sd = now < st.spaceUntil ? 0.04 : 0;
-    box(F, [-0.8, 0.19 - sd, 1.16], [0.8, 0.24 - sd, 1.27], "chrome");
-    // the carriage: rail, platen and its knobs, paper bail, return lever, paper table
-    box(F, [-1.45 + cx, 0.62, -0.95], [1.45 + cx, 0.72, -0.3], "dark");
-    prism(F, "x", [cx, 0.95, -0.62], 0.2, 1.3, 14, "dark", "dark");
-    for (const s of [-1, 1]) prism(F, "x", [cx + s * 1.41, 0.95, -0.62], 0.25, 0.09, 14, "knob", "knobcap");
-    box(F, [-1.2 + cx, 1.18, -0.465], [1.2 + cx, 1.215, -0.43], "chrome");
-    box(F, [-1.92 + cx, 1.14, -0.36], [-1.32 + cx, 1.19, -0.3], "chrome");
-    box(F, [-2.0 + cx, 1.1, -0.38], [-1.88 + cx, 1.24, -0.27], "dark");
-    face(F, [[-1.15 + cx, 2.05, -1.12], [1.15 + cx, 2.05, -1.12], [1.15 + cx, 1.05, -0.86], [-1.15 + cx, 1.05, -0.86]], "body", { two: true });
-    // the sheet, and the typebar's flash as a letter strikes
-    face(F, [[-0.95 + cx, PT[1], PT[2]], [0.95 + cx, PT[1], PT[2]], [0.95 + cx, PB[1], PB[2]], [-0.95 + cx, PB[1], PB[2]]], "paper", { two: true, cast: false });
-    if (now < st.strikeUntil) face(F, [[-0.025, 1.08, -0.42], [0.025, 1.08, -0.42], [0.025, 0.84, -0.1], [-0.025, 0.84, -0.1]], "chrome", { two: true, cast: false });
-    turntable(F, FLOOR_R, 0, "floor");
+    if (st.carr !== carriageAt) {
+      carriage = carriageFaces(st.carr);
+      carriageAt = st.carr;
+    }
+    F.length = 0;
+    for (const f of still) F.push(f);
+    const down = now < st.keyUntil ? st.keyDown : -1;
+    for (let i = 0; i < keys.length; i++) for (const f of keys[i][i === down ? 1 : 0]) F.push(f);
+    for (const f of space[now < st.spaceUntil ? 1 : 0]) F.push(f);
+    for (const f of carriage) F.push(f);
+    if (now < st.strikeUntil) for (const f of flash) F.push(f);
     return F;
   }
 
@@ -304,7 +342,7 @@ export function makeTypewriter(reduced: boolean) {
     return P.flare;
   }
 
-  /** a frame; true while it wants another */
+  /** paints a frame; answers how many seconds until the picture next changes */
   function frame(R: Raster, t: number, dt: number) {
     while (st.steps.length && st.steps[0].t <= t) st.steps.shift()!.fn(t);
     for (const k of ["carr", "feed"] as const) {
@@ -314,56 +352,55 @@ export function makeTypewriter(reduced: boolean) {
       st[k] = a.from + (a.to - a.from) * ease(p);
       if (p >= 1) anim[k] = null;
     }
-    if (!st.dragging) {
-      if (Math.abs(st.vYaw) > 0.001) {
-        st.user += st.vYaw * dt;
-        st.vYaw *= Math.exp(-dt * 2.5);
-      }
-      st.auto = clamp(st.auto + (t - st.lastInput > 2.5 ? dt * 0.4 : -dt * 4), 0, 1);
+    if (!st.dragging && st.vYaw) {
+      st.user += st.vYaw * dt;
+      st.vYaw *= Math.exp(-dt * 3);
+      if (Math.abs(st.vYaw) < 0.03) st.vYaw = 0;
     }
     const W = R.w;
     const H = R.h;
-    const yaw = -0.42 + st.user + (reduced ? 0 : 0.3 * Math.sin(t * 0.23)) * st.auto;
-    // the whole machine when there's room; on a small stage, closer, on the sheet
-    const close = W < 180;
-    const scale = close ? Math.min(W / 3.3, H / 2.9) : Math.min(W / 5.15, H / 3.95);
-    const cam = makeCam(yaw, 0.46, scale, W / 2, close ? H * 0.6 : H / 2 - scale * 0.02, close ? [0, 1.25, -0.1] : [0, 1.02, 0.12]);
+    // close on the sheet, big enough to read: aimed a little right of the type guide, where the
+    // sheet rests between lines; the keyboard runs off the bottom edge
+    const scale = Math.min(W / 3.3, H / 2.9);
+    const cam = makeCam(-0.42 + st.user, 0.46, scale, W / 2, H * 0.6, [0.35, 1.25, -0.1]);
     st.cam = cam;
-    const F = build(t);
-    st.S ??= makeShadow(220, L, 3.1, [0, 0.9, 0]);
-    renderShadow(st.S, F);
+    const faces = build(t);
+    // the shadow follows the carriage; nothing else that moves casts one worth redrawing
+    if (!st.S) st.S = makeShadow(200, L, 3.1, [0, 0.9, 0]);
+    if (Number.isNaN(shadowAt) || Math.abs(st.carr - shadowAt) > TEX / 2) {
+      renderShadow(st.S, faces);
+      shadowAt = st.carr;
+    }
     halo(R, W / 2, H * 0.45, H * 0.66);
     clearDepth(R);
-    draw(R, F, cam, shade);
+    draw(R, faces, cam, shade);
     if (t < st.dingUntil) {
       const p = cam.proj([st.carr + 1.6, 1.42, -0.62]);
       drawText(R.c, W, H, "DING", Math.round(p[0]) - 2, Math.round(p[1]) - 6, P.light);
     }
-    const typing = st.steps.length > 0 || anim.carr !== null || anim.feed !== null || t < st.dingUntil || t < st.keyUntil;
-    return typing || (!reduced && st.auto > 0) || st.dragging || Math.abs(st.vYaw) > 0.001;
+    if (anim.carr || anim.feed || st.dragging || st.vYaw) return 0;
+    // between strikes nothing moves: sleep until the next key, or a key coming back up
+    let next = st.steps.length ? st.steps[0].t : Infinity;
+    for (const u of [st.keyUntil, st.spaceUntil, st.strikeUntil, st.dingUntil]) if (u > t && u < next) next = u;
+    return next - t;
   }
 
   return {
     frame,
-    /** start typing a sheet now (`seed` keeps each title's rhythm its own) */
+    /** feed a fresh sheet and type it, starting now */
     type,
-    /** seconds since the last sheet was finished (negative while typing) */
-    idle: (t: number) => (st.steps.length ? -1 : t - st.doneAt),
-    grab(t: number) {
+    grab() {
       st.dragging = true;
       st.vYaw = 0;
-      st.lastInput = t;
     },
-    turn(dx: number, ms: number, t: number) {
+    turn(dx: number, ms: number) {
       const k = 0.008;
       st.user += dx * k;
       st.vYaw = (dx * k) / (Math.max(1, ms) / 1000);
-      st.lastInput = t;
     },
-    release(t: number, still: boolean) {
+    release(still: boolean) {
       if (still) st.vYaw = 0;
       st.dragging = false;
-      st.lastInput = t;
     },
   };
 }

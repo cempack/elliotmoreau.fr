@@ -15,7 +15,8 @@ import { useContextMenu } from "@/components/os/context/ContextMenu";
 import { Plate } from "./Plate";
 import { ReadingSky } from "./ReadingSky";
 import { Letters } from "./Letters";
-import { G_BACK, G_COPY, G_MAIL } from "./glyphs";
+import { Typewriter } from "./Typewriter";
+import { G_BACK, G_COPY } from "./glyphs";
 import { dateLong, fmt, primaryTag } from "./util";
 
 type Neighbour = { slug: string; title: string } | null;
@@ -23,8 +24,8 @@ type Neighbour = { slug: string; title: string } | null;
 /**
  * A post read in full, in the Writing window: its sky plate, the post as
  * Elliot wrote it (from the blog, cleaned on the server), then a way to
- * answer (Write back opens Mail with the subject filled), the next and
- * previous posts, and the newsletter. The blog stays one link away.
+ * answer (a typewriter starts the letter, Write back opens Mail with the
+ * subject filled), the next and previous posts, and the newsletter. The blog stays one link away.
  */
 export function Article({
   post,
@@ -132,9 +133,7 @@ export function Article({
           <div ref={proseRef} className="app-writing-prose" dangerouslySetInnerHTML={{ __html: html }} />
 
           <aside className="app-writing-writeback" aria-labelledby="post-writeback">
-            <span className="app-writing-member-art" aria-hidden>
-              <PixelGlyph cells={G_MAIL} size={28} />
-            </span>
+            <Typewriter subject={subject} />
             <div className="app-writing-member-text">
               <h3 id="post-writeback" className="app-writing-member-title">
                 {w.writeBackTitle}
