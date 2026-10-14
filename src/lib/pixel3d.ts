@@ -1,4 +1,4 @@
-import { INK as ATLAS } from "@/components/apps/atlas/planet";
+import { INK as ATLAS } from "@/components/apps/atlas/ink";
 import { PIXEL_FOLD, PIXEL_GLYPHS } from "@/components/PixelLabel";
 
 /**

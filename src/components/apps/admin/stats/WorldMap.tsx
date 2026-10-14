@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { worldGrid } from "@/components/apps/atlas/geo";
+import { worldGrid } from "@/components/apps/atlas/land";
 import { WORLD_H, WORLD_W } from "@/components/apps/atlas/landmass";
 import type { StatsRow } from "../api";
 import { countryAt } from "./countries";

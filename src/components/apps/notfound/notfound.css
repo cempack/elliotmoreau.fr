@@ -80,9 +80,7 @@
   }
   /* one of its LEDs keeps trying */
   .app-nf-matrix-flicker {
-    animation:
-      app-nf-die 1500ms steps(1, end) var(--d) both,
-      app-nf-flicker 6.5s steps(1, end) 2.4s infinite;
+    animation: app-nf-die 1500ms steps(1, end) var(--d) both;
   }
 }
 @keyframes app-nf-ignite {
@@ -137,37 +135,10 @@
   }
 }
 /* the LED that keeps trying: dead like the rest of its 0, then every few
-   seconds it sparks, stutters, and gives up again */
+   seconds it sparks, stutters, and gives up again (Matrix404.tsx plays
+   the sparks) */
 .app-nf-matrix-flicker {
   opacity: 0.3;
-}
-@keyframes app-nf-flicker {
-  0%,
-  78%,
-  100% {
-    opacity: 0.3;
-  }
-  79% {
-    opacity: 1;
-  }
-  80% {
-    opacity: 0.35;
-  }
-  81.5% {
-    opacity: 1;
-  }
-  84% {
-    opacity: 0.85;
-  }
-  85% {
-    opacity: 0.3;
-  }
-  86% {
-    opacity: 0.7;
-  }
-  87.5% {
-    opacity: 0.3;
-  }
 }
 
 /* ── the alert ── */

@@ -8,7 +8,7 @@ import { useSiteData } from "../SiteData";
 import { Wordmark } from "./Wordmark";
 import { playStartupChord } from "./chime";
 import { Arrival } from "./Arrival";
-import { T } from "./flight";
+import { T } from "./timeline";
 import { rememberArrival } from "../intro-script";
 
 /** The boot screen starts fading here (ms from first paint): see intro.css. */

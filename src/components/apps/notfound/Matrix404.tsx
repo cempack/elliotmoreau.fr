@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { bandIndexFor, bandInk } from "@/lib/pixelword";
 
 /**
@@ -104,6 +105,51 @@ function Column({ c }: { c: (typeof COLUMNS)[number] }) {
   );
 }
 
+/* the LED that keeps trying: every 6.5 s, 2.4 s in, it sparks and stutters
+   for half a second (opacity, each step held until the next) */
+const TRY_EVERY = 6500;
+const TRY_FROM = 2400 + 0.79 * TRY_EVERY;
+const TRY_STEPS: [number, number][] = [
+  [79, 1],
+  [80, 0.35],
+  [81.5, 1],
+  [84, 0.85],
+  [85, 0.3],
+  [86, 0.7],
+  [87.5, 0.3],
+];
+const TRY_KEYS: Keyframe[] = TRY_STEPS.map(([at, opacity]) => ({
+  offset: (at - 79) / (87.5 - 79),
+  opacity,
+  easing: "steps(1, end)",
+}));
+
+/**
+ * The trying LED. Its sparks are played from a timer, half a second every
+ * few seconds: an SVG element's opacity can't be animated off the main
+ * thread, and an endless CSS animation on it restyled the page every
+ * frame, even while it held still.
+ */
+function Trying({ c }: { c: Cell }) {
+  const ref = useRef<SVGGElement>(null);
+  useEffect(() => {
+    const g = ref.current;
+    if (!g || !window.matchMedia("(prefers-reduced-motion: no-preference)").matches) return;
+    let timer = 0;
+    const spark = () => {
+      g.animate(TRY_KEYS, { duration: (TRY_STEPS[TRY_STEPS.length - 1][0] - 79) * (TRY_EVERY / 100) });
+      timer = window.setTimeout(spark, TRY_EVERY);
+    };
+    timer = window.setTimeout(spark, TRY_FROM);
+    return () => window.clearTimeout(timer);
+  }, []);
+  return (
+    <g ref={ref} className="app-nf-matrix-flicker" style={{ "--d": `${delay(c.x)}ms` } as React.CSSProperties}>
+      <Led c={c} />
+    </g>
+  );
+}
+
 export function Matrix404({ className = "" }: { className?: string }) {
   return (
     <svg
@@ -142,11 +188,7 @@ export function Matrix404({ className = "" }: { className?: string }) {
         {COLUMNS.filter((c) => c.dead).map((c) => (
           <Column key={c.col} c={c} />
         ))}
-        {TRYING && (
-          <g className="app-nf-matrix-flicker" style={{ "--d": `${delay(TRYING.x)}ms` } as React.CSSProperties}>
-            <Led c={TRYING} />
-          </g>
-        )}
+        {TRYING && <Trying c={TRYING} />}
       </g>
     </svg>
   );

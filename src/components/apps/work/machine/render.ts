@@ -40,7 +40,7 @@ const pack = (r: number, g: number, b: number) => ((255 << 24) | (b << 16) | (g 
 const scale = (c: number, k: number) =>
   pack(Math.min(255, (c & 255) * k) | 0, Math.min(255, ((c >>> 8) & 255) * k) | 0, Math.min(255, ((c >>> 16) & 255) * k) | 0);
 
-/* the Atlas inks (atlas/planet.ts), and a light-to-dark ramp per material */
+/* the Atlas inks (atlas/ink.ts), and a light-to-dark ramp per material */
 const INK = {
   ocean: pack(15, 20, 55),
   oceanDeep: pack(10, 13, 38),

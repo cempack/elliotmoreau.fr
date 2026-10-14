@@ -1,4 +1,4 @@
-import { INK } from "@/components/apps/atlas/planet";
+import { INK } from "@/components/apps/atlas/ink";
 import {
   add,
   b4,

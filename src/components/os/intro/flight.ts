@@ -18,39 +18,19 @@
  * (same cell, same rows), little-endian RGBA as Uint32.
  */
 
-import { worldGrid } from "../../apps/atlas/geo";
-import { INK, project, sunVector } from "../../apps/atlas/planet";
+import { INK } from "../../apps/atlas/ink";
+import { worldGrid } from "../../apps/atlas/land";
+import { project, sunVector } from "../../apps/atlas/planet";
 import { MAT, WATER, buildCity, cityFrame } from "../wallpaper/city";
 import { lampsAt, relight, skyLight } from "../wallpaper/light";
 import { CELL, CLOUDS, MAP, lightToulouse, paintToulouse } from "./toulouseMap";
+import { T } from "./timeline";
+
+export { T };
 
 type RGB = [number, number, number];
 
 const HOME = { lat: 43.6, lon: 1.44 };
-
-/** The timeline, in ms. */
-export const T = {
-  /** stars and the planet come up out of the dark */
-  fade: 1000,
-  /** Toulouse faces you */
-  turned: 3200,
-  /** the fall toward it begins */
-  plunge: 3400,
-  /** inside the thickest cloud: the planet becomes the city */
-  city: 6000,
-  /** the descent over the map levels off over the Pont Saint-Pierre */
-  reveal: 8000,
-  /** deep in the low cloud on the river: the map is gone, the wallpaper's scene is under it, the glide up the river begins */
-  glide: 8500,
-  /** (the city camera's last frame, under the cloud) */
-  joined: 8500,
-  /** the Desktop starts coming in, over the last of the glide */
-  hand: 9700,
-  /** the glide has come to rest on the wallpaper's own view (the canvas, fading, is a pixel off at most by then) */
-  land: 10300,
-  /** the Desktop is all there is */
-  end: 10600,
-} as const;
 
 export type FlightSetup = {
   /** the wallpaper's grid, in art pixels */
