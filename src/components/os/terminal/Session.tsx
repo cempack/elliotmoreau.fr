@@ -213,8 +213,11 @@ export function Session({
       if (e.shiftKey || !value) return; // let focus move on an empty prompt
       e.preventDefault();
       const c = complete(value, ctx);
-      if (c.value !== null) put(c.value);
-      else if (c.list.length)
+      if (c.value !== null) {
+        if (c.value !== value) sound.blip("complete");
+        put(c.value);
+      } else if (c.list.length) {
+        sound.blip("tick");
         session.append({
           cwd,
           input: value,
@@ -226,8 +229,10 @@ export function Session({
             </ul>
           ),
         });
+      }
     } else if (e.key === "ArrowRight" && ghost && el.selectionStart === value.length) {
       e.preventDefault();
+      sound.blip("complete");
       put(value + ghost);
     } else if (e.ctrlKey && !e.metaKey && !e.altKey) {
       const k = e.key.toLowerCase();
@@ -258,6 +263,7 @@ export function Session({
       className="os-term-line"
       onSubmit={(e) => {
         e.preventDefault();
+        sound.blip("enter");
         submit(value);
       }}
     >
@@ -274,6 +280,8 @@ export function Session({
           spellCheck={false}
           enterKeyHint="go"
           onChange={(e) => {
+            // a key under the finger; a deletion, the softer knock of a key coming back
+            sound.blip(e.target.value.length < value.length ? "space" : "key");
             setValue(e.target.value);
             setHIdx(null);
             syncCaret(e.target);

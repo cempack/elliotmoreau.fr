@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { spun, useSound } from "@/lib/sound";
 import type { MotionValue } from "motion/react";
 import type { PlaceRow } from "@/lib/content";
 import { angleBetween, focusFor, slerp, toVec, type Vec3 } from "./geo";
@@ -179,11 +180,12 @@ export function AtlasGlobe({
   const baseRef = useRef<HTMLCanvasElement>(null);
   const tipRef = useRef<HTMLSpanElement>(null);
   // live props for the imperative loop (synced after commit)
-  const live = useRef({ places, home, selectedId, onSelect, ambient, margin, hint, onCamera });
+  const { blip } = useSound();
+  const live = useRef({ places, home, selectedId, onSelect, ambient, margin, hint, onCamera, blip });
   const api = useRef<{ focus: (cut: boolean) => void; wake: () => void } | null>(null);
 
   useEffect(() => {
-    live.current = { places, home, selectedId, onSelect, ambient, margin, hint, onCamera };
+    live.current = { places, home, selectedId, onSelect, ambient, margin, hint, onCamera, blip };
     api.current?.wake();
   });
 
@@ -1170,6 +1172,7 @@ export function AtlasGlobe({
       cam.vLon = reduced || stale ? 0 : cap((lastS.lon - first.lon) / dtS);
       cam.vLat = reduced || stale ? 0 : cap((lastS.lat - first.lat) / dtS);
       cam.coasting = true;
+      spun(live.current.blip, Math.hypot(cam.vLon, cam.vLat), SPIN_MAX);
       if (reduced) {
         cam.lat = Math.min(LAT_MAX, Math.max(LAT_MIN, cam.lat));
         cam.coasting = false;

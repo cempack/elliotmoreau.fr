@@ -130,7 +130,7 @@ export function LitWindow() {
       onFocus={() => void loadLayer()}
       onPointerDown={(e) => e.stopPropagation()}
       onClick={() => {
-        blip("open");
+        blip("inside");
         setRoom(true, { x: cx, y: cy });
       }}
     >

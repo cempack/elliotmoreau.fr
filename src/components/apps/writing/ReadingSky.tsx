@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { useI18n } from "@/i18n/client";
 import { scroller } from "@/lib/scroller";
+import { useSound } from "@/lib/sound";
 import { loadSky, publishedMs, type Dome, type Exposure, type Sky, type SkyModule } from "./sky";
 import { fmt } from "./util";
 
@@ -32,6 +33,7 @@ export function ReadingSky({
   proseRef: RefObject<HTMLElement | null>;
 }) {
   const { t } = useI18n();
+  const { blip } = useSound();
   const w = t.writing;
   const planets = w.planets.join("|");
   const railRef = useRef<HTMLDivElement>(null);
@@ -108,9 +110,15 @@ export function ReadingSky({
       return p < 0 ? 0 : p > 1 ? 1 : p;
     };
 
+    /** the exposure has run its course (null: not read yet, so the page opening at the end stays quiet) */
+    let closed: boolean | null = null;
     const update = () => {
       raf = 0;
       const p = progress();
+      // read to the end: the long exposure's shutter closes
+      const end = p >= 0.985;
+      if (closed === false && end) blip("shutter");
+      closed = end;
       const s = Math.round(p * (mod?.STEPS ?? 240));
       if (mod && sky && expo && img && out && s !== step) {
         step = s;
@@ -158,7 +166,7 @@ export function ReadingSky({
       sc.removeEventListener("scroll", schedule);
       if (article) delete article.dataset.sky;
     };
-  }, [ms, minutes, proseRef, planets]);
+  }, [ms, minutes, proseRef, planets, blip]);
 
   return (
     <div ref={railRef} className="app-writing-skyrail" aria-hidden>

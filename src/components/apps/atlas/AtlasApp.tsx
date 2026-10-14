@@ -61,12 +61,20 @@ export function AtlasApp() {
     [ordered]
   );
 
+  const stampLater = useRef(0);
   const select = useCallback(
     (id: string) => {
       if (!byId(id)) return;
-      if (id === selectedId) setRecenter((n) => n + 1);
-      else setSelectedId(id);
-      blip("select");
+      window.clearTimeout(stampLater.current);
+      if (id === selectedId) {
+        setRecenter((n) => n + 1);
+        blip("zoom", { amount: 0 });
+      } else {
+        setSelectedId(id);
+        // a pin into the map, then the place's stamp slapped onto the card as it lands
+        blip("pin");
+        stampLater.current = window.setTimeout(() => blip("stamp"), 170);
+      }
       try {
         const url = new URL(window.location.href);
         url.hash = id === home.id ? "" : id;
@@ -120,7 +128,12 @@ export function AtlasApp() {
           {fmtCoordsL(home.lat, home.lon, lang)}
         </span>
       </span>
-      <PressButton className="app-atlas-tool" onClick={() => setRecenter((n) => n + 1)} aria-label={a.recenterLabel}>
+      <PressButton
+        className="app-atlas-tool"
+        onClick={() => {
+          blip("zoom", { amount: 0 });
+          setRecenter((n) => n + 1);
+        }} aria-label={a.recenterLabel}>
         <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
           <path d="M7 1.5 12.5 12 7 9.6 1.5 12Z" fill="currentColor" />
         </svg>

@@ -9,7 +9,7 @@ import { timeAgo } from "@/lib/format";
 import { SITE_MAILTO, SOCIALS } from "@/lib/socials";
 import { fmtCoords } from "@/lib/content";
 import { APPS, type AppDef, type AppId } from "../apps";
-import { type SkyMode, type SkyPhase } from "../sky";
+import { skySound, type SkyMode, type SkyPhase } from "../sky";
 import { phaseOf, sunAt } from "@/lib/sun";
 import { EmosLogo } from "../EmosLogo";
 import { Cmd, Ext, Swatch, fill, nodes } from "./ui";
@@ -322,7 +322,10 @@ function contact(ctx: RunCtx) {
         ctx.notify(ctx.d.shell.toast.copied);
         ctx.sound.blip("copy");
       },
-      () => ctx.notify(t.failed)
+      () => {
+        ctx.notify(t.failed);
+        ctx.sound.blip("error");
+      }
     );
   }
   return (
@@ -714,8 +717,8 @@ const COMMANDS: Command[] = [
         );
       const mode = SKY_WORDS[fold(args[0])];
       if (!mode) return <Line tone="err">{t.usage}</Line>;
+      ctx.sound.blip(skySound(ctx.sky.phase, mode === "auto" ? phaseOf(sunAt(new Date())) : mode));
       ctx.sky.setMode(mode);
-      ctx.sound.blip("toggle");
       if (mode === "auto") return <Line>{fill(t.live, { phase: phaseName(ctx, phaseOf(sunAt(new Date()))) })}</Line>;
       return <Line>{fill(t.pinned, { phase: phaseName(ctx, mode) })}</Line>;
     },
@@ -1028,6 +1031,8 @@ export function runCommand(raw: string, ctx: RunCtx): Output {
   if (cmd) return cmd.run(args, ctx, rest, name);
 
   const t = ctx.d.system.term;
+  // after the return key's own sound
+  window.setTimeout(() => ctx.sound.blip("error"), 70);
   const near = COMPLETABLE.map((c) => [c, distance(name, c)] as const).sort((a, b) => a[1] - b[1])[0];
   return (
     <div className="os-term-block">

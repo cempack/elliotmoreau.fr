@@ -13,7 +13,7 @@ import { copyText } from "@/lib/clipboard";
 import { claimSurface, useSurfaceYield } from "../surface";
 import { openOverview } from "../overview";
 import { useTerminal } from "../Terminal";
-import { SKY_PHASES, useSky, type SkyMode } from "../sky";
+import { SKY_PHASES, skySound, useSky, type SkyMode } from "../sky";
 import { replayArrival } from "../menubar/util";
 import { stripLocale } from "@/i18n/config";
 import { collect, shortcut, type MenuContext, type MenuItem, type MenuSection } from "./menu";
@@ -93,6 +93,7 @@ export function ContextMenu() {
   const term = useTerminal();
   const sky = useSky();
   const sound = useSound();
+  const menuBlip = sound.blip;
   const copy = useCopy();
   const [menu, setMenu] = useState<Open | null>(null);
   const seq = useRef(0);
@@ -131,14 +132,26 @@ export function ContextMenu() {
           submenu: (["auto", ...SKY_PHASES] as SkyMode[]).map((m) => ({
             label: cc[m],
             checked: sky.mode === m,
-            onSelect: () => sky.setMode(m),
+            onSelect: () => {
+              if (m !== sky.mode) sound.blip(skySound(sky.phase, m === "auto" ? (sky.live ?? sky.phase) : m));
+              sky.setMode(m);
+            },
           })),
         },
-        { label: cc.sound, checked: !sound.muted, onSelect: sound.toggle },
+        {
+          label: cc.sound,
+          checked: !sound.muted,
+          onSelect: () => {
+            const unmuting = sound.muted;
+            sound.toggle();
+            if (unmuting) window.setTimeout(() => sound.blip("on"), 0);
+          },
+        },
         {
           label: c.language,
           onSelect: () => {
             const to = lang === "en" ? "fr" : "en";
+            sound.blip("toggle");
             rememberLocale(to);
             router.push(switchLocaleHref(pathname, to), { scroll: false });
           },
@@ -201,6 +214,7 @@ export function ContextMenu() {
       const a = document.activeElement;
       opener.current = a instanceof HTMLElement && a !== document.body ? a : null;
       claimSurface("context");
+      menuBlip("menu", { x });
       setMenu({ id: ++seq.current, x, y, sections, keyboard, path: live.current.path, leaving: false });
     };
     window.addEventListener("pointerdown", onPointer, true);
@@ -209,7 +223,7 @@ export function ContextMenu() {
       window.removeEventListener("pointerdown", onPointer, true);
       window.removeEventListener("contextmenu", onMenu);
     };
-  }, []);
+  }, [menuBlip]);
 
   /** let the menu go (it fades, then unmounts); `restore` hands focus back to where it was */
   const dismiss = useCallback((restore: boolean) => {

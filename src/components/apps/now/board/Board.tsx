@@ -504,10 +504,11 @@ export function Board({
     if (reducedRef.current) it.scale.set(1.02);
     else animate(it.scale, 1.035, spring.snappy);
     if (d.touch) navigator.vibrate?.(8);
+    blip("lift");
     setLive([...liveRef.current]);
     setCarry({ id: d.id, mode: "pointer" });
     startLoop();
-  }, [startLoop]);
+  }, [startLoop, blip]);
 
   const onItemPointerDown = useCallback(
     (id: string, e: React.PointerEvent, viaGrip: boolean) => {
@@ -607,7 +608,10 @@ export function Board({
       setLive(null);
       setCarry(null);
       if (!sameOrder(next, board.order)) board.commit(next);
-      if (!cancel) blip("select");
+      if (!cancel) {
+        const thrown = settle.current.thrown;
+        window.setTimeout(() => blip("drop", { amount: thrown ? 1 : 0.4 }), reducedRef.current ? 0 : thrown ? 240 : 130);
+      }
       // swallow the click a drag would otherwise end with
       const swallow = (ev: Event) => {
         ev.stopPropagation();
@@ -721,7 +725,7 @@ export function Board({
     setCarry(null);
     if (!cancel && !sameOrder(next, board.order)) board.commit(next);
     say(cancel ? strings.cancelled : strings.dropped, id, next);
-    if (!cancel) blip("select");
+    if (!cancel) blip("drop", { amount: 0.3 });
   };
 
   const onGripKeyDown = (id: string, e: React.KeyboardEvent) => {
@@ -738,6 +742,7 @@ export function Board({
       if (reducedRef.current) it.scale.set(1.02);
       else animate(it.scale, 1.03, spring.snappy);
       setLive([...board.order]);
+      blip("lift");
       setCarry({ id, mode: "keyboard" });
       say(strings.picked, id, board.order);
       return;

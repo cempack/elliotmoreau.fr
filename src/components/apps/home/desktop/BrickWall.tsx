@@ -212,7 +212,7 @@ export function PushWidget() {
   const pick = (i: number | null) => {
     if (i === activeRef.current) return;
     hold(i);
-    if (i != null && scrub.current) blip("tick");
+    if (i != null && scrub.current) blip("brick");
   };
 
   const onPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {

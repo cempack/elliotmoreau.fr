@@ -92,7 +92,9 @@ export function PhoneTicket() {
       setCopied(true);
       blip("copy");
       window.setTimeout(() => setCopied(false), 1600);
-    } catch {}
+    } catch {
+      blip("error");
+    }
   };
 
   return (

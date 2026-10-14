@@ -92,7 +92,7 @@ export function useAppShortcuts(activeId: AppDef["id"]) {
       e.preventDefault();
       if (app.id === activeId) return;
       bounce(visibleIcon(app.id)?.querySelector("[data-dock-bounce]"));
-      blip("launch");
+      blip("launch", { variant: app.id });
       router.push(path(app.path), { transitionTypes: ["app-open"] });
     };
     window.addEventListener("keydown", onKey);

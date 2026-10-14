@@ -202,13 +202,14 @@ export function Layer() {
   const close = () => {
     // the window on screen shrinks back into place as the rest fades
     fly.current.get(here)?.();
+    blip("close");
     closeOverview();
   };
 
   const goTo = (id: AppId) => {
-    blip("select");
     if (here === "home") setHomeDesk(view);
     if (id === here) return close();
+    blip("select");
     const a = APPS.find((x) => x.id === id);
     if (!a) return closeOverview();
     setDiving(id);

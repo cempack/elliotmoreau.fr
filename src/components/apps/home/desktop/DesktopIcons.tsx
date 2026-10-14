@@ -375,13 +375,13 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
       return;
     }
     if (id === "draft") {
-      blip("launch");
+      blip("launch", { variant: "contact" });
       router.push(path("/contact"), { transitionTypes: ["app-open"] });
       return;
     }
     const app = APPS.find((a) => a.id === id);
     if (!app) return;
-    blip("launch");
+    blip("launch", { variant: app.id });
     router.push(path(app.path), { transitionTypes: ["app-open"] });
   };
 
@@ -456,6 +456,7 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
     if (!scene) return;
     const m = readMetrics(scene);
     d.moved = true;
+    blip("lift");
     d.ids = selected.has(d.id) ? icons.filter((i) => selected.has(i)) : [d.id];
     let gl = Infinity;
     let gt = Infinity;
@@ -593,7 +594,8 @@ export function DesktopIcons({ sceneRef, selected, setSelected, blockers, onRead
     }
     // from now on the desktop is arranged by hand, and remembered
     remember();
-    blip("tick");
+    // the landing: as it settles into its cell (a throw travels a little longer)
+    if (!cancelled) window.setTimeout(() => blip("drop", { amount: thrown ? 1 : 0.3 }), reduced ? 0 : thrown ? 260 : 140);
   };
 
   const onClick = (id: DesktopIconId | PhoneOnly) => (e: React.MouseEvent<HTMLElement>) => {

@@ -392,6 +392,8 @@ export function NetworkMap({
 
   const arrive = (to: Station) => {
     ride.current = null;
+    // the doors' chime: the train is in
+    blip("chime");
     if (to.external) {
       window.open(to.href, "_blank", "noopener,noreferrer");
       if (train.current) train.current.style.visibility = "hidden";

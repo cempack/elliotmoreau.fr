@@ -401,7 +401,8 @@ export function Compose({
   const onStrike = () => {
     if (phase !== "compose") return;
     setMark(markAt(new Date()));
-    blip("tick");
+    // the franking machine's postmark, struck
+    blip("stamp");
     navigator.vibrate?.(8);
     window.clearTimeout(sendTimer.current);
     sendTimer.current = window.setTimeout(leave, reduced ? 0 : 140);

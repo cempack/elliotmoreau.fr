@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useReduced } from "@/hooks/env";
+import { useSound } from "@/lib/sound";
 import { Art } from "./bits";
 import { PixelCover, themeFor } from "./Cover";
 import { fmtMs, useOnScreen, useTabHidden } from "./lib";
@@ -296,6 +297,7 @@ export function Deck({
   const on = useOnScreen(wrap, "40px");
   const hidden = useTabHidden();
   const reduced = useReduced();
+  const { blip } = useSound();
   const [needle, setNeedle] = useState(false);
   const [sleeve, setSleeve] = useState<Sleeve>(track);
   const seed = track?.seed ?? null;
@@ -435,6 +437,7 @@ export function Deck({
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
     // a hand on the record stops it dead
+    if (Math.abs(s.omega) > 0.5) blip("brake");
     s.holding = true;
     s.omega = 0;
     s.grab = angleAt(e) - s.angle;
@@ -464,6 +467,8 @@ export function Deck({
     const b = s.samples[s.samples.length - 1];
     const fresh = e.timeStamp - b.t < 60;
     s.omega = props.current.reduced || !fresh ? 0 : Math.max(-SPIN_MAX, Math.min(SPIN_MAX, ((b.a - a.a) / Math.max(8, b.t - a.t)) * 1000));
+    // thrown, or picked back up by the motor: the platter spinning up
+    if (Math.abs(s.omega) > 2 || playing) blip("whirl", { amount: Math.min(1, Math.abs(s.omega) / SPIN_MAX) });
     kick.current();
   };
 

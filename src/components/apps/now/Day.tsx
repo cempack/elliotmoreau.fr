@@ -5,7 +5,9 @@ import { animate, type AnimationPlaybackControls } from "motion/react";
 import { useI18n } from "@/i18n/client";
 import { useReduced } from "@/hooks/env";
 import { spring } from "@/lib/motion";
-import { moonAt, sunAt, sunDay } from "@/lib/sun";
+import { moonAt, phaseOf, sunAt, sunDay } from "@/lib/sun";
+import { useSound } from "@/lib/sound";
+import { skySound } from "@/components/os/sky";
 import { skyLight } from "@/components/os/wallpaper/light";
 import type { DayData } from "@/lib/data";
 import { fill, useNow } from "./lib";
@@ -199,6 +201,9 @@ export function TodaySky({ day }: { day: DayData }) {
   const { t, lang } = useI18n();
   const d = t.now.day;
   const reduced = useReduced();
+  const { blip } = useSound();
+  /** the moment the hand last showed, so an hour passing (or the sun rising, or setting) under it is heard */
+  const heard = useRef<number | null>(null);
   const now = useNow(30_000);
   const skyRef = useRef<HTMLDivElement>(null);
   const cvRef = useRef<HTMLCanvasElement>(null);
@@ -264,8 +269,19 @@ export function TodaySky({ day }: { day: DayData }) {
     const f = Math.min(1, Math.max(0, (clientX - r.left) / r.width));
     return Math.min(nowMs, day0 + f * 86_400_000);
   };
+  /** the hand moving through the day */
+  const hear = (ms: number) => {
+    const prev = heard.current;
+    heard.current = ms;
+    if (prev == null || !ms) return;
+    const a = phaseOf(sunAt(prev));
+    const b = phaseOf(sunAt(ms));
+    if (a !== b) blip(skySound(a, b));
+    else if (Math.floor(prev / 3_600_000) !== Math.floor(ms / 3_600_000)) blip("hour");
+  };
   const goNow = (from: number | null) => {
     back.current?.stop();
+    if (from != null) blip("tap");
     if (from == null || reduced) return setAt(null);
     // it travels in milliseconds: it has arrived within half a minute
     const home = (v: number) => {
@@ -281,6 +297,7 @@ export function TodaySky({ day }: { day: DayData }) {
   const travel = (to: number) => {
     back.current?.stop();
     setTouched(true);
+    blip("tick");
     if (reduced) return setAt(to);
     back.current = animate(shown, to, { ...spring.default, ...REST, onUpdate: (v) => setAt(v), onComplete: () => setAt(to) });
   };
@@ -296,11 +313,16 @@ export function TodaySky({ day }: { day: DayData }) {
     back.current?.stop();
     e.currentTarget.setPointerCapture(e.pointerId);
     setTouched(true);
-    setAt(timeAt(e.clientX));
+    heard.current = shown;
+    const ms = timeAt(e.clientX);
+    hear(ms);
+    setAt(ms);
   };
   const onMove = (e: React.PointerEvent) => {
     if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
-    setAt(timeAt(e.clientX));
+    const ms = timeAt(e.clientX);
+    hear(ms);
+    setAt(ms);
   };
   // letting go (or a scroll taking over the finger) keeps the moment: the day is read at leisure
   const onUp = (e: React.PointerEvent) => {
@@ -312,7 +334,10 @@ export function TodaySky({ day }: { day: DayData }) {
     if (step) {
       e.preventDefault();
       setTouched(true);
-      setAt(Math.min(nowMs, Math.max(day0, (at ?? nowMs) + step * 60_000)));
+      const ms = Math.min(nowMs, Math.max(day0, (at ?? nowMs) + step * 60_000));
+      heard.current = at ?? nowMs;
+      hear(ms);
+      setAt(ms);
     } else if (e.key === "Home") {
       e.preventDefault();
       setAt(day0);

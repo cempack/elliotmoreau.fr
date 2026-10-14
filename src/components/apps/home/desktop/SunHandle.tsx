@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { atLocalHour, sunAt, sunDay } from "@/lib/sun";
+import { atLocalHour, phaseOf, sunAt, sunDay, type SkyPhase } from "@/lib/sun";
+import { useSound } from "@/lib/sound";
+import { skySound } from "@/components/os/sky";
 import { project, sunScrub, sunSpot, type SunView } from "@/components/os/wallpaper/sunClock";
 import { grabSun, holdSun, releaseSun } from "@/components/os/wallpaper/hold";
 import { FLING, pushSample, releaseVelocity, type Sample } from "./physics";
@@ -61,6 +63,9 @@ export function SunHandle() {
   const spot = useSyncExternalStore(sunSpot.subscribe, sunSpot.get, () => null);
   const [held, setHeld] = useState<{ view: SunView; pts: Pt[]; now: number } | null>(null);
   const g = useRef<{ pid: number; dx: number; dy: number; from: number; to: number; pts: Pt[]; ms: Sample[]; px: Sample[] } | null>(null);
+  const { blip } = useSound();
+  /** what the held sun is showing: its phase and its hour, so crossing either is heard */
+  const heard = useRef<{ phase: SkyPhase; hour: number } | null>(null);
 
   const track = useMemo(() => {
     if (!held) return null;
@@ -87,6 +92,7 @@ export function SunHandle() {
     const { pts, from, to } = pathFor(spot.view, now);
     if (pts.length < 2) return;
     grabSun();
+    heard.current = { phase: phaseOf(sunAt(now)), hour: Math.floor(now.getTime() / 3_600_000) };
     g.current = { pid: e.pointerId, dx: e.clientX - spot.x, dy: e.clientY - spot.y, from, to, pts, ms: [], px: [] };
     setHeld({ view: spot.view, pts, now: now.getTime() });
     pushSample(g.current.px, { t: e.timeStamp, x: e.clientX, y: e.clientY });
@@ -95,6 +101,14 @@ export function SunHandle() {
     const d = g.current;
     if (!d || d.pid !== e.pointerId) return;
     const ms = holdSun(msAt(d.pts, e.clientX - d.dx, e.clientY - d.dy), d.from, d.to);
+    const h = heard.current;
+    if (h) {
+      const phase = phaseOf(sunAt(new Date(ms)));
+      const hour = Math.floor(ms / 3_600_000);
+      if (phase !== h.phase) blip(skySound(h.phase, phase));
+      else if (hour !== h.hour) blip("hour");
+      heard.current = { phase, hour };
+    }
     pushSample(d.ms, { t: e.timeStamp, x: ms / 60_000, y: 0 });
     pushSample(d.px, { t: e.timeStamp, x: e.clientX, y: e.clientY });
   };
@@ -105,6 +119,11 @@ export function SunHandle() {
     setHeld(null);
     const p = releaseVelocity(d.px, e.timeStamp);
     if (sunScrub.get() == null) return;
+    // back to now: if the held sun was in another light, the sky turns back with it
+    const was = heard.current?.phase;
+    const live = phaseOf(sunAt(new Date()));
+    if (was && was !== live) window.setTimeout(() => blip(skySound(was, live)), 180);
+    heard.current = null;
     releaseSun(releaseVelocity(d.ms, e.timeStamp).vx, Math.hypot(p.vx, p.vy) > FLING);
   };
 

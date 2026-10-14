@@ -212,8 +212,10 @@ export function DeparturesBoard({
         return { cur: start, target, steps, at: now + row * 60 + col * 10, color: w.colors[col] };
       })
     );
-    // one soft clatter per flipping row, on its first step
-    flipping.forEach((row) => window.setTimeout(() => blip("tick"), row * 60));
+    // one soft clatter of flaps per flipping row, on its first step; the board
+    // re-reading the clock on its own, with nobody at the keys, stays quiet
+    const act = (navigator as Navigator & { userActivation?: { isActive: boolean } }).userActivation;
+    if (!act || act.isActive) flipping.forEach((row) => window.setTimeout(() => blip("flap"), row * 60));
     cancelAnimationFrame(raf.current);
     raf.current = requestAnimationFrame(function frame(t) {
       if (paint(t)) raf.current = requestAnimationFrame(frame);

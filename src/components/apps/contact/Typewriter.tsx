@@ -3,15 +3,16 @@
 import { useEffect, useRef } from "react";
 import { CELL, pixelLoop } from "@/lib/pixel3d";
 import { useReduced } from "@/hooks/env";
-import { useSound } from "@/lib/sound";
+import { spun, useSound } from "@/lib/sound";
 import { markAt } from "./postmark";
 import { letterLines, makeTypewriter } from "./typewriter/scene";
 
 /**
  * The typewriter beside the letter: once it is in view it feeds a sheet,
  * types today's date (the postmark's, in Toulouse), then follows the
- * subject and the message as they are written, a soft tick a letter.
- * Drag it to turn it. Decorative: the letter itself is the form beside it.
+ * subject and the message as they are written, and sounds like one: a
+ * typebar striking for each letter, the spacebar, the margin bell near the
+ * end of a line, the carriage thrown back. Drag it to turn it. Decorative: the letter itself is the form beside it.
  */
 export function Typewriter({ subject, body }: { subject: string; body: string }) {
   const reduced = useReduced();
@@ -19,15 +20,20 @@ export function Typewriter({ subject, body }: { subject: string; body: string })
   const hostRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const latest = useRef({ subject, body });
-  const tick = useRef(blip);
+  const sound = useRef(blip);
+  /** it only sounds once the letter is the visitor's: the date and a restored draft go in quietly */
+  const live = useRef(false);
+  const first = useRef(true);
   /** what the running machine is handed when the letter changes */
   const follow = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    tick.current = blip;
+    sound.current = blip;
   }, [blip]);
 
   useEffect(() => {
+    if (!first.current) live.current = true;
+    first.current = false;
     latest.current = { subject, body };
     follow.current?.();
   }, [subject, body]);
@@ -36,7 +42,14 @@ export function Typewriter({ subject, body }: { subject: string; body: string })
     const host = hostRef.current;
     const canvas = canvasRef.current;
     if (!host || !canvas) return;
-    const tw = makeTypewriter(reduced, () => tick.current("tick"));
+    const tw = makeTypewriter(reduced, (s) => {
+      if (!live.current) return;
+      const b = sound.current;
+      if (s === "erase") b("space");
+      else if (s === "out") b("page");
+      else if (s === "in") b("fold");
+      else b(s);
+    });
     const loop = pixelLoop({
       host,
       canvas,
@@ -89,7 +102,7 @@ export function Typewriter({ subject, body }: { subject: string; body: string })
     };
     const up = (e: PointerEvent) => {
       if (!drag || e.pointerId !== drag.id) return;
-      tw.release(performance.now() - drag.t > 80);
+      spun(sound.current, tw.release(performance.now() - drag.t > 80), 8);
       drag = null;
       loop.wake();
     };

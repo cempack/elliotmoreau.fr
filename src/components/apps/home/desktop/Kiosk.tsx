@@ -6,6 +6,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { useI18n } from "@/i18n/client";
 import { useReduced } from "@/hooks/env";
 import { project, spring, springFrom } from "@/lib/motion";
+import { useSound } from "@/lib/sound";
 import { Glass } from "@/components/os/Glass";
 import { useSiteData } from "@/components/os/SiteData";
 import { composite, paintPlateLayers, plateSeed } from "@/components/apps/writing/plate";
@@ -159,6 +160,7 @@ export function LatestPostWidget() {
   const { posts } = useSiteData();
   const now = useMinute();
   const reduced = useReduced();
+  const { blip } = useSound();
   const stack = posts.slice(0, STACK);
   const [top, setTop] = useState(0);
   const [peel, setPeel] = useState<Pt | null>(null);
@@ -251,7 +253,10 @@ export function LatestPostWidget() {
     setBox({ w: W, h: H });
     g.current = { pid: e.pointerId, mode: corner ? "corner" : "pull", x0: e.clientX, y0: e.clientY, moved: false, s: [] };
     // the corner lifts a cell the moment it is pressed
-    if (corner) setPeel({ x: W - CELL, y: H - CELL });
+    if (corner) {
+      blip("fold");
+      setPeel({ x: W - CELL, y: H - CELL });
+    }
   };
   const onPointerMove = (e: React.PointerEvent<HTMLAnchorElement>) => {
     const d = g.current;
@@ -300,6 +305,7 @@ export function LatestPostWidget() {
       // how far the fold would travel with this release
       const reach = Math.hypot(W - (P.x + project(v.x)), H - (P.y + project(v.y)));
       if (reach > Math.hypot(W, H) * 0.55 || (thrown && v.x < 0 && v.y < 0)) {
+        blip("page");
         fly(P, away, v, thrown, () => {
           setTop((i) => i + 1);
           setPeel(null);
@@ -307,6 +313,7 @@ export function LatestPostWidget() {
       } else fly(P, flat, v, false, () => setPeel(null));
     } else {
       const k = (P.y + H) / (2 * H);
+      blip("page");
       if (k + project(v.y) / (2 * H) > 0.4) fly(P, flat, v, thrown, () => setPeel(null));
       else
         fly(P, away, v, false, () => {
@@ -319,6 +326,7 @@ export function LatestPostWidget() {
   const onKeyDown = (e: React.KeyboardEvent<HTMLAnchorElement>) => {
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
     e.preventDefault();
+    blip("page");
     setPeel(null);
     setTop((i) => i + (e.key === "ArrowRight" ? 1 : -1));
   };

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { GhostPost } from "@/lib/ghost";
 import { useI18n } from "@/i18n/client";
+import { spun, useSound } from "@/lib/sound";
 import { afterTransition, viewTransitionActive } from "@/hooks/useSettled";
 import { loadSky, publishedMs, skyModule, type Dome } from "./sky";
 import { realImage } from "./util";
@@ -218,6 +219,7 @@ class SkyPicture {
 }
 
 export function Plate({ post }: { post: GhostPost }) {
+  const { blip } = useSound();
   const { t } = useI18n();
   // (a key, so a dictionary rebuilt with the same words doesn't repaint)
   const planets = t.writing.planets.join("|");
@@ -269,6 +271,8 @@ export function Plate({ post }: { post: GhostPost }) {
       window.clearTimeout(hold);
       hold = window.setTimeout(() => {
         swallow = true;
+        // a fingertip held on the glass: it rings, and the stars are named
+        blip("glass");
         pic.names(true);
       }, HOLD_MS);
     };
@@ -297,7 +301,11 @@ export function Plate({ post }: { post: GhostPost }) {
     const up = (e: PointerEvent) => {
       if (!drag || e.pointerId !== drag.id) return;
       // (a pause before letting go leaves it still)
-      if (drag.moved && e.type === "pointerup") pic.release(e.timeStamp - drag.t < 80 ? drag.v : 0);
+      if (drag.moved && e.type === "pointerup") {
+        const v = e.timeStamp - drag.t < 80 ? drag.v : 0;
+        if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) spun(blip, v, 0.8);
+        pic.release(v);
+      }
       drag = null;
       window.clearTimeout(hold);
       delete frame.dataset.drag;
@@ -339,7 +347,7 @@ export function Plate({ post }: { post: GhostPost }) {
       pic.destroy();
       pictureRef.current = null;
     };
-  }, [planets]);
+  }, [planets, blip]);
 
   const ms = publishedMs(post);
   useEffect(() => {

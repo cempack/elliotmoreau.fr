@@ -100,7 +100,7 @@ export function WritingApp() {
           <p className="app-writing-lede">{w.lede}</p>
         </header>
 
-        <Link href={href(lead)} onClick={() => blip("page")} className="app-writing-lead" aria-label={fmt(w.readLabel, { title: lead.title })}>
+        <Link href={href(lead)} onClick={() => blip("glass")} className="app-writing-lead" aria-label={fmt(w.readLabel, { title: lead.title })}>
           <span className="app-writing-lead-plate">
             <Plate post={lead} />
           </span>

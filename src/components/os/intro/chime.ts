@@ -9,7 +9,7 @@
  * an activation event, so a context born suspended waits for the release
  * (pointerup / touchend / click) to resume, then plays.
  */
-import { ambientAudio } from "@/lib/sfx";
+import { ambientAudio } from "@/lib/sfx/gate";
 
 const NOTES = [261.63, 329.63, 392.0, 493.88, 587.33];
 const ROOT = 130.81;

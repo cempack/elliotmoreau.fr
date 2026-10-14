@@ -275,7 +275,8 @@ export function MapSheet({
     // in view), don't fly back up to the card on every step
     const a = document.activeElement;
     if (a instanceof HTMLElement && scrollRef.current?.contains(a) && a.matches(":focus-visible")) return;
-    if (detentRef.current !== open) goTo(open);
+    // (the pick was heard already, as a pin)
+    if (detentRef.current !== open) goTo(open, 0, true);
     else scrollRef.current?.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
   }, [place.id, goTo, open, reduced]);
 
