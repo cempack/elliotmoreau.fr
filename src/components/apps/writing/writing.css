@@ -71,7 +71,7 @@
   display: block;
 }
 .app-writing-lead-plate .app-writing-plate {
-  aspect-ratio: 5 / 2;
+  aspect-ratio: 2 / 1;
   margin: 0;
   border-radius: 0;
 }
@@ -380,9 +380,9 @@
   display: none;
 }
 
-/* the plate: the sky the post went out under, its foot dithered into the
-   glass. Drag it to look round (a finger turns it along the horizon and
-   leaves up and down to the page); hold it to name the stars */
+/* the plate: the post's dome, Saint-Sernin's quarter under the sky it went
+   out under. Drag it to spin it (a finger spins it side to side and leaves
+   up and down to the page); hold it to name the stars */
 .app-writing-plate {
   position: relative;
   aspect-ratio: 2 / 1;
@@ -430,8 +430,6 @@
   align-items: center;
   gap: 0.5rem 0.625rem;
   color: var(--color-label-2);
-  /* it sits on the plate's dithered foot */
-  text-shadow: 0 1px 2px color-mix(in srgb, var(--color-ink-950) 70%, transparent);
   font-size: var(--text-footnote);
   line-height: 1.3;
 }
@@ -836,7 +834,7 @@
 .app-writing-article-head {
   position: relative;
   max-width: 48rem;
-  margin-top: calc(-1 * clamp(2.25rem, 7.5cqi, 4.75rem));
+  margin-top: 0.5rem;
 }
 .app-writing-article-by {
   display: flex;
@@ -1244,7 +1242,7 @@
   }
   .app-writing-sky-frame {
     height: auto;
-    aspect-ratio: 4 / 5;
+    aspect-ratio: 5 / 4;
     border-radius: 0.75rem;
     box-shadow:
       inset 0 0 0 1px var(--hairline),

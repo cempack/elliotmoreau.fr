@@ -1,12 +1,12 @@
 /**
  * The Blog's skies, loaded on first use: the renderer and its star
- * catalogue (about 35 KB compressed) stay out of the pages that never show
+ * catalogue (about 45 KB compressed) stay out of the pages that never show
  * a post. `skyModule()` is the module once it has arrived, so a picture
  * painted before can come back without waiting.
  */
 
 export type SkyModule = typeof import("./render");
-export type { Exposure, Sky } from "./render";
+export type { Dome, Exposure, Sky } from "./render";
 
 let ready: SkyModule | null = null;
 let pending: Promise<SkyModule> | null = null;

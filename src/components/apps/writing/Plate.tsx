@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { GhostPost } from "@/lib/ghost";
 import { useI18n } from "@/i18n/client";
 import { afterTransition, viewTransitionActive } from "@/hooks/useSettled";
-import { loadSky, publishedMs, skyModule, type Sky } from "./sky";
+import { loadSky, publishedMs, skyModule, type Dome } from "./sky";
 import { realImage } from "./util";
 
 /** CSS px per cell: the globe's grid */
@@ -12,7 +12,7 @@ const CELL = 3;
 /** a press held this long (still) names the stars */
 const HOLD_MS = 260;
 
-/** skies already painted this visit, by post and grid: reopening the Blog
+/** domes already painted this visit, by post and grid: reopening the Blog
     puts its picture up at once instead of painting it again */
 const painted = new Map<string, Uint32Array>();
 function remember(key: string, px: Uint32Array) {
@@ -23,16 +23,16 @@ function remember(key: string, px: Uint32Array) {
 
 /**
  * Keeps one canvas sized to its frame (whole 3 px cells) and paints the
- * post's sky into it: the real one over Toulouse at the minute it went
- * out, with the amber date stamp and a dithered foot for the title to
- * sit on. Dragging turns the camera along the horizon (and up, with a
- * mouse); holding it draws the constellations in. A drag on a link
- * doesn't follow the link.
+ * post's dome into it: Saint-Sernin's quarter under the real sky over
+ * Toulouse at the minute it went out, the date on its plinth. Dragging
+ * spins it (it carries on a little when let go, as the globe does);
+ * holding it draws the constellations in. A drag on a link doesn't follow
+ * the link.
  */
 class SkyPicture {
   W = 0;
   H = 0;
-  sky: Sky | null = null;
+  dome: Dome | null = null;
   ms = 0;
   face = 0;
   key = "";
@@ -43,6 +43,9 @@ class SkyPicture {
   private ctx: CanvasRenderingContext2D | null;
   private later: (() => void) | null = null;
   private raf = 0;
+  /** the spin left when let go, cells a millisecond */
+  private v = 0;
+  private fling = 0;
   /* the constellation names: where they are, where they're going */
   private want = 0;
   private from = 0;
@@ -73,7 +76,7 @@ class SkyPicture {
     this.canvas.style.height = `${H * CELL}px`;
     this.img = new ImageData(W, H);
     this.out = new Uint32Array(this.img.data.buffer);
-    this.sky = null;
+    this.dome = null;
     this.turned = false;
     return true;
   }
@@ -83,7 +86,7 @@ class SkyPicture {
     this.face = face;
     this.key = key;
     this.turned = false;
-    this.sky?.set(ms, face);
+    this.dome?.set(ms, face);
   }
 
   private get cacheKey() {
@@ -104,7 +107,7 @@ class SkyPicture {
       loadSky().then(() => this.paintNow(), () => {});
       return;
     }
-    // a sky is a few tens of thousands of cells: painted once the window is in, not in its opening frames
+    // a dome is a few tens of thousands of cells: painted once the window is in, not in its opening frames
     if (viewTransitionActive()) {
       this.later ??= afterTransition(() => {
         this.later = null;
@@ -112,24 +115,23 @@ class SkyPicture {
       });
       return;
     }
-    const sky = this.ensure();
-    if (!sky) return;
-    sky.paint(this.out);
-    if (!this.turned && sky.names === 0) remember(this.cacheKey, this.out);
+    const dome = this.ensure();
+    if (!dome) return;
+    dome.paint(this.out);
+    if (!this.turned && dome.names === 0) remember(this.cacheKey, this.out);
     this.put();
   }
 
-  /** the sky for this size and post (a picture put up from memory has none until it's touched) */
+  /** the dome for this size and post (a picture put up from memory has none until it's touched) */
   ensure() {
     const mod = skyModule();
     if (!mod || !this.W || !this.ms) return null;
-    if (!this.sky) {
-      const fade = Math.max(6, Math.round(this.H * 0.22));
-      this.sky = new mod.Sky({ fov: { h: 55 }, bottom: -2.5, moonR: 6, sunR: 3.5, stamp: true, offset: 14, fade, planets: this.planets });
-      this.sky.size(this.W, this.H);
-      this.sky.set(this.ms, this.face);
+    if (!this.dome) {
+      this.dome = new mod.Dome({ stamp: true, planets: this.planets });
+      this.dome.size(this.W, this.H);
+      this.dome.set(this.ms, this.face);
     }
-    return this.sky;
+    return this.dome;
   }
 
   private put() {
@@ -138,18 +140,40 @@ class SkyPicture {
     this.canvas.dataset.on = "";
   }
 
-  /** turn the camera by a number of cells across and up */
-  turn(dx: number, dy: number) {
-    const sky = this.sky;
-    if (!sky || !this.out) return;
-    const k = sky.degPerCell;
-    sky.look(-dx * k, dy * k);
+  /** spin it by a number of cells at the rim */
+  turn(dx: number) {
+    const dome = this.dome;
+    if (!dome || !this.out) return;
+    dome.turn(dx);
     this.turned = true;
     cancelAnimationFrame(this.raf);
     this.raf = requestAnimationFrame(() => {
-      if (this.out) sky.paint(this.out);
+      if (this.out) dome.paint(this.out);
       this.put();
     });
+  }
+
+  /** let go: it keeps spinning a moment, slowing (not with reduced motion) */
+  release(v: number) {
+    cancelAnimationFrame(this.fling);
+    if (this.reduced() || Math.abs(v) < 0.02) return;
+    this.v = v;
+    let last = performance.now();
+    const step = (now: number) => {
+      const dome = this.dome;
+      const dt = Math.min(48, now - last);
+      last = now;
+      this.v *= Math.exp(-dt / 260);
+      if (!dome || !this.out || Math.abs(this.v) < 0.01) return;
+      dome.turn(this.v * dt);
+      dome.paint(this.out);
+      this.put();
+      this.fling = requestAnimationFrame(step);
+    };
+    this.fling = requestAnimationFrame(step);
+  }
+  stop() {
+    cancelAnimationFrame(this.fling);
   }
 
   /** draw the constellations in (quickly) or out (a moment after letting go, slowly) */
@@ -158,23 +182,23 @@ class SkyPicture {
     window.clearTimeout(this.hideT);
     if (target === this.want) return;
     const go = () => {
-      const sky = this.sky;
-      if (!sky || !this.out) return;
+      const dome = this.dome;
+      if (!dome || !this.out) return;
       this.want = target;
       cancelAnimationFrame(this.nraf);
       if (this.reduced()) {
-        sky.names = target;
-        sky.compose(this.out);
+        dome.names = target;
+        dome.compose(this.out);
         this.put();
         return;
       }
-      this.from = sky.names;
+      this.from = dome.names;
       this.t0 = performance.now();
       this.dur = on ? 220 : 520;
       const step = (now: number) => {
         const k = Math.min(1, (now - this.t0) / this.dur);
-        sky.names = this.from + (target - this.from) * k;
-        if (this.out) sky.compose(this.out);
+        dome.names = this.from + (target - this.from) * k;
+        if (this.out) dome.compose(this.out);
         this.put();
         if (k < 1) this.nraf = requestAnimationFrame(step);
       };
@@ -186,6 +210,7 @@ class SkyPicture {
 
   destroy() {
     cancelAnimationFrame(this.raf);
+    cancelAnimationFrame(this.fling);
     cancelAnimationFrame(this.nraf);
     window.clearTimeout(this.hideT);
     this.later?.();
@@ -231,15 +256,16 @@ export function Plate({ post }: { post: GhostPost }) {
     });
     ro.observe(frame);
 
-    /* drag to turn, hold to name the stars */
-    let drag: { id: number; x: number; y: number; x0: number; y0: number; touch: boolean; moved: boolean } | null = null;
+    /* drag to spin, hold to name the stars */
+    let drag: { id: number; x: number; y: number; x0: number; y0: number; t: number; v: number; touch: boolean; moved: boolean } | null = null;
     let hold = 0;
     /** the press that just ended turned the sky or named the stars: it isn't a click */
     let swallow = false;
     const down = (e: PointerEvent) => {
       if (e.button !== 0 || !pic.ensure()) return;
-      drag = { id: e.pointerId, x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, touch: e.pointerType !== "mouse", moved: false };
+      drag = { id: e.pointerId, x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, t: e.timeStamp, v: 0, touch: e.pointerType !== "mouse", moved: false };
       swallow = false;
+      pic.stop();
       window.clearTimeout(hold);
       hold = window.setTimeout(() => {
         swallow = true;
@@ -261,14 +287,17 @@ export function Plate({ post }: { post: GhostPost }) {
         pic.names(true);
       }
       const dx = (e.clientX - drag.x) / CELL;
-      // a finger only turns along the horizon: up and down is the page's scroll
-      const dy = drag.touch ? 0 : (e.clientY - drag.y) / CELL;
+      const dt = Math.max(1, e.timeStamp - drag.t);
+      drag.v = drag.v * 0.4 + (dx / dt) * 0.6;
       drag.x = e.clientX;
       drag.y = e.clientY;
-      pic.turn(dx, dy);
+      drag.t = e.timeStamp;
+      pic.turn(dx);
     };
     const up = (e: PointerEvent) => {
       if (!drag || e.pointerId !== drag.id) return;
+      // (a pause before letting go leaves it still)
+      if (drag.moved && e.type === "pointerup") pic.release(e.timeStamp - drag.t < 80 ? drag.v : 0);
       drag = null;
       window.clearTimeout(hold);
       delete frame.dataset.drag;

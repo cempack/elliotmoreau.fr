@@ -13,10 +13,11 @@ function remember(key: string, img: ImageData) {
 }
 
 /**
- * A post's sky in miniature: the same sky its picture shows (Toulouse at
+ * A post's dome in miniature: the same one its picture shows (Toulouse at
  * the minute it went out, the same first look), one canvas cell per
  * pixel, painted once the window has settled. It names nothing, so it
- * needs no words (the palette and Now show it outside the Blog).
+ * needs no words (the palette and Now show it outside the Blog). Small
+ * ones leave the turntable out, so the glass is bigger.
  */
 export function PlateThumb({
   post,
@@ -54,12 +55,11 @@ export function PlateThumb({
     loadSky().then(
       (mod) => {
         if (!live) return;
-        const big = W >= 60;
-        const sky = new mod.Sky({ fov: { h: big ? 50 : 38 }, bottom: -2, moonR: big ? 4 : 3, sunR: big ? 3 : 2.5, offset: 6, horizon: true });
-        sky.size(W, H);
-        sky.set(ms, mod.faceOf(slug, ms));
+        const dome = new mod.Dome({ table: W >= 60, fill: W >= 60 ? 0.9 : 0.8 });
+        dome.size(W, H);
+        dome.set(ms, mod.faceOf(slug, ms));
         const img = new ImageData(W, H);
-        sky.paint(new Uint32Array(img.data.buffer));
+        dome.paint(new Uint32Array(img.data.buffer));
         remember(key, img);
         put(img);
       },
