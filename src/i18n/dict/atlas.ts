@@ -42,6 +42,16 @@ const en = {
     facing: "Facing {deg}° {dir}",
     routes: "{n} routes out",
   },
+  /** the relief block in the place card: the place's land, lit by the sun where it is */
+  relief: {
+    label: "{place} in relief, its real heights stretched so they show, lit by the sun there; highest ground {m} m",
+    time: "{time} there",
+    sunUp: "sun {deg}° up",
+    horizon: "sun on the horizon",
+    night: "night, lights on",
+    high: "highest ground {m} m",
+    offline: "relief unavailable",
+  },
   stats: {
     label: "Travel so far",
     countries: "Countries",
@@ -125,6 +135,15 @@ const fr: typeof en = {
     peak: "{peak}, {m} m, {deg}° {dir}",
     facing: "Cap au {deg}° {dir}",
     routes: "{n} liaisons",
+  },
+  relief: {
+    label: "{place} en relief, ses vraies hauteurs accentuées, éclairé par le soleil de là-bas ; point culminant {m} m",
+    time: "{time} là-bas",
+    sunUp: "soleil à {deg}°",
+    horizon: "soleil à l’horizon",
+    night: "nuit, lumières allumées",
+    high: "point culminant {m} m",
+    offline: "relief indisponible",
   },
   stats: {
     label: "Mes voyages en chiffres",

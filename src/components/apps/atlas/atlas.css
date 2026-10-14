@@ -297,6 +297,7 @@
   grid-template-areas:
     "meta stamp"
     "name name"
+    "relief relief"
     "view view"
     "body body"
     "nav nav";
@@ -1309,6 +1310,7 @@
   grid-template-areas:
     "stamp name"
     "stamp meta"
+    "relief relief"
     "view view"
     "body body"
     "nav nav";
@@ -1465,4 +1467,58 @@
   .app-atlas-stats-list {
     background: var(--color-ink-900);
   }
+}
+
+/* ───────────────────────────── relief ─────────────────────────────
+   the place's land as a contour model standing in a puck of sea (relief/scene.ts):
+   a canvas of whole 3px cells, scaled crisp, the hour and the light under it */
+.app-atlas-card-relief {
+  grid-area: relief;
+  min-width: 0;
+}
+.app-atlas-relief {
+  margin: 1.125rem 0 0;
+  padding: 0.875rem 0 0;
+  border-top: 1px solid var(--hairline);
+}
+.app-atlas-relief-stage {
+  position: relative;
+  aspect-ratio: 1 / 0.6;
+  overflow: hidden;
+  cursor: var(--cursor-grab, grab);
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.app-atlas-relief-stage:active {
+  cursor: var(--cursor-grabbing, grabbing);
+}
+.app-atlas-relief-canvas {
+  position: absolute;
+  inset: 0;
+  image-rendering: pixelated;
+}
+.app-atlas-relief-readout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  margin-top: 0.5rem;
+  color: var(--color-label-3);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.3;
+}
+.app-atlas-relief-readout b {
+  color: var(--color-label);
+  font-weight: 500;
+}
+.app-atlas-relief-readout [data-tone="day"] {
+  color: var(--color-ember);
+}
+.app-atlas-relief-readout [data-tone="night"] {
+  color: var(--color-ion);
+}
+.app-atlas-card[data-compact] .app-atlas-relief {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
 }

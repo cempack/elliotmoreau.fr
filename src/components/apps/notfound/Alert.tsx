@@ -1,19 +1,20 @@
 "use client";
 
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { animate, m, useMotionValue, useTransform, type MotionValue } from "motion/react";
 import { useI18n } from "@/i18n/client";
 import { Glass } from "@/components/os/Glass";
 import { spring } from "@/lib/motion";
 import { PressAnchor, PressButton, PressLink } from "@/components/ui/Pressable";
-import { BrokenIcon } from "./BrokenIcon";
+import type { IconId } from "@/components/os/icons";
+import { Shards } from "./shards/Shards";
 import { DragHint } from "./DragHint";
 import { Zsh, type Answer } from "./Zsh";
 import type { Suggestion } from "./suggest";
 import type { useTether } from "./useTether";
 
 /**
- * The macOS-style alert: a broken pixel app icon, the bold "can't be
+ * The macOS-style alert: the app in pieces (shards/), the bold "can't be
  * opened" line, the informative text, a zsh transcript, and its buttons
  * (two side by side; three stacked when there's something to suggest,
  * the default one in lime). The whole sheet of glass is the drag handle
@@ -47,6 +48,7 @@ export function Alert({
   onAnswer,
   onSearch,
   onDesktop,
+  onRebuilt,
   countdown,
 }: {
   tether: ReturnType<typeof useTether>;
@@ -69,6 +71,8 @@ export function Alert({
   onSearch: () => void;
   /** the Desktop buttons: the alert flies into the Dock, then navigates */
   onDesktop: () => void;
+  /** the pieces were put back together: go where they lead */
+  onRebuilt: () => void;
   /** a near-certain typo, going by itself: seconds left, and Stay */
   countdown?: { left: number; total: number; onStay: () => void } | null;
 }) {
@@ -76,7 +80,11 @@ export function Alert({
   const s = t.notfound;
   const [before, after = ""] = s.title.split("{path}");
   const offering = suggestion != null && answer !== "n" && answer !== "a";
-  // the fragments feel every push the alert gets, shakes included
+  // the pieces make the tile of where you'd go: the suggestion, else the Desktop
+  const icon: IconId = offering && suggestion ? suggestion.app : "home";
+  // it arrives whole and breaks once (a typo that's going by itself builds instead)
+  const [broken, setBroken] = useState(false);
+  // the loose pieces feel every push the alert gets, shakes included
   const ox = useTransform(() => tether.x.get() + shake.get());
 
   // the sheet's height follows its content on a spring (answers change the
@@ -153,9 +161,18 @@ export function Alert({
 
         <m.div className="app-nf-alert-sizer" style={{ height }}>
           <div ref={bodyRef} className="app-nf-alert-body">
-            <span className="app-nf-grip">
-              <BrokenIcon size={64} ox={ox} oy={tether.y} loose={!reduced} />
-            </span>
+            <Shards
+              key={icon}
+              icon={icon}
+              intro={!broken && !suggestion?.certain}
+              auto={countdown ? countdown.total : null}
+              reduced={reduced}
+              ox={ox}
+              oy={tether.y}
+              hint={s.rebuild}
+              onBroken={() => setBroken(true)}
+              onDone={onRebuilt}
+            />
 
             <h1 id="app-nf-title" className="app-nf-title">
               {before}

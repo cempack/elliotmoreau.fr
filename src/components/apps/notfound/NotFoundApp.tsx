@@ -17,6 +17,7 @@ import { Matrix404 } from "./Matrix404";
 import { Alert } from "./Alert";
 import { NetworkMap } from "./NetworkMap";
 import { useTether } from "./useTether";
+import { introOver } from "./intro";
 import { commandFor, middleTruncate, suggest } from "./suggest";
 import type { Answer } from "./Zsh";
 
@@ -39,10 +40,6 @@ import type { Answer } from "./Zsh";
  * the document arrives finished, with its own title and pre-paint
  * scripts), and by [lang]/not-found.tsx for an in-app notFound().
  */
-
-/** the boot is over (it never shows under reduced motion) */
-const introOver = () =>
-  document.documentElement.dataset.intro === "done" || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const NUDGED = "em-nf-nudged";
 /** how long a near-certain typo waits before it goes */
@@ -369,6 +366,11 @@ export function NotFoundApp({ standalone = false }: {
             onAnswer={onAnswer}
             onSearch={palette.open}
             onDesktop={dismiss}
+            onRebuilt={() => {
+              blip("snap");
+              if (offering) openSuggestion();
+              else dismiss();
+            }}
             countdown={counting ? { left, total: AUTO_MS, onStay: () => (setStayed(true), blip("select")) } : null}
           />
         </div>
