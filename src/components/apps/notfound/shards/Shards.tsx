@@ -12,7 +12,7 @@ import { makeShards, type Shards as Scene } from "./scene";
 /**
  * The app that can't be opened, in pieces (scene.ts): the Dock tile of
  * the page you most likely meant (the Desktop when there's no guess),
- * come apart into cubes. Drag right across it and they fly home and
+ * cracked into shards. Drag right across it and they fly home and
  * light up; let go near the end and it snaps together and opens, short
  * of it and it drifts apart again. It arrives whole and breaks once; a
  * near-certain typo starts in pieces and builds itself while the alert
