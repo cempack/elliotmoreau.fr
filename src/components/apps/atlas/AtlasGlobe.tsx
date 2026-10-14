@@ -3,7 +3,8 @@
 import { useEffect, useRef } from "react";
 import type { MotionValue } from "motion/react";
 import type { PlaceRow } from "@/lib/content";
-import { angleBetween, focusFor, slerp, toVec, worldGrid, type Vec3 } from "./geo";
+import { angleBetween, focusFor, slerp, toVec, type Vec3 } from "./geo";
+import { worldGrid } from "./land";
 
 /**
  * The Atlas globe: a dithered pixel planet you can throw.
@@ -175,6 +176,7 @@ export function AtlasGlobe({
 }: AtlasGlobeProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const baseRef = useRef<HTMLCanvasElement>(null);
   const tipRef = useRef<HTMLSpanElement>(null);
   // live props for the imperative loop (synced after commit)
   const live = useRef({ places, home, selectedId, onSelect, ambient, margin, hint, onCamera });
@@ -188,12 +190,17 @@ export function AtlasGlobe({
   useEffect(() => {
     const wrap = wrapRef.current;
     const cvs = canvasRef.current;
+    const base = baseRef.current;
     const tip = tipRef.current;
-    if (!wrap || !cvs || !tip) return;
+    if (!wrap || !cvs || !base || !tip) return;
+    const baseCvs: HTMLCanvasElement = base;
     const tipEl: HTMLSpanElement = tip;
     const ctx0 = cvs.getContext("2d");
     if (!ctx0) return;
     const ctxMain: CanvasRenderingContext2D = ctx0;
+    const ctxB = baseCvs.getContext("2d");
+    if (!ctxB) return;
+    const ctxBase: CanvasRenderingContext2D = ctxB;
     let ctx: CanvasRenderingContext2D = ctx0;
     const mqReduced = window.matchMedia("(prefers-reduced-motion: reduce)");
     let reduced = mqReduced.matches;
@@ -554,8 +561,9 @@ export function AtlasGlobe({
       dpr = Math.min(window.devicePixelRatio || 1, 2);
       W = w;
       H = h;
-      cvs.width = Math.round(w * dpr);
-      cvs.height = Math.round(h * dpr);
+      cvs.width = baseCvs.width = Math.round(w * dpr);
+      cvs.height = baseCvs.height = Math.round(h * dpr);
+      statKey = "";
       R0 = Math.max(40, Math.floor(Math.min(w, h) / 2 - live.current.margin));
       cx = Math.round(w / 2);
       cy0 = Math.round(h / 2);
@@ -720,8 +728,10 @@ export function AtlasGlobe({
       }
     }
 
-    // the planet and the settled routes in a cached layer; flights and markers on top each frame
-    let stat: HTMLCanvasElement | null = null;
+    // the planet and the settled routes on the canvas underneath, redrawn
+    // only when they change; flights and markers on the live canvas over it
+    // each frame, so an ambient frame clears and draws a few dots, not the
+    // whole planet
     let statKey = "";
     function paintArcs(homeSel: boolean, sel: string, withFlights: boolean, staticPart: boolean, amb: boolean) {
       for (const a of arcs) {
@@ -795,36 +805,23 @@ export function AtlasGlobe({
       const skey = settled ? `${cam.lat}|${cam.lon}|${zoomShown}|${R}|${RL}|${cx}|${cy}|${W}|${H}|${dpr}|${sel}|${amb ? flick : -1}|${now - sunAt > 10_000 ? "x" : sunAt}|${geoVer}|${shownFor}` : "";
       if (skey) {
         if (skey !== statKey) {
-          stat ??= document.createElement("canvas");
-          if (stat.width !== ctxMain.canvas.width || stat.height !== ctxMain.canvas.height) {
-            stat.width = ctxMain.canvas.width;
-            stat.height = ctxMain.canvas.height;
-          }
-          const sc = stat.getContext("2d");
-          if (sc) {
-            ctx = sc;
-            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-            ctx.imageSmoothingEnabled = false;
-            ctx.clearRect(0, 0, W, H);
-            paintDeco();
-            paintPlanet(amb);
-            if (zoomedIn) {
-              ctx.save();
-              ctx.beginPath();
-              ctx.arc(cx, cy, RL + 1, 0, Math.PI * 2);
-              ctx.clip();
-            }
-            paintArcs(homeSel, sel, false, true, amb);
-            ctx.globalAlpha = 1;
-            if (zoomedIn) ctx.restore();
-            ctx = ctxMain;
-            statKey = skey;
-          }
-        }
-        if (stat && statKey === skey) {
-          ctx.setTransform(1, 0, 0, 1, 0, 0);
-          ctx.drawImage(stat, 0, 0);
+          ctx = ctxBase;
           ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          ctx.imageSmoothingEnabled = false;
+          ctx.clearRect(0, 0, W, H);
+          paintDeco();
+          paintPlanet(amb);
+          if (zoomedIn) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(cx, cy, RL + 1, 0, Math.PI * 2);
+            ctx.clip();
+          }
+          paintArcs(homeSel, sel, false, true, amb);
+          ctx.globalAlpha = 1;
+          if (zoomedIn) ctx.restore();
+          ctx = ctxMain;
+          statKey = skey;
         }
         if (zoomedIn) {
           ctx.save();
@@ -834,6 +831,12 @@ export function AtlasGlobe({
         }
         paintArcs(homeSel, sel, true, false, amb);
       } else {
+        // moving: everything on the live canvas, nothing under it
+        if (statKey) {
+          ctxBase.setTransform(1, 0, 0, 1, 0, 0);
+          ctxBase.clearRect(0, 0, baseCvs.width, baseCvs.height);
+          statKey = "";
+        }
         paintDeco();
         paintPlanet(amb);
         if (zoomedIn) {
@@ -1236,8 +1239,12 @@ export function AtlasGlobe({
     };
     mqReduced.addEventListener("change", onReduced);
     // a restored context is blank: paint it again
-    const onRestored = () => wake();
+    const onRestored = () => {
+      statKey = "";
+      wake();
+    };
     cvs.addEventListener("contextrestored", onRestored);
+    baseCvs.addEventListener("contextrestored", onRestored);
     // a sheet moving over the globe: redraw at the new size
     const offLift = lift?.on("change", wake);
     const offRoom = liftRoom?.on("change", wake);
@@ -1257,6 +1264,7 @@ export function AtlasGlobe({
       document.removeEventListener("visibilitychange", onVis);
       mqReduced.removeEventListener("change", onReduced);
       cvs.removeEventListener("contextrestored", onRestored);
+      baseCvs.removeEventListener("contextrestored", onRestored);
       offLift?.();
       offRoom?.();
       cvs.removeEventListener("pointerdown", onDown);
@@ -1291,6 +1299,7 @@ export function AtlasGlobe({
       // the very markers you aim at (the callout names them instead)
      
     >
+      <canvas ref={baseRef} className="app-atlas-globe-canvas app-atlas-globe-base" aria-hidden />
       <canvas ref={canvasRef} className="app-atlas-globe-canvas" aria-hidden />
       <span ref={tipRef} className="app-atlas-globe-tip" aria-hidden />
     </div>

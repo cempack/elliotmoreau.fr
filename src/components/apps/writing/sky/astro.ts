@@ -21,7 +21,7 @@ export const R = Math.PI / 180;
 const LAT = TOULOUSE.lat;
 const LON = TOULOUSE.lon;
 
-/* ───── the Atlas inks (src/components/apps/atlas/planet.ts) ───── */
+/* ───── the Atlas inks (src/components/apps/atlas/ink.ts) ───── */
 export const INK = {
   oceanDeep: [10, 13, 38],
   ocean: [15, 20, 55],

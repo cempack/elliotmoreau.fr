@@ -11,6 +11,7 @@ const warmed = new Set<string>();
 /** the shell's lazy pieces, warmed after the apps (their first open used to wait for them) */
 const CHUNKS: [string, () => Promise<unknown>][] = [
   ["spotlight", () => import("./SpotlightDialog")],
+  ["overview", () => import("./WindowsOverviewLayer")],
   ["control", () => import("./menubar/ControlCenter")],
   ["notifications", () => import("./menubar/Notifications")],
   ["music", () => import("./menubar/Music")],

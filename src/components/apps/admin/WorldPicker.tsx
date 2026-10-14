@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import type { PlaceRow } from "@/lib/content";
-import { isLand } from "@/components/apps/atlas/geo";
+import { isLand } from "@/components/apps/atlas/land";
 
 /**
  * Click the world to place a pin. Two pixel maps from the Atlas's land

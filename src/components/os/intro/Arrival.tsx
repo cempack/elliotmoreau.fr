@@ -5,7 +5,7 @@ import { useI18n } from "@/i18n/client";
 import { SKY_PHASES, type SkyPhase } from "../sky";
 import { useWeather } from "../weather";
 import { pinnedMs } from "../wallpaper/sunClock";
-import { T, createFlight } from "./flight";
+import { T } from "./timeline";
 
 /** the wallpaper's art grid (Wallpaper.tsx, gridFor): the flight paints the same pixels, so its last frame lands on them */
 function artGrid(w: number, h: number) {
@@ -125,26 +125,32 @@ export function Arrival({ skipped, onLand, onGone }: { skipped: boolean; onLand:
     }
 
     // otherwise, here: the same flight, frame by frame
+    // (the flight's code is only fetched for this: the worker has its own copy)
     let raf = 0;
+    let gone = false;
     if (!worker) {
       const ctx = cv.getContext("2d");
-      if (ctx) {
-        const flight = createFlight({ W: g.W, H: g.H, now, near });
-        const img = ctx.createImageData(g.W, g.H);
-        const px = new Uint32Array(img.data.buffer);
-        start = clock();
-        const tick = () => {
-          const t = elapsed();
-          flight.draw(t, px);
-          ctx.putImageData(img, 0, 0);
-          if (t >= T.hand) land();
-          if (t < T.end + 300) raf = requestAnimationFrame(tick);
-        };
-        raf = requestAnimationFrame(tick);
-      } else land();
+      if (ctx)
+        import("./flight").then(({ createFlight }) => {
+          if (gone) return;
+          const flight = createFlight({ W: g.W, H: g.H, now, near });
+          const img = ctx.createImageData(g.W, g.H);
+          const px = new Uint32Array(img.data.buffer);
+          start = clock();
+          const tick = () => {
+            const t = elapsed();
+            flight.draw(t, px);
+            ctx.putImageData(img, 0, 0);
+            if (t >= T.hand) land();
+            if (t < T.end + 300) raf = requestAnimationFrame(tick);
+          };
+          raf = requestAnimationFrame(tick);
+        }, land);
+      else land();
     }
 
     return () => {
+      gone = true;
       window.clearTimeout(watchdog);
       cancelAnimationFrame(raf);
       if (worker) {

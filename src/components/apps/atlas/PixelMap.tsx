@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import type { PlaceRow } from "@/lib/content";
 import { usePlaces } from "@/components/os/SiteData";
 import { useSettled } from "@/hooks/useSettled";
-import { tileFor } from "./geo";
+import { tileFor } from "./land";
 import { TILE_H, TILE_W } from "./landmass";
 
 type RGB = [number, number, number];
