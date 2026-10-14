@@ -1,13 +1,14 @@
 /**
  * The Blog's skies: the sky over Toulouse lines up with the site's own sun,
  * the Pole Star stands at Toulouse's latitude, a daytime post's exposure
- * opens at sunset, and a picture paints with its foot dithered away.
+ * opens at sunset, a post's dome paints with its sky inside the glass and
+ * its date on the plinth, and reading draws trails on the band and the dome.
  *
  *   npx tsx --test scripts/test/blog-sky.test.ts
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { Exposure, Sky, exposureStart, faceOf, skyAt } from "../../src/components/apps/writing/sky/render";
+import { Dome, Exposure, Sky, exposureStart, faceOf, skyAt } from "../../src/components/apps/writing/sky/render";
 import { POLARIS } from "../../src/components/apps/writing/sky/catalog";
 import { TOULOUSE, sunAt } from "../../src/lib/sun";
 
@@ -48,51 +49,68 @@ test("a daytime post's exposure opens at that evening's sunset; a night post's a
   assert.equal(exposureStart(night), night);
 });
 
-test("a picture paints, faces the same way every time, and its foot dithers into the glass", () => {
+test("a dome paints: the sky on the back of the glass, the town in front, the date on the plinth", () => {
   const ms = at("2026-10-07T23:41:00+02:00");
   const face = faceOf("ricing-a-laptop", ms);
   assert.equal(face, faceOf("ricing-a-laptop", ms));
-  const sky = new Sky({ fov: { h: 55 }, bottom: -2.5, moonR: 6, sunR: 3.5, stamp: true, offset: 14, fade: 12 });
-  sky.size(200, 80);
-  sky.set(ms, face);
-  const out = new Uint32Array(200 * 80);
-  sky.paint(out);
-  const row = (y: number) => out.subarray(y * 200, (y + 1) * 200);
-  // the sky is painted, opaque, up top
-  assert.ok(row(2).every((px) => px >>> 24 === 255));
-  // the last row is mostly glass
-  assert.ok(row(79).filter((px) => px === 0).length > 150);
-  // the amber stamp sits above the foot, on the right
+  const W = 220;
+  const H = 110;
+  const dome = new Dome({ stamp: true });
+  dome.size(W, H);
+  dome.set(ms, face);
+  const out = new Uint32Array(W * H);
+  dome.paint(out);
+  // it stands on the card: the corners are clear
+  assert.equal(out[0], 0);
+  assert.equal(out[W * H - 1], 0);
+  // the back of the glass shows a good stretch of sky, and the town stands in front of some of it
+  const sky = dome.mask.reduce((n, m) => n + (m ? 0 : 1), 0);
+  assert.ok(sky > 1500, `${sky} cells of sky`);
+  assert.ok(sky < dome.scale * dome.scale * Math.PI * 0.5, "the town hides part of it");
+  // the amber date on the plinth, under the middle
   const amber = 0xff6bb8ff;
-  assert.ok(out.slice(60 * 200, 68 * 200).some((px, i) => px === amber && i % 200 > 140));
+  let stamp = 0;
+  for (let y = Math.round(H * 0.6); y < H; y++) for (let x = Math.round(W * 0.3); x < W * 0.7; x++) if (out[y * W + x] === amber) stamp++;
+  assert.ok(stamp > 30, `${stamp} amber cells`);
+  // spinning it shows another part of the sky
+  const before = out.slice();
+  dome.turn(40);
+  dome.paint(out);
+  assert.ok(out.some((px, i) => px !== before[i]));
 });
 
-test("the long exposure draws trails as the reading goes on", () => {
+test("the long exposure draws trails as the reading goes on, on the band and on the dome", () => {
   const ms = at("2026-10-07T23:41:00+02:00");
-  const sky = new Sky({ fov: { v: 30 }, bottom: -3, moonR: 4, sunR: 3, north: true });
-  sky.size(70, 88);
-  sky.set(ms, 0);
-  const expo = new Exposure(sky);
-  sky.trail = expo;
-  expo.reset(ms, 7);
-  const out = new Uint32Array(70 * 88);
-  const bare = new Uint32Array(70 * 88);
-  /** cells the trails changed, against the same sky without them */
-  const traced = () => {
-    sky.trail = null;
-    sky.paint(bare);
-    sky.trail = expo;
-    sky.paint(out);
-    return out.filter((px, i) => px !== bare[i]).length;
-  };
-  expo.advance(0);
-  sky.ms = expo.at(0);
-  assert.equal(traced(), 0);
-  expo.advance(240);
-  sky.ms = expo.at(240);
-  // 7 minutes of reading is 4 h 40 of sky: long arcs round the pole
-  assert.ok(traced() > 400, `${traced()} cells traced`);
-  // going back takes the exposure back
-  expo.advance(10);
-  assert.equal(expo.step, 10);
+  const band = new Sky({ fov: 30, bottom: -3, moonR: 4, sunR: 3 });
+  band.size(70, 88);
+  band.ms = ms;
+  const dome = new Dome({ north: true, table: false, pitch: 0.22 });
+  dome.size(70, 56);
+  dome.set(ms, 0);
+  for (const film of [band, dome]) {
+    const { W, H } = film;
+    const expo = new Exposure(film);
+    film.trail = expo;
+    expo.reset(ms, 7);
+    const out = new Uint32Array(W * H);
+    const bare = new Uint32Array(W * H);
+    /** cells the trails changed, against the same sky without them */
+    const traced = () => {
+      film.trail = null;
+      film.paint(bare);
+      film.trail = expo;
+      film.paint(out);
+      return out.filter((px, i) => px !== bare[i]).length;
+    };
+    expo.advance(0);
+    film.ms = expo.at(0);
+    assert.equal(traced(), 0);
+    expo.advance(240);
+    film.ms = expo.at(240);
+    // 7 minutes of reading is 4 h 40 of sky: long arcs round the pole
+    assert.ok(traced() > (film === band ? 400 : 150), `${traced()} cells traced`);
+    // going back takes the exposure back
+    expo.advance(10);
+    assert.equal(expo.step, 10);
+  }
 });
