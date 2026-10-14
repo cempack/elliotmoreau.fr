@@ -1,10 +1,10 @@
 /* ─────────────────────────── emOS · Projects (work) ───────────────────────────
    What Elliot has made, for anyone. Laid out like Atlas: wide screens
-   (1200px up, BESIDE-wide in ProjectsApp.tsx) put the list on the left,
-   the project's picture in the middle and its card on the right; tablets
-   keep the list and the card, picture on top; phones show the list and
-   open a project in a sheet (768px matches BESIDE). Only the panels
-   scroll on wide screens. */
+   (1200px up, STAGE in ProjectsApp.tsx) put the list on the left, the
+   machine the project runs on in the middle and its card on the right;
+   tablets keep the list and the card, the machine on top; phones show the
+   list and open a project in a sheet, the machine on top (768px matches
+   BESIDE). Only the panels scroll on wide screens. */
 
 .app-work {
   --app-work-h: var(--os-win-view-h, 100svh);
@@ -101,12 +101,8 @@
     min-height: 0;
     container-type: size;
   }
-  .app-work-stage-pic {
-    /* as large as the room allows, always 16:10 */
-    width: min(100cqw, 100cqh * 1.6);
-  }
-  /* the picture is in the middle: the card keeps to words */
-  .app-work-panel--card .app-work-card-pic {
+  /* the machine is in the middle: the card keeps to words */
+  .app-work-panel--card .app-work-card-machine {
     display: none;
   }
 }
@@ -370,39 +366,6 @@
   }
 }
 
-/* ───────────────────────────── picture ───────────────────────────── */
-
-.app-work-pic {
-  position: relative;
-  aspect-ratio: 16 / 10;
-  overflow: hidden;
-  border-radius: 14px;
-  background: var(--color-ink-900);
-}
-.app-work-pic::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  box-shadow: inset 0 0 0 1px var(--hairline);
-  pointer-events: none;
-}
-.app-work-pic img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-.app-work-scene {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-.app-work-stage .app-work-pic {
-  border-radius: 18px;
-  box-shadow: 0 40px 80px -40px rgba(0, 0, 0, 0.8);
-}
-
 /* ───────────────────────────── card ───────────────────────────── */
 
 .app-work-card {
@@ -413,8 +376,13 @@
 .app-work-sheet .app-work-card {
   padding: 0.25rem 0 0;
 }
-.app-work-card-pic {
-  margin-bottom: 1.25rem;
+/* the machine on top of the card (tablets, the phone's sheet); in a short
+   window it keeps to about half of it, so the project's name still shows */
+.app-work-card-machine {
+  aspect-ratio: 4 / 3;
+  max-height: calc(var(--app-work-h, 100svh) * 0.55);
+  margin-bottom: 1rem;
+  container-type: size;
 }
 .app-work-card-body {
   min-width: 0;

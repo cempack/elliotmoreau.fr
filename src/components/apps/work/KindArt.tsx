@@ -2,8 +2,8 @@ import { byFill, pxPath, type PxRun } from "@/lib/pxpath";
 import type { ProjectKind } from "./kind";
 
 /**
- * The pictures for projects without a screenshot: one small pixel scene per
- * shelf (a web page, a platformer, a desktop with its top bar, a terminal
+ * The pictures for projects without a screenshot, which the machine's screen
+ * shows: one small pixel scene per shelf (a web page, a platformer, a desktop with its top bar, a terminal
  * finishing a job, a flask), varied a little by the project's name so two
  * tools never look identical. Plus each shelf's machine as an icon for the
  * list.
@@ -211,20 +211,6 @@ const SCENES: Record<ProjectKind, (r: () => number, a: string) => Px[]> = { app,
 /** A project's scene as runs of art pixels (fills are CSS colours), for a canvas to paint: the machine's screen. */
 export function scenePixels(kind: ProjectKind, seed: string) {
   return { w: W, h: H, px: SCENES[kind](rng(seed), KIND_ACCENT[kind]) };
-}
-
-/** A project's scene, 48×30 art pixels (16:10). Sized by className. */
-export function KindScene({ kind, seed, className = "" }: { kind: ProjectKind; seed: string; className?: string }) {
-  const px = SCENES[kind](rng(seed), KIND_ACCENT[kind]);
-  const groups = byFill(px, (p) => `${p.f}|${p.o ?? 1}`);
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} shapeRendering="crispEdges" aria-hidden focusable="false" className={className}>
-      {[...groups].map(([key, runs]) => {
-        const [fill, o] = key.split("|");
-        return <path key={key} d={pxPath(runs)} fill={fill} opacity={o === "1" ? undefined : o} />;
-      })}
-    </svg>
-  );
 }
 
 /*

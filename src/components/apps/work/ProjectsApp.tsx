@@ -29,11 +29,11 @@ const STAGE = "(min-width: 1200px)";
  * understands (apps and websites, games, add-ons for his desktop, tools),
  * each with its name, what it does in a sentence and one clear button.
  *
- * Like Atlas: on wide screens the list sits on the left, the project's
- * picture fills the middle and its card stands on the right; tablets keep
- * the list and the card (picture on top); phones show the list and open a
- * project in a sheet. `?repo=name` (Spotlight, the Desktop's pushes) opens
- * on that project.
+ * Like Atlas: on wide screens the list sits on the left, the machine the
+ * project runs on fills the middle and its card stands on the right;
+ * tablets keep the list and the card (the machine on top); phones show the
+ * list and open a project in a sheet (the machine on top there too).
+ * `?repo=name` (Spotlight, the Desktop's pushes) opens on that project.
  */
 export function ProjectsApp() {
   const { repos } = useSiteData();
@@ -97,7 +97,8 @@ export function ProjectsApp() {
     return { items };
   });
 
-  const card = (name: string | undefined, titleId: string) => {
+  /** one project's card; `machine` (only where it shows: each machine paints) puts its machine on top */
+  const card = (name: string | undefined, titleId: string, machine: boolean) => {
     const repo = ordered.find((r) => r.name === name);
     if (!repo) return null;
     const i = ordered.indexOf(repo);
@@ -110,7 +111,7 @@ export function ProjectsApp() {
       <ProjectCard
         repo={repo}
         kind={kindOf(repo)}
-        picture
+        machine={machine}
         prev={ordered[(i - 1 + ordered.length) % ordered.length]}
         next={ordered[(i + 1) % ordered.length]}
         index={i}
@@ -167,12 +168,12 @@ export function ProjectsApp() {
 
         <aside className="app-work-panel app-work-panel--card" aria-label={titleOf(current)}>
           <div className="app-work-panel-scroll" data-lenis-prevent>
-            {card(current.name, "app-work-card-title")}
+            {card(current.name, "app-work-card-title", beside && !wide)}
           </div>
         </aside>
 
         <Sheet open={!!sheetRepo} onClose={() => setSheet(null)} label={sheetRepo ? titleOf(sheetRepo) : ""} className="app-work-sheet">
-          {card(sheet ?? undefined, "app-work-sheet-title")}
+          {card(sheet ?? undefined, "app-work-sheet-title", !beside)}
         </Sheet>
       </div>
     </AppWindow>

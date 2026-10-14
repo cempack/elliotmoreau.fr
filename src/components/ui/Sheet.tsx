@@ -228,7 +228,7 @@ function SheetBody({
     const target = e.target as HTMLElement;
     const scroller = target.closest("[data-sheet-scroll]") as HTMLElement | null;
     if (scroller && scroller.scrollTop > 0) return;
-    if (target.closest("a,button,input,textarea,select")) return;
+    if (target.closest('a,button,[role="button"],input,textarea,select')) return;
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     y.stop();
     drag.current = { startY: e.clientY, base: y.get(), history: [{ y: e.clientY, t: e.timeStamp }], id: e.pointerId };
