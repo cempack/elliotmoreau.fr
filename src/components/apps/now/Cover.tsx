@@ -106,6 +106,9 @@ function paint(seed: string, n: number) {
   return g;
 }
 
+/** the sleeve as an n×n grid of hex inks, for painting into other pixels */
+export { paint as sleeveGrid };
+
 /**
  * A sleeve for music with no artwork: a pixel cover seeded by the track or
  * artist, so the same song always gets the same sleeve. Painted as merged
