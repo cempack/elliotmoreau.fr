@@ -11,6 +11,7 @@ import { createGate } from "@/lib/sfx/gate";
 import { LENGTH, play } from "@/lib/sfx/recipes";
 import { makeBus, panned } from "@/lib/sfx/voices";
 import type { SoundKind } from "@/lib/sfx/kinds";
+import { FLIGHT_LENGTH, boot, flight } from "@/components/os/intro/score";
 
 describe("sound gate", () => {
   test("the same sound twice in a row is dropped, then allowed again", () => {
@@ -164,5 +165,34 @@ describe("the sounds", () => {
     };
     assert.equal(run(0.3), run(0.3));
     assert.notEqual(run(0.3), run(0.8));
+  });
+});
+
+describe("the intro", () => {
+  test("the flight's score starts with it and is over within its length", () => {
+    const { ctx, log } = fakeContext();
+    flight(makeBus(ctx), 2);
+    assert.ok(Math.min(...log.starts) >= 2, "nothing before the flight");
+    const end = Math.max(...log.stops) - 2;
+    assert.ok(end <= FLIGHT_LENGTH + 0.05, `the flight rings ${end.toFixed(3)}s, longer than its ${FLIGHT_LENGTH}s`);
+  });
+
+  test("a score that joins late leaves out the notes already behind it", () => {
+    const all = fakeContext();
+    flight(makeBus(all.ctx), 0);
+    const late = fakeContext();
+    flight(makeBus(late.ctx), 0, 5);
+    assert.ok(late.log.starts.length < all.log.starts.length);
+    // only what holds (the hums and the wind) is still started from before: no struck note
+    const struck = late.log.starts.filter((at) => at < 5 - 0.03 && at > 0.5 && at !== 3.3 && at !== 4.2);
+    assert.deepEqual(struck, []);
+  });
+
+  test("the boot ticks with its segments, and only those still ahead", () => {
+    const segments = [100, 400, 450, 2000];
+    const { ctx, log } = fakeContext();
+    boot(makeBus(ctx), 1, segments, 1.3);
+    assert.ok(Math.min(...log.starts) >= 1.3, "nothing already lit");
+    assert.ok(Math.max(...log.stops) <= 3.05);
   });
 });
