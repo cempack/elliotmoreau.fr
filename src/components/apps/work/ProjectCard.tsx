@@ -1,17 +1,16 @@
 "use client";
 
-import { useState } from "react";
 import { AnimatePresence, m } from "motion/react";
 import type { RepoInfo } from "@/lib/github";
 import { useI18n } from "@/i18n/client";
-import { useReduced } from "@/hooks/env";
+import { useHydrated, useReduced } from "@/hooks/env";
 import { QUARTER, useQuarterHour } from "@/hooks/useQuarterHour";
 import { spring } from "@/lib/motion";
 import { PressAnchor } from "@/components/ui/Pressable";
 import { PixelGlyph } from "@/components/glyphs";
 import { G_CHEVRON } from "@/components/os/window/glyphs";
 import { G_ARROW } from "./glyphs";
-import { KindScene } from "./KindArt";
+import { Machine } from "./machine/Machine";
 import { actionOf, plainOf, siteOf, titleOf, type ProjectKind } from "./kind";
 import { fmt, plural } from "./model";
 
@@ -32,37 +31,18 @@ function useAgo(iso: string) {
 }
 
 /**
- * The project's picture: its screenshot when the README shows one, else the
- * drawing of its shelf. A screenshot that fails to load falls back to the
- * drawing.
- */
-export function ProjectPicture({ repo, kind, className = "" }: { repo: RepoInfo; kind: ProjectKind; className?: string }) {
-  const { t } = useI18n();
-  const [broken, setBroken] = useState<string | null>(null);
-  const shot = repo.preview && repo.preview !== broken ? repo.preview : null;
-  return (
-    <div className={`app-work-pic ${className}`} data-kind={kind} data-shot={shot ? "" : undefined}>
-      {shot ? (
-        // eslint-disable-next-line @next/next/no-img-element -- any README host; sized by CSS
-        <img src={shot} alt={fmt(t.work.shot, { name: titleOf(repo) })} loading="lazy" decoding="async" onError={() => setBroken(shot)} />
-      ) : (
-        <KindScene kind={kind} seed={repo.name} className="app-work-scene" />
-      )}
-    </div>
-  );
-}
-
-/**
  * One project, for anyone: what shelf it's on, its name, what it does in a
  * sentence, what that shelf means when it needs saying, one clear button
  * (open it, play it, get it, or read the code) and three facts in words.
- * `picture` puts the picture on top (the Atlas-wide layout shows it
- * beside the card instead).
+ * `machine` puts the machine it runs on on top (tablets, and the phone's
+ * sheet; the Atlas-wide layout shows it beside the card instead): one
+ * machine that follows the project, switching channel or dissolving like
+ * the stage's.
  */
 export function ProjectCard({
   repo,
   kind,
-  picture,
+  machine,
   prev,
   next,
   index,
@@ -72,7 +52,7 @@ export function ProjectCard({
 }: {
   repo: RepoInfo;
   kind: ProjectKind;
-  picture: boolean;
+  machine: boolean;
   prev: RepoInfo;
   next: RepoInfo;
   index: number;
@@ -84,6 +64,8 @@ export function ProjectCard({
   const w = t.work;
   const k = w.kinds[kind];
   const reduced = useReduced();
+  /** the layout is known (not the server's guess): only then does the machine start */
+  const hydrated = useHydrated();
   const ago = useAgo(repo.pushedAt);
   const action = actionOf(repo, kind);
   const href = action === "code" ? repo.url : siteOf(repo);
@@ -100,12 +82,10 @@ export function ProjectCard({
 
   return (
     <article className="app-work-card" aria-labelledby={titleId}>
-      {picture && (
-        <AnimatePresence mode="popLayout" initial={false}>
-          <m.div key={repo.name} className="app-work-card-pic" {...swap}>
-            <ProjectPicture repo={repo} kind={kind} />
-          </m.div>
-        </AnimatePresence>
+      {machine && (
+        <div className="app-work-card-machine">
+          {hydrated && <Machine repo={repo} kind={kind} />}
+        </div>
       )}
       <AnimatePresence mode="popLayout" initial={false}>
         <m.div key={repo.name} className="app-work-card-body" {...swap}>

@@ -49,7 +49,6 @@ const en = {
     yearsOne: "Over a year ago",
     yearsOther: "{n} years ago",
   },
-  shot: "Screenshot of {name}",
   scene: "A drawing of {kind}",
   machine: {
     app: "an old monitor",
@@ -117,7 +116,6 @@ const fr: typeof en = {
     yearsOne: "Il y a plus d’un an",
     yearsOther: "Il y a {n} ans",
   },
-  shot: "Capture d’écran de {name}",
   scene: "Un dessin : {kind}",
   machine: {
     app: "un vieil écran",

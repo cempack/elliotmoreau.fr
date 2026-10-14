@@ -11,7 +11,10 @@ import { MODELS, type Model, type Vec3 } from "./models";
 import { DISSOLVE, painter, type Ask, type FromPainter, type ToPainter } from "./painter";
 import { marqueeTexture, pick, project, scaled, screenTexture, sharpTexture, type Tex, type View } from "./render";
 
+/** a cell, in CSS pixels; 2 on a small stage (the card's, on tablets and phones), so the machine keeps its detail */
 const CELL = 3;
+const CELL_SMALL = 2;
+const SMALL = 560;
 /** the resting camera: looking down a little, turned to show a side */
 const TILT = 0.3;
 const YAW = -0.42;
@@ -68,14 +71,16 @@ function sceneTexture(kind: ProjectKind, seed: string, el: Element, tint?: Model
 }
 
 /**
- * The project, on the machine it runs on: Projects' stage on wide screens.
+ * The project, on the machine it runs on: Projects' stage on wide screens,
+ * and on top of the project's card on tablets and phones.
  * Apps sit on an old CRT, games in an arcade cabinet with their name on
  * the marquee, desktop add-ons on a widescreen monitor, tools on a green
  * terminal, experiments on a handheld. The screen shows the README's
  * screenshot, or the shelf's drawing when there is none.
  *
  * - drag turns it on its turntable and a throw keeps it turning; at rest it
- *   sways slowly, and picks the sway back up a few seconds after a drag;
+ *   sways slowly, and picks the sway back up a few seconds after a drag; a
+ *   finger dragging mostly up or down is left to the page or the sheet;
  * - the screenshot is drawn sharp under the screen's cells, which keep their
  *   scanlines, soft edge, rolling band and the bezel's shadow on it;
  * - pressing the screen (or Enter) looks closer: the camera squares up to
@@ -109,7 +114,7 @@ export function Machine({ repo, kind }: { repo: RepoInfo; kind: ProjectKind }) {
     if (!bctx) return;
 
     const s = {
-      w: 0, h: 0, dpr: 1,
+      w: 0, h: 0, dpr: 1, cell: CELL,
       /** the frame's cells; lent to the painter while it paints one */
       cells: null as ArrayBuffer | null,
       /** the frame being painted, with where its sharp screenshot goes */
@@ -215,7 +220,7 @@ export function Machine({ repo, kind }: { repo: RepoInfo; kind: ProjectKind }) {
       const gen = ++s.gen;
       const sw = m.screen.x1 - m.screen.x0, tint = m.screen.tint;
       const px = (unit: number, cap: number) => {
-        const w = Math.max(16, Math.min(cap, Math.round((sw / unit) * CELL * s.dpr)));
+        const w = Math.max(16, Math.min(cap, Math.round((sw / unit) * s.cell * s.dpr)));
         return [w, Math.round(w / 1.6)] as const;
       };
       const [rw, rh] = px(r.unit, 1280);
@@ -254,18 +259,20 @@ export function Machine({ repo, kind }: { repo: RepoInfo; kind: ProjectKind }) {
 
     const layout = () => {
       const r = wrap.getBoundingClientRect();
+      const cell = r.width < SMALL ? CELL_SMALL : CELL;
       // capped, so a very large window doesn't cost more than a frame can spare
-      const w = Math.min(MAX_W, Math.floor(r.width / CELL)), h = Math.min(MAX_H, Math.floor(r.height / CELL));
+      const w = Math.min(MAX_W, Math.floor(r.width / cell)), h = Math.min(MAX_H, Math.floor(r.height / cell));
       if (w < 24 || h < 24) { s.w = s.h = 0; return; }
+      s.cell = cell;
       s.dpr = Math.min(window.devicePixelRatio || 1, 2);
       if (w !== s.w || h !== s.h) {
         s.w = w; s.h = h;
         buf.width = w; buf.height = h;
       }
-      canvas.width = Math.round(w * CELL * s.dpr);
-      canvas.height = Math.round(h * CELL * s.dpr);
-      frameEl.style.width = `${w * CELL}px`;
-      frameEl.style.height = `${h * CELL}px`;
+      canvas.width = Math.round(w * cell * s.dpr);
+      canvas.height = Math.round(h * cell * s.dpr);
+      frameEl.style.width = `${w * cell}px`;
+      frameEl.style.height = `${h * cell}px`;
       if (s.model) {
         s.rest = fitRest(s.model, w, h);
         s.close = fitClose(s.model, w, h);
@@ -305,7 +312,7 @@ export function Machine({ repo, kind }: { repo: RepoInfo; kind: ProjectKind }) {
     const beneath = (v: View): Under | null => {
       const rest = s.sharpRest;
       if (!rest) return null;
-      const sc = v.model.screen, k = CELL * s.dpr;
+      const sc = v.model.screen, k = s.cell * s.dpr;
       const at = (x: number, y: number) => {
         const [px, py] = project([x, y, sc.z], v);
         return [(v.cx + px) * k, (v.cy + py) * k] as const;
@@ -521,8 +528,13 @@ export function Machine({ repo, kind }: { repo: RepoInfo; kind: ProjectKind }) {
     const move = (e: PointerEvent) => {
       const d = s.drag;
       if (!d || d.id !== e.pointerId) return hover(e);
-      const dx = e.clientX - d.x;
-      if (!d.moved && Math.abs(dx) + Math.abs(e.clientY - d.y) < 4) return;
+      const dx = e.clientX - d.x, dy = e.clientY - d.y;
+      if (!d.moved && Math.abs(dx) + Math.abs(dy) < 4) return;
+      // a finger going up or down scrolls the card or pulls the sheet: not a turn
+      if (!d.moved && e.pointerType === "touch" && Math.abs(dy) > Math.abs(dx)) {
+        s.drag = null;
+        return;
+      }
       if (!d.moved) {
         d.moved = true;
         wrap.setPointerCapture(e.pointerId);
