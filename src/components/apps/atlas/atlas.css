@@ -1470,7 +1470,7 @@
 }
 
 /* ───────────────────────────── relief ─────────────────────────────
-   the place's land as a block on the globe's turntable (relief/scene.ts):
+   the place's land as a contour model standing in a puck of sea (relief/scene.ts):
    a canvas of whole 3px cells, scaled crisp, the hour and the light under it */
 .app-atlas-card-relief {
   grid-area: relief;
