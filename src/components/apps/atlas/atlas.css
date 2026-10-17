@@ -1113,7 +1113,10 @@
   .app-atlas-stage {
     /* sideways only: the sheet may stretch up under the title bar */
     overflow-x: clip;
-    min-height: 30rem;
+    /* exactly the window's room, never more: the window clips Atlas, so a
+       floor here pushed the sheet's foot (the peek, the end of the list)
+       off the bottom of shorter phones, out of reach */
+    min-height: 0;
   }
   /* server-rendered wide panels never flash on small screens */
   .app-atlas-panel,
@@ -1155,9 +1158,6 @@
   /* landscape tablets: an iPad Maps sidebar on the left, the globe beside
      it (BESIDE in AtlasApp.tsx); short screens keep it above the Dock
      (the sidebar scrolls) */
-  .app-atlas-stage {
-    min-height: 0;
-  }
   .app-atlas-globe-slot {
     inset: 0 0 0 calc(min(25rem, 50%) + 1rem);
   }
