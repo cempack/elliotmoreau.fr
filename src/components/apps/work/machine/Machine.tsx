@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { RepoInfo } from "@/lib/github";
 import { useI18n } from "@/i18n/client";
+import { spun, useSound } from "@/lib/sound";
 import { PIXEL_FOLD, PIXEL_GLYPHS } from "@/components/PixelLabel";
 import { scenePixels } from "../KindArt";
 import { titleOf, type ProjectKind } from "../kind";
@@ -100,6 +101,11 @@ export function Machine({ repo, kind }: { repo: RepoInfo; kind: ProjectKind }) {
   const frameRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [closer, setCloser] = useState(false);
+  const { blip } = useSound();
+  const sound = useRef(blip);
+  useEffect(() => {
+    sound.current = blip;
+  }, [blip]);
   /** the loop's controls, set up once the canvas is there */
   const api = useRef<{ show(repo: RepoInfo, kind: ProjectKind): void; toggle(): void; back(): void; turn(dir: number): void } | null>(null);
 
@@ -413,9 +419,15 @@ export function Machine({ repo, kind }: { repo: RepoInfo; kind: ProjectKind }) {
       if (!s.raf && s.visible && !document.hidden) s.raf = requestAnimationFrame(draw);
     };
 
+    /** the first machine arrives with the page, quietly; after that, a pick is heard */
+    let heard = false;
     const show = (r: RepoInfo, k: ProjectKind) => {
       const t = now();
       const model = MODELS[k];
+      const asked = heard ? performance.now() : -Infinity;
+      // another machine: its drive finding the project as it dissolves in
+      if (heard && s.model && model !== s.model) sound.current("disk");
+      heard = true;
       if (s.model && model !== s.model && !reduced) {
         tell({ type: "dissolve", at: t });
         s.fadeUntil = t + DISSOLVE;
@@ -443,6 +455,8 @@ export function Machine({ repo, kind }: { repo: RepoInfo; kind: ProjectKind }) {
         if (s.name !== r.name) return;
         s.source = src;
         s.changedAt = reduced ? -Infinity : now();
+        // the screen waking with the picture (a picture that took ages comes up quietly)
+        if (performance.now() - asked < 2500) sound.current("power");
         wake();
       };
       const scene = () => {
@@ -487,6 +501,7 @@ export function Machine({ repo, kind }: { repo: RepoInfo; kind: ProjectKind }) {
         s.yaw = Math.atan2(Math.sin(turned), Math.cos(turned)) - YAW - SWAY * s.sway * Math.sin(now() * 0.33);
         s.vYaw = 0;
       }
+      if (s.zoomTo !== to) sound.current("zoom", { amount: to });
       s.zoomTo = to;
       s.lastInput = now();
       setCloser(to === 1);
@@ -552,6 +567,7 @@ export function Machine({ repo, kind }: { repo: RepoInfo; kind: ProjectKind }) {
       if (!d || d.id !== e.pointerId) return;
       s.drag = null;
       if (performance.now() - d.at > 90) s.vYaw = 0;
+      if (d.moved) spun(sound.current, s.vYaw, 8);
       if (!d.moved) {
         if (s.zoomTo) zoom(0);
         else {

@@ -198,7 +198,10 @@ const flashFaces = () => {
 };
 
 /** `onStrike`: a letter just hit the paper (for its sound) */
-export function makeTypewriter(reduced: boolean, onStrike?: () => void) {
+/** what the machine just did, for its sound: a letter struck, the spacebar, the margin bell, the carriage thrown back, a letter lifted off, the sheet pulled out or fed in */
+export type TypewriterSound = "type" | "space" | "ding" | "carriage" | "erase" | "out" | "in";
+
+export function makeTypewriter(reduced: boolean, onSound?: (s: TypewriterSound) => void) {
   const sheet = new Uint8Array(SW * SH);
   const st = {
     user: 0,
@@ -264,6 +267,7 @@ export function makeTypewriter(reduced: boolean, onStrike?: () => void) {
   function strike(ch: string, line: number, col: number, now: number) {
     if (ch === " ") {
       if (!reduced) st.spaceUntil = now + 0.09;
+      onSound?.("space");
     } else {
       ink(line, col, ch, line === 0 ? 2 : 1);
       if (!reduced) {
@@ -271,23 +275,35 @@ export function makeTypewriter(reduced: boolean, onStrike?: () => void) {
         st.keyUntil = now + 0.09;
         st.strikeUntil = now + 0.06;
       }
-      onStrike?.();
+      onSound?.("type");
     }
     tween("carr", carrAt(col + 1), 0.05, now);
-    if (col + 1 === COLS - 4 && !reduced) st.dingUntil = now + 0.6;
+    if (col + 1 === COLS - 4) {
+      if (!reduced) st.dingUntil = now + 0.6;
+      onSound?.("ding");
+    }
     st.spool += 0.35;
   }
 
   /** pull the sheet out (if one is in) and feed a fresh one to the first line */
   function fresh(now: number) {
-    if (plan) queue(now, 0.5, (n) => tween("feed", SH + VIS + 4, 0.45, n));
+    const first = !plan;
+    if (plan)
+      queue(now, 0.5, (n) => {
+        onSound?.("out");
+        tween("feed", SH + VIS + 4, 0.45, n);
+      });
     queue(now, 0.1, (n) => {
       sheet.fill(0);
       st.feed = 0;
       anim.feed = null;
+      if (!first) onSound?.("carriage");
       tween("carr", carrAt(0), 0.32, n);
     });
-    queue(now, 0.62, (n) => tween("feed", feedAt(0), 0.5, n));
+    queue(now, 0.62, (n) => {
+      onSound?.("in");
+      tween("feed", feedAt(0), 0.5, n);
+    });
     plan = [""];
   }
 
@@ -340,6 +356,7 @@ export function makeTypewriter(reduced: boolean, onStrike?: () => void) {
         col--;
         const [l, c] = [line, col];
         queue(now, pace(now, 0.06), (n) => {
+          onSound?.("erase");
           tween("carr", carrAt(c), 0.04, n);
           ink(l, c, null, 0);
           if (!reduced) st.strikeUntil = n + 0.05;
@@ -357,6 +374,7 @@ export function makeTypewriter(reduced: boolean, onStrike?: () => void) {
         col = 0;
         const l = line;
         queue(now, 0.42, (n) => {
+          onSound?.("carriage");
           tween("carr", carrAt(0), 0.3, n);
           tween("feed", feedAt(l), 0.22, n);
         });
@@ -517,9 +535,11 @@ export function makeTypewriter(reduced: boolean, onStrike?: () => void) {
       st.user += dx * k;
       st.vYaw = (dx * k) / (Math.max(1, ms) / 1000);
     },
+    /** let go; returns the spin it keeps (rad/s) */
     release(still: boolean) {
       if (still) st.vYaw = 0;
       st.dragging = false;
+      return st.vYaw;
     },
   };
 }

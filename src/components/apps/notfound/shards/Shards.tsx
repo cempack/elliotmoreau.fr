@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import type { MotionValue } from "motion/react";
 import { useArtPalette } from "@/hooks/useTheme";
+import { useSound } from "@/lib/sound";
 import type { ArtPalette } from "@/lib/theme";
 import { CELL, clamp, ease, pixelLoop } from "@/lib/pixel3d";
 import { glyphFills, type IconId } from "@/components/os/icons";
@@ -88,9 +89,10 @@ export function Shards({
   const hostRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ctlRef = useRef<Control | null>(null);
-  const cb = useRef({ onBroken, onDone, intro });
+  const { blip } = useSound();
+  const cb = useRef({ onBroken, onDone, intro, blip });
   useEffect(() => {
-    cb.current = { onBroken, onDone, intro };
+    cb.current = { onBroken, onDone, intro, blip };
   });
 
   useEffect(() => {
@@ -179,7 +181,11 @@ export function Shards({
       const left = autoEnd - loop.clock();
       if (p >= LET_GO) finish();
       else if (autoEnd >= 0 && left > 0) go(1, left, linearish);
-      else if (p > 0) go(0, 0.45 + p * 0.7, smooth);
+      else if (p > 0) {
+        // let go short of whole: the pieces fall apart again (a hint of a draw-in, quietly)
+        if (p > TEMPT + 0.05) cb.current.blip("shatter", { amount: p });
+        go(0, 0.45 + p * 0.7, smooth);
+      }
     };
 
     const down = (e: PointerEvent) => {

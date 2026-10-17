@@ -159,7 +159,7 @@ export function MobileTabBar() {
   };
   useEffect(() => endSwipe, []);
 
-  const launch = (e: React.MouseEvent<HTMLElement>, on: boolean) => {
+  const launch = (e: React.MouseEvent<HTMLElement>, on: boolean, id: AppId) => {
     if (!isPlainClick(e)) return;
     if (on) {
       e.preventDefault();
@@ -168,7 +168,7 @@ export function MobileTabBar() {
       return;
     }
     bounce(e.currentTarget.querySelector("[data-dock-bounce]"), 7);
-    blip("launch");
+    blip("launch", { variant: id });
   };
 
   return (
@@ -192,7 +192,7 @@ export function MobileTabBar() {
                   transitionTypes={["app-open"]}
                   className="os-tabbar-link"
                   aria-current={on ? "page" : undefined}
-                  onClick={(e) => launch(e, on)}
+                  onClick={(e) => launch(e, on, id)}
                   // the finger is down: warm the route before it lifts
                   onTouchStart={() => !on && router.prefetch(path(app.path))}
                   {...pressHandlers}

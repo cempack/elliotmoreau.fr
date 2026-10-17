@@ -541,9 +541,11 @@ export function makeRelief(reduced: boolean) {
       st.dragging = true;
       st.vYaw = 0;
     },
+    /** let go; returns the spin it keeps (rad/s) */
     release(still: boolean) {
       if (still || reduced) st.vYaw = 0;
       st.dragging = false;
+      return st.vYaw;
     },
   };
 }

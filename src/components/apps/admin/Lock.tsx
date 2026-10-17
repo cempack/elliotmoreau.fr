@@ -60,7 +60,8 @@ export function Lock({ state, onUnlocked, onCodes }: { state: AuthState; onUnloc
       }
       const res = await auth("login.verify", { response });
       if (!res.ok) return say(res.error, res.retryIn);
-      blip("success");
+      // the lock giving: a key turning, the bolt drawn back
+      blip("unlock");
       onUnlocked();
     } finally {
       setBusy(false);

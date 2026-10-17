@@ -78,11 +78,12 @@ export function NowApp({ pushes, day }: { pushes: PushHistory | null; day: DayDa
       const from = e.target instanceof Element ? e.target : null;
       if (from?.closest("dialog,[role=dialog],[role=alertdialog],[aria-modal=true],.os-term")) return;
       if (document.querySelector("dialog[open],[aria-modal=true]")) return;
+      blip("off");
       setArrange(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [arrange, setArrange]);
+  }, [arrange, setArrange, blip]);
 
   // "today / yesterday / 6 days ago", by calendar day in Toulouse
   const now = useNow(60_000);

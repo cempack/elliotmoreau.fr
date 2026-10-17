@@ -349,10 +349,12 @@ export function makeCity(reduced: boolean) {
       st.vYaw = 0;
       st.lastInput = t;
     },
+    /** let go; returns the spin it keeps (rad/s) */
     release(t: number, still: boolean) {
       if (still) st.vYaw = 0;
       st.dragging = false;
       st.lastInput = t;
+      return st.vYaw;
     },
   };
 }

@@ -116,6 +116,7 @@ export function PlaceCard({
       blip("copy");
       notify(`${name} · ${text}`, a.card.copied);
     } catch {
+      blip("error");
       notify(text, a.card.coords);
     }
   };

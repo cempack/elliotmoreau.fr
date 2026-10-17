@@ -250,7 +250,7 @@ export function Seal({
   /** the ring is down: the wax takes the impression ring by ring while it's held */
   const touch = () => {
     const s = st.current;
-    blip("tick");
+    blip("seal");
     navigator.vibrate?.(8);
     if (s.depth >= FULL) {
       s.depth = 0;
@@ -277,7 +277,7 @@ export function Seal({
       s.depth = FULL;
       setDepth(FULL);
       setFade((f) => f + 1);
-      blip("tick");
+      blip("seal");
       return;
     }
     s.holding = false;

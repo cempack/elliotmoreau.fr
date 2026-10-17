@@ -6,9 +6,10 @@ import { useHydrated } from "@/hooks/env";
 import { useSound } from "@/lib/sound";
 import { useSiteData } from "../SiteData";
 import { Wordmark } from "./Wordmark";
-import { playStartupChord } from "./chime";
+import { openAudio, playStartupChord } from "./chime";
 import { Arrival } from "./Arrival";
 import { T } from "./timeline";
+import type { Score } from "./score";
 import { rememberArrival } from "../intro-script";
 
 /** The boot screen starts fading here (ms from first paint): see intro.css. */
@@ -36,6 +37,12 @@ const SETTLE = "cubic-bezier(0.22, 1, 0.36, 1)";
  */
 const PREPAINT = `try{var d=document.documentElement;if(!d.dataset.intro&&!d.dataset.introUp&&sessionStorage.getItem("em-intro"))d.dataset.intro="done"}catch(e){}`;
 
+/** A first visit that hydrates early enough (and moves) arrives from space; otherwise the boot's text plays. */
+function arrives() {
+  if (wasRestart() || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
+  return performance.now() - sequenceStart() <= ARRIVE_BEFORE_MS;
+}
+
 /** When the CSS sequence started (performance.now() clock), read off the
     boot screen's own keyframes; cached once known. */
 let started: number | null = null;
@@ -45,6 +52,15 @@ function sequenceStart() {
   if (typeof t === "number") return (started = t);
   const fcp = performance.getEntriesByName("first-contentful-paint")[0]?.startTime;
   return (started = fcp ?? performance.now());
+}
+
+/** Sound is off: muted in this tab, or by a choice the visitor saved. */
+function soundOff(muted: boolean) {
+  try {
+    return muted || localStorage.getItem("em-sound") === "off";
+  } catch {
+    return muted;
+  }
 }
 
 /** A Restart (or a power-on after Shut Down) left a note: this boot shows its text, the old way. */
@@ -113,18 +129,15 @@ export default function Gate({ onDone }: { onDone: () => void }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const out = useRef(false);
 
-  /** the gate clears: the Desktop comes in `delay` ms on, as the cover lifts */
-  const clear = (delay: number, settle = true) => {
+  /** the gate clears: the Desktop comes in `delay` ms on, as the cover lifts (`gesture`: a key or tap skipped to it) */
+  const clear = (delay: number, settle = true, gesture = false) => {
     if (out.current) return;
     out.current = true;
     setPhase("out");
     arrive(delay, settle);
-    // a Restart was asked for with a click: the chord, if the browser still lets this page play sound
-    let off = muted;
-    try {
-      off ||= localStorage.getItem("em-sound") === "off";
-    } catch {}
-    if (wasRestart() && !off) playStartupChord({ onlyIfAllowed: true });
+    // the Desktop lands on the startup chord: after a skip, the skip's own gesture
+    // lets it play; otherwise only where the browser lets the page sound by itself
+    if (!soundOff(muted)) playStartupChord({ onlyIfAllowed: !gesture });
     window.setTimeout(() => {
       rememberArrival();
       document.documentElement.dataset.intro = "done";
@@ -140,13 +153,37 @@ export default function Gate({ onDone }: { onDone: () => void }) {
   // late, after a Restart, or with reduced motion, the boot plays as it always has
   // (a skip during the hold clears the gate: the timer goes with it)
   useEffect(() => {
-    if (!hydrated || phase !== "boot" || wasRestart()) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!hydrated || phase !== "boot" || !arrives()) return;
     const since = performance.now() - sequenceStart();
-    if (since > ARRIVE_BEFORE_MS) return;
     const id = window.setTimeout(() => setArrival((a) => (a === "off" ? "on" : a)), Math.max(16, BOOT_HOLD_MS - since));
     return () => window.clearTimeout(id);
     // decided once, at hydration; only a skip (phase) cancels it
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, phase === "boot"]);
+
+  // the boot's text (no flight), where the browser lets it sound: its segments tick as they light
+  useEffect(() => {
+    if (!hydrated || phase !== "boot" || arrives() || soundOff(muted)) return;
+    // (with reduced motion there is no boot at all: Intro.tsx skips it)
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let score: Score | null = null;
+    let gone = false;
+    void openAudio().then((ctx) => {
+      if (!ctx) return;
+      import("./score").then(
+        (m) => {
+          if (gone) return void ctx.close().catch(() => {});
+          score = m.score(ctx);
+          score.boot(sequenceStart(), SEGMENTS);
+        },
+        () => void ctx.close().catch(() => {})
+      );
+    });
+    return () => {
+      gone = true;
+      score?.fade(0.15);
+    };
+    // decided once, at hydration; the boot ending (or a skip) stops it
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, phase === "boot"]);
 
@@ -167,7 +204,7 @@ export default function Gate({ onDone }: { onDone: () => void }) {
     const skip = (e: Event) => {
       if (e instanceof KeyboardEvent && (e.repeat || e.metaKey || e.ctrlKey || e.altKey)) return;
       setSkipped(true);
-      clearRef.current(60);
+      clearRef.current(60, true, true);
     };
     window.addEventListener("keydown", skip, true);
     window.addEventListener("pointerdown", skip, true);
@@ -216,7 +253,7 @@ export default function Gate({ onDone }: { onDone: () => void }) {
     >
       {!hydrated && <script dangerouslySetInnerHTML={{ __html: PREPAINT }} />}
       <BootScreen />
-      {arrival === "on" && <Arrival skipped={skipped} onLand={() => clear(120, false)} onGone={() => setArrival("done")} />}
+      {arrival === "on" && <Arrival skipped={skipped} sound={!soundOff(muted)} onLand={() => clear(120, false)} onGone={() => setArrival("done")} />}
     </div>
   );
 }

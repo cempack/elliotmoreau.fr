@@ -111,7 +111,7 @@ export const Crate = memo(function Crate({
     if (k !== shown.current) {
       shown.current = k;
       setFocus(k);
-      blip("tick");
+      blip("sleeve");
     }
   };
 

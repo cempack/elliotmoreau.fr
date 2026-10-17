@@ -77,3 +77,12 @@ export function SkyProvider({ children }: { children: React.ReactNode }) {
 }
 
 export const useSky = () => useContext(Ctx);
+
+const LIGHT: Record<SkyPhase, number> = { night: 0, dawn: 1, dusk: 1, day: 2 };
+
+/** the sound of the sky turning: towards day, a dawn; towards night, a dusk */
+export function skySound(from: SkyPhase, to: SkyPhase): "dawn" | "dusk" | "toggle" {
+  if (from === to) return "toggle";
+  const d = LIGHT[to] - LIGHT[from];
+  return d > 0 || (d === 0 && to === "dawn") ? "dawn" : "dusk";
+}

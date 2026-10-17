@@ -6,6 +6,8 @@ import { SKY_PHASES, type SkyPhase } from "../sky";
 import { useWeather } from "../weather";
 import { pinnedMs } from "../wallpaper/sunClock";
 import { T } from "./timeline";
+import { openAudio } from "./chime";
+import type { Score } from "./score";
 
 /** the wallpaper's art grid (Wallpaper.tsx, gridFor): the flight paints the same pixels, so its last frame lands on them */
 function artGrid(w: number, h: number) {
@@ -33,9 +35,20 @@ function wallpaperMs() {
  * (the Gate listens). Its last frames are the wallpaper itself, lit for
  * the same instant: `onLand` hands over to the Desktop as the glide comes
  * to rest, and the canvas fades over pixels it matches by the time it is
- * gone; `onGone` once it has.
+ * gone; `onGone` once it has. With `sound`, it is scored (./score), where
+ * the browser lets the page sound without a click.
  */
-export function Arrival({ skipped, onLand, onGone }: { skipped: boolean; onLand: () => void; onGone: () => void }) {
+export function Arrival({
+  skipped,
+  sound,
+  onLand,
+  onGone,
+}: {
+  skipped: boolean;
+  sound: boolean;
+  onLand: () => void;
+  onGone: () => void;
+}) {
   const { t } = useI18n();
   const s = t.system.intro;
   // today's clouds over Toulouse
@@ -44,6 +57,7 @@ export function Arrival({ skipped, onLand, onGone }: { skipped: boolean; onLand:
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const handlers = useRef({ onLand, onGone });
+  const score = useRef<Score | null>(null);
   useEffect(() => {
     handlers.current = { onLand, onGone };
   });
@@ -51,6 +65,7 @@ export function Arrival({ skipped, onLand, onGone }: { skipped: boolean; onLand:
   // a skip: out at once
   useEffect(() => {
     if (!skipped) return;
+    score.current?.fade(0.25);
     const el = rootRef.current;
     if (!el) return handlers.current.onGone();
     for (const a of el.getAnimations()) a.cancel();
@@ -76,6 +91,21 @@ export function Arrival({ skipped, onLand, onGone }: { skipped: boolean; onLand:
     // the flight's clock starts when it has been built (the worker says when)
     let start = -1;
     const elapsed = () => (start < 0 ? 0 : clock() - start);
+    let gone = false;
+
+    // the score joins the flight on its own clock, whichever is ready first
+    if (sound)
+      void openAudio().then((ctx) => {
+        if (!ctx) return;
+        import("./score").then(
+          (m) => {
+            if (gone) return void ctx.close().catch(() => {});
+            score.current = m.score(ctx);
+            if (start >= 0) score.current.flight(start);
+          },
+          () => void ctx.close().catch(() => {})
+        );
+      });
 
     let landed = false;
     const land = () => {
@@ -111,8 +141,10 @@ export function Arrival({ skipped, onLand, onGone }: { skipped: boolean; onLand:
         // whatever goes wrong in there, the visitor still ends on the Desktop
         w.onerror = land;
         w.onmessage = (e: MessageEvent<{ type: string; start?: number }>) => {
-          if (e.data.type === "ready" && typeof e.data.start === "number") start = e.data.start;
-          else land();
+          if (e.data.type === "ready" && typeof e.data.start === "number") {
+            start = e.data.start;
+            score.current?.flight(start);
+          } else land();
         };
         try {
           const off = cv.transferControlToOffscreen();
@@ -127,7 +159,6 @@ export function Arrival({ skipped, onLand, onGone }: { skipped: boolean; onLand:
     // otherwise, here: the same flight, frame by frame
     // (the flight's code is only fetched for this: the worker has its own copy)
     let raf = 0;
-    let gone = false;
     if (!worker) {
       const ctx = cv.getContext("2d");
       if (ctx)
@@ -137,6 +168,7 @@ export function Arrival({ skipped, onLand, onGone }: { skipped: boolean; onLand:
           const img = ctx.createImageData(g.W, g.H);
           const px = new Uint32Array(img.data.buffer);
           start = clock();
+          score.current?.flight(start);
           const tick = () => {
             const t = elapsed();
             flight.draw(t, px);
@@ -151,6 +183,8 @@ export function Arrival({ skipped, onLand, onGone }: { skipped: boolean; onLand:
 
     return () => {
       gone = true;
+      // the score's last breath of air goes on a moment under the Desktop
+      score.current?.fade(1.2);
       window.clearTimeout(watchdog);
       cancelAnimationFrame(raf);
       if (worker) {

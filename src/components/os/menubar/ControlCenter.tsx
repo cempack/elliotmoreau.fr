@@ -10,7 +10,7 @@ import { rememberLocale, switchLocaleHref, useI18n } from "@/i18n/client";
 import { LOCALES } from "@/i18n/config";
 import { useSound } from "@/lib/sound";
 import { spring } from "@/lib/motion";
-import { useSky, type SkyMode } from "../sky";
+import { skySound, useSky, type SkyMode } from "../sky";
 import { SkyView } from "./SkyArt";
 import { ChevronRight, GLYPH_MOON, GLYPH_MUTE, GLYPH_SPEAKER, Pixels, SKY_GLYPH } from "./glyphs";
 import { useMenu } from "./Panel";
@@ -24,14 +24,14 @@ const ENDONYM = { en: "English", fr: "Français" } as const;
 function SkyTile() {
   const { t } = useI18n();
   const c = t.shell.control;
-  const { mode, setMode, phase } = useSky();
+  const { mode, setMode, phase, live } = useSky();
   const { blip } = useSound();
   const group = useRef<HTMLDivElement>(null);
 
   const pick = (next: SkyMode, focus = false) => {
     if (next !== mode) {
       setMode(next);
-      blip("toggle");
+      blip(skySound(phase, next === "auto" ? (live ?? phase) : next));
     }
     if (focus) group.current?.querySelector<HTMLElement>(`[data-mode="${next}"]`)?.focus();
   };

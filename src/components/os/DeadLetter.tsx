@@ -3,6 +3,7 @@
 import { animate, type AnimationPlaybackControls } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { project, rubberband, spring } from "@/lib/motion";
+import { useSound } from "@/lib/sound";
 import { PixelLabel } from "@/components/PixelLabel";
 import { Envelope } from "@/components/apps/contact/Envelope";
 
@@ -40,6 +41,7 @@ export function DeadLetter({
   const g = useRef<{ pid: number; x0: number; y0: number; s: { t: number; x: number; y: number }[] } | null>(null);
   const pos = useRef({ x: 0, y: 0, rot: 0 });
   const flight = useRef<AnimationPlaybackControls[]>([]);
+  const { blip } = useSound();
   const sent = useRef(false);
 
   const apply = () => {
@@ -57,7 +59,11 @@ export function DeadLetter({
   /** postmark, then away along its own path */
   const fly = (vx: number, vy: number) => {
     stop();
-    // the ring inks over the stamp in two stepped frames
+    // the ring inks over the stamp in two stepped frames: the postmark struck, then away
+    if (!sent.current) {
+      blip("stamp");
+      window.setTimeout(() => blip("send"), 90);
+    }
     setInked(1);
     window.setTimeout(() => setInked(2), 70);
     if (reduced()) {

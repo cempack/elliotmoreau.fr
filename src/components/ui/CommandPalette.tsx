@@ -258,15 +258,18 @@ export function CommandPalette({
     if (e.key === "ArrowDown") {
       e.preventDefault();
       byKey.current = true;
+      if (active < results.length - 1) blip("tick");
       setActive((a) => Math.min(results.length - 1, a + 1));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       byKey.current = true;
+      if (active > 0) blip("tick");
       setActive((a) => Math.max(0, a - 1));
     } else if (e.key === "Enter") {
       e.preventDefault();
       const c = results[active];
       if (c) run(c);
+      else blip("error");
     }
   };
 

@@ -5,6 +5,7 @@ import { animate, m, useMotionValue } from "motion/react";
 import { useI18n } from "@/i18n/client";
 import { nearest, project, rubberband, spring } from "@/lib/motion";
 import { useReduced } from "@/hooks/env";
+import { useSound } from "@/lib/sound";
 import { PixelGlyph } from "@/components/glyphs";
 import { G_CHEVRON } from "@/components/os/window/glyphs";
 import type { PlaceRow } from "@/lib/content";
@@ -61,6 +62,7 @@ export function Postcards({
   const fmt = useKm();
   const coords = useCoords();
   const reduced = useReduced();
+  const { blip } = useSound();
   const { home, ordered } = useAtlas();
   const viewRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLUListElement>(null);
@@ -79,6 +81,8 @@ export function Postcards({
   };
 
   const settle = (to: number, v = 0) => {
+    // the strip coming to rest on another card: the flick of its edge
+    if (Math.abs(to - x.get()) > 2) blip("card");
     if (reduced) {
       x.jump(to);
       return;

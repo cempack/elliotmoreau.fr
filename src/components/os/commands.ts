@@ -14,7 +14,7 @@ import { APPS } from "./apps";
 import { AppGlyph, type IconId } from "./icons";
 import { G_EXTERNAL } from "./window/glyphs";
 import { useSiteData } from "./SiteData";
-import { useSky, type SkyMode } from "./sky";
+import { skySound, useSky, type SkyMode } from "./sky";
 import { useTerminal } from "./Terminal";
 import type { PanelId } from "./menubar/Panel";
 import { BLOG_URL, fill, replayArrival, restartOS } from "./menubar/util";
@@ -69,7 +69,7 @@ export function useSpotlightCommands(): Command[] {
   const { t, other, path, lang } = useI18n();
   const { muted, toggle, blip } = useSound();
   const { notify } = useToast();
-  const { mode, setMode } = useSky();
+  const { mode, setMode, phase, live } = useSky();
   const { setOpen: setTerminal } = useTerminal();
   const { posts, repos, activity, spotify, now, places } = useSiteData();
   const stops = useSyncExternalStore(trail.subscribe, trail.get, trail.server);
@@ -154,7 +154,7 @@ export function useSpotlightCommands(): Command[] {
         keywords: `sky ciel theme phase ${md} ${c.short[md]}`,
         perform: () => {
           setMode(md);
-          blip("toggle");
+          blip(skySound(phase, md === "auto" ? (live ?? phase) : md));
           notify(md === "auto" ? s.toast.skySet : fill(s.toast.skyPinned, { phase: c[md] }), s.toast.sky);
         },
       })),
@@ -367,7 +367,7 @@ export function useSpotlightCommands(): Command[] {
       }));
 
     return [...board, ...arrivals, ...apps, ...act, ...writing, ...projects, ...atlas, ...links];
-  }, [t, other, path, router, pathname, muted, toggle, blip, notify, mode, setMode, setTerminal, posts, repos, activity, music, phone, lang, now, places, stops, fs.supported, fs.active, fs.toggle, systemCursor]);
+  }, [t, other, path, router, pathname, muted, toggle, blip, notify, mode, setMode, phase, live, setTerminal, posts, repos, activity, music, phone, lang, now, places, stops, fs.supported, fs.active, fs.toggle, systemCursor]);
 }
 
 /**

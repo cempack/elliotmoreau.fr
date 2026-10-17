@@ -231,7 +231,8 @@ export function NotFoundApp({ standalone = false }: {
   // macOS: clicking outside a modal alert gets a shake of the head (and
   // the alert keeps the focus)
   const refuse = useCallback(() => {
-    blip("tick");
+    // a shake of the head: a small, dull bump
+    blip("stop");
     const el = surfaceRef.current;
     if (el && !el.contains(document.activeElement)) el.focus({ preventScroll: true });
     if (reduced) {
@@ -367,7 +368,8 @@ export function NotFoundApp({ standalone = false }: {
             onSearch={palette.open}
             onDesktop={dismiss}
             onRebuilt={() => {
-              blip("snap");
+              // the shards finding each other
+              blip("mend");
               if (offering) openSuggestion();
               else dismiss();
             }}

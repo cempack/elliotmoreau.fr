@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/i18n/client";
 import { useReduced } from "@/hooks/env";
+import { spun, useSound } from "@/lib/sound";
 import { CELL, pixelLoop, type PixelLoop } from "@/lib/pixel3d";
 import { sunAt, TOULOUSE } from "@/lib/sun";
 import { clockIn, tzForPlace } from "@/lib/tz";
@@ -42,6 +43,7 @@ export function Relief({ place }: { place: PlaceRow }) {
   const { t, lang } = useI18n();
   const r = t.atlas.relief;
   const reduced = useReduced();
+  const { blip } = useSound();
   const { phase, mode } = useSky();
   const quarter = useQuarterHour();
   const hostRef = useRef<HTMLDivElement>(null);
@@ -92,7 +94,7 @@ export function Relief({ place }: { place: PlaceRow }) {
     };
     const up = (e: PointerEvent) => {
       if (!drag || e.pointerId !== drag.id) return;
-      scene.release(performance.now() - drag.t > 80);
+      spun(blip, scene.release(performance.now() - drag.t > 80), 8);
       drag = null;
       loop.wake();
     };
@@ -109,7 +111,7 @@ export function Relief({ place }: { place: PlaceRow }) {
       loopRef.current = null;
       sceneRef.current = null;
     };
-  }, [reduced]);
+  }, [reduced, blip]);
 
   // the sun where the place is: now (to the quarter hour), or, when the sky is pinned to a
   // time of day, that same time of day there

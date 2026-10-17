@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode, type RefObject } from "rea
 import type { SiteCity } from "@/lib/github";
 import { CELL, pixelLoop, type PixelLoop } from "@/lib/pixel3d";
 import { useReduced } from "@/hooks/env";
+import { spun, useSound } from "@/lib/sound";
 import { useI18n } from "@/i18n/client";
 import { timeAgo } from "@/lib/format";
 import { fill } from "../lib";
@@ -34,6 +35,7 @@ export function City({ room }: { room: RefObject<HTMLElement | null> }) {
   const { t, lang } = useI18n();
   const b = t.now.building;
   const reduced = useReduced();
+  const { blip } = useSound();
   const hostRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<CityScene | null>(null);
@@ -124,7 +126,7 @@ export function City({ room }: { room: RefObject<HTMLElement | null> }) {
     };
     const up = (e: PointerEvent) => {
       if (!drag || e.pointerId !== drag.id) return;
-      city.release(loop.clock(), performance.now() - drag.t > 80);
+      spun(blip, city.release(loop.clock(), performance.now() - drag.t > 80), 8);
       drag = null;
       loop.wake();
     };
@@ -147,7 +149,7 @@ export function City({ room }: { room: RefObject<HTMLElement | null> }) {
       loopRef.current = null;
       sceneRef.current = null;
     };
-  }, [reduced, room]);
+  }, [reduced, room, blip]);
 
   useEffect(() => {
     if (!data) return;

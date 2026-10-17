@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { useReduced } from "@/hooks/env";
 import { lenisRef } from "@/lib/lenisRef";
 import { clamp, project, rubberband, spring, springFrom } from "@/lib/motion";
+import { useSound } from "@/lib/sound";
 import { appForPath } from "../apps";
 import { WinIcon } from "../window/WinIcon";
 import { AppIcon } from "../icons";
@@ -119,6 +120,7 @@ export function DesktopWindow({
   const { setOpen } = useTerminal();
   const { rect: saved, setRect: save } = useTerminalWindow();
   const reduced = useReduced();
+  const { blip } = useSound();
 
   const [init] = useState(() => fit(saved ?? defaultRect()));
   const x = useMotionValue(init.x);
@@ -203,6 +205,7 @@ export function DesktopWindow({
   const toggleZoom = () => {
     const to = fit(zoomed ? normal.current : zoomRect());
     if (!zoomed) normal.current = current();
+    blip("snap");
     setZoomed(!zoomed);
     settle(to);
     const tr = reduced ? { duration: 0 } : spring.default;

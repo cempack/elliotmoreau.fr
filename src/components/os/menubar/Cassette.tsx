@@ -177,6 +177,8 @@ export function Cassette({
   useEffect(() => {
     latest.current = { labelA, labelB, clock, blip };
   });
+  /** when a hand last turned it (a turn nobody asked for, like going back to side A, lands quietly) */
+  const handled = useRef(-1e9);
 
   // the scene and its loop, made once (again if motion is turned off or on)
   useEffect(() => {
@@ -187,7 +189,8 @@ export function Cassette({
     const sc = makeCassette(reduced, {
       side: setSide,
       settle: (s) => {
-        if (s !== settled) latest.current.blip("tick");
+        // the shell seating on its new side
+        if (s !== settled && performance.now() - handled.current < 3000) latest.current.blip("seat");
         settled = s;
       },
     });
@@ -249,11 +252,17 @@ export function Cassette({
 
   const flip = () => {
     if (!canFlip || !scene.current) return;
+    handled.current = performance.now();
+    blip("flip");
     scene.current.sc.flip();
     scene.current.loop.wake();
   };
   const show = (s: Side) => {
     if (!canFlip || !scene.current) return;
+    if (s !== side) {
+      handled.current = performance.now();
+      blip("flip");
+    }
     scene.current.sc.show(s);
     scene.current.loop.wake();
   };
@@ -278,6 +287,7 @@ export function Cassette({
       d.axis = Math.abs(e.clientX - d.x0) > Math.abs(e.clientY - d.y0) ? "x" : "y";
       if (d.axis !== "x") return;
       e.currentTarget.setPointerCapture(e.pointerId);
+      handled.current = performance.now();
       s.sc.grab();
     }
     if (d.axis !== "x") return;
@@ -297,6 +307,7 @@ export function Cassette({
       return;
     }
     if (d.axis !== "x" || !scene.current) return;
+    handled.current = performance.now();
     scene.current.sc.release(e.timeStamp - d.t > 80);
     scene.current.loop.wake();
   };

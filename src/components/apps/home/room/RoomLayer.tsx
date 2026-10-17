@@ -214,7 +214,6 @@ export function RoomLayer({ from, leaving, onGone }: { from: { x: number; y: num
     const scene = document.querySelector<HTMLElement>(".app-home-scene");
     scene?.setAttribute("inert", "");
     if (!leaving) {
-      blip("open");
       backRef.current?.focus({ preventScroll: true });
       if (reduced) {
         layer.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 180, fill: "both" });
@@ -268,11 +267,10 @@ export function RoomLayer({ from, leaving, onGone }: { from: { x: number; y: num
   }, [leaving]);
 
   const leave = () => {
-    blip("close");
+    blip("outside");
     setRoom(false);
   };
   const go = (href: string) => {
-    blip("select");
     router.push(path(href), { transitionTypes: ["app-open"] });
     setRoom(false);
   };
@@ -390,9 +388,10 @@ export function RoomLayer({ from, leaving, onGone }: { from: { x: number; y: num
                     if (touch && named !== s.id) {
                       setNamed(s.id);
                       setLooked(true);
-                      blip("tick");
+                      blip("thing", { variant: s.id });
                       return;
                     }
+                    if (s.id !== "window") blip("thing", { variant: s.id });
                     s.go();
                   }}
                 />
@@ -401,7 +400,10 @@ export function RoomLayer({ from, leaving, onGone }: { from: { x: number; y: num
                     className="app-home-room-tag"
                     data-side={q.y + q.h / 2 > (typeof window === "undefined" ? 900 : window.innerHeight) * 0.55 ? "up" : "down"}
                     data-align={cx < 160 ? "start" : cx > vw - 160 ? "end" : undefined}
-                    onClick={s.go}
+                    onClick={() => {
+                      if (s.id !== "window") blip("thing", { variant: s.id });
+                      s.go();
+                    }}
                   >
                     <span className="app-home-room-tag-k">{s.k}</span>
                     <span className="app-home-room-tag-t">{s.title}</span>

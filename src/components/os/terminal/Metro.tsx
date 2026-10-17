@@ -331,6 +331,8 @@ function MetroMap({ lines, lang }: { lines: MetroLine[]; lang: "en" | "fr" }) {
     if (reduced) pos.jump(to);
     // a slight bounce only when it was thrown
     else anim.current = animate(pos, to, Math.abs(v) > 300 ? { ...spring.flick, velocity: v } : { ...spring.default, velocity: v });
+    // the doors' chime as it pulls in
+    window.setTimeout(() => blip("chime"), reduced ? 0 : 260);
   };
 
   // wide maps open on their newest end
@@ -339,7 +341,10 @@ function MetroMap({ lines, lang }: { lines: MetroLine[]; lang: "en" | "fr" }) {
     if (el && !narrow) el.scrollLeft = el.scrollWidth;
   }, [narrow, W]);
 
-  const go = (line: number, i: number) => setSel({ line, i });
+  const go = (line: number, i: number) => {
+    if (line !== at.line || i !== at.i) blip("tick");
+    setSel({ line, i });
+  };
   const onKey = (e: React.KeyboardEvent) => {
     const tr = tracks[at.line];
     if (!tr || !stop) return;

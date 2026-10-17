@@ -75,6 +75,7 @@ export function Article({
       blip("copy");
       notify(w.copied, t.shell.apps.writing);
     } catch {
+      blip("error");
       notify(w.copyFailed, t.shell.apps.writing);
     }
   };
