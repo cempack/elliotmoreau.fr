@@ -47,8 +47,9 @@ import {
 import { syncOnce } from "@/server/mail/sync";
 import { json } from "@/server/mail/http";
 import { db } from "@/server/db";
-import { env, imapReady, smtpReady } from "@/server/env";
+import { env, imapReady, smtpReady, turnstileReady } from "@/server/env";
 import { getRepos } from "@/lib/github";
+import { databaseKept, isLive } from "@/lib/deploy";
 import { getLatestPosts } from "@/lib/ghost";
 import { FIXTURE_POSTS, FIXTURE_REPOS } from "@/lib/fixtures";
 
@@ -87,19 +88,20 @@ function overview(ctx: AdminCtx) {
       recoveryLeft: recoveryLeft(),
       session: { createdAt: ctx.session.createdAt, expiresAt: ctx.session.expiresAt, hardExpiresAt: ctx.session.hardExpiresAt },
       integrations: {
-        database: env.databasePath.startsWith("/data/") ? "volume" : "local",
+        database: databaseKept(env.databasePath) ? "volume" : "local",
         smtp: smtpReady(),
         imap: imapReady(),
         github: Boolean(process.env.GITHUB_TOKEN),
         ghost: Boolean(process.env.GHOST_API_URL && process.env.GHOST_CONTENT_KEY),
         spotify: Boolean(process.env.SPOTIFY_REFRESH_TOKEN),
+        turnstile: turnstileReady(),
         siteUrl: env.siteUrl,
       },
     },
   };
 }
 
-const sample = () => process.env.RAILWAY_ENVIRONMENT_NAME !== "production";
+const sample = () => !isLive();
 
 const OPS: Record<string, Handler> = {
   overview,

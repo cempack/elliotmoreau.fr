@@ -76,6 +76,9 @@ const en = {
 
   /* sending from the site (when it can) */
   composeLeadSend: "Send delivers it to my inbox. I reply to yours, and here.",
+  privacyNote:
+    "To keep spam out, your letter is kept with the network address and browser details it was sent from. Only I see them, and they’re deleted after 90 days.",
+  privacyTurnstile: "Cloudflare Turnstile checks that a person is sending it.",
   sendLabelSend: "Send: delivers this message to Elliot",
   from: "From",
   fromEmail: "Your email",
@@ -88,6 +91,9 @@ const en = {
   errInvalid: "Something wasn’t accepted. Check your email address and message, then send again.",
   errRate: "That’s a lot of letters for now. Try again in a while.",
   errFailed: "It didn’t go through. Try again in a moment, or send it from your mail app.",
+  errVerify: "Cloudflare couldn’t confirm a person sent this (a blocker, or a check left unticked). Send again, or use your mail app.",
+  verifying: "Checking…",
+  verifyAsk: "One quick check before it goes: tick the box.",
   useMailApp: "Use my mail app",
   hpLabel: "Leave this empty",
   deliveredEyebrow: "Delivered",
@@ -292,6 +298,9 @@ const fr: typeof en = {
   noSubject: "Sans objet",
 
   composeLeadSend: "Envoyer le dépose dans ma boîte. Je réponds dans la vôtre, et ici.",
+  privacyNote:
+    "Pour éviter le spam, votre lettre est gardée avec l’adresse réseau et les détails du navigateur d’où elle part. Moi seul les vois, et ils sont effacés au bout de 90 jours.",
+  privacyTurnstile: "Cloudflare Turnstile vérifie qu’une personne l’envoie.",
   sendLabelSend: "Envoyer : remet ce message à Elliot",
   from: "De",
   fromEmail: "Votre e-mail",
@@ -304,6 +313,9 @@ const fr: typeof en = {
   errInvalid: "Quelque chose n’a pas été accepté. Vérifiez votre adresse et votre message, puis renvoyez.",
   errRate: "Beaucoup de lettres pour le moment. Réessayez un peu plus tard.",
   errFailed: "L’envoi n’a pas abouti. Réessayez dans un instant, ou passez par votre messagerie.",
+  errVerify: "Cloudflare n’a pas pu confirmer qu’une personne l’envoie (un bloqueur, ou une case restée vide). Renvoyez, ou passez par votre messagerie.",
+  verifying: "Vérification…",
+  verifyAsk: "Une petite vérification avant le départ : cochez la case.",
   useMailApp: "Passer par ma messagerie",
   hpLabel: "Laissez ce champ vide",
   deliveredEyebrow: "Remise",

@@ -29,6 +29,9 @@ export const RATE = {
   mailtoDay: 40,
 } as const;
 
+/** how long a letter's sender details (IP, browser, location) are kept */
+export const SENDER_DAYS = 90;
+
 /** the visitor's private link to their thread (also what admin replies carry) */
 export function threadLink(token: string, lang: "en" | "fr") {
   return `${env.siteUrl}${lang === "fr" ? "/fr" : ""}/contact?thread=${token}`;

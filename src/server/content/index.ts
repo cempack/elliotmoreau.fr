@@ -26,7 +26,7 @@ import { validateAway, validateCopy, validateLive, validateNow, validatePlace, v
  *
  * Synchronous (better-sqlite3), typed, validated on write. Reads never
  * break a page: when the database can't be opened (or during `next build`,
- * which never touches it because Railway mounts the volume only at run
+ * which never touches it because the persistent storage is mounted only at run
  * time) they log once and return the seed, and a stored document that no
  * longer validates falls back to its seed the same way. Writes throw: a
  * ContentError for bad input, the database error otherwise.

@@ -79,7 +79,7 @@ const en = {
     },
     values: {
       built: "Next.js 16 · React 19 · motion",
-      host: "Railway",
+      host: "Coolify, self-hosted",
       fonts: "Inter + JetBrains Mono",
     },
     palette: "The theme’s palette",
@@ -359,7 +359,7 @@ const fr: typeof en = {
     },
     values: {
       built: "Next.js 16 · React 19 · motion",
-      host: "Railway",
+      host: "Coolify, auto-hébergé",
       fonts: "Inter + JetBrains Mono",
     },
     palette: "La palette du thème",

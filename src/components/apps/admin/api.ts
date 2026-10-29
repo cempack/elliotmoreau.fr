@@ -41,7 +41,80 @@ export type AuditRow = { id: number; at: string; action: string; ok: boolean; de
 export type MailHealth = { smtp: boolean; imap: boolean; lastSync?: string; lastError?: string };
 
 export type ThreadStatus = "open" | "answered" | "archived" | "spam";
-export type Message = { id: string; direction: "in" | "out"; body: string; source: "site" | "admin" | "imap"; createdAt: string; error?: string };
+/** who sent a letter from the site (src/server/mail/senders SenderRow) */
+export type Sender = {
+  ip: string;
+  host?: string;
+  network?: {
+    asn?: string;
+    org?: string;
+    hostname?: string;
+    city?: string;
+    region?: string;
+    country?: string;
+    loc?: string;
+    postal?: string;
+    timezone?: string;
+    datacenter?: boolean;
+    vpn?: boolean;
+    proxy?: boolean;
+    tor?: boolean;
+    relay?: boolean;
+    hosting?: boolean;
+  };
+  country?: string;
+  continent?: string;
+  region?: string;
+  city?: string;
+  postal?: string;
+  latitude?: string;
+  longitude?: string;
+  ipTimeZone?: string;
+  userAgent?: string;
+  acceptLanguage?: string;
+  timeZone?: string;
+  ray?: string;
+  colo?: string;
+  viaCloudflare: boolean;
+  headers?: Record<string, string>;
+  clues?: {
+    languages?: string[];
+    platform?: string;
+    mobile?: boolean;
+    brands?: string[];
+    screen?: string;
+    window?: string;
+    dpr?: number;
+    colorDepth?: number;
+    cores?: number;
+    memory?: number;
+    touch?: number;
+    dark?: boolean;
+    reducedMotion?: boolean;
+    connection?: string;
+    saveData?: boolean;
+    cookies?: boolean;
+    webdriver?: boolean;
+    dnt?: boolean;
+    ref?: string;
+    landing?: string;
+    pages?: string[];
+    onSiteMs?: number;
+    writingMs?: number;
+    pasted?: boolean;
+  };
+  turnstile: "passed" | "off";
+  sameIp: { threads: number; spam: number };
+};
+export type Message = {
+  id: string;
+  direction: "in" | "out";
+  body: string;
+  source: "site" | "admin" | "imap";
+  createdAt: string;
+  error?: string;
+  sender?: Sender;
+};
 export type Thread = {
   id: string;
   name: string;
@@ -52,6 +125,8 @@ export type Thread = {
   createdAt: string;
   lastAt: string;
   adminUnread: number;
+  /** where the first letter came from (two letters, Cloudflare's guess) */
+  country?: string;
   messages?: Message[];
 };
 
@@ -75,6 +150,7 @@ export type Overview = {
       github: boolean;
       ghost: boolean;
       spotify: boolean;
+      turnstile: boolean;
       siteUrl: string;
     };
   };

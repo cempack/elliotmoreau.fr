@@ -1,6 +1,7 @@
 import { getYears } from "@/lib/github";
 import { fixtureYears } from "@/lib/fixtures";
 import { getSiteContent } from "@/server/content";
+import { sampleAllowed } from "@/lib/deploy";
 
 /**
  * GET /api/years: a year of work for Projects' Years view: each recently
@@ -9,7 +10,6 @@ import { getSiteContent } from "@/server/content";
  * data, cached half an hour; a sample outside production when GitHub
  * can't be reached.
  */
-const sampleAllowed = () => process.env.RAILWAY_ENVIRONMENT_NAME !== "production" && process.env.EM_NO_FIXTURES !== "1";
 
 export async function GET() {
   const hidden = new Set(getSiteContent().live.hiddenRepos.map((n) => n.toLowerCase()));

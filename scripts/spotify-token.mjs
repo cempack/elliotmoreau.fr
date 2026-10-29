@@ -96,7 +96,7 @@ const server = createServer(async (req, res) => {
     }
     console.log("\nDone." + (check ? ` Last played: ${check}` : ""));
     console.log("\nSPOTIFY_REFRESH_TOKEN=" + json.refresh_token);
-    console.log("\nPut it on Railway → web → Variables (with the same Client ID and secret), or from this folder:");
+    console.log("\nPut it in Coolify → the site → Environment Variables (with the same Client ID and secret), or from this folder:");
     console.log(
       `  railway variables --service web --set "SPOTIFY_CLIENT_ID=${clientId}" --set "SPOTIFY_CLIENT_SECRET=<your secret>" --set "SPOTIFY_REFRESH_TOKEN=${json.refresh_token}"\n`
     );

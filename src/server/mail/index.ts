@@ -22,6 +22,9 @@ import { canSend, deliver, lastSmtpError } from "./transport";
 import { queue } from "./outbox";
 import { cleanBody, cleanEmail, cleanLang, cleanLine } from "./validate";
 import { syncStatus } from "./sync";
+import type { SenderInfo } from "./http";
+import { firstCountries, insertSender, lookupSender, pruneSenders, sendersOf, type SenderRow } from "./senders";
+import { checkTurnstile } from "./turnstile";
 
 /**
  * The mail module's API: what the site's Mail app (visitor side, through
@@ -35,7 +38,10 @@ import { syncStatus } from "./sync";
  */
 
 export type { ThreadStatus } from "./store";
+export type { SenderRow } from "./senders";
 export type MessageRow = { id: string; direction: "in" | "out"; body: string; source: "site" | "admin" | "imap"; createdAt: string; error?: string };
+/** the admin's view of a letter: who sent it, when it came from the site (and isn't older than SENDER_DAYS) */
+export type AdminMessageRow = MessageRow & { sender?: SenderRow };
 export type ThreadRow = {
   id: string;
   name: string;
@@ -46,9 +52,11 @@ export type ThreadRow = {
   createdAt: string;
   lastAt: string;
   adminUnread: number;
-  messages?: MessageRow[];
+  /** where the first letter came from (Cloudflare's two-letter guess), while its details are kept */
+  country?: string;
+  messages?: AdminMessageRow[];
 };
-export type VisitorThread = Omit<ThreadRow, "email" | "adminUnread"> & { messages: MessageRow[]; visitorUnread: number };
+export type VisitorThread = Omit<ThreadRow, "email" | "adminUnread" | "country" | "messages"> & { messages: MessageRow[]; visitorUnread: number };
 
 type Fail<E extends string> = { ok: false; error: E };
 
@@ -97,10 +105,13 @@ export async function sendFromVisitor(input: {
   body: string;
   lang: "en" | "fr";
   ip: string;
-  ua?: string;
+  /** the request's details, kept with the letter for the admin (just the IP if left out) */
+  sender?: SenderInfo;
+  /** the Turnstile widget's token (required once Turnstile is set up) */
+  turnstile?: unknown;
   startedAt?: number;
   honeypot?: string;
-}): Promise<{ ok: true; token: string; threadId: string } | Fail<"invalid" | "rate" | "unavailable" | "failed">> {
+}): Promise<{ ok: true; token: string; threadId: string } | Fail<"invalid" | "verify" | "rate" | "unavailable" | "failed">> {
   if (!canSend()) return { ok: false, error: "unavailable" };
   // bots fill every field, and are fast
   if (input.honeypot) return { ok: false, error: "invalid" };
@@ -114,6 +125,11 @@ export async function sendFromVisitor(input: {
   const lang = cleanLang(input.lang);
   if (email == null || name == null || subject == null || body == null) return { ok: false, error: "invalid" };
   if (elliotAddresses().has(email.toLowerCase())) return { ok: false, error: "invalid" };
+  // a person, by Cloudflare's judgement (before anything is counted or stored)
+  const human = await checkTurnstile(input.turnstile, input.ip);
+  if (human === "verify") return { ok: false, error: "verify" };
+  if (human === "unreachable") return { ok: false, error: "failed" };
+  const sender: SenderInfo = { ...(input.sender ?? { viaCloudflare: false }), ip: input.ip || "unknown" };
 
   let ipHash: string;
   try {
@@ -167,12 +183,15 @@ export async function sendFromVisitor(input: {
         created_at: at,
         sent_at: null,
       });
+      insertSender(d, msgId, sender, human, at);
     });
   } catch (e) {
     console.error("[mail] couldn't store the letter:", (e as Error)?.message ?? e);
     return { ok: false, error: "failed" };
   }
   queue(msgId);
+  lookupSender(msgId, sender.ip);
+  safely(() => pruneSenders(), undefined);
   return { ok: true, token, threadId: thread.id };
 }
 
@@ -211,7 +230,8 @@ export function markVisitorRead(token: string) {
 export async function visitorReply(
   token: string,
   body: string,
-  ip: string
+  ip: string,
+  sender?: SenderInfo
 ): Promise<{ ok: true } | Fail<"invalid" | "rate" | "unavailable" | "failed" | "notfound">> {
   if (typeof token !== "string" || !TOKEN_RE.test(token)) return { ok: false, error: "notfound" };
   if (!canSend()) return { ok: false, error: "unavailable" };
@@ -253,6 +273,7 @@ export async function visitorReply(
         created_at: at,
         sent_at: null,
       });
+      insertSender(d, msgId, { ...(sender ?? { viaCloudflare: false }), ip: ip || "unknown" }, "off", at);
       // the ball is in Elliot's court again (an archived thread comes back to the inbox)
       d.prepare(`UPDATE threads SET status = 'open', last_at = ?, admin_unread = admin_unread + 1 WHERE id = ?`).run(at, thread.id);
     });
@@ -261,6 +282,7 @@ export async function visitorReply(
     return { ok: false, error: "failed" };
   }
   queue(msgId);
+  lookupSender(msgId, ip);
   return { ok: true };
 }
 
@@ -270,16 +292,25 @@ export async function visitorReply(
 export function listThreads(filter?: { status?: ThreadStatus | "inbox" }): ThreadRow[] {
   const s = filter?.status;
   const statuses: ThreadStatus[] = s === "inbox" ? ["open", "answered"] : s && STATUSES.includes(s) ? [s] : ["open", "answered", "archived"];
-  return db()
+  const rows = db()
     .prepare(`SELECT * FROM threads WHERE status IN (${statuses.map(() => "?").join(", ")}) ORDER BY last_at DESC LIMIT 500`)
     .all(...statuses)
     .map((t) => toThread(t as ThreadDb));
+  const countries = firstCountries(rows.map((t) => t.id));
+  return rows.map((t) => (countries.has(t.id) ? { ...t, country: countries.get(t.id) } : t));
 }
 
+/** the admin's view: every letter, with who sent each one from the site */
 export function getThread(id: string): ThreadRow | null {
   const t = threadById(id);
   if (!t) return null;
-  return { ...toThread(t), messages: messagesOf(t.id).map(toMessage) };
+  const senders = sendersOf(t.id);
+  const messages = messagesOf(t.id).map((m): AdminMessageRow => {
+    const sender = senders.get(m.id);
+    return sender ? { ...toMessage(m), sender } : toMessage(m);
+  });
+  const first = messages.find((m) => m.sender?.country)?.sender?.country;
+  return { ...toThread(t), ...(first ? { country: first } : {}), messages };
 }
 
 export function markThreadRead(id: string) {

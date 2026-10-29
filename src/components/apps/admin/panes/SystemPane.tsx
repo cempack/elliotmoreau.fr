@@ -136,6 +136,7 @@ export function SystemPane({ data, onChanged }: { data: Overview; onChanged: () 
     [s.github, integ.github, integ.github ? t.admin.mail.ok : t.admin.mail.off],
     [s.ghost, integ.ghost, integ.ghost ? t.admin.mail.ok : t.admin.mail.off],
     [s.spotify, integ.spotify, integ.spotify ? t.admin.mail.ok : t.admin.mail.off],
+    [s.turnstile, integ.turnstile, integ.turnstile ? t.admin.mail.ok : t.admin.mail.off],
   ];
 
   return (

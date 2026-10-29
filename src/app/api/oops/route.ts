@@ -3,7 +3,7 @@ import { sameSite } from "@/server/sameSite";
 /**
  * POST /api/oops: a crash in a visitor's browser (lib/oops.ts), written to
  * the server log as one JSON line, so something that only breaks on
- * someone's phone can be read in Railway's logs and fixed. What is kept:
+ * someone's phone can be read in the server's logs (Coolify) and fixed. What is kept:
  * the error, the first lines of its stack, the page, the last navigation
  * and the browser. No address, no identifier. Always 204.
  */

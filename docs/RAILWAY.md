@@ -1,5 +1,13 @@
 # Deploying elliotmoreau.fr on Railway
 
+> **The site no longer runs on Railway.** It is self-hosted on Coolify
+> (https://apps.elliotmoreau.fr), behind Cloudflare, and deploys `main`
+> through Coolify's GitHub App (PR previews at `pr-<n>-site.elliotmoreau.fr`).
+> What still holds here: the variables table in step 3 (set them in Coolify →
+> the site → Environment Variables), the database at `DATABASE_PATH=/data/emos.db`
+> on persistent storage mounted at `/data`, the `/api/health` check, and the
+> Cloudflare notes. The Railway-specific steps are kept for reference.
+
 This moves the site from Vercel to Railway: one long-running Next.js server
 (`next start`) with a persistent volume for the SQLite database. The mail
 bridge (Proton Mail Bridge) is a second service, set up afterwards with

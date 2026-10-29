@@ -56,9 +56,10 @@ function DraftPath() {
  *
  * `mailReady`: the server can send mail (SMTP is configured). Without it,
  * or once the server says it can't, Send goes through the visitor's own
- * mail app instead.
+ * mail app instead. `turnstileKey`: Cloudflare Turnstile's site key, when
+ * the server checks that a letter comes from a person.
  */
-export function MailApp({ mailReady = false }: { mailReady?: boolean }) {
+export function MailApp({ mailReady = false, turnstileKey }: { mailReady?: boolean; turnstileKey?: string }) {
   const data = useSiteData();
   const { t } = useI18n();
   const c = t.contact;
@@ -182,6 +183,7 @@ export function MailApp({ mailReady = false }: { mailReady?: boolean }) {
           <Compose
             formId={formId}
             mode={mode}
+            turnstileKey={turnstileKey}
             onPhase={setPhase}
             onDelivered={(token, subject) => threadStore.add({ token, subject, at: new Date().toISOString() })}
             onOpenSent={(token) => {

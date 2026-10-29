@@ -3,13 +3,15 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { useI18n } from "@/i18n/client";
+import { noteVisit } from "@/lib/visit";
 
 /**
  * Counts a page view for the site's own stats (src/server/stats): the
  * page, the language, the site the visit came from (first page only), the
  * time zone (for the country) and whether the screen is touch. No cookie,
- * nothing stored in the browser. Do Not Track or Global Privacy Control
- * turned on: nothing is sent at all.
+ * nothing stored for the count. Do Not Track or Global Privacy Control
+ * turned on: nothing is sent at all. (Each page is also noted in the tab's
+ * own record of the visit, lib/visit, which only ever leaves with a letter.)
  */
 export function Beacon() {
   const pathname = usePathname();
@@ -17,6 +19,7 @@ export function Beacon() {
   const first = useRef(true);
 
   useEffect(() => {
+    noteVisit(pathname);
     const nav = navigator as Navigator & { globalPrivacyControl?: boolean };
     if (nav.globalPrivacyControl || nav.doNotTrack === "1") return;
     if (/^\/(en\/|fr\/)?admin(\/|$)/.test(pathname)) return;

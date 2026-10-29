@@ -463,3 +463,107 @@ test("IMAP: a letter to the site's mailto address starts a thread; other inbox m
   assert.equal(match.ingest("inbox", other), "ignored");
   assert.equal(mail.listThreads().some((x) => x.email === "news@shop.example"), false);
 });
+
+/* ───────────── who sent it: the visitor's IP behind Cloudflare, Turnstile, sender details ───────────── */
+
+const req = (headers: Record<string, string>) => new Request("https://elliotmoreau.fr/api/mail/send", { method: "POST", headers });
+
+test("the visitor's IP: Cloudflare's word only when the request came through Cloudflare", async () => {
+  const { clientIp, senderOf } = await import("../../src/server/mail/http");
+  // Coolify's proxy saw Cloudflare's edge: the visitor is CF-Connecting-IP
+  assert.equal(clientIp(req({ "x-real-ip": "172.70.1.2", "x-forwarded-for": "172.70.1.2", "cf-connecting-ip": "198.51.100.7" })), "198.51.100.7");
+  assert.equal(clientIp(req({ "x-forwarded-for": "2a06:98c0:3600::103", "cf-connecting-ip": "2001:db8::1" })), "2001:db8::1");
+  // a Cloudflare Tunnel reaches the proxy from the Docker network
+  assert.equal(clientIp(req({ "x-real-ip": "10.0.1.5", "cf-connecting-ip": "198.51.100.8" })), "198.51.100.8");
+  // straight to the server, faking the header: the real peer
+  assert.equal(clientIp(req({ "x-real-ip": "192.0.2.66", "cf-connecting-ip": "1.1.1.1" })), "192.0.2.66");
+  assert.equal(clientIp(req({ "x-forwarded-for": "1.1.1.1, 192.0.2.67" })), "192.0.2.67", "the last hop, not what the client wrote first");
+  assert.equal(clientIp(req({})), "unknown");
+
+  const s = senderOf(
+    req({
+      "x-real-ip": "172.70.1.2",
+      "cf-connecting-ip": "198.51.100.7",
+      "cf-ipcountry": "fr",
+      "cf-ipcity": "Toulouse",
+      "cf-ray": "8f2a1b3c4d5e6f70-CDG",
+      "user-agent": "Mozilla/5.0 (X11; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0",
+      cookie: "secret=1",
+      authorization: "Bearer x",
+      "accept-language": "fr-FR,fr;q=0.9",
+    }),
+    { tz: "Europe/Paris", elapsed: 42_000, clues: { screen: "1920×1080", cores: 8, pasted: true, evil: "<script>", languages: ["fr-FR", 3], dark: "yes" } }
+  );
+  assert.equal(s.ip, "198.51.100.7");
+  assert.equal(s.country, "FR");
+  assert.equal(s.city, "Toulouse");
+  assert.equal(s.colo, "CDG");
+  assert.equal(s.timeZone, "Europe/Paris");
+  assert.equal(s.viaCloudflare, true);
+  assert.equal(s.headers?.cookie, undefined, "never the visitor's cookies");
+  assert.equal(s.headers?.authorization, undefined);
+  assert.equal(s.headers?.["accept-language"], "fr-FR,fr;q=0.9");
+  assert.deepEqual(s.clues, { screen: "1920×1080", languages: ["fr-FR"], cores: 8, pasted: true, writingMs: 42_000 });
+
+  // not through Cloudflare: its headers aren't believed
+  const direct = senderOf(req({ "x-real-ip": "192.0.2.66", "cf-ipcountry": "US", "cf-connecting-ip": "1.1.1.1" }));
+  assert.equal(direct.ip, "192.0.2.66");
+  assert.equal(direct.country, undefined);
+  assert.equal(direct.viaCloudflare, false);
+});
+
+test("Turnstile: once set up, a letter needs a good token, for the contact action", async () => {
+  const { useTestVerifier } = await import("../../src/server/mail/turnstile");
+  useTestVerifier((t) =>
+    t === "good" ? { success: true, action: "contact" } : t === "elsewhere" ? { success: true, action: "login" } : { success: false, "error-codes": ["invalid-input-response"] }
+  );
+  try {
+    const before = mail.listThreads().length;
+    assert.deepEqual(await mail.sendFromVisitor(letter({ email: "t1@example.com" })), { ok: false, error: "verify" }, "no token");
+    assert.deepEqual(await mail.sendFromVisitor(letter({ email: "t2@example.com", turnstile: "forged" })), { ok: false, error: "verify" });
+    assert.deepEqual(await mail.sendFromVisitor(letter({ email: "t3@example.com", turnstile: "elsewhere" })), { ok: false, error: "verify" });
+    assert.equal(mail.listThreads().length, before, "nothing stored");
+    const r = await mail.sendFromVisitor(letter({ email: "t4@example.com", turnstile: "good" }));
+    assert.equal(r.ok, true);
+    if (!r.ok) return;
+    assert.equal(mail.getThread(r.threadId)!.messages![0].sender?.turnstile, "passed");
+  } finally {
+    useTestVerifier(null);
+  }
+});
+
+test("sender details: kept with each letter for the admin, never shown to the visitor, forgotten after 90 days", async () => {
+  const { senderOf } = await import("../../src/server/mail/http");
+  const { pruneSenders } = await import("../../src/server/mail/senders");
+  const headers = { "x-real-ip": "162.158.1.1", "cf-connecting-ip": "198.51.100.42", "cf-ipcountry": "DE", "user-agent": "curl/8.5.0" };
+  const sender = senderOf(req(headers), { clues: { ref: "https://news.ycombinator.com/item?id=1", landing: "/", pages: ["/", "/contact"] } });
+  const r = await mail.sendFromVisitor(letter({ email: "who@example.com", ip: sender.ip, sender }));
+  assert.equal(r.ok, true);
+  if (!r.ok) return;
+  const again = senderOf(req(headers));
+  assert.equal((await mail.visitorReply(r.token, "One more thing.", again.ip, again)).ok, true);
+
+  const t = mail.getThread(r.threadId)!;
+  assert.equal(t.country, "DE");
+  assert.equal(mail.listThreads().find((x) => x.id === t.id)?.country, "DE", "the inbox list shows it too");
+  const [first, reply] = t.messages!;
+  assert.equal(first.sender?.ip, "198.51.100.42");
+  assert.equal(first.sender?.userAgent, "curl/8.5.0");
+  assert.equal(first.sender?.clues?.ref, "https://news.ycombinator.com/item?id=1");
+  assert.equal(first.sender?.turnstile, "off");
+  assert.equal(reply.sender?.ip, "198.51.100.42");
+
+  // another conversation from the same IP is counted
+  const r2 = await mail.sendFromVisitor(letter({ email: "who2@example.com", ip: sender.ip, sender }));
+  assert.equal(r2.ok, true);
+  if (!r2.ok) return;
+  assert.deepEqual(mail.getThread(r2.threadId)!.messages![0].sender?.sameIp, { threads: 1, spam: 0 });
+
+  const visitor = mail.visitorThread(r.token)!;
+  assert.equal(JSON.stringify(visitor).includes("198.51.100.42"), false, "the visitor's view has none of it");
+  assert.equal(JSON.stringify(visitor).includes("curl"), false);
+
+  pruneSenders(Date.now() + 91 * 86_400_000);
+  assert.equal(mail.getThread(r.threadId)!.messages![0].sender, undefined, "gone after 90 days");
+  assert.equal(mail.getThread(r.threadId)!.messages![0].body.length > 0, true, "the letter stays");
+});

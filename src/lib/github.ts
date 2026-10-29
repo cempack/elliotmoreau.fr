@@ -1,5 +1,6 @@
 import "server-only";
 import type { ProjectNote } from "@/lib/content";
+import { deployedByCoolify, deployedSha } from "@/lib/deploy";
 // Server-only GitHub helper with minute-scale in-memory cache.
 
 const API = "https://api.github.com";
@@ -273,9 +274,6 @@ export async function getDayPushes(skip?: Skip): Promise<DayPush[] | null> {
 /* ───────────────────────── this site's own history (Terminal: git log) ───────────────────────── */
 
 const SITE = "elliotmoreau.fr";
-/** the branch and commit this server was built from (Railway sets these), so the log is the running site's */
-const DEPLOYED_BRANCH = () => process.env.RAILWAY_GIT_BRANCH || "main";
-const DEPLOYED_SHA = () => process.env.RAILWAY_GIT_COMMIT_SHA || DEPLOYED_BRANCH();
 
 export type CommitInfo = { sha: string; message: string; date: string; url: string; author: string };
 export type CommitDetail = CommitInfo & {
@@ -303,7 +301,7 @@ const toInfo = (c: GhCommit): CommitInfo => ({
 /** the latest commits of this site's repo (cached 5 minutes) */
 export async function getSiteCommits(n = 15): Promise<CommitInfo[] | null> {
   try {
-    const res = await fetch(`${API}/repos/${USER}/${SITE}/commits?per_page=${Math.min(n, 50)}&sha=${encodeURIComponent(DEPLOYED_SHA())}`, {
+    const res = await fetch(`${API}/repos/${USER}/${SITE}/commits?per_page=${Math.min(n, 50)}&sha=${encodeURIComponent(deployedSha())}`, {
       headers: headers(), signal: timeout(),
       next: { revalidate: 300 },
     });
@@ -317,7 +315,7 @@ export async function getSiteCommits(n = 15): Promise<CommitInfo[] | null> {
 /** one commit with its files (git show); null when unknown */
 export async function getSiteCommit(name: string): Promise<CommitDetail | null> {
   if (!/^(HEAD|main|[0-9a-f]{4,40})$/i.test(name)) return null;
-  const ref = /^head$/i.test(name) ? DEPLOYED_SHA() : name;
+  const ref = /^head$/i.test(name) ? deployedSha() : name;
   try {
     const res = await fetch(`${API}/repos/${USER}/${SITE}/commits/${ref}`, { headers: headers(), signal: timeout(), next: { revalidate: 3600 } });
     if (!res.ok) return null;
@@ -475,8 +473,8 @@ export function readmeIntro(md: string): string {
 /** the default branch's checks, folded into one signal */
 export async function getCi(name: string, branch = "HEAD"): Promise<CiInfo> {
   if (!NAME_RE.test(name)) return { state: "none" };
-  // this site: the deploy itself is its check (Railway built and is serving it)
-  if (name === SITE && process.env.RAILWAY_DEPLOYMENT_ID) return { state: "passing", detail: "deployed", at: BOOTED_AT };
+  // this site: the deploy itself is its check (Coolify built and is serving it)
+  if (name === SITE && deployedByCoolify()) return { state: "passing", detail: "deployed", at: BOOTED_AT };
   const r = await gh<{ check_runs: { name: string; status: string; conclusion: string | null; html_url: string; completed_at: string | null }[] }>(
     `/repos/${USER}/${name}/commits/${branch}/check-runs?per_page=30`
   );
@@ -488,7 +486,7 @@ export async function getCi(name: string, branch = "HEAD"): Promise<CiInfo> {
   return { state: "passing", url: runs[0].html_url, at: runs[0].completed_at ?? undefined };
 }
 
-/** when this server started: on Railway, the moment the running deploy went live */
+/** when this server started: on Coolify, the moment the running deploy went live */
 const BOOTED_AT = new Date().toISOString();
 
 export async function getRepoDetail(name: string): Promise<RepoDetail | null> {

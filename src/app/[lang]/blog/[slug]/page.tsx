@@ -7,11 +7,12 @@ import { getLatestPosts, getPost, type GhostFullPost } from "@/lib/ghost";
 import { cleanPostHtml, postText } from "@/lib/postHtml";
 import { FIXTURE_POSTS, FIXTURE_POST_HTML } from "@/lib/fixtures";
 import { Article } from "@/components/apps/writing/Article";
+import { sampleAllowed } from "@/lib/deploy";
 
 export const revalidate = 3600;
 
 /** sample posts stand in outside production when Ghost can't be reached */
-const fixturesAllowed = () => process.env.RAILWAY_ENVIRONMENT_NAME !== "production" && process.env.EM_NO_FIXTURES !== "1";
+const fixturesAllowed = sampleAllowed;
 
 /** the post and its neighbours, or null (404); `sample` when it's stand-in text */
 async function load(slug: string) {
