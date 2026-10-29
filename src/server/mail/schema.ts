@@ -15,6 +15,12 @@ import type { Migration } from "../db/types";
  *   `message_row` is the letter it names, when we have it.
  * - mail_sync: per-mailbox IMAP position (UIDVALIDITY + last UID seen).
  * - mail_rate: fixed-window counters for the abuse limits.
+ * - mail_senders: who sent each letter from the site, for Elliot to judge
+ *   abuse by: the IP, its reverse DNS and network (`network`, JSON, looked
+ *   up after arrival), and `info` (JSON: Cloudflare's location, every
+ *   request header but cookies, what the browser said about itself and the
+ *   visit). Kept 90 days (SENDER_DAYS), then forgotten; the thread keeps
+ *   only its salted IP hash.
  * - mail_kv: small internal values (a generated secret when SESSION_SECRET
  *   isn't set, so tokens and IP hashes still have a key; how the last SMTP
  *   send went).
@@ -80,6 +86,22 @@ export const mailMigrations: Migration[] = [
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL
       );
+    `,
+  },
+  {
+    id: "mail-002",
+    up: `
+      CREATE TABLE mail_senders (
+        message_id TEXT PRIMARY KEY REFERENCES messages (id) ON DELETE CASCADE,
+        ip TEXT NOT NULL,
+        country TEXT,
+        host TEXT,
+        network TEXT,
+        info TEXT NOT NULL,
+        turnstile TEXT NOT NULL DEFAULT 'off' CHECK (turnstile IN ('passed', 'off')),
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX mail_senders_created ON mail_senders (created_at);
     `,
   },
 ];

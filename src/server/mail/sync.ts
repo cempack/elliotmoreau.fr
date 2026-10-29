@@ -6,6 +6,7 @@ import { env, imapReady } from "../env";
 import { tlsFor } from "./config";
 import { ingest, toIncoming, worthFetching, type Outcome } from "./match";
 import { pruneRates } from "./rate";
+import { pruneSenders } from "./senders";
 
 /**
  * The IMAP poller: every IMAP_POLL_SECONDS (120 s by default) it signs in
@@ -238,6 +239,7 @@ export async function syncOnce(): Promise<boolean> {
   }
   try {
     pruneRates();
+    pruneSenders();
   } catch {}
   return anyOk;
 }

@@ -1950,6 +1950,10 @@ html[data-mail-hash] .app-contact-sendtool {
   height: 1px;
   overflow: hidden;
 }
+/* Cloudflare Turnstile: takes no room unless it asks for a tick */
+.app-contact-turnstile[data-asking] {
+  margin-top: 0.75rem;
+}
 /* the server said no (or couldn't): what happened, and the way round it */
 .app-contact-error {
   background: color-mix(in oklab, var(--color-flare) 9%, transparent);

@@ -11,7 +11,7 @@ import { SOCIALS } from "@/lib/places";
 import { SITE_MAILTO } from "@/lib/socials";
 import { PixelGlyph } from "@/components/glyphs";
 import { EmosMark } from "@/components/os/menubar/glyphs";
-import { sendLetter, type SendError } from "./api";
+import { clues, sendLetter, type SendError } from "./api";
 import { CopyButton } from "./Copy";
 import { useStatus } from "@/components/os/SiteData";
 import { markAt, type Mark } from "./postmark";
@@ -36,6 +36,7 @@ import {
   type From,
 } from "./mail";
 import { useDraft } from "./useDraft";
+import { useTurnstile } from "./turnstile";
 
 export type Phase = "compose" | "sending" | "sent" | "ready";
 /** "send": the site delivers it (SMTP is set up); "mailto": the visitor's own mail app does */
@@ -114,10 +115,13 @@ function useFrom() {
  * The draft lives here, not in MailApp, so typing re-renders this sheet
  * only. `formId` lets a Send button outside the form (the window's
  * toolbar on phones) submit it; `onPhase` tells MailApp when to show it.
+ * With `turnstileKey`, Send first gets Cloudflare Turnstile's word that a
+ * person wrote it (unseen, unless Cloudflare asks for a tick).
  */
 export function Compose({
   formId,
   mode,
+  turnstileKey,
   onPhase,
   onDelivered,
   onOpenSent,
@@ -125,6 +129,7 @@ export function Compose({
 }: {
   formId: string;
   mode: Mode;
+  turnstileKey?: string;
   onPhase: (p: Phase) => void;
   /** the site delivered it: here is the visitor's key to the thread */
   onDelivered: (token: string, subject: string) => void;
@@ -144,6 +149,7 @@ export function Compose({
   const email = SOCIALS.email;
   const uid = useId();
   const sending = mode === "send";
+  const { boxRef: humanBox, asking, prime, take, on: guarded } = useTurnstile(sending ? turnstileKey : undefined, lang);
 
   const [phase, setPhaseState] = useState<Phase>("compose");
   const [returned, setReturned] = useState(false);
@@ -157,6 +163,10 @@ export function Compose({
   const [delivered, setDelivered] = useState<string | null>(null);
   /** the server couldn't send, so this one went the mailto way */
   const [fellBack, setFellBack] = useState(false);
+  /** Send is waiting for Turnstile's word */
+  const [checking, setChecking] = useState(false);
+  /** part of the message was pasted in (sent with the letter, for spotting copy-paste spam) */
+  const pasted = useRef(false);
   const refuseTimer = useRef(0);
   const sendTimer = useRef(0);
   useEffect(
@@ -218,6 +228,11 @@ export function Compose({
     if (saved) draftFile.set(slug(draft.subject));
   }, [saved, draft.subject]);
   useEffect(() => () => draftFile.set(""), []);
+
+  // Cloudflare wants a tick: bring its box into view (the pinned footer would cover it)
+  useEffect(() => {
+    if (asking) humanBox.current?.scrollIntoView({ block: "center", behavior: reduced ? "auto" : "smooth" });
+  }, [asking, humanBox, reduced]);
 
   // arriving from Spotlight's dead letter: straight to the message
   useEffect(() => {
@@ -346,6 +361,7 @@ export function Compose({
   const typing = (at: number) => {
     if (startedAt.current == null) startedAt.current = at;
     if (sendError) setSendError(null);
+    prime();
   };
 
   /**
@@ -392,14 +408,14 @@ export function Compose({
 
   /** Send, ⌘↵ and the toolbar: nothing written yet says so; otherwise it's postmarked and off it goes */
   const send = () => {
-    if (phase !== "compose") return;
+    if (phase !== "compose" || checking) return;
     if (blocker !== null) onRefuse();
     else onStrike();
   };
 
   /** the postmark goes on, and off it goes */
   const onStrike = () => {
-    if (phase !== "compose") return;
+    if (phase !== "compose" || checking) return;
     setMark(markAt(new Date()));
     // the franking machine's postmark, struck
     blip("stamp");
@@ -418,7 +434,7 @@ export function Compose({
   };
 
   /** the letter, to the server: an honest quick writer just waits out the minimum */
-  const post = async () => {
+  const post = async (ts: string | undefined) => {
     const elapsed = performance.now() - (startedAt.current ?? mountedAt.current);
     if (elapsed < MIN_COMPOSE_MS) await new Promise((r) => window.setTimeout(r, MIN_COMPOSE_MS - elapsed));
     const r = await sendLetter({
@@ -429,18 +445,30 @@ export function Compose({
       lang,
       elapsed: Math.max(elapsed, MIN_COMPOSE_MS),
       hp: hpRef.current?.value ?? "",
+      ts,
+      clues: clues(pasted.current),
     });
     outcome.current = r;
     return r.ok;
   };
 
-  const leave = () => {
+  const leave = async () => {
     if (sending) {
       setSendError(null);
       outcome.current = null;
+      // Turnstile's token, usually ready by now; if Cloudflare wants a tick, the sheet (and its box) is still there
+      setChecking(true);
+      const ts = await take();
+      setChecking(false);
+      if (ts === null) {
+        setMark(null);
+        setSendError("verify");
+        blip("error");
+        return;
+      }
       go("sending");
       blip("send");
-      stageRef.current?.send(post());
+      stageRef.current?.send(post(ts));
       return;
     }
     blip("send");
@@ -456,6 +484,7 @@ export function Compose({
     else state.restore();
     startedAt.current = null;
     mountedAt.current = performance.now();
+    if (clear) pasted.current = false;
     focusNext.current = clear ? "subject" : "body";
     setReturned(true);
     go("compose");
@@ -477,7 +506,10 @@ export function Compose({
   const done = phase === "sent" || phase === "ready";
   const keys = isMac ? "⌘↵" : "Ctrl ↵";
   const refusal = refused === "email" ? c.needEmail : refused === "badEmail" ? c.badEmail : refused ? c.writeFirst : "";
-  const errorText = sendError === "rate" ? c.errRate : sendError === "invalid" ? c.errInvalid : sendError ? c.errFailed : "";
+  const errorText =
+    sendError === "rate" ? c.errRate : sendError === "invalid" ? c.errInvalid : sendError === "verify" ? c.errVerify : sendError ? c.errFailed : "";
+  const busyText = asking ? c.verifyAsk : checking ? c.verifying : sending ? c.sending : c.flying;
+  const waiting = busy || checking;
   const emailInvalid = (refused === "email" || refused === "badEmail" || sendError === "invalid") && blocker !== null && blocker !== "body";
   const deliveredHere = phase === "sent" && delivered != null;
 
@@ -585,6 +617,7 @@ export function Compose({
                     if (refused === "email" || refused === "badEmail") setRefused(null);
                     if (startedAt.current == null) startedAt.current = e.timeStamp;
                     if (sendError) setSendError(null);
+                    prime();
                   }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.metaKey && !e.ctrlKey && !e.nativeEvent.isComposing) {
@@ -689,6 +722,9 @@ export function Compose({
                 typing(e.timeStamp);
                 scrollsInside(e.currentTarget);
               }}
+              onPaste={() => {
+                pasted.current = true;
+              }}
             />
           </div>
 
@@ -726,13 +762,16 @@ export function Compose({
             </div>
           )}
 
+          {/* Cloudflare's check: empty, unless it needs a tick */}
+          {guarded && <div ref={humanBox} className="app-contact-turnstile" data-asking={asking || undefined} />}
+
           <div ref={footRef} className="app-contact-foot">
             <span className="sr-only" aria-live="polite">
-              {busy ? (sending ? c.sending : c.flying) : refusal}
+              {waiting || asking ? busyText : refusal}
             </span>
             <p className="app-contact-status">
-              {busy ? (
-                <span className="app-contact-status-busy">{sending ? c.sending : c.flying}</span>
+              {waiting || asking ? (
+                <span className="app-contact-status-busy">{busyText}</span>
               ) : refused ? (
                 <span className="app-contact-status-refused">{refusal}</span>
               ) : (
@@ -753,7 +792,7 @@ export function Compose({
               className="app-contact-btn app-contact-btn--primary app-contact-send"
               aria-label={sending ? c.sendLabelSend : c.sendLabel}
               aria-keyshortcuts={isMac ? "Meta+Enter" : "Control+Enter"}
-              disabled={busy}
+              disabled={waiting}
             >
               <PixelGlyph cells={G_SEND} size={14} />
               <span>{c.send}</span>

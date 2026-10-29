@@ -6,13 +6,15 @@ import { useToast } from "@/components/Toasts";
 import { useSound } from "@/lib/sound";
 import { rpc, type MailHealth, type Overview, type Thread, type ThreadStatus } from "../api";
 import { Btn, Section, Segmented, fill, useAgo } from "../ui";
+import { SenderDetails } from "./SenderDetails";
 
 type Box = "inbox" | "archived" | "spam";
 
 /**
  * The real inbox: letters from the Mail app and replies picked up from
  * the mailbox. Read a thread, answer it (sent from Elliot's address,
- * threaded, with the visitor's link), archive or mark spam.
+ * threaded, with the visitor's link), archive or mark spam. Each letter
+ * from the site shows who sent it (SenderDetails).
  */
 export function MailPane({ data, onChanged }: { data: Overview; onChanged: () => void }) {
   const { t, lang } = useI18n();
@@ -155,6 +157,8 @@ export function MailPane({ data, onChanged }: { data: Overview; onChanged: () =>
                 </p>
                 <div className="app-admin-message-body">{msg.body}</div>
                 {msg.error && <p className="app-admin-error">{msg.error}</p>}
+                {msg.direction === "in" &&
+                  (msg.sender ? <SenderDetails s={msg.sender} /> : <p className="app-admin-hint app-admin-who-none">{m.who.none}</p>)}
               </li>
             ))}
           </ol>
@@ -228,7 +232,10 @@ export function MailPane({ data, onChanged }: { data: Overview; onChanged: () =>
                       )}
                     </span>
                     <span className="app-admin-list-sub">{th.subject || m.noSubject}</span>
-                    <span className="app-admin-list-meta">{ago(th.lastAt)}</span>
+                    <span className="app-admin-list-meta">
+                      {th.country && th.country !== "XX" ? `${th.country === "T1" ? "Tor" : th.country} · ` : ""}
+                      {ago(th.lastAt)}
+                    </span>
                   </button>
                 </li>
               ))}

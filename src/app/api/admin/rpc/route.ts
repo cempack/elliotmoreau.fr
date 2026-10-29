@@ -47,7 +47,7 @@ import {
 import { syncOnce } from "@/server/mail/sync";
 import { json } from "@/server/mail/http";
 import { db } from "@/server/db";
-import { env, imapReady, smtpReady } from "@/server/env";
+import { env, imapReady, smtpReady, turnstileReady } from "@/server/env";
 import { getRepos } from "@/lib/github";
 import { getLatestPosts } from "@/lib/ghost";
 import { FIXTURE_POSTS, FIXTURE_REPOS } from "@/lib/fixtures";
@@ -93,6 +93,7 @@ function overview(ctx: AdminCtx) {
         github: Boolean(process.env.GITHUB_TOKEN),
         ghost: Boolean(process.env.GHOST_API_URL && process.env.GHOST_CONTENT_KEY),
         spotify: Boolean(process.env.SPOTIFY_REFRESH_TOKEN),
+        turnstile: turnstileReady(),
         siteUrl: env.siteUrl,
       },
     },
