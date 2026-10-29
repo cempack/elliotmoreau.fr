@@ -2,6 +2,7 @@ import "server-only";
 import path from "node:path";
 import { db } from "./db";
 import { env } from "./env";
+import { databaseKept, isLive } from "@/lib/deploy";
 import { startMailSync } from "./mail";
 import { startOutbox } from "./mail/outbox";
 
@@ -45,12 +46,11 @@ export function boot() {
 
 /** Open (and migrate, and seed) now, so a broken volume shows at boot. */
 function openDatabase() {
-  const volume = process.env.RAILWAY_VOLUME_MOUNT_PATH;
   const file = path.resolve(env.databasePath);
-  if (process.env.RAILWAY_ENVIRONMENT_NAME && !(volume && file.startsWith(path.resolve(volume) + path.sep))) {
+  if (isLive() && !databaseKept(file)) {
     console.warn(
-      `[boot] DATABASE_PATH (${file}) is not on a Railway volume: every deploy would start from an empty database. ` +
-        `Attach a volume at /data and set DATABASE_PATH=/data/emos.db (docs/RAILWAY.md).`
+      `[boot] DATABASE_PATH (${file}) is inside the app's folder: every deploy would start from an empty database. ` +
+        `In Coolify, add Persistent Storage mounted at /data and set DATABASE_PATH=/data/emos.db.`
     );
   }
   db();

@@ -76,6 +76,9 @@ const en = {
 
   /* sending from the site (when it can) */
   composeLeadSend: "Send delivers it to my inbox. I reply to yours, and here.",
+  privacyNote:
+    "To keep spam out, your letter is kept with the network address and browser details it was sent from. Only I see them, and they’re deleted after 90 days.",
+  privacyTurnstile: "Cloudflare Turnstile checks that a person is sending it.",
   sendLabelSend: "Send: delivers this message to Elliot",
   from: "From",
   fromEmail: "Your email",
@@ -295,6 +298,9 @@ const fr: typeof en = {
   noSubject: "Sans objet",
 
   composeLeadSend: "Envoyer le dépose dans ma boîte. Je réponds dans la vôtre, et ici.",
+  privacyNote:
+    "Pour éviter le spam, votre lettre est gardée avec l’adresse réseau et les détails du navigateur d’où elle part. Moi seul les vois, et ils sont effacés au bout de 90 jours.",
+  privacyTurnstile: "Cloudflare Turnstile vérifie qu’une personne l’envoie.",
   sendLabelSend: "Envoyer : remet ce message à Elliot",
   from: "De",
   fromEmail: "Votre e-mail",

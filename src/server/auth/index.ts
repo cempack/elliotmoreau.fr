@@ -18,7 +18,7 @@ import { clientIp, json, readJson } from "../mail/http";
  * else can: there are no passwords to guess or phish.
  *
  * - The first passkey can only be registered with ADMIN_SETUP_TOKEN (set on
- *   Railway, compared in constant time) while no passkey exists. That
+ *   Coolify, compared in constant time) while no passkey exists. That
  *   registration hands out 10 one-time recovery codes.
  * - Later passkeys are added from a signed-in session, or with a recovery
  *   code when every device is lost (which also signs out everywhere).

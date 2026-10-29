@@ -1,6 +1,7 @@
 import { isShownRepo } from "@/lib/data";
 import { getRepoDetail, type RepoDetail } from "@/lib/github";
 import { FIXTURE_REPOS } from "@/lib/fixtures";
+import { sampleAllowed } from "@/lib/deploy";
 
 /**
  * GET /api/repo?name=<repo>: one repo turned over, for Quick Look's back:
@@ -9,7 +10,6 @@ import { FIXTURE_REPOS } from "@/lib/fixtures";
  * data, cached 5 minutes. A sample outside production when GitHub can't
  * be reached.
  */
-const sampleAllowed = () => process.env.RAILWAY_ENVIRONMENT_NAME !== "production" && process.env.EM_NO_FIXTURES !== "1";
 
 function sample(name: string): RepoDetail | null {
   const r = FIXTURE_REPOS.find((x) => x.name === name);

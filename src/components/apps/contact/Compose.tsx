@@ -526,6 +526,13 @@ export function Compose({
             {c.keyLink}
           </a>
         </p>
+        {/* what Send keeps besides the letter, said before anyone writes (CNIL: tell people at collection) */}
+        {sending && (
+          <p className="app-contact-habits app-contact-privacy">
+            {c.privacyNote}
+            {guarded && ` ${c.privacyTurnstile}`}
+          </p>
+        )}
       </div>
 
       <Typewriter subject={draft.subject} body={draft.body} />

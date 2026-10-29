@@ -4,7 +4,7 @@ import { adminReady, imapReady, smtpReady } from "@/server/env";
 export const dynamic = "force-dynamic";
 
 /**
- * Railway's deploy healthcheck: 200 once the database opens (migrated and
+ * The deploy healthcheck (Coolify's, or any): 200 once the database opens (migrated and
  * readable), 503 otherwise, so a deploy with a broken volume never goes
  * live. The other flags say which integrations are configured. Booleans
  * only: no paths, counts or versions.

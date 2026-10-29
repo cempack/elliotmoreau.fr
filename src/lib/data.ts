@@ -1,4 +1,5 @@
 import "server-only";
+import { sampleAllowed } from "./deploy";
 import { cache } from "react";
 import { getLatestPosts, type GhostPost } from "./ghost";
 import { getActivity, getDayPushes, getPushes, getRepos, type ActivityInfo, type DayPush, type PushHistory, type RepoInfo } from "./github";
@@ -36,10 +37,8 @@ export type SiteData = {
   theme: Theme;
 };
 
-/** sample data stands in for unreachable sources everywhere except the
-    production deployment (Railway's "production" environment) */
-const fixturesAllowed = () =>
-  process.env.RAILWAY_ENVIRONMENT_NAME !== "production" && process.env.EM_NO_FIXTURES !== "1";
+/** sample data stands in for unreachable sources everywhere except the real site (lib/deploy) */
+const fixturesAllowed = sampleAllowed;
 
 /**
  * Everything the OS shows, fetched on the server once per render (each

@@ -5,7 +5,7 @@ import { env, smtpReady } from "../env";
 import { MSGID_DOMAIN, tlsFor } from "./config";
 
 /**
- * Outgoing mail through SMTP (Proton Mail Bridge on Railway's private
+ * Outgoing mail through SMTP (Proton Mail Bridge on the server's private
  * network). One transporter for the process, built on first use; a send
  * that fails is reported to the caller, never retried silently, so the
  * site only ever says "delivered" for mail the server accepted.

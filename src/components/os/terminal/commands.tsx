@@ -409,7 +409,7 @@ function neofetch(ctx: RunCtx) {
   const dpr = Math.round(Math.min(window.devicePixelRatio || 1, 3) * 10) / 10;
   const rows: [string, React.ReactNode][] = [
     [t.os, "emOS 26.10 Moss"],
-    [t.host, "elliotmoreau.fr (Railway)"],
+    [t.host, "elliotmoreau.fr (Coolify)"],
     [t.kernel, "Next.js 16.3 · React 19.2"],
     [t.shell, "zsh 5.9"],
     [t.wm, t.wmValue],

@@ -251,6 +251,10 @@ html[data-mail-hash] .app-contact-sendtool {
   line-height: 1.5;
   text-wrap: pretty;
 }
+.app-contact-privacy {
+  margin-top: 0.25rem;
+  font-size: var(--text-caption);
+}
 .app-contact-label {
   color: var(--color-label-2);
   font: 500 0.75rem/1.3 var(--font-mono);

@@ -19,7 +19,7 @@ const int = (k: string, d: number) => {
 };
 
 export const env = {
-  /** the SQLite file: a Railway volume in production (/data/emos.db), ./.data locally */
+  /** the SQLite file: Coolify persistent storage in production (/data/emos.db), ./.data locally */
   databasePath: str("DATABASE_PATH") ?? path.join(process.cwd(), ".data", "emos.db"),
 
   /** public origin, e.g. https://elliotmoreau.fr (passkeys and mail links are bound to it) */
@@ -30,7 +30,7 @@ export const env = {
   /** admin: one-time token that allows registering the first passkey */
   adminSetupToken: str("ADMIN_SETUP_TOKEN"),
 
-  /** outgoing mail (Proton Mail Bridge's SMTP on Railway's private network) */
+  /** outgoing mail (Proton Mail Bridge's SMTP, on the server's private network) */
   smtp: {
     host: str("SMTP_HOST"),
     port: int("SMTP_PORT", 1025),
