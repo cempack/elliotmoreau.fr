@@ -1,0 +1,15 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "packageRules": [
+    {
+      "description": "TypeScript 7: typescript-eslint (via eslint-config-next) only supports typescript <6.1, so lint can't run on 7 yet",
+      "matchPackageNames": ["typescript"],
+      "allowedVersions": "<7"
+    },
+    {
+      "description": "ESLint 10: eslint-config-next's plugins (eslint-plugin-react, -import, -jsx-a11y) only support eslint up to 9",
+      "matchPackageNames": ["eslint"],
+      "allowedVersions": "<10"
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+# The gate Renovate merges through: it pushes renovate/** branches and merges
+# them into main (which Coolify deploys) only when this is green.
+name: CI
+
+on:
+  push:
+    branches: [main, "renovate/**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - name: Tests
+        run: npx -y tsx@4.23.15 --conditions=react-server --test scripts/test/*.test.ts
+      - name: Build (type-checks too)
+        run: npm run build
+      - name: Boot smoke test
+        env:
+          PORT: "3000"
+          DATABASE_PATH: ${{ runner.temp }}/emos.db
+        run: |
+          npm start > "$RUNNER_TEMP/app.log" 2>&1 &
+          for _ in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:3000/api/health; then echo; echo "healthy"; exit 0; fi
+            sleep 1
+          done
+          echo "::error::/api/health never returned 2xx"
+          cat "$RUNNER_TEMP/app.log"
+          exit 1
