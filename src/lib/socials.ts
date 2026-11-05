@@ -4,6 +4,7 @@ export const SOCIALS = {
   youtube: "https://www.youtube.com/@cempack",
   mastodon: "https://mastodon.social/@cempack",
   x: "https://x.com/cempack_",
+  linkedin: "https://www.linkedin.com/in/elliot-moreau/",
   spotifyUser: "https://open.spotify.com/user/31a6a3od3rg52u6yz53ubapsxfgu",
   email: "hello@elliotm.fr",
 };

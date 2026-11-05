@@ -93,3 +93,15 @@ export const M_NOTES = cells([
   "####.####",
   ".##...##.",
 ]);
+/** a briefcase, its clasp on the seam: studies and work */
+export const M_CASE = cells([
+  ".........",
+  "..#####..",
+  "..#...#..",
+  "#########",
+  "#########",
+  "#...#...#",
+  "#########",
+  "#########",
+  ".........",
+]);

@@ -1097,6 +1097,9 @@ html[data-mail-hash] .app-contact-sendtool {
 .app-contact-place[data-id="mastodon"] {
   --tint: var(--color-lilac);
 }
+.app-contact-place[data-id="linkedin"] {
+  --tint: var(--color-ion);
+}
 /* a quiet card is all one link: it gives a little under the finger */
 .app-contact-place:not([data-live]):has(> .app-contact-profile:active) {
   scale: 0.985;
@@ -1418,7 +1421,7 @@ html[data-mail-hash] .app-contact-sendtool {
     column-gap: 0.875rem;
   }
 }
-/* wide: the live two side by side; the quiet ones three to a row (two, if there are four) */
+/* wide: the live two side by side; the quiet ones three to a row (two, if there are four; three then two, if five) */
 @container app-contact (min-width: 760px) {
   .app-contact-profiles {
     grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -1429,7 +1432,7 @@ html[data-mail-hash] .app-contact-sendtool {
   }
   .app-contact-place[data-live],
   .app-contact-profiles[data-quiet="4"] > .app-contact-place,
-  .app-contact-profiles[data-quiet="5"] > .app-contact-place:nth-child(n + 4) {
+  .app-contact-profiles[data-quiet="5"] > .app-contact-place:nth-last-child(-n + 2) {
     grid-column: span 3;
   }
   /* alone, the live card runs the full width: the profile beside its well */

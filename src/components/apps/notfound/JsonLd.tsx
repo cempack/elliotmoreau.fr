@@ -30,7 +30,7 @@ export function PersonJsonLd({ lang }: { lang: Locale }) {
         description: t.meta.description,
         address: { "@type": "PostalAddress", addressCountry: country },
         knowsLanguage: ["fr", "en"],
-        sameAs: [SOCIALS.github, SOCIALS.mastodon, SOCIALS.youtube, SOCIALS.x, SOCIALS.spotifyUser, BLOG_URL],
+        sameAs: [SOCIALS.github, SOCIALS.linkedin, SOCIALS.mastodon, SOCIALS.youtube, SOCIALS.x, SOCIALS.spotifyUser, BLOG_URL],
       },
       {
         "@type": "WebSite",
