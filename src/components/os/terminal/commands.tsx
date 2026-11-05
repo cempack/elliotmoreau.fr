@@ -95,6 +95,7 @@ const EXTERNAL: Record<string, string> = {
   mastodon: SOCIALS.mastodon,
   youtube: SOCIALS.youtube,
   x: SOCIALS.x,
+  linkedin: SOCIALS.linkedin,
   spotify: SOCIALS.spotifyUser,
 };
 
@@ -261,6 +262,7 @@ function readme(ctx: RunCtx) {
   const apps = (["work", "writing", "atlas", "now", "contact"] as const).map((id) => ({ id, label: ctx.d.shell.apps[id], about: r.apps[id] }));
   const elsewhere: [string, string, string][] = [
     ["GitHub", SOCIALS.github, "github.com/cempack"],
+    ["LinkedIn", SOCIALS.linkedin, "linkedin.com/in/elliot-moreau"],
     ["Mastodon", SOCIALS.mastodon, "mastodon.social/@cempack"],
     ["YouTube", SOCIALS.youtube, "youtube.com/@cempack"],
   ];

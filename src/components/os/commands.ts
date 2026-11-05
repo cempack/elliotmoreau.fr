@@ -255,6 +255,7 @@ export function useSpotlightCommands(): Command[] {
     const links: Command[] = [
       { id: "ln-github", label: "GitHub", hint: "@cempack", href: SOCIALS.github, k: "code repos" },
       { id: "ln-blog", label: sp.blog, hint: host(BLOG_URL), href: BLOG_URL, k: "ghost writing articles" },
+      { id: "ln-linkedin", label: "LinkedIn", hint: "elliot-moreau", href: SOCIALS.linkedin, k: "cv resume career work jobs parcours stage emploi" },
       { id: "ln-mastodon", label: "Mastodon", hint: "@cempack", href: SOCIALS.mastodon, k: "fediverse" },
       { id: "ln-youtube", label: "YouTube", hint: "@cempack", href: SOCIALS.youtube, k: "video" },
       { id: "ln-x", label: "X", hint: "@cempack_", href: SOCIALS.x, k: "twitter" },

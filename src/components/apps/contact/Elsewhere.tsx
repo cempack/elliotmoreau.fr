@@ -16,17 +16,17 @@ import { PixelGlyph, type Cells } from "@/components/glyphs";
 import { RepoArt } from "@/components/apps/work/RepoArt";
 import { PixelCover } from "@/components/apps/now/Cover";
 import { fmtMs, useOnScreen, useTrackProgress } from "@/components/apps/now/lib";
-import { G_ARROW, M_CODE, M_NOTES, M_PLAY, M_TOOT, M_X } from "./glyphs";
+import { G_ARROW, M_CASE, M_CODE, M_NOTES, M_PLAY, M_TOOT, M_X } from "./glyphs";
 import { fill } from "./mail";
 
-type Id = "github" | "spotify" | "youtube" | "mastodon" | "x";
+type Id = "github" | "spotify" | "linkedin" | "youtube" | "mastodon" | "x";
 type Profile = { id: Id; name: string; handle: string; href: string; note: string; mark: Cells; rel?: string };
 type Push = { when: string; repo: string; url: string; message: string; info: RepoInfo | undefined };
 /** `current`: the track is the one Spotify holds now (playing or paused), so its position means something */
 type Listen = { track: TrackInfo | null; playing: boolean; current: boolean };
 
 /** the cards' order; those with something live move to the front */
-const ORDER: Id[] = ["github", "spotify", "youtube", "mastodon", "x"];
+const ORDER: Id[] = ["github", "spotify", "linkedin", "youtube", "mastodon", "x"];
 
 /** a network's 9 × 9 mark, three screen pixels a cell */
 function Mark({ cells }: { cells: Cells }) {
@@ -294,6 +294,7 @@ export function Elsewhere({ data, active }: { data: SiteData; active: boolean })
   const profiles: Record<Id, Profile> = {
     github: { id: "github", name: "GitHub", handle: "@cempack", href: SOCIALS.github, note: c.githubNote, mark: M_CODE },
     spotify: { id: "spotify", name: "Spotify", handle: c.spotifyHandle, href: SOCIALS.spotifyUser, note: c.spotifyNote, mark: M_NOTES },
+    linkedin: { id: "linkedin", name: "LinkedIn", handle: "in/elliot-moreau", href: SOCIALS.linkedin, note: c.linkedinNote, mark: M_CASE },
     youtube: { id: "youtube", name: "YouTube", handle: "@cempack", href: SOCIALS.youtube, note: c.youtubeNote, mark: M_PLAY },
     mastodon: {
       id: "mastodon",
