@@ -15,7 +15,7 @@
     "imapflow": "^2.4.0",
     "lenis": "^1.3.26",
     "mailparser": "^3.9.38",
-    "motion": "^12.43.0",
+    "motion": "^14.0.0",
     "next": "16.4.5",
     "nodemailer": "^10.1.0",
     "react": "19.3.1",
